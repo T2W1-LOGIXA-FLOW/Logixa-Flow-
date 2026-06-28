@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#0f172a"/>
+  <text x="400" y="300" text-anchor="middle" fill="#00A3FF" font-size="24" font-family="Arial">Container Truck Placeholder</text>
+  <text x="400" y="340" text-anchor="middle" fill="#64748b" font-size="16" font-family="Arial">Land Transportation</text>
+</svg>

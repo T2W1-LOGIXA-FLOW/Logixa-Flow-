@@ -1,0 +1,143 @@
+// src/app/admin/login/page.tsx
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { login } from '@/components/api';
+
+export default function AdminLoginPage() {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const router = useRouter();
+
+  // Check if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    const savedUsername = localStorage.getItem('adminUsername');
+    if (savedUsername) {
+      setUsername(savedUsername);
+      setRememberMe(true);
+    }
+    if (token) {
+      router.push('/admin');
+    }
+  }, [router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const data = await login(username, password);
+
+      // Store token
+      localStorage.setItem('adminToken', data.access_token);
+      localStorage.setItem('logixa_token', data.access_token);
+      if (rememberMe) {
+        localStorage.setItem('adminUsername', username);
+      }
+
+      // Redirect to admin dashboard
+      router.push('/admin');
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+      <div className="bg-slate-900/60 backdrop-blur border border-cyan-500/20 rounded-lg shadow-2xl shadow-cyan-500/5 w-full max-w-md">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-cyan-600/20 to-blue-600/20 backdrop-blur px-8 py-8 rounded-t-lg border-b border-cyan-500/20">
+          <h1 className="text-white text-2xl font-bold">Admin Login</h1>
+          <p className="text-cyan-300 text-sm mt-2">Logixa Flow Management System</p>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="px-8 py-8 space-y-6">
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-950/40 border border-red-500/30 rounded-lg p-4 backdrop-blur">
+              <p className="text-red-300 text-sm font-medium">{error}</p>
+            </div>
+          )}
+
+          {/* Email Field */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
+              Username
+            </label>
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="admin"
+              required
+              className="w-full px-4 py-2 border border-slate-600/40 rounded-lg bg-slate-900/40 text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition"
+            />
+          </div>
+
+          {/* Password Field */}
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter admin password"
+              required
+              className="w-full px-4 py-2 border border-slate-600/40 rounded-lg bg-slate-900/40 text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition"
+            />
+          </div>
+
+          {/* Remember Me */}
+          <div className="flex items-center">
+            <input
+              id="rememberMe"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 text-cyan-600 rounded focus:ring-2 focus:ring-cyan-500"
+            />
+            <label htmlFor="rememberMe" className="ml-2 text-sm text-slate-300">
+              Remember username for next time
+            </label>
+          </div>
+
+          {/* Login Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-medium py-2 rounded-lg hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Logging in...' : 'Login to Dashboard'}
+          </button>
+
+        </form>
+
+        {/* Footer */}
+        <div className="bg-slate-900/30 backdrop-blur px-8 py-4 rounded-b-lg border-t border-slate-700/50">
+          <p className="text-sm text-slate-400 text-center">
+            Not an admin?{' '}
+            <Link href="/" className="text-cyan-600 hover:text-cyan-700 font-medium">
+              Return to home
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

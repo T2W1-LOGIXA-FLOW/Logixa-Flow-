@@ -1,0 +1,3 @@
+# PostgreSQL production driver (Neon/Supabase pgvector)
+# pip install -r requirements-postgres.txt
+psycopg2-binary==2.9.10

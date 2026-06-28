@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Allow: /blog
+Allow: /about
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /api
+Disallow: /*.json
+Disallow: /*?*
+Disallow: /search
+
+Sitemap: /sitemap.xml
+Crawl-delay: 1

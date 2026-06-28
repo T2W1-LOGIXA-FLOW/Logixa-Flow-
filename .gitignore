@@ -1,0 +1,92 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# Backend Python
+__pycache__/
+*.py[cod]
+*.pyc
+.Python
+venv/
+env/
+.venv/
+ENV/
+*.egg-info/
+*.egg
+.pytest_cache/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+*.pem
+*.key
+*.cert
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Media & uploads
+uploads/
+media/
+web-platform/backend/uploads/
+
+# Local generated reports / archives
+*.zip
+*.tar.gz
+*.bak
+*.backup
+
+# Logs
+logs/
+*.log
+*.pid
+
+# Backups
+backups/
+
+# IDE & OS
+.vscode/
+.idea/
+.agents/
+.claude/
+.codex/
+.git_corrupt_backup/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Misc
+*.tmp
+.cache/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+.vercel/
+.terraform/
+*.tfstate*
+
+# Local QA artifacts
+.qa-*.log
+.qa-screens/
+.qa-screens-admin/

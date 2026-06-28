@@ -1,0 +1,150 @@
+/* Feedback Rating Component */
+.feedback-rating {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-top: 1px solid hsl(var(--border));
+  margin-top: 1.5rem;
+}
+
+.feedback-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+}
+
+.feedback-buttons {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.feedback-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border: 2px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  background: hsl(var(--background));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.25rem;
+}
+
+.feedback-button:hover:not(:disabled) {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+}
+
+.feedback-button.active {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.2);
+}
+
+.feedback-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.feedback-status {
+  font-size: 0.875rem;
+  color: hsl(var(--primary));
+  font-weight: 500;
+}
+
+/* Empty State Component */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem 2rem;
+  text-align: center;
+  min-height: 250px;
+}
+
+.empty-state.error {
+  background: hsl(var(--destructive) / 0.05);
+  border: 1px solid hsl(var(--destructive) / 0.2);
+  border-radius: 0.5rem;
+}
+
+.empty-state-icon {
+  font-size: 3.5rem;
+  line-height: 1;
+}
+
+.empty-state-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin: 0;
+}
+
+.empty-state-description {
+  font-size: 0.95rem;
+  color: hsl(var(--muted-foreground));
+  margin: 0;
+  max-width: 450px;
+}
+
+.empty-state-action {
+  margin-top: 1rem;
+}
+
+.empty-state-action a,
+.empty-state-action button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Empty state integration with specific components */
+.source-picker-empty {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.brain-list-empty {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .feedback-rating {
+    padding: 1rem;
+  }
+
+  .feedback-buttons {
+    gap: 0.5rem;
+  }
+
+  .feedback-button {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .empty-state {
+    gap: 0.75rem;
+    padding: 2rem 1rem;
+  }
+
+  .empty-state-icon {
+    font-size: 2.5rem;
+  }
+
+  .empty-state-title {
+    font-size: 1.1rem;
+  }
+
+  .empty-state-description {
+    font-size: 0.9rem;
+  }
+}
