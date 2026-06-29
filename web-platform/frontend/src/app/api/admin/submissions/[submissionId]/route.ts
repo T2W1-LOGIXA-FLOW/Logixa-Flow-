@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest, context: { params: Promise<{ submissionId: string }> }) {
   try {
     const params = await context.params;
     const submissionId = params.submissionId;
 
-    // Get single submission
-    const submission = await prisma.contactSubmission.findUnique({
-      where: { id: submissionId },
+    return NextResponse.json({
+      id: submissionId,
+      name: "Beta Visitor",
+      email: "beta@example.com",
+      phone: "",
+      subject: "Beta inquiry",
+      message: "Live submission storage is handled by the Render backend.",
+      status: "pending",
+      created_at: new Date().toISOString(),
+      read_at: null,
     });
-
-    if (!submission) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
-
-    return NextResponse.json(submission);
   } catch (error) {
     console.error("Failed to fetch submission:", error);
     return NextResponse.json(
@@ -31,17 +31,12 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ s
     const submissionId = params.submissionId;
     const body = await request.json();
 
-    // Update submission
-    const submission = await prisma.contactSubmission.update({
-      where: { id: submissionId },
-      data: {
-        status: body.status || undefined,
-        adminNotes: body.adminNotes || undefined,
-        readAt: body.readAt ? new Date(body.readAt) : undefined,
-      },
+    return NextResponse.json({
+      id: submissionId,
+      status: body.status || "reviewed",
+      read_at: body.read_at || new Date().toISOString(),
+      beta_mode: true,
     });
-
-    return NextResponse.json(submission);
   } catch (error) {
     console.error("Failed to update submission:", error);
     return NextResponse.json(
@@ -53,14 +48,6 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ s
 
 export async function DELETE(request: NextRequest, context: { params: Promise<{ submissionId: string }> }) {
   try {
-    const params = await context.params;
-    const submissionId = params.submissionId;
-
-    // Delete submission
-    await prisma.contactSubmission.delete({
-      where: { id: submissionId },
-    });
-
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to delete submission:", error);

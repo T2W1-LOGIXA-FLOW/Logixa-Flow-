@@ -1,20 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+
+const betaSubmissions = [
+  {
+    id: "beta-submission-1",
+    name: "Beta Visitor",
+    email: "beta@example.com",
+    phone: "",
+    subject: "Beta inquiry",
+    message: "Connect the Render backend admin endpoint for live submissions.",
+    status: "pending",
+    created_at: new Date().toISOString(),
+    read_at: null,
+  },
+];
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get("status");
 
-    // Build where clause
-    const where = status && status !== "all" ? { status } : {};
-
-    // Fetch submissions from database
-    const submissions = await prisma.contactSubmission.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    });
+    const submissions =
+      status && status !== "all"
+        ? betaSubmissions.filter((submission) => submission.status === status)
+        : betaSubmissions;
 
     return NextResponse.json(submissions);
   } catch (error) {

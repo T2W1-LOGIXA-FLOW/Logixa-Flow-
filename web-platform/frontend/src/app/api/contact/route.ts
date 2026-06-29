@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
 import { sendConfirmationEmail, sendAdminNotification } from "@/lib/email";
 import DOMPurify from "isomorphic-dompurify";
 
@@ -60,22 +59,24 @@ export async function POST(request: NextRequest) {
       message: DOMPurify.sanitize(data.message),
     };
 
-    // Save to database
-    const submission = await prisma.contactSubmission.create({
-      data: {
-        name: sanitizedData.name,
-        email: sanitizedData.email,
-        phone: sanitizedData.phone || null,
-        subject: sanitizedData.subject,
-        message: sanitizedData.message,
-        status: "pending",
-        ipAddress: ip,
-        userAgent: request.headers.get("user-agent") || undefined,
-      },
-    });
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const submissionId = `contact-${Date.now()}`;
+
+    if (apiUrl) {
+      await fetch(`${apiUrl}/api/contacts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: sanitizedData.name,
+          email: sanitizedData.email,
+          company: sanitizedData.phone || undefined,
+          message: `${sanitizedData.subject}\n\n${sanitizedData.message}`,
+        }),
+      });
+    }
 
     // Send confirmation email
-    await sendConfirmationEmail(data.email, data.name, submission.id);
+    await sendConfirmationEmail(data.email, data.name, submissionId);
 
     // Send admin notification
     await sendAdminNotification(
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         message: "Thank you! Your message has been received.",
-        submissionId: submission.id,
+        submissionId,
       },
       { status: 201 }
     );

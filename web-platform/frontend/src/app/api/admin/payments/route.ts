@@ -1,20 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+
+const betaPayments = [
+  {
+    id: "beta-payment-1",
+    user_id: "beta-user",
+    amount: 0,
+    currency: "USD",
+    status: "pending",
+    description: "Beta mode. Connect Stripe before production billing.",
+    created_at: new Date().toISOString(),
+  },
+];
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get("status");
 
-    // Build where clause
-    const where = status && status !== "all" ? { status } : {};
-
-    // Fetch payments from database
-    const payments = await prisma.paymentHistory.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    });
+    const payments =
+      status && status !== "all"
+        ? betaPayments.filter((payment) => payment.status === status)
+        : betaPayments;
 
     return NextResponse.json(payments);
   } catch (error) {

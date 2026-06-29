@@ -54,6 +54,8 @@ Required environment variable:
 NEXT_PUBLIC_API_URL=https://your-backend-url
 ```
 
+Do not add `DATABASE_URL` to Vercel for the beta deploy. The frontend calls the Render backend, and the backend owns database access.
+
 ## Backend
 
 Deploy the FastAPI backend separately on Render, Railway, Fly.io, or a VPS.
@@ -65,6 +67,9 @@ DATABASE_URL=postgresql://...
 ADMIN_USERNAME=...
 ADMIN_PASSWORD=...
 JWT_SECRET=...
+API_SECRET_TOKEN=...
+ENVIRONMENT=production
+CORS_ORIGINS=https://your-vercel-domain.vercel.app
 ```
 
 Use PostgreSQL for beta users. SQLite is local preview only.

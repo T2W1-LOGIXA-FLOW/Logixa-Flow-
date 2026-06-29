@@ -42,6 +42,8 @@ Required frontend variable:
 NEXT_PUBLIC_API_URL=https://your-backend-url
 ```
 
+The beta frontend does not need `DATABASE_URL`; database access belongs to the backend.
+
 Required backend variables depend on enabled features, but normally include:
 
 ```text
@@ -49,6 +51,9 @@ DATABASE_URL=postgresql://...
 ADMIN_USERNAME=...
 ADMIN_PASSWORD=...
 JWT_SECRET=...
+API_SECRET_TOKEN=...
+ENVIRONMENT=production
+CORS_ORIGINS=https://your-vercel-domain.vercel.app
 ```
 
 Do not commit real `.env` files. Keep only `.env.example` files in the repo.
