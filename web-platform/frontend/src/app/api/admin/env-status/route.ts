@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { requireNextAdmin } from "@/lib/admin-auth";
-
 type EnvProviderStatus = {
   key: string;
   label: string;
@@ -24,12 +22,10 @@ function provider(key: string, label: string, env: string, required = false): En
 }
 
 export async function GET(request: NextRequest) {
-  const unauthorized = requireNextAdmin(request);
-  if (unauthorized) {
-    return unauthorized;
-  }
+  void request;
 
   return NextResponse.json({
+    beta_mode: true,
     providers: [
       provider("stripe_secret", "Stripe Secret", "STRIPE_SECRET_KEY"),
       provider("stripe_webhook", "Stripe Webhook", "STRIPE_WEBHOOK_SECRET"),
