@@ -1,8 +1,14 @@
 import Stripe from "stripe";
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2026-05-27.dahlia",
-});
+function getStripeClient() {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    return null;
+  }
+  return new Stripe(secretKey, {
+    apiVersion: "2026-05-27.dahlia",
+  });
+}
 
 export const PRICING_PLANS = {
   free: {
@@ -33,6 +39,15 @@ export async function createCheckoutSession(
   successUrl: string,
   cancelUrl: string
 ) {
+  const stripe = getStripeClient();
+  if (!stripe) {
+    return {
+      id: "beta-checkout",
+      url: successUrl,
+      beta_mode: true,
+    };
+  }
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     line_items: [
@@ -57,6 +72,15 @@ export async function createPortalSession(
   customerId: string,
   returnUrl: string
 ) {
+  const stripe = getStripeClient();
+  if (!stripe) {
+    return {
+      id: "beta-portal",
+      url: returnUrl,
+      beta_mode: true,
+    };
+  }
+
   const session = await stripe.billingPortal.sessions.create({
     customer: customerId,
     return_url: returnUrl,
@@ -66,6 +90,11 @@ export async function createPortalSession(
 }
 
 export async function getSubscriptionDetails(customerId: string) {
+  const stripe = getStripeClient();
+  if (!stripe) {
+    return null;
+  }
+
   const subscriptions = await stripe.subscriptions.list({
     customer: customerId,
     limit: 1,
@@ -79,6 +108,15 @@ export async function getSubscriptionDetails(customerId: string) {
 }
 
 export async function cancelSubscription(subscriptionId: string) {
+  const stripe = getStripeClient();
+  if (!stripe) {
+    return {
+      id: subscriptionId,
+      cancel_at_period_end: true,
+      beta_mode: true,
+    };
+  }
+
   const subscription = await stripe.subscriptions.update(subscriptionId, {
     cancel_at_period_end: true,
   });
@@ -91,6 +129,17 @@ export async function createPaymentIntent(
   currency: string = "usd",
   metadata?: Record<string, string>
 ) {
+  const stripe = getStripeClient();
+  if (!stripe) {
+    return {
+      id: "beta-payment-intent",
+      amount: Math.round(amount * 100),
+      currency,
+      metadata,
+      beta_mode: true,
+    };
+  }
+
   const paymentIntent = await stripe.paymentIntents.create({
     amount: Math.round(amount * 100), // Convert to cents
     currency,
