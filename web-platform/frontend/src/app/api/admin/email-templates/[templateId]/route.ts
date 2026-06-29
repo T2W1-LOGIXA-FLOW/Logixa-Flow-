@@ -4,6 +4,7 @@ import { emailTemplatePreviews } from "../data";
 
 export async function GET(request: NextRequest, context: { params: Promise<{ templateId: string }> }) {
   try {
+    void request;
     const params = await context.params;
     const templateId = params.templateId;
 
@@ -44,6 +45,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ t
 
 export async function DELETE(request: NextRequest, context: { params: Promise<{ templateId: string }> }) {
   try {
+    void request;
     const params = await context.params;
     const templateId = params.templateId;
 

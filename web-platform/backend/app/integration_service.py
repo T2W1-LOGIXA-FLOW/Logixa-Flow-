@@ -14,7 +14,10 @@ from . import models, schemas
 from .analytics import log_analytics_event
 from .models import utc_now
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+_APP_FILE = Path(__file__).resolve()
+PROJECT_ROOT = Path(os.getenv("PROJECT_ROOT", "")).resolve() if os.getenv("PROJECT_ROOT") else (
+    _APP_FILE.parents[3] if len(_APP_FILE.parents) > 3 else _APP_FILE.parents[1]
+)
 DEFAULT_DRAFTS_DIR = PROJECT_ROOT / "agents" / "data" / "drafts"
 
 DEFAULT_RSS_FEEDS = [

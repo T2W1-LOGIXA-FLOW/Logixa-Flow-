@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest, context: { params: Promise<{ submissionId: string }> }) {
   try {
+    void request;
     const params = await context.params;
     const submissionId = params.submissionId;
 
@@ -46,7 +47,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ s
   }
 }
 
-export async function DELETE(request: NextRequest, context: { params: Promise<{ submissionId: string }> }) {
+export async function DELETE() {
   try {
     return NextResponse.json({ success: true });
   } catch (error) {
