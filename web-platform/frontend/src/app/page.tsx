@@ -77,7 +77,6 @@ import { getPosts, Post } from "@/components/api";
 import Card from "@/components/shadcn/Card";
 import MyanmarFlowMap from "@/components/MyanmarFlowMap";
 import { DotGlobeHero } from "@/components/ui/globe-hero";
-import Footer7 from "@/components/ui/footer-7";
 import ScrollBackground from "@/components/ScrollBackground";
 import { WorldMap } from "@/components/ui/map";
 
@@ -94,7 +93,6 @@ export default function Home() {
     { title: "Procurement", description: "Supplier signals, contract timing, and sourcing readiness." },
     { title: "Operations", description: "Daily operations flow, exception alerts, and process coherence." },
     { title: "Market Intel", description: "Market narratives, briefing notes, and commercial context." },
-    { title: "Supplier Score", description: "Supplier reputation, quality metrics, and risk signals." },
   ];
 
   const samplePosts: Post[] = [
@@ -356,27 +354,31 @@ export default function Home() {
       {/* Premium Intelligence Layer */}
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8 items-start">
-            <div className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+            <div className="flex">
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
                 viewport={{ once: true }}
-                className="logixa-card p-6 md:p-8"
+                className="logixa-card flex h-full w-full flex-col justify-between p-6 md:min-h-[420px] md:p-8"
               >
-                <p className="text-cyan-400 text-xs uppercase tracking-wider font-semibold">PREMIUM INTELLIGENCE LAYER</p>
-                <h2 className="text-2xl md:text-3xl font-bold mt-2">Live supply chain control surface for intelligent operations.</h2>
-                <p className="mt-4 text-slate-300">
-                  Surface intelligence, signal maps, and tactical sourcing context in a dashboard that feels active and premium.
-                </p>
-                <div className="mt-6">
-                  <p className="font-semibold text-sm">Operational Highlights</p>
-                  <ul className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <li className="text-sm">Real-time logistics signals</li>
-                    <li className="text-sm">High-fidelity sourcing data</li>
-                    <li className="text-sm">Geo-enabled maps & alerts</li>
-                    <li className="text-sm">Premium analytics streams</li>
+                <div>
+                  <p className="text-cyan-400 text-xs uppercase tracking-wider font-semibold">PREMIUM INTELLIGENCE LAYER</p>
+                  <h2 className="mt-3 max-w-xl text-2xl font-bold leading-tight md:text-4xl">
+                    Live supply chain control surface for intelligent operations.
+                  </h2>
+                  <p className="mt-5 max-w-2xl text-slate-300 leading-relaxed">
+                    Surface intelligence, signal maps, and tactical sourcing context in a dashboard that feels active and premium.
+                  </p>
+                </div>
+                <div className="mt-8">
+                  <p className="font-semibold text-sm text-white">Operational Highlights</p>
+                  <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <li className="rounded-lg border border-cyan-500/15 bg-slate-950/30 p-3 text-sm text-slate-200">Real-time logistics signals</li>
+                    <li className="rounded-lg border border-cyan-500/15 bg-slate-950/30 p-3 text-sm text-slate-200">High-fidelity sourcing data</li>
+                    <li className="rounded-lg border border-cyan-500/15 bg-slate-950/30 p-3 text-sm text-slate-200">Geo-enabled maps and alerts</li>
+                    <li className="rounded-lg border border-cyan-500/15 bg-slate-950/30 p-3 text-sm text-slate-200">Premium analytics streams</li>
                   </ul>
                 </div>
               </motion.div>
@@ -388,7 +390,7 @@ export default function Home() {
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
-              className="logixa-card p-6"
+              className="logixa-card flex h-full min-h-[420px] flex-col p-6"
             >
               <div className="mb-4">
                 <div className="flex justify-between items-center">
@@ -408,7 +410,9 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <MyanmarFlowMap />
+              <div className="flex flex-1 items-center">
+                <MyanmarFlowMap />
+              </div>
             </motion.div>
           </div>
         </div>
@@ -429,7 +433,7 @@ export default function Home() {
               Premium SCM Experience, Practical Business Insights
             </h2>
           </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
             {capabilities.map((item, idx) => (
               <motion.div
                 key={item.title}
@@ -438,11 +442,11 @@ export default function Home() {
                 transition={{ duration: 0.6, delay: idx * 0.1 }}
                 viewport={{ once: true }}
                 whileHover={{ y: -8 }}
-                className="bg-slate-900/50 backdrop-blur border border-cyan-500/20 rounded-2xl p-8 h-full hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-300 group cursor-pointer relative overflow-hidden"
+                className="bg-slate-900/50 backdrop-blur border border-cyan-500/20 rounded-2xl p-6 h-full min-h-[168px] hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-300 group cursor-pointer relative overflow-hidden"
               >
                 <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-cyan-500/15 to-orange-500/10 pointer-events-none" />
                 <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-cyan-500/20 to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <h3 className="text-xl font-bold relative z-10 text-white group-hover:text-cyan-400 transition-colors">{item.title}</h3>
+                <h3 className="text-lg font-bold relative z-10 text-white group-hover:text-cyan-400 transition-colors">{item.title}</h3>
                 <p className="mt-3 text-sm text-slate-300 relative z-10 leading-relaxed">{item.description}</p>
               </motion.div>
             ))}
@@ -488,56 +492,40 @@ export default function Home() {
 
       <section className="py-16">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="rounded-[2rem] overflow-hidden border border-cyan-500/20 bg-slate-900/50 backdrop-blur shadow-2xl shadow-cyan-500/5">
-            <WorldMap
-              dots={[
-                { start: { lat: 37.7749, lng: -122.4194, label: "San Francisco" }, end: { lat: 51.5074, lng: -0.1278, label: "London" } },
-                { start: { lat: 51.5074, lng: -0.1278, label: "London" }, end: { lat: 28.6139, lng: 77.209, label: "New Delhi" } },
-                { start: { lat: 35.6895, lng: 139.6917, label: "Tokyo" }, end: { lat: -33.8688, lng: 151.2093, label: "Sydney" } },
-              ]}
-              lineColor="#0ea5e9"
-              showLabels
-              loop
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="lg:grid lg:grid-cols-[1.05fr_0.95fr] gap-8 items-start">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-              className="logixa-card p-8"
-            >
-              <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="logixa-card overflow-hidden p-0"
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.6fr]">
+              <div className="flex flex-col justify-center p-8 md:p-10">
                 <p className="text-cyan-400 text-xs uppercase tracking-wider font-semibold">GLOBAL NETWORK</p>
-                <h2 className="text-3xl md:text-4xl font-bold text-slate-900"># Global EdgeNetwork</h2>
-                <p className="text-slate-300 leading-relaxed">
-                  The global network layer is now anchored to the left side, with EdgeNetwork intelligence driving route context.
+                <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">Global Edge Network</h2>
+                <p className="mt-4 text-slate-300 leading-relaxed">
+                  Route context, port connectivity, and logistics signal flow are grouped with the world map so the section reads as one network layer.
                 </p>
+                <ul className="mt-6 grid gap-3 text-sm text-slate-300">
+                  <li className="rounded-lg border border-cyan-500/15 bg-slate-950/35 p-3">Major shipping corridors in a global network view</li>
+                  <li className="rounded-lg border border-cyan-500/15 bg-slate-950/35 p-3">Port hub connectivity and logistics signal flow</li>
+                  <li className="rounded-lg border border-cyan-500/15 bg-slate-950/35 p-3">Rapid route visibility for strategic decisions</li>
+                </ul>
               </div>
-              <div className="mt-8 grid gap-4">
-                <div className="rounded-3xl border border-cyan-500/20 bg-slate-900/50 backdrop-blur p-6">
-                  <p className="text-sm uppercase tracking-widest text-cyan-400">Insights</p>
-                  <ul className="mt-4 space-y-3 text-sm text-slate-300">
-                    <li>Major shipping corridors in a global network view</li>
-                    <li>Port hub connectivity and logistics signal flow</li>
-                    <li>Rapid route visibility for strategic decisions</li>
-                  </ul>
-                </div>
-                <div className="rounded-3xl border border-cyan-500/20 bg-slate-900/50 backdrop-blur p-6">
-                  <p className="text-sm uppercase tracking-widest text-cyan-400">Why it matters</p>
-                  <p className="mt-3 text-slate-300 text-sm leading-relaxed">
-                    This layout keeps the globe section compact under the left premium area while the route panel now occupies the left visual position cleanly.
-                  </p>
-                </div>
+              <div className="min-h-[360px] border-t border-cyan-500/10 lg:border-l lg:border-t-0">
+                <WorldMap
+                  dots={[
+                    { start: { lat: 37.7749, lng: -122.4194, label: "San Francisco" }, end: { lat: 51.5074, lng: -0.1278, label: "London" } },
+                    { start: { lat: 51.5074, lng: -0.1278, label: "London" }, end: { lat: 28.6139, lng: 77.209, label: "New Delhi" } },
+                    { start: { lat: 35.6895, lng: 139.6917, label: "Tokyo" }, end: { lat: -33.8688, lng: 151.2093, label: "Sydney" } },
+                  ]}
+                  lineColor="#0ea5e9"
+                  showLabels
+                  loop
+                />
               </div>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -668,36 +656,36 @@ export default function Home() {
             className="logixa-card p-8 md:p-12"
           >
             <div className="space-y-4 mb-8">
-              <p className="text-slate-700 text-center">
-                💡 Sample questions you can ask:
+              <p className="text-slate-300 text-center">
+                Sample questions you can ask:
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button
                   onClick={() => window.location.href = "/admin/agent-chat"}
                   className="text-left p-4 rounded-lg bg-slate-900/40 hover:bg-slate-800/50 transition border border-white/10 hover:border-cyan-500/50 backdrop-blur"
                 >
-                  <p className="font-semibold text-white">ကမ္ဘာ့ကုန်သည်ရောင်းဝယ်မှု</p>
+                  <p className="font-semibold text-white">How do global shipping delays affect Myanmar importers?</p>
                   <p className="text-sm text-slate-400">Learn about international trade</p>
                 </button>
                 <button
                   onClick={() => window.location.href = "/admin/agent-chat"}
                   className="text-left p-4 rounded-lg bg-slate-900/40 hover:bg-slate-800/50 transition border border-white/10 hover:border-cyan-500/50 backdrop-blur"
                 >
-                  <p className="font-semibold text-white">အငယ်အဆငျး စတင်ခြင်း</p>
+                  <p className="font-semibold text-white">What should a small business prepare before sourcing suppliers?</p>
                   <p className="text-sm text-slate-400">Start a small business</p>
                 </button>
                 <button
                   onClick={() => window.location.href = "/admin/agent-chat"}
                   className="text-left p-4 rounded-lg bg-slate-900/40 hover:bg-slate-800/50 transition border border-white/10 hover:border-cyan-500/50 backdrop-blur"
                 >
-                  <p className="font-semibold text-white">ထည့်သွင်းရန်သည့် နည်းပညာ</p>
-                  <p className="text-sm text-slate-600">Affordable technology solutions</p>
+                  <p className="font-semibold text-white">Which affordable tools help track logistics operations?</p>
+                  <p className="text-sm text-slate-400">Affordable technology solutions</p>
                 </button>
                 <button
                   onClick={() => window.location.href = "/admin/agent-chat"}
                   className="text-left p-4 rounded-lg bg-slate-900/40 hover:bg-slate-800/50 transition border border-white/10 hover:border-cyan-500/50 backdrop-blur"
                 >
-                  <p className="font-semibold text-white">ပိုးဝါးကြောင်း</p>
+                  <p className="font-semibold text-white">How can I reduce delivery delays in a local supply chain?</p>
                   <p className="text-sm text-slate-400">Supply chain logistics</p>
                 </button>
               </div>
@@ -733,7 +721,6 @@ export default function Home() {
         </div>
       </section>
 
-      <Footer7 />
       </main>
     </>
   );
