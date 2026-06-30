@@ -21,7 +21,7 @@ services:
       - key: API_SECRET_TOKEN
         generateValue: true
       - key: CORS_ORIGINS
-        value: https://your-vercel-domain.vercel.app
+        value: https://*.vercel.app,https://localhost:3000
       - key: REQUIRE_AI_KEY
         value: false
       - key: GEMINI_API_KEY

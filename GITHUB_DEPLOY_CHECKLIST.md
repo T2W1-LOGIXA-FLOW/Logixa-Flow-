@@ -54,6 +54,11 @@ Required environment variable:
 NEXT_PUBLIC_API_URL=https://your-backend-url.onrender.com
 ```
 
+**Example:**
+```text
+NEXT_PUBLIC_API_URL=https://logixa-flow-backend.onrender.com
+```
+
 Do not add `DATABASE_URL` to Vercel for the beta deploy. The frontend calls the Render backend, and the backend owns database access.
 
 ### AI Keys for Frontend
