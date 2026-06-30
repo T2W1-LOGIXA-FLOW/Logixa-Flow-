@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useLocale } from '@/lib/LanguageContext';
 import { toast } from 'sonner';
 import Footer7 from '@/components/ui/footer-7';
+import PageBackground from '@/components/PageBackground';
 
 interface Preferences {
   notifications: boolean;
@@ -58,8 +59,8 @@ export default function PreferencesPage() {
   if (!mounted) return null;
 
   return (
-    <>
-    <main className="min-h-screen bg-slate-950 py-20">
+    <PageBackground overlayOpacity={0.85}>
+      <main className="min-h-screen py-20">
       <div className="mx-auto max-w-4xl px-4 lg:px-8">
         {/* Header */}
         <motion.div
@@ -189,6 +190,6 @@ export default function PreferencesPage() {
       </div>
     </main>
     <Footer7 />
-    </>
+    </PageBackground>
   );
 }

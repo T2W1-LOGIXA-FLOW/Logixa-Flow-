@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import LatestTicker from "@/components/LatestTicker";
 import BlogSearch from "@/components/BlogSearch";
-import StaticSphereBackground from "@/components/StaticSphereBackground";
+import PageBackground from "@/components/PageBackground";
 import { Post } from "@/components/api";
 import { useLocale } from "@/lib/LanguageContext";
 
@@ -20,9 +20,8 @@ export default function BlogContent({ posts, latestPosts, selectedCategory }: Bl
   const { t } = useLocale();
 
   return (
-    <>
-      <StaticSphereBackground variant="cyan" opacity="medium" position="right" />
-      <main className="relative min-h-screen bg-slate-950 py-16 md:py-20 overflow-hidden">
+    <PageBackground overlayOpacity={0.85}>
+      <main className="relative min-h-screen py-16 md:py-20 overflow-hidden">
         <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8">
         {/* Header Section */}
         <div className="blog-heading-grid mb-8">
@@ -62,6 +61,6 @@ export default function BlogContent({ posts, latestPosts, selectedCategory }: Bl
         </div>
         </div>
       </main>
-    </>
+    </PageBackground>
   );
 }

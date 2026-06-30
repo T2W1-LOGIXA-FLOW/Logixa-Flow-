@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import Footer7 from "@/components/ui/footer-7";
+import PageBackground from "@/components/PageBackground";
 
 export default function CheckoutSuccessPage() {
 
   return (
-    <>
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-4">
+    <PageBackground overlayOpacity={0.85}>
+      <div className="min-h-screen text-slate-100 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-8 text-center">
           {/* Success Icon */}
@@ -98,6 +99,6 @@ export default function CheckoutSuccessPage() {
       </div>
     </div>
     <Footer7 />
-    </>
+    </PageBackground>
   );
 }

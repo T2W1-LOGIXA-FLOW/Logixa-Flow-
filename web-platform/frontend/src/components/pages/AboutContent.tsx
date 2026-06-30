@@ -1,15 +1,14 @@
 "use client";
 
-import StaticSphereBackground from "@/components/StaticSphereBackground";
+import PageBackground from "@/components/PageBackground";
 import { useLocale } from "@/lib/LanguageContext";
 
 export default function AboutContent() {
   const { t } = useLocale();
 
   return (
-    <>
-      <StaticSphereBackground variant="cyan" opacity="medium" position="right" />
-      <main className="relative min-h-screen bg-slate-950 py-16 md:py-20 overflow-hidden">
+    <PageBackground overlayOpacity={0.85}>
+      <main className="relative min-h-screen py-16 md:py-20 overflow-hidden">
         <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8">
         <div className="logixa-card page-heading mb-12 p-8 md:p-10">
           <p className="eyebrow">{t("aboutEyebrow")}</p>
@@ -165,6 +164,6 @@ export default function AboutContent() {
         </section>
         </div>
       </main>
-    </>
+    </PageBackground>
   );
 }

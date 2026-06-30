@@ -1,7 +1,7 @@
 "use client";
 
 import ContactForm from "@/components/ContactForm";
-import StaticSphereBackground from "@/components/StaticSphereBackground";
+import PageBackground from "@/components/PageBackground";
 import { useLocale } from "@/lib/LanguageContext";
 
 export default function ContactContent() {
@@ -22,9 +22,8 @@ export default function ContactContent() {
   ];
 
   return (
-    <>
-      <StaticSphereBackground variant="cyan" opacity="medium" position="right" />
-      <main className="relative min-h-screen overflow-hidden bg-slate-950 py-16 md:py-20">
+    <PageBackground overlayOpacity={0.85}>
+      <main className="relative min-h-screen overflow-hidden py-16 md:py-20">
         <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="logixa-card p-6 md:p-8 space-y-6">
@@ -59,6 +58,6 @@ export default function ContactContent() {
           </div>
         </div>
       </main>
-    </>
+    </PageBackground>
   );
 }

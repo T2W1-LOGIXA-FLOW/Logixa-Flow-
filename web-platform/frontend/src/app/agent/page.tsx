@@ -13,6 +13,7 @@ import Skeleton from "@/components/shadcn/Skeleton";
 import Citations, { type Match } from "@/components/Citations";
 import { AgentRun, IntelligenceSource, Post, adminFetch } from "@/components/api";
 import Footer7 from "@/components/ui/footer-7";
+import PageBackground from "@/components/PageBackground";
 
 const categories: Post["category"][] = ["Supply Chain", "Logistics", "Procurement", "Operations Excellence", "News"];
 
@@ -144,7 +145,8 @@ export default function AgentControlCenter() {
 
   if (!token) {
     return (
-      <main className="page-shell agent-workspace">
+      <PageBackground overlayOpacity={0.85}>
+        <main className="page-shell agent-workspace">
         <div className="space-y-6 max-w-4xl mx-auto py-8">
           <div className="flex items-center justify-between">
             <div className="space-y-2 w-3/4">
@@ -160,11 +162,13 @@ export default function AgentControlCenter() {
           </div>
         </div>
       </main>
+      </PageBackground>
     );
   }
 
   return (
-    <main className="page-shell agent-workspace min-h-screen bg-slate-950">
+    <PageBackground overlayOpacity={0.85}>
+      <main className="page-shell agent-workspace min-h-screen">
       <section className="agent-header">
         <div>
           <p className="eyebrow">AI Agent</p>
@@ -331,5 +335,6 @@ export default function AgentControlCenter() {
       ) : null}
       <Footer7 />
     </main>
+    </PageBackground>
   );
 }

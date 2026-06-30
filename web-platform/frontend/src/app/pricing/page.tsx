@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Footer7 from "@/components/ui/footer-7";
+import PageBackground from "@/components/PageBackground";
 
 const PLANS = [
   {
@@ -73,7 +74,8 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-24 px-4">
+    <PageBackground overlayOpacity={0.85}>
+      <div className="min-h-screen text-slate-100 py-24 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
@@ -218,5 +220,6 @@ export default function PricingPage() {
       </div>
       <Footer7 />
     </div>
+    </PageBackground>
   );
 }

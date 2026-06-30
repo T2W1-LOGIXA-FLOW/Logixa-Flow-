@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { getPosts, Post } from '@/components/api';
 import PostCard from '@/components/PostCard';
 import Footer7 from '@/components/ui/footer-7';
+import PageBackground from '@/components/PageBackground';
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
@@ -64,8 +65,8 @@ export default function SearchPage() {
   };
 
   return (
-    <>
-    <main className="min-h-screen bg-slate-950 py-20">
+    <PageBackground overlayOpacity={0.85}>
+      <main className="min-h-screen py-20">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         {/* Header */}
         <motion.div
@@ -187,6 +188,6 @@ export default function SearchPage() {
       </div>
     </main>
     <Footer7 />
-    </>
+    </PageBackground>
   );
 }

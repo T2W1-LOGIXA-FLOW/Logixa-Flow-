@@ -51,10 +51,13 @@ git push -u origin main
 Required environment variable:
 
 ```text
-NEXT_PUBLIC_API_URL=https://your-backend-url
+NEXT_PUBLIC_API_URL=https://your-backend-url.onrender.com
 ```
 
 Do not add `DATABASE_URL` to Vercel for the beta deploy. The frontend calls the Render backend, and the backend owns database access.
+
+### AI Keys for Frontend
+Frontend does NOT need AI API keys. All AI operations are handled by the backend.
 
 ## Backend
 
@@ -70,6 +73,37 @@ JWT_SECRET=...
 API_SECRET_TOKEN=...
 ENVIRONMENT=production
 CORS_ORIGINS=https://your-vercel-domain.vercel.app
+REQUIRE_AI_KEY=false
 ```
 
+Optional AI provider keys (add one or more):
+
+```text
+GEMINI_API_KEY=your-gemini-key
+OPENROUTER_API_KEY=your-openrouter-key
+GROQ_API_KEY=your-groq-key
+REDIS_URL=redis://...
+```
+
+**Important:** AI keys are optional. Set `REQUIRE_AI_KEY=false` to run without AI features.
+
 Use PostgreSQL for beta users. SQLite is local preview only.
+
+## AI Agents Configuration
+
+AI agents read API keys from the project root `.env` file. See `AI_AGENTS_SETUP.md` for detailed configuration.
+
+**For Production Deployment:**
+- AI agents are optional for basic functionality
+- Add AI keys to Render backend environment variables
+- Set `REQUIRE_AI_KEY=false` if AI features are not required
+- Agents can be run separately as background services
+
+**Required for AI Agents:**
+```text
+# In project root .env or Render backend
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=your-gemini-key
+BACKEND_URL=https://your-backend-url.onrender.com
+API_SECRET_TOKEN=your-secure-token
+```

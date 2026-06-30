@@ -5,6 +5,7 @@ import Script from "next/script";
 import { assetUrl, getPost } from "@/components/api";
 import ShareButtons from "@/components/ShareButtons";
 import BlogPDFExport from "@/components/BlogPDFExport";
+import PageBackground from "@/components/PageBackground";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -85,7 +86,8 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
   };
 
   return (
-    <main className="article-shell">
+    <PageBackground overlayOpacity={0.85}>
+      <main className="article-shell">
       <Script
         id="article-schema"
         type="application/ld+json"
@@ -114,5 +116,6 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
         </p>
       ) : null}
     </main>
+    </PageBackground>
   );
 }

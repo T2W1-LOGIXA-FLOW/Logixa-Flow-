@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import Footer7 from "@/components/ui/footer-7";
+import PageBackground from "@/components/PageBackground";
 
 export const metadata: Metadata = {
   title: "Terms of Service | Logixa Flow",
@@ -12,7 +13,8 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <PageBackground overlayOpacity={0.85}>
+      <div className="min-h-screen text-slate-100">
       <div className="max-w-4xl mx-auto px-4 py-16 md:py-24">
         <h1 className="text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r from-cyan-500 to-orange-500 bg-clip-text text-transparent">
           Terms of Service
@@ -112,5 +114,6 @@ export default function TermsPage() {
       </div>
       <Footer7 />
     </div>
+    </PageBackground>
   );
 }
