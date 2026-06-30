@@ -1,6 +1,7 @@
 import ThemeProvider from "@/components/shadcn/ThemeProvider";
 import { LanguageProvider } from "@/lib/LanguageContext";
 import ConditionalLayout from "@/components/ConditionalLayout";
+import { Analytics } from "@vercel/analytics/next";
 
 import "@/styles/globals.css";
 
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </ThemeProvider>
           </LanguageProvider>
         </div>
+        <Analytics />
       </body>
     </html>
   );
