@@ -8,7 +8,7 @@ export default function PageBackground({
   return (
     <div className="relative min-h-screen">
       {/* Background Image Layer */}
-      <div className="fixed inset-0 z-0">
+      <div className="fixed inset-0 z-0 pointer-events-none">
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ 
