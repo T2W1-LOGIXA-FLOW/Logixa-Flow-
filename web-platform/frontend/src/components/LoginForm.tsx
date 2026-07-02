@@ -26,7 +26,7 @@ export default function LoginForm() {
       router.push("/admin");
     } catch {
       const translation = t("loginError");
-      const message = typeof translation === "string" ? translation : "Invalid username or password.";
+      const message = typeof translation === "string" ? translation : translation.join(" ");
       setError(message);
     } finally {
       setLoading(false);
