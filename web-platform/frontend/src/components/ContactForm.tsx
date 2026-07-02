@@ -187,15 +187,6 @@ export default function ContactForm() {
         {touched.message && !errors.message && formData.message ? <p className="mt-1 text-xs text-green-500">OK: Message ready to send</p> : null}
       </div>
 
-      <label className="flex cursor-pointer items-center gap-3 text-sm text-slate-400 hover:text-slate-300">
-        <input
-          name="newsletter"
-          type="checkbox"
-          className="appearance-none w-5 h-5 rounded-md border border-slate-600 bg-slate-950 text-cyan-500 shadow-inner shadow-cyan-500/10 focus:ring-2 focus:ring-cyan-400 focus:border-transparent checked:bg-cyan-500 checked:border-transparent checked:shadow-[0_0_0_4px_rgba(56,189,248,0.16)] cursor-pointer"
-        />
-        <span>{t("contactNewsletterOptIn")}</span>
-      </label>
-
       <button
         className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-orange-500 px-4 py-2.5 font-bold text-foreground transition-all hover:from-cyan-400 hover:to-orange-400 disabled:cursor-not-allowed disabled:opacity-50"
         type="submit"
