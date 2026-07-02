@@ -26,13 +26,13 @@ export default function BlogContent({ posts, latestPosts, selectedCategory }: Bl
       <main className="relative min-h-screen py-16 md:py-20 overflow-hidden">
         <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8">
         {/* Header Section */}
-        <div className="blog-heading-grid mb-8">
-          <div className="blog-heading-section">
+        <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-stretch">
+          <div className="flex-[2]">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, ease: "easeOut" }}
-              className="logixa-card page-heading"
+              className="logixa-card page-heading h-full"
             >
               <p className="eyebrow">{t("blogEyebrow")}</p>
               <h1>{t("blogTitle")}</h1>
@@ -43,8 +43,10 @@ export default function BlogContent({ posts, latestPosts, selectedCategory }: Bl
               </p>
             </motion.div>
           </div>
-          <div className="logixa-card">
-            <LatestTicker posts={latestPosts} />
+          <div className="flex-[1]">
+            <div className="logixa-card h-full p-6 sm:p-8">
+              <LatestTicker posts={latestPosts} />
+            </div>
           </div>
         </div>
 

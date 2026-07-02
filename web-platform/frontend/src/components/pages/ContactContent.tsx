@@ -26,8 +26,8 @@ export default function ContactContent() {
     <PageBackground overlayOpacity={0.85}>
       <main className="relative min-h-screen overflow-hidden py-16 md:py-20">
         <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="logixa-card p-6 md:p-8 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+            <div className="logixa-card h-full bg-slate-900/30 backdrop-blur-md p-8 md:p-10 space-y-6">
               <div>
                 <p className="eyebrow mb-4">{t("contactEyebrow")}</p>
                 <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight mb-4">
@@ -37,7 +37,7 @@ export default function ContactContent() {
                   {t("contactIntro")}
                 </p>
               </div>
-              <div className="grid gap-4 pt-2">
+              <div className="grid gap-5 pt-2">
                 {contactNotes.map((note) => (
                   <div
                     key={note.label}
@@ -53,7 +53,7 @@ export default function ContactContent() {
                 ))}
               </div>
             </div>
-            <div className="logixa-card p-6 md:p-8">
+            <div className="logixa-card h-full bg-slate-900/30 backdrop-blur-md p-8 md:p-10">
               <ContactForm />
             </div>
           </div>

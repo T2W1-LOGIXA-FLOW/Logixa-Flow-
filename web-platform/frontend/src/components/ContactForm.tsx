@@ -134,7 +134,7 @@ export default function ContactForm() {
       <div className="form-group">
         <label className="form-label">{t("contactName")}</label>
         <input
-          className={`form-input ${touched.name && errors.name ? "border-red-500" : ""} ${touched.name && !errors.name && formData.name ? "border-green-500" : ""}`}
+          className={`form-input focus:ring-2 focus:ring-cyan-400 focus:border-transparent ${touched.name && errors.name ? "border-red-500" : ""} ${touched.name && !errors.name && formData.name ? "border-green-500" : ""}`}
           name="name"
           value={formData.name}
           onChange={handleChange}
@@ -149,7 +149,7 @@ export default function ContactForm() {
       <div className="form-group">
         <label className="form-label">{t("contactEmail")}</label>
         <input
-          className={`form-input ${touched.email && errors.email ? "border-red-500" : ""} ${touched.email && !errors.email && formData.email ? "border-green-500" : ""}`}
+          className={`form-input focus:ring-2 focus:ring-cyan-400 focus:border-transparent ${touched.email && errors.email ? "border-red-500" : ""} ${touched.email && !errors.email && formData.email ? "border-green-500" : ""}`}
           name="email"
           type="email"
           value={formData.email}
@@ -164,7 +164,7 @@ export default function ContactForm() {
       <div className="form-group">
         <label className="form-label">{t("contactCompany")}</label>
         <input
-          className="form-input"
+          className="form-input focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
           name="company"
           value={formData.company}
           onChange={handleChange}
@@ -174,7 +174,7 @@ export default function ContactForm() {
       <div className="form-group">
         <label className="form-label">{t("contactMessage")}</label>
         <textarea
-          className={`form-textarea ${touched.message && errors.message ? "border-red-500" : ""} ${touched.message && !errors.message && formData.message ? "border-green-500" : ""}`}
+          className={`form-textarea resize-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent ${touched.message && errors.message ? "border-red-500" : ""} ${touched.message && !errors.message && formData.message ? "border-green-500" : ""}`}
           name="message"
           value={formData.message}
           onChange={handleChange}
@@ -187,8 +187,12 @@ export default function ContactForm() {
         {touched.message && !errors.message && formData.message ? <p className="mt-1 text-xs text-green-500">OK: Message ready to send</p> : null}
       </div>
 
-      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-400 hover:text-slate-300">
-        <input name="newsletter" type="checkbox" className="form-checkbox" />
+      <label className="flex cursor-pointer items-center gap-3 text-sm text-slate-400 hover:text-slate-300">
+        <input
+          name="newsletter"
+          type="checkbox"
+          className="appearance-none w-5 h-5 rounded-md border border-slate-600 bg-slate-950 text-cyan-500 shadow-inner shadow-cyan-500/10 focus:ring-2 focus:ring-cyan-400 focus:border-transparent checked:bg-cyan-500 checked:border-transparent checked:shadow-[0_0_0_4px_rgba(56,189,248,0.16)] cursor-pointer"
+        />
         <span>{t("contactNewsletterOptIn")}</span>
       </label>
 

@@ -73,52 +73,36 @@ export const Footer7 = ({
   sections = defaultSections,
   description = "Actionable supply chain intelligence for Myanmar business teams.",
   socialLinks = defaultSocialLinks,
-  copyright = "(c) 2026 Logixa Flow. All rights reserved.",
+  copyright = "© 2026 Logixa Flow. All rights reserved.",
   legalLinks = defaultLegalLinks,
 }: Footer7Props) => {
   return (
-    <section className="border-t border-cyan-500/10 bg-slate-950/95 py-16 md:py-20">
+    <section className="bg-slate-900/60 border-t border-slate-700/50 backdrop-blur-xl shadow-[0_0_40px_rgba(15,23,42,0.25)] py-16 md:py-20">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
-        <div className="flex w-full flex-col justify-between gap-10 lg:flex-row lg:items-start lg:text-left">
-          <div className="flex w-full flex-col justify-between gap-6 lg:max-w-md lg:items-start">
-            <div className="flex items-center gap-2 lg:justify-start">
-              <Link href={logo.url} className="flex items-center gap-3" aria-label="Logixa Flow home">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-cyan-400/30 bg-gradient-to-br from-cyan-500/25 to-orange-500/25 text-xs font-black text-white shadow-lg shadow-cyan-500/10">
-                  LF
-                </span>
-                <span className="bg-gradient-to-r from-cyan-400 to-orange-400 bg-clip-text text-xl font-bold text-transparent">
-                  {logo.title}
-                </span>
-              </Link>
-            </div>
-            <p className="max-w-sm text-sm leading-6 text-slate-400">
+        <div className="grid gap-12 lg:grid-cols-[minmax(300px,1fr)_repeat(3,220px)] lg:items-start">
+          <div className="flex flex-col gap-5">
+            <Link href={logo.url} className="flex items-center gap-3" aria-label="Logixa Flow home">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/10 text-sm font-black text-white shadow-lg shadow-cyan-500/10">
+                LF
+              </span>
+              <span className="bg-gradient-to-r from-cyan-400 to-orange-400 bg-clip-text text-2xl font-bold text-transparent">
+                {logo.title}
+              </span>
+            </Link>
+            <p className="max-w-sm text-sm leading-7 text-slate-300">
               {description}
             </p>
-            {socialLinks.length > 0 ? (
-              <ul className="flex items-center space-x-6 text-slate-400">
-                {socialLinks.map((social, idx) => (
-                  <li key={idx} className="font-medium hover:text-cyan-300">
-                    <a href={social.href} aria-label={social.label}>
-                      {social.icon}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
           </div>
 
-          <div className="grid w-full gap-6 md:grid-cols-3 lg:gap-20">
+          <div className="grid gap-8 sm:grid-cols-3">
             {sections.map((section, sectionIdx) => (
               <div key={sectionIdx}>
-                <h3 className="mb-4 text-sm font-bold uppercase tracking-[0.16em] text-slate-200">
+                <h3 className="mb-4 text-sm font-bold uppercase tracking-[0.24em] text-slate-200">
                   {section.title}
                 </h3>
                 <ul className="space-y-3 text-sm text-slate-400">
                   {section.links.map((link, linkIdx) => (
-                    <li
-                      key={linkIdx}
-                      className="font-medium transition-colors hover:text-cyan-300"
-                    >
+                    <li key={linkIdx} className="font-medium transition-colors hover:text-cyan-300">
                       <Link href={link.href}>{link.name}</Link>
                     </li>
                   ))}
@@ -128,15 +112,15 @@ export const Footer7 = ({
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col justify-between gap-4 border-t border-slate-800 py-8 text-xs font-medium text-slate-500 md:flex-row md:items-center md:text-left">
-          <p className="order-2 lg:order-1">{copyright}</p>
-          <ul className="order-1 flex flex-col gap-2 md:order-2 md:flex-row">
+        <div className="mt-12 flex flex-col gap-4 border-t border-slate-700/50 py-8 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+          <p>{copyright}</p>
+          <div className="flex flex-wrap gap-4 text-slate-400">
             {legalLinks.map((link, idx) => (
-              <li key={idx} className="transition-colors hover:text-cyan-300">
-                <Link href={link.href}>{link.name}</Link>
-              </li>
+              <Link key={idx} href={link.href} className="transition-colors hover:text-cyan-300">
+                {link.name}
+              </Link>
             ))}
-          </ul>
+          </div>
         </div>
       </div>
     </section>

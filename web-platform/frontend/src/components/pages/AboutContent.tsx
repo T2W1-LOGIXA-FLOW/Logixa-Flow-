@@ -11,19 +11,19 @@ export default function AboutContent() {
     <PageBackground overlayOpacity={0.85}>
       <main className="relative min-h-screen py-16 md:py-20 overflow-hidden">
         <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8">
-        <div className="logixa-card page-heading mb-12 p-8 md:p-10">
+        <div className="logixa-card page-heading mb-12 px-8 py-10 md:px-10 md:py-12">
           <p className="eyebrow">{t("aboutEyebrow")}</p>
           <h1>{t("aboutTitle")}</h1>
           <p>{t("aboutIntro")}</p>
         </div>
 
-        <section className="feature-band mb-12">
-          <div className="logixa-card feature-item p-6">
-            <h3>{t("aboutMissionTitle")}</h3>
+        <section className="feature-band mb-12 flex flex-col gap-6 lg:flex-row lg:items-stretch">
+          <div className="logixa-card feature-item h-full flex-1 p-6 lg:w-1/2">
+            <h3 className="text-cyan-400">{t("aboutMissionTitle")}</h3>
             <p>{t("aboutMissionBody")}</p>
           </div>
-          <div className="logixa-card feature-item p-6">
-            <h3>{t("aboutFocusTitle")}</h3>
+          <div className="logixa-card feature-item h-full flex-1 p-6 lg:w-1/2">
+            <h3 className="text-cyan-400">{t("aboutFocusTitle")}</h3>
             <div className="mt-3">
               {Array.isArray(t("aboutFocusBody")) ? (
                 <ul className="space-y-2">
