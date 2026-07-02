@@ -98,21 +98,48 @@ export const Footer7 = ({
             </p>
           </div>
 
-          <div className="grid gap-8 sm:grid-cols-3">
-            {sections.map((section, sectionIdx) => (
-              <div key={sectionIdx}>
-                <h3 className="mb-4 text-sm font-bold uppercase tracking-[0.24em] text-slate-200">
-                  {section.title}
-                </h3>
-                <ul className="space-y-3 text-sm text-slate-400">
-                  {section.links.map((link, linkIdx) => (
-                    <li key={linkIdx} className="font-medium transition-colors hover:text-cyan-300">
-                      <Link href={link.href}>{link.name}</Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+          <div className="grid gap-8 grid-cols-1 sm:grid-cols-3">
+            {/* PLATFORM column */}
+            <div>
+              <h3 className="mb-4 text-sm font-bold uppercase tracking-[0.24em] text-slate-200">
+                PLATFORM
+              </h3>
+              <ul className="space-y-3 text-sm text-slate-400">
+                {sections[0]?.links?.map((link, linkIdx) => (
+                  <li key={linkIdx} className="font-medium transition-colors hover:text-cyan-300">
+                    <Link href={link.href}>{link.name}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* COMPANY column */}
+            <div>
+              <h3 className="mb-4 text-sm font-bold uppercase tracking-[0.24em] text-slate-200">
+                COMPANY
+              </h3>
+              <ul className="space-y-3 text-sm text-slate-400">
+                {sections[1]?.links?.map((link, linkIdx) => (
+                  <li key={linkIdx} className="font-medium transition-colors hover:text-cyan-300">
+                    <Link href={link.href}>{link.name}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* LEGAL column */}
+            <div>
+              <h3 className="mb-4 text-sm font-bold uppercase tracking-[0.24em] text-slate-200">
+                LEGAL
+              </h3>
+              <ul className="space-y-3 text-sm text-slate-400">
+                {sections[2]?.links?.map((link, linkIdx) => (
+                  <li key={linkIdx} className="font-medium transition-colors hover:text-cyan-300">
+                    <Link href={link.href}>{link.name}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
 
