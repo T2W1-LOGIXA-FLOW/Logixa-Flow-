@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 import LatestTicker from "@/components/LatestTicker";
 import BlogSearch from "@/components/BlogSearch";
 import PageBackground from "@/components/PageBackground";
+import Footer from "@/components/Footer";
 import { Post } from "@/components/api";
 import { useLocale } from "@/lib/LanguageContext";
 
@@ -26,11 +28,20 @@ export default function BlogContent({ posts, latestPosts, selectedCategory }: Bl
         {/* Header Section */}
         <div className="blog-heading-grid mb-8">
           <div className="blog-heading-section">
-            <div className="logixa-card page-heading">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, ease: "easeOut" }}
+              className="logixa-card page-heading"
+            >
               <p className="eyebrow">{t("blogEyebrow")}</p>
               <h1>{t("blogTitle")}</h1>
-              <p className="leading-relaxed">{t("blogIntro")}</p>
-            </div>
+              <p className="leading-relaxed text-[#d1d5db]">
+                Executive-ready{" "}
+                <span className="text-cyan-400 font-semibold">supply chain</span>,{" "}
+                <span className="text-cyan-400 font-semibold">logistics</span>, procurement, operations excellence, and news articles.
+              </p>
+            </motion.div>
           </div>
           <div className="logixa-card">
             <LatestTicker posts={latestPosts} />
@@ -61,6 +72,11 @@ export default function BlogContent({ posts, latestPosts, selectedCategory }: Bl
         </div>
         </div>
       </main>
+      
+      {/* Footer */}
+      <div className="relative z-10 mt-12">
+        <Footer />
+      </div>
     </PageBackground>
   );
 }

@@ -48,8 +48,32 @@ export default function CoverflowSlider({ posts }: CoverflowSliderProps) {
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -100 }}
         transition={{ duration: 0.5 }}
-        className="w-full"
+        className="w-full relative"
       >
+        {/* Navigation Buttons - Left */}
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handlePrev}
+          onMouseEnter={() => setAutoPlay(false)}
+          onMouseLeave={() => setAutoPlay(true)}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-30 -translate-x-3 p-3 bg-slate-900/60 backdrop-blur-md border border-slate-700/50 rounded-full transition hover:bg-slate-800/70"
+        >
+          <ChevronLeft className="w-5 h-5 text-white" />
+        </motion.button>
+
+        {/* Navigation Buttons - Right */}
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleNext}
+          onMouseEnter={() => setAutoPlay(false)}
+          onMouseLeave={() => setAutoPlay(true)}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-30 translate-x-3 p-3 bg-slate-900/60 backdrop-blur-md border border-slate-700/50 rounded-full transition hover:bg-slate-800/70"
+        >
+          <ChevronRight className="w-5 h-5 text-white" />
+        </motion.button>
+
         <div className="relative w-full h-96 bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg overflow-hidden">
           {/* Background */}
           {posts[current]?.image_url && (
@@ -65,7 +89,7 @@ export default function CoverflowSlider({ posts }: CoverflowSliderProps) {
 
           {/* Content */}
           <div className="absolute inset-0 flex items-center justify-center p-8">
-            <div className="text-center max-w-2xl z-10">
+            <div className="text-center max-w-2xl z-10 bg-slate-900/80 backdrop-blur-xl rounded-2xl p-8 border border-slate-700/30">
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -86,7 +110,7 @@ export default function CoverflowSlider({ posts }: CoverflowSliderProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="text-lg text-slate-300 mb-6 line-clamp-2"
+                className="text-lg text-slate-200 mb-6 line-clamp-2"
               >
                 {posts[current]?.excerpt}
               </motion.p>
@@ -95,35 +119,12 @@ export default function CoverflowSlider({ posts }: CoverflowSliderProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
                 href={`/blog/${posts[current]?.slug}`}
-                className="inline-block px-6 py-3 bg-gradient-to-r from-cyan-500 to-orange-500 rounded-lg font-semibold hover:shadow-lg transition"
+                className="inline-block px-6 py-3 bg-cyan-500 rounded-lg font-semibold text-white hover:bg-cyan-400 transition-all duration-300 hover:shadow-[0_0_20px_rgba(6,182,212,0.3)]"
               >
                 Read More
               </motion.a>
             </div>
           </div>
-
-          {/* Navigation Buttons */}
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handlePrev}
-            onMouseEnter={() => setAutoPlay(false)}
-            onMouseLeave={() => setAutoPlay(true)}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/10 hover:bg-white/20 rounded-full transition"
-          >
-            <ChevronLeft className="w-6 h-6 text-white" />
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleNext}
-            onMouseEnter={() => setAutoPlay(false)}
-            onMouseLeave={() => setAutoPlay(true)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/10 hover:bg-white/20 rounded-full transition"
-          >
-            <ChevronRight className="w-6 h-6 text-white" />
-          </motion.button>
 
           {/* Indicators */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
@@ -146,7 +147,7 @@ export default function CoverflowSlider({ posts }: CoverflowSliderProps) {
       </motion.div>
 
       {/* Thumbnail Strip */}
-      <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
+      <div className="mt-6 flex gap-3 overflow-x-auto pb-2 justify-center">
         {posts.map((post, index) => (
           <motion.button
             key={index}
@@ -154,8 +155,10 @@ export default function CoverflowSlider({ posts }: CoverflowSliderProps) {
               setCurrent(index);
               setAutoPlay(false);
             }}
-            className={`flex-shrink-0 h-20 rounded-lg overflow-hidden cursor-pointer transition ${
-              current === index ? "ring-2 ring-cyan-500" : "opacity-60 hover:opacity-100"
+            className={`flex-shrink-0 h-20 w-40 rounded-lg overflow-hidden cursor-pointer transition ${
+              current === index 
+                ? "ring-2 ring-cyan-500 bg-slate-800" 
+                : "opacity-70 hover:opacity-100 bg-slate-900/50"
             }`}
             whileHover={{ scale: 1.05 }}
           >
@@ -169,7 +172,7 @@ export default function CoverflowSlider({ posts }: CoverflowSliderProps) {
             )}
             {!post.image_url && (
               <div className="w-full h-full bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center">
-                <p className="text-xs text-center text-slate-400 px-2 line-clamp-2">{post.title}</p>
+                <p className="text-xs text-center text-[#e2e8f0] px-2 line-clamp-2">{post.title}</p>
               </div>
             )}
           </motion.button>

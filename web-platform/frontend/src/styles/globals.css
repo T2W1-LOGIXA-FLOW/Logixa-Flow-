@@ -405,12 +405,12 @@ body {
 }
 
 .form-input:focus {
-  @apply border-cyan-400/60 ring-1 ring-cyan-400/30;
+  @apply border-cyan-400 ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-900;
   background: rgba(30, 41, 59, 0.9);
 }
 
 .form-textarea {
-  @apply w-full px-4 py-3 rounded-lg border text-white placeholder-slate-400 focus:outline-none transition-all resize;
+  @apply w-full px-4 py-3 rounded-lg border text-white placeholder-slate-400 focus:outline-none transition-all resize-none;
   background: rgba(30, 41, 59, 0.5);
   border-color: rgba(100, 116, 139, 0.4);
   -webkit-backdrop-filter: blur(8px);
@@ -424,8 +424,37 @@ body {
 }
 
 .form-textarea:focus {
-  @apply border-cyan-400/60 ring-1 ring-cyan-400/30;
+  @apply border-cyan-400 ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-900;
   background: rgba(30, 41, 59, 0.9);
+}
+
+/* Custom Checkbox Styling */
+.form-checkbox {
+  @apply appearance-none w-5 h-5 rounded border-2 border-slate-600 bg-slate-800 cursor-pointer transition-all duration-200;
+  position: relative;
+}
+
+.form-checkbox:checked {
+  @apply border-cyan-500 bg-cyan-500;
+}
+
+.form-checkbox:checked::after {
+  content: "✓";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.form-checkbox:hover {
+  @apply border-cyan-400;
+}
+
+.form-checkbox:focus {
+  @apply outline-none ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-900;
 }
 
 /* Admin Layout */
@@ -602,8 +631,8 @@ body {
 .eyebrow {
   @apply text-xs md:text-sm font-semibold uppercase tracking-widest mb-2;
   color: #0ea5e9;
-  opacity: 0.95;
-  text-shadow: 0 0 8px rgba(14, 165, 233, 0.2);
+  opacity: 1;
+  text-shadow: 0 0 12px rgba(14, 165, 233, 0.5), 0 0 24px rgba(14, 165, 233, 0.3);
 }
 
 .hero-body {
@@ -611,7 +640,9 @@ body {
 }
 
 .feature-band {
-  @apply grid grid-cols-1 md:grid-cols-3 gap-6;
+  @apply grid grid-cols-1 md:grid-cols-2 gap-6;
+  display: flex;
+  align-items: stretch;
 }
 
 .feature-card {
@@ -816,7 +847,7 @@ body {
 /* Page Heading - Unified across all pages */
 .page-heading {
   @apply space-y-4 max-w-3xl;
-  padding: 2rem !important;
+  padding: 2rem 3rem !important;
 }
 
 .page-heading h1 {
@@ -854,6 +885,9 @@ body {
 /* Feature Items (for About page) */
 .feature-item {
   @apply space-y-3;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .feature-item h3 {

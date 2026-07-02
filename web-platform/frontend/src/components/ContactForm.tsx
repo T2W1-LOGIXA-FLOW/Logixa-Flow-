@@ -188,7 +188,7 @@ export default function ContactForm() {
       </div>
 
       <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-400 hover:text-slate-300">
-        <input name="newsletter" type="checkbox" className="rounded" />
+        <input name="newsletter" type="checkbox" className="form-checkbox" />
         <span>{t("contactNewsletterOptIn")}</span>
       </label>
 

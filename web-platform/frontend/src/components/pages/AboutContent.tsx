@@ -1,6 +1,7 @@
 "use client";
 
 import PageBackground from "@/components/PageBackground";
+import Footer from "@/components/Footer";
 import { useLocale } from "@/lib/LanguageContext";
 
 export default function AboutContent() {
@@ -23,7 +24,20 @@ export default function AboutContent() {
           </div>
           <div className="logixa-card feature-item p-6">
             <h3>{t("aboutFocusTitle")}</h3>
-            <p>{t("aboutFocusBody")}</p>
+            <div className="mt-3">
+              {Array.isArray(t("aboutFocusBody")) ? (
+                <ul className="space-y-2">
+                  {t("aboutFocusBody").map((item: string, index: number) => (
+                    <li key={index} className="flex items-start gap-2 text-slate-300 text-base leading-relaxed">
+                      <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-cyan-400 mt-2"></span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-slate-300 text-base leading-relaxed">{t("aboutFocusBody")}</p>
+              )}
+            </div>
           </div>
         </section>
 
@@ -164,6 +178,11 @@ export default function AboutContent() {
         </section>
         </div>
       </main>
+      
+      {/* Footer */}
+      <div className="relative z-10 mt-16">
+        <Footer />
+      </div>
     </PageBackground>
   );
 }

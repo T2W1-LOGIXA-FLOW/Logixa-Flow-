@@ -24,7 +24,7 @@ export default function Footer() {
 
   return (
     <footer className="site-footer">
-      <div>
+      <div className="text-left">
         <strong className="text-xl font-heading bg-gradient-to-r from-[#00A3FF] to-[#FF6B00] bg-clip-text text-transparent">
           Logixa Flow
         </strong>

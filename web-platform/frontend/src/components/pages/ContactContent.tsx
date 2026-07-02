@@ -2,6 +2,7 @@
 
 import ContactForm from "@/components/ContactForm";
 import PageBackground from "@/components/PageBackground";
+import Footer from "@/components/Footer";
 import { useLocale } from "@/lib/LanguageContext";
 
 export default function ContactContent() {
@@ -9,7 +10,7 @@ export default function ContactContent() {
   const contactNotes = [
     {
       label: "Best for",
-      value: "Supply chain insight, procurement planning, logistics workflows, and platform collaboration.",
+      value: "Procurement planning, logistics workflows, and platform integrations.",
     },
     {
       label: "Response flow",
@@ -36,11 +37,11 @@ export default function ContactContent() {
                   {t("contactIntro")}
                 </p>
               </div>
-              <div className="grid gap-3 pt-2">
+              <div className="grid gap-4 pt-2">
                 {contactNotes.map((note) => (
                   <div
                     key={note.label}
-                    className="rounded-lg border border-cyan-500/15 bg-slate-950/35 p-4"
+                    className="rounded-lg border border-cyan-500/15 bg-slate-950/35 p-5"
                   >
                     <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-300">
                       {note.label}
@@ -58,6 +59,11 @@ export default function ContactContent() {
           </div>
         </div>
       </main>
+      
+      {/* Footer */}
+      <div className="relative z-10 mt-16">
+        <Footer />
+      </div>
     </PageBackground>
   );
 }

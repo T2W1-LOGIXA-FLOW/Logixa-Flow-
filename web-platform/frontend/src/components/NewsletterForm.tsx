@@ -27,20 +27,22 @@ export default function NewsletterForm() {
       <p className="eyebrow">{t("weeklySignals")}</p>
       <h2>{t("newsletterTitle")}</h2>
       <p className="hero-body">{t("newsletterSubtitle")}</p>
+      <p className="text-sm text-slate-400 mt-3 mb-4">Get the latest supply chain insights delivered to your inbox.</p>
+      <p className="text-xs text-slate-500 mb-4">Get supply chain alerts delivered to your inbox.</p>
       <div className="inline-field">
         <input
           type="email"
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          placeholder="Get supply chain alerts in your inbox"
+          placeholder="Enter your email address"
           aria-label="Email address"
           className="bg-slate-800/50 border-slate-600 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
         />
         <button 
           type="submit" 
           disabled={status === "loading"}
-          className="bg-gradient-to-r from-cyan-600 to-orange-600 hover:brightness-110 transition"
+          className="bg-gradient-to-r from-cyan-600 to-orange-600 hover:brightness-110 transition rounded-full px-6 py-3 font-semibold"
         >
           {status === "loading" ? t("sending") : t("subscribe")}
         </button>

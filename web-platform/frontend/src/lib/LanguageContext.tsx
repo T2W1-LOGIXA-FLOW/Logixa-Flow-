@@ -7,10 +7,10 @@ type Locale = "en" | "mm";
 interface LanguageContextType {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  t: (key: string) => string;
+  t: (key: string) => string | string[];
 }
 
-const translations: Record<Locale, Record<string, string>> = {
+const translations: Record<Locale, Record<string, string | string[]>> = {
   en: {
     // Nav
     home: "Home",
@@ -32,9 +32,9 @@ const translations: Record<Locale, Record<string, string>> = {
     heroDescription: "Logixa Flow delivers deep-dive supply chain intelligence, procurement signal clarity, and operational strategy for Myanmar business teams.",
     exploreInsights: "Browse Latest Insights",
     statCoreCategories: "CORE SCM CATEGORIES",
-    statLatestSlots: "LATEST INSIGHT SLOTS",
+    statLatestSlots: "Featured Insight Topics",
     statApprovalWorkflow: "APPROVAL-FIRST WORKFLOW",
-    statSignalMonitoring: "SIGNAL MONITORING CONCEPT",
+    statSignalMonitoring: "24/7 Signal Monitoring",
     featuredArticles: "Featured Articles",
     newsletterTitle: "Stay Informed",
     newsletterSubtitle: "Get the latest supply chain insights delivered to your inbox.",
@@ -52,15 +52,19 @@ const translations: Record<Locale, Record<string, string>> = {
       "Logixa Flow is a platform that delivers data-informed insights for procurement, logistics, manufacturing, retail operations, and SME growth—aligned with Myanmar business context.",
     aboutMissionTitle: "Mission",
     aboutMissionBody:
-      "Transform global supply chain changes into insights Myanmar businesses can act on.",
+      "Transform global supply chain shifts into actionable insights for Myanmar businesses.",
     aboutFocusTitle: "Focus Areas",
-    aboutFocusBody:
-      "Supplier risk, inventory optimization, demand planning, freight visibility, automation, insight-driven operations, and leadership-ready SCM communication.",
+    aboutFocusBody: [
+      "Supplier Risk & Inventory Optimization",
+      "Demand Planning & Freight Visibility",
+      "Automation-driven Operations",
+      "Leadership-ready SCM Communication"
+    ],
     // Contact
     contactEyebrow: "Work With Logixa Flow",
     contactTitle: "Get in touch for supply chain insight, automation, and content workflow",
     contactIntro:
-      "Send a message for consulting, SCM knowledge content, research workflow, newsletter partnership, or platform collaboration.",
+      "Reach out for SCM consulting, research workflow partnerships, and platform collaborations.",
     // Blog
     blogEyebrow: "Logixa Flow Library",
     blogTitle: "SCM Insights",
@@ -137,6 +141,29 @@ const translations: Record<Locale, Record<string, string>> = {
     writerAgentTitle: "Writer Agent",
     activeModel: "Active Model",
     saveAIModel: "Save AI Model",
+    // AI Agent Sample Questions
+    aiQuestion1: "How do global shipping delays affect Myanmar importers?",
+    aiQuestion1Desc: "Learn about international trade",
+    aiQuestion2: "What should a small business prepare before sourcing suppliers?",
+    aiQuestion2Desc: "Start a small business",
+    aiQuestion3: "Which affordable tools help track logistics operations?",
+    aiQuestion3Desc: "Affordable technology solutions",
+    aiQuestion4: "How can I reduce delivery delays in a local supply chain?",
+    aiQuestion4Desc: "Supply chain logistics",
+    // CTA Buttons
+    readMore: "Read More",
+    readInsight: "Read Insight",
+    chatWithAINow: "Chat with AI Now",
+    browseLatestInsights: "Browse Latest Insights",
+    exploreAllInsights: "Explore All Insights",
+    // UI Section Headers
+    searchInsights: "Search insights by keyword",
+    aiPoweredWorkflow: "AI-POWERED WORKFLOW",
+    trustQualityModel: "TRUST & QUALITY MODEL",
+    coreFocusAreas: "CORE FOCUS AREAS",
+    premiumIntelligenceLayer: "Premium Intelligence Layer",
+    operationalHighlights: "Operational Highlights",
+    // Volume Calculator
     length: "Length (cm)",
     width: "Width (cm)",
     height: "Height (cm)",
@@ -150,9 +177,9 @@ const translations: Record<Locale, Record<string, string>> = {
   mm: {
     // Nav
     home: "ပင်မစာမျက်နှာ",
-    blog: "ဘလော့ဂ်",
-    insights: "အမြင်သစ်များ",
-    about: "ကျွန်တော်တို့အကြောင်း",
+    blog: "အသိပညာမျှေ",
+    insights: "အသိပညာမျှေ",
+    about: "ကျွန်ုပ်တို့အကြောင်း",
     contact: "ဆက်သွယ်ရန်",
     admin: "စီမံခန့်ခွဲသူ",
     agent: "အေးဂျင့်",
@@ -163,18 +190,18 @@ const translations: Record<Locale, Record<string, string>> = {
     getStarted: "စတင်မည်",
     // Hero
     heroEyebrow: "မြန်မာ SCM ဉာဏ်ရည်တုစနစ် ပလက်ဖောင်း",
-    heroTitle: "Supply Chain Insights That Move Business Forward",
-    heroSubtitle: "အရာဝတျ သတင်းများ၊ အချက်အလက်များနှင့် လုံလုံခြုံခြုံ ဆောင်ရွက်နိုင်သော လမ်းညွှန်ချက်များကို ပေးသည်။",
-    heroDescription: "Logixa Flow သည် မြန်မာ့ စွမ်းဆောင်ရည်မြှင့် Supply Chain အဖွဲ့များအတွက် နက်ရှိုင်းသော သတင်းအချက်အလက်များ၊ ဝယ်ယူခြင်း လမ်းကြောင်းများနှင့် အဆင့်ဆင့် ပြုပြင်နိုင်သော မဟာဗျူဟာများကို တင်ဆက်ပေးသည်။",
-    exploreInsights: "အမြန်တင်ဆက်များ",
-    statCoreCategories: "အဓိက SCM အမျိုးအစားများ",
-    statLatestSlots: "နောက်ဆုံး အမြင်သစ် နေရာများ",
-    statApprovalWorkflow: "အတည်ပြုချက် ဦးစားပေး လုပ်ငန်းစဉ်",
-    statSignalMonitoring: "အချက်ပြမှု စောင့်ကြည့်ရေး",
+    heroTitle: "Transform Your Supply Chain",
+    heroSubtitle: "Actionable logistics intelligence, market signal analysis, and execution-ready guidance for supply chain operators.",
+    heroDescription: "Logixa Flow delivers deep-dive supply chain intelligence, procurement signal clarity, and operational strategy for Myanmar business teams.",
+    exploreInsights: "နောက်ဆုံးရအကြောင်းအရာများကို ရှာဖွေရန်",
+    statCoreCategories: "CORE SCM CATEGORIES",
+    statLatestSlots: "Featured Insight Topics",
+    statApprovalWorkflow: "APPROVAL-FIRST WORKFLOW",
+    statSignalMonitoring: "24/7 Signal Monitoring",
     featuredArticles: "အထူးတင်ဆက်မှုများ",
     newsletterTitle: "သတင်းအချက်အလက်များ ရယူရန်",
     newsletterSubtitle: "နောက်ဆုံးရ ထောက်ပံ့ပို့ဆောင်ရေး အမြင်များကို သင့်အီးမေးလ်တွင် ရယူပါ။",
-    subscribe: "စာရင်းသွင်းမည်",
+    subscribe: "စာရင်းသွင်းရန်",
     subscribeSuccess: "စာရင်းသွင်းမှု အောင်မြင်ပါသည်။ ကျေးဇူးတင်ပါသည်။",
     smarterSupplyChain: "Smarter Supply Chain. Limitless Flow.",
     allRightsReserved: "© ၂၀၂၆ Logixa Flow. All rights reserved.",
@@ -183,25 +210,25 @@ const translations: Record<Locale, Record<string, string>> = {
     subscribeError: "အမှားတက်နေပါသည်၊ ထပ်မံကြိုးစားပါ။",
     // About
     aboutEyebrow: "Logixa Flow အကြောင်း",
-    aboutTitle: "မြန်မာလုပ်ငန်းများအတွက် Supply Chain Intelligence",
+    aboutTitle: "Supply Chain Intelligence for Myanmar Businesses",
     aboutIntro:
-      "Logixa Flow သည် procurement, logistics, manufacturing, retail operations နှင့် SME growth အတွက် data-informed insight များကို မြန်မာ business context နှင့်ကိုက်ညီအောင် တင်ဆက်သည့် platform ဖြစ်သည်။",
+      "Logixa Flow is a platform that delivers data-informed insights for procurement, logistics, manufacturing, retail operations, and SME growth—aligned with Myanmar business context.",
     aboutMissionTitle: "ရည်မှန်းချက်",
     aboutMissionBody:
-      "Global supply chain change များကို မြန်မာလုပ်ငန်းများ လက်တွေ့ဆုံးဖြတ်ချက်ချနိုင်သည့် insight အဖြစ် ပြောင်းလဲပေးရန်။",
+      "Transform global supply chain changes into actionable insights for Myanmar businesses.",
     aboutFocusTitle: "အာရုံစိုက်နယ်ပယ်များ",
     aboutFocusBody:
       "Supplier risk, inventory optimization, demand planning, freight visibility, automation, insight-driven operations နှင့် leadership-ready SCM communication။",
     // Contact
     contactEyebrow: "Logixa Flow နှင့် လုပ်ဆောင်ရန်",
-    contactTitle: "Supply chain insight, automation, content workflow အတွက် ဆက်သွယ်ရန်",
+    contactTitle: "Get in touch for supply chain insight, automation, and content workflow",
     contactIntro:
-      "Consulting, SCM knowledge content, research workflow, newsletter partnership သို့မဟုတ် platform collaboration အတွက် message ပို့နိုင်ပါသည်။",
+      "Reach out for SCM consulting, research workflow partnerships, and platform collaborations.",
     // Blog
-    blogEyebrow: "Logixa Flow စာကြည့်တိုက်",
+    blogEyebrow: "Logixa Flow Library",
     blogTitle: "SCM Insights",
     blogIntro:
-      "Executive-ready supply chain, logistics, procurement, operations excellence နှင့် news articles များ။",
+      "Executive-ready supply chain, logistics, procurement, operations excellence, and news articles.",
     blogAllCategory: "အားလုံး",
     // Footer
     copyright: "© ၂၀၂၆ Logixa Flow",
@@ -229,50 +256,77 @@ const translations: Record<Locale, Record<string, string>> = {
     metricTransit: "သယ်ယူပို့ဆောင်မှု",
     metricAlerts: "သတိပေးချက်များ",
     metricQuality: "အရည်အသွေး",
-    capabilitiesEyebrow: "စွမ်းရည်များ",
-    capabilitiesTitle: "Premium SCM အတွေ့အကြုံ၊ လက်တွေ့လုပ်ငန်းဘာသာစကား။",
+    capabilitiesEyebrow: "CAPABILITIES",
+    capabilitiesTitle: "Premium SCM experience, practical business language.",
     capVisibilityTitle: "Visibility",
-    capVisibilityDesc: "Real-time inventory, port flow နှင့် demand signal ကြည်လင်မှု။",
+    capVisibilityDesc: "Real-time inventory, port flow, and demand signal clarity.",
     capLogisticsTitle: "Logistics",
-    capLogisticsDesc: "Route intelligence, carrier cadence နှင့် shipment health တစ်နေရာတည်း။",
+    capLogisticsDesc: "Route intelligence, carrier cadence, and shipment health in one view.",
     capProcurementTitle: "Procurement",
-    capProcurementDesc: "Supplier signals, contract timing နှင့် sourcing readiness။",
+    capProcurementDesc: "Supplier signals, contract timing, and sourcing readiness.",
     capOperationsTitle: "Operations",
-    capOperationsDesc: "နေ့စဉ် လုပ်ငန်းလည်ပတ်မှု၊ exception alerts နှင့် process coherence။",
+    capOperationsDesc: "Daily operations flow, exception alerts, and process coherence.",
     capEditorialTitle: "Editorial",
-    capEditorialDesc: "Market narratives, briefing notes နှင့် commercial context။",
+    capEditorialDesc: "Market narratives, briefing notes, and commercial context.",
     capBrandTitle: "Brand",
-    capBrandDesc: "Impact messaging, distribution plans နှင့် product sentiment။",
+    capBrandDesc: "Impact messaging, distribution plans, and product sentiment.",
     knowledgeHubEyebrow: "KNOWLEDGE HUB",
-    knowledgeHubTitle: "လက်တွေ့ SCM playbooks များ — flow မထွက်ဘဲ ရယူပါ။",
+    knowledgeHubTitle: "Practical SCM playbooks, without leaving the flow.",
     khProcurementTitle: "Procurement Playbooks",
-    khProcurementDesc: "Supplier နှင့် sourcing ဆုံးဖြတ်ချက်များအတွက် အဆင့်ဆင့် လမ်းညွှန်။",
+    khProcurementDesc: "Step-by-step guidance for supplier and sourcing decisions.",
     khLogisticsTitle: "Logistics Control Notes",
-    khLogisticsDesc: "သယ်ယူပို့ဆောင်ရေး၊ ဂိုဒေါင်နှင့် ပို့ဆောင်မှုအတွက် လုပ်ဆောင်နိုင်သော checklist များ။",
+    khLogisticsDesc: "Actionable checklists for transport, warehousing, and delivery.",
     khOperationsTitle: "Operations Briefs",
-    khOperationsDesc: "လုပ်ဆောင်မှု၊ အတည်ပြုချက်နှင့် supply flow အတွက် အကျဉ်းချုပ် မှတ်တမ်းများ။",
+    khOperationsDesc: "Quick summaries for execution, approval, and supply flow.",
     browseInsights: "အမြင်သစ်များ ကြည့်ရန်",
     loadingInsight: "အမြင်သစ် တင်နေသည်...",
-    operatingModelEyebrow: "လုပ်ဆောင်မှု မော်ဒယ်",
+    operatingModelEyebrow: "OPERATING MODEL",
     operatingModelTitle: "Insight‑driven editorial flow",
     operatingModelBody:
-      "ဆုံးဖြတ်ချက်လုပ်ငန်းစဉ်၊ approval workflows နှင့် editorial signal ကို execution နှင့် intelligence ကို တစ်ပြိုင်တည်း ထောက်ပံ့သော operating plane တစ်ခုတည်းတွင် စုစည်းပါ။",
-    latestUpdatesEyebrow: "နောက်ဆုံး အပ်ဒိတ်များ",
+      "Stream the decision-making model, approval workflows, and editorial signal into a single operating plane that supports execution and intelligence together.",
+    latestUpdatesEyebrow: "Latest Updates",
     recentlyPublished: "မကြာသေးမီ ထုတ်ဝေထားသော",
     sending: "ပို့နေသည်",
     contactName: "အမည်",
     contactEmail: "အီးမေးလ်",
     contactCompany: "ကုမ္ပဏီ",
     contactMessage: "မက်ဆေ့ချ်",
-    contactNewsletterOptIn: "Newsletter ပါ subscribe လုပ်ရန်",
+    contactNewsletterOptIn: "Newsletter တွင်စာရင်းသွင်းရန်",
     contactSend: "မက်ဆေ့ချ် ပို့မည်",
     contactSending: "ပို့နေသည်",
-    contactSuccess: "Message လက်ခံရရှိပါပြီ။",
-    contactError: "မအောင်မြင်ပါ။ ပြန်စမ်းပါ။",
+    contactSuccess: "မက်ဆေ့ချ် လက်ခံရရှိပါပြီ။",
+    contactError: "တစ်စုံတစ်ခု မှားယွင်းနေပါသည်။ ထပ်မံကြိုးစားပါ။",
     stageHomepageControls: "Homepage ထိန်းချုပ်မှုများကို စတေ့ခ််လုပ်မည်",
     writerAgentTitle: "စာရေး အေးဂျင့်",
     activeModel: "အသုံးပြုမည့် မော်ဒယ်",
     saveAIModel: "AI မော်ဒယ် သိမ်းမည်",
+    // AI Agent Sample Questions
+    aiQuestion1: "မြန်မာသွင်းသူများအတွက် ကမ္ဘာ့ပို့ဆောင်ရေးနှောင်းနှေးမှုများက ဘယ်လိုအကျိုးသက်ရောက်သနည်း",
+    aiQuestion1Desc: "နိုင်ငံတကာ ကုန်သွယ်ရေးကို လေ့လာရန်",
+    aiQuestion2: "သေးငယ်သောလုပ်ငန်းတစ်ခုက supplier များကို ရှာဖွေခင်မှ မျက်နှာပြုရန် ဘာတွေပြင်ဆင်းသင့်",
+    aiQuestion2Desc: "သေးငယ်သောလုပ်ငန်းစတင်ရန်",
+    aiQuestion3: "စျေးနှုန်းခန့်ခွဲနိုင်သော ကိရိယာများက မည်သို့လုပ်ငန်းစနစ်များကို စီမံနိုင်သနည်း",
+    aiQuestion3Desc: "စျေးနှုန်းခန့်ခွဲနိုင်သော နည်းပည်ဆန်းများ",
+    aiQuestion4: "ဒေသဆိုင်း supply chain တွင် ပို့ဆောင်ရေးနှောင်းများကို ဘယ်လိုလျှော့ချနိုင်သနည်း",
+    aiQuestion4Desc: "Supply chain စီမံခန့်ခွဲမှု",
+    // CTA Buttons
+    readMore: "ဆောင်းပါးဖတ်ရန်",
+    readInsight: "ဆောင်းပါးဖတ်ရန်",
+    chatWithAINow: "AI ဖြင့် စကားပြောရန်",
+    browseLatestInsights: "နောက်ဆုံးရအကြောင်းအရာများကို ရှာဖွေရန်",
+    exploreAllInsights: "ပိုမိုသိရှိရန်",
+    // UI Section Headers
+    recentlyPublished: "မကြာသေးမီ ထုတ်ဝေထားသော",
+    searchInsights: "သော့ဂ််ဝဒ်ဖြင့် အမြင်သစ်များကို ရှာဖွေရန်",
+    operatingModelEyebrow: "လုပ်ဆောင်မှု မော်ဒယ်",
+    aiPoweredWorkflow: "AI-POWERED WORKFLOW",
+    trustQualityModel: "TRUST & QUALITY MODEL",
+    coreFocusAreas: "CORE FOCUS AREAS",
+    premiumIntelligenceLayer: "Premium Intelligence Layer",
+    operationalHighlights: "Operational Highlights",
+    weeklySignals: "WEEKLY SIGNALS",
+    // Form Labels
+    newsletterOptIn: "Newsletter တွင်စာရင်းသွင်းရန်",
   },
 };
 
