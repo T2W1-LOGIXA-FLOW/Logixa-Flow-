@@ -17,13 +17,14 @@ export default function AdminLoginPage() {
 
   // Check if already logged in
   useEffect(() => {
+    const bypassAuth = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_ADMIN_AUTH_BYPASS === 'true';
     const token = localStorage.getItem('adminToken');
     const savedUsername = localStorage.getItem('adminUsername');
     if (savedUsername) {
       setUsername(savedUsername);
       setRememberMe(true);
     }
-    if (token) {
+    if (bypassAuth || token) {
       router.push('/admin');
     }
   }, [router]);

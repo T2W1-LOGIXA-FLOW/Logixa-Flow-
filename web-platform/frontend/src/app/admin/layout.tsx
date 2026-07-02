@@ -65,6 +65,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   useEffect(() => {
+    const bypassAuth = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_ADMIN_AUTH_BYPASS === 'true';
+    if (bypassAuth) {
+      return;
+    }
     if (isLoginRoute) {
       return;
     }
