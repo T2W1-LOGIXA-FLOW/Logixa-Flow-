@@ -81,7 +81,7 @@ export const Footer7 = ({
   legalLinks = defaultLegalLinks,
 }: Footer7Props) => {
   return (
-    <section className="bg-slate-900/60 border-t border-slate-700/50 backdrop-blur-xl shadow-[0_0_40px_rgba(15,23,42,0.25)] py-16 md:py-20">
+    <section style={{ backgroundColor: 'rgba(15,23,42,0.6)' }} className="border-t border-slate-700/50 backdrop-blur-[12px] shadow-[0_0_40px_rgba(15,23,42,0.25)] py-16 md:py-20">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         <div className="grid gap-12 lg:grid-cols-[minmax(300px,1fr)_repeat(3,220px)] lg:items-start">
           <div className="flex flex-col gap-5">
