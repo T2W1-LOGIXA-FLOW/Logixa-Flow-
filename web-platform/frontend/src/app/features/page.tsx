@@ -1,6 +1,6 @@
 "use client";
 
-import Footer7 from "@/components/ui/footer-7";
+import Footer from "@/components/Footer";
 import PageBackground from "@/components/PageBackground";
 
 const features = [
@@ -68,7 +68,7 @@ export default function FeaturesPage() {
             ))}
           </div>
         </div>
-        <Footer7 />
+        <Footer />
       </div>
     </PageBackground>
   );

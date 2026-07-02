@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Header from "@/components/Header";
-import Footer7 from "@/components/ui/footer-7";
+import Footer from "@/components/Footer";
 import LayoutWrapper from "@/components/LayoutWrapper";
 
 export default function ConditionalLayout({ children }: { children: React.ReactNode }) {
@@ -19,7 +19,7 @@ export default function ConditionalLayout({ children }: { children: React.ReactN
       <main className="flex-1 w-full">{children}</main>
       {!isAdminRoute && (
         <LayoutWrapper>
-          <Footer7 />
+          <Footer />
         </LayoutWrapper>
       )}
     </div>

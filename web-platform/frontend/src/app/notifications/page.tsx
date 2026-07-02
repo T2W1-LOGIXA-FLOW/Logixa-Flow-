@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import Footer7 from '@/components/ui/footer-7';
+import Footer from '@/components/Footer';
 import PageBackground from '@/components/PageBackground';
 
 interface Notification {
@@ -235,7 +235,7 @@ export default function NotificationsPage() {
           )}
       </div>
     </main>
-    <Footer7 />
+    <Footer />
     </PageBackground>
   );
 }

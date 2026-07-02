@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Footer7 from "@/components/ui/footer-7";
+import Footer from "@/components/Footer";
 import PageBackground from "@/components/PageBackground";
 
 const PLANS = [
@@ -214,7 +214,7 @@ export default function PricingPage() {
           </div>
         </div>
       </div>
-      <Footer7 />
+      <Footer />
     </div>
     </PageBackground>
   );

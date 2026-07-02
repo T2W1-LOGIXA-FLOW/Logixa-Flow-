@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getPosts, Post } from '@/components/api';
 import PostCard from '@/components/PostCard';
-import Footer7 from '@/components/ui/footer-7';
+import Footer from '@/components/Footer';
 import PageBackground from '@/components/PageBackground';
 
 export default function SearchPage() {
@@ -187,7 +187,7 @@ export default function SearchPage() {
         </div>
       </div>
     </main>
-    <Footer7 />
+    <Footer />
     </PageBackground>
   );
 }
