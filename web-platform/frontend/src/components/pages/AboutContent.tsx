@@ -27,7 +27,7 @@ export default function AboutContent() {
             <div className="mt-3">
               {Array.isArray(t("aboutFocusBody")) ? (
                 <ul className="space-y-2">
-                  {t("aboutFocusBody").map((item: string, index: number) => (
+                  {(t("aboutFocusBody") as string[]).map((item: string, index: number) => (
                     <li key={index} className="flex items-start gap-2 text-slate-300 text-base leading-relaxed">
                       <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-cyan-400 mt-2"></span>
                       <span>{item}</span>

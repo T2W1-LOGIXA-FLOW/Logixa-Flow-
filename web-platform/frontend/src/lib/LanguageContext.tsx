@@ -285,7 +285,6 @@ const translations: Record<Locale, Record<string, string | string[]>> = {
     operatingModelBody:
       "Stream the decision-making model, approval workflows, and editorial signal into a single operating plane that supports execution and intelligence together.",
     latestUpdatesEyebrow: "Latest Updates",
-    recentlyPublished: "မကြာသေးမီ ထုတ်ဝေထားသော",
     sending: "ပို့နေသည်",
     contactName: "အမည်",
     contactEmail: "အီးမေးလ်",
@@ -316,15 +315,12 @@ const translations: Record<Locale, Record<string, string | string[]>> = {
     browseLatestInsights: "နောက်ဆုံးရအကြောင်းအရာများကို ရှာဖွေရန်",
     exploreAllInsights: "ပိုမိုသိရှိရန်",
     // UI Section Headers
-    recentlyPublished: "မကြာသေးမီ ထုတ်ဝေထားသော",
     searchInsights: "သော့ဂ််ဝဒ်ဖြင့် အမြင်သစ်များကို ရှာဖွေရန်",
-    operatingModelEyebrow: "လုပ်ဆောင်မှု မော်ဒယ်",
     aiPoweredWorkflow: "AI-POWERED WORKFLOW",
     trustQualityModel: "TRUST & QUALITY MODEL",
     coreFocusAreas: "CORE FOCUS AREAS",
     premiumIntelligenceLayer: "Premium Intelligence Layer",
     operationalHighlights: "Operational Highlights",
-    weeklySignals: "WEEKLY SIGNALS",
     // Form Labels
     newsletterOptIn: "Newsletter တွင်စာရင်းသွင်းရန်",
   },

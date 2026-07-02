@@ -25,7 +25,9 @@ export default function LoginForm() {
       localStorage.setItem("logixa_token", result.access_token);
       router.push("/admin");
     } catch {
-      setError(t("loginError"));
+      const translation = t("loginError");
+      const message = typeof translation === "string" ? translation : "Invalid username or password.";
+      setError(message);
     } finally {
       setLoading(false);
     }
