@@ -23,9 +23,9 @@ export default function Footer() {
           <div className="flex flex-wrap gap-12 md:gap-16">
 
             {/* COLUMN 1: PLATFORM */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 min-w-[180px]">
               <h3 className="text-white font-semibold text-sm tracking-wider mb-1">PLATFORM</h3>
-              <ul className="flex flex-col gap-2 text-sm">
+              <ul className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
                 <li><Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link></li>
                 <li><Link href="/blog" className="hover:text-cyan-400 transition-colors">Insights</Link></li>
                 <li><Link href="/contact" className="hover:text-cyan-400 transition-colors">Contact</Link></li>
@@ -37,7 +37,7 @@ export default function Footer() {
             </div>
 
             {/* COLUMN 2: COMPANY */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 min-w-[120px]">
               <h3 className="text-white font-semibold text-sm tracking-wider mb-1">COMPANY</h3>
               <ul className="flex flex-col gap-2 text-sm">
                 <li><Link href="/about" className="hover:text-cyan-400 transition-colors">About</Link></li>

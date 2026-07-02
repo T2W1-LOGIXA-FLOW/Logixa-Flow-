@@ -12,7 +12,6 @@ import ErrorState from "@/components/ErrorState";
 import Skeleton from "@/components/shadcn/Skeleton";
 import Citations, { type Match } from "@/components/Citations";
 import { AgentRun, IntelligenceSource, Post, adminFetch } from "@/components/api";
-import Footer from "@/components/Footer";
 import PageBackground from "@/components/PageBackground";
 
 const categories: Post["category"][] = ["Supply Chain", "Logistics", "Procurement", "Operations Excellence", "News"];
@@ -333,7 +332,6 @@ export default function AgentControlCenter() {
           )}
         </section>
       ) : null}
-      <Footer />
     </main>
     </PageBackground>
   );

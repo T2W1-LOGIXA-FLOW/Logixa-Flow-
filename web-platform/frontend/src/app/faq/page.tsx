@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Footer from "@/components/Footer";
 import PageBackground from "@/components/PageBackground";
 
 const faqs = [
@@ -77,7 +76,6 @@ export default function FAQPage() {
             })}
           </div>
         </div>
-        <Footer />
       </div>
     </PageBackground>
   );

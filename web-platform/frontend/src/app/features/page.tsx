@@ -1,6 +1,5 @@
 "use client";
 
-import Footer from "@/components/Footer";
 import PageBackground from "@/components/PageBackground";
 
 const features = [
@@ -68,7 +67,6 @@ export default function FeaturesPage() {
             ))}
           </div>
         </div>
-        <Footer />
       </div>
     </PageBackground>
   );

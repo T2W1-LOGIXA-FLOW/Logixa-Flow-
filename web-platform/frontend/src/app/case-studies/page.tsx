@@ -1,6 +1,5 @@
 "use client";
 
-import Footer from "@/components/Footer";
 import PageBackground from "@/components/PageBackground";
 
 const stories = [
@@ -61,7 +60,6 @@ export default function CaseStudiesPage() {
             ))}
           </div>
         </div>
-        <Footer />
       </div>
     </PageBackground>
   );

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useLocale } from '@/lib/LanguageContext';
 import { toast } from 'sonner';
-import Footer from '@/components/Footer';
 import PageBackground from '@/components/PageBackground';
 
 interface Preferences {
@@ -189,7 +188,6 @@ export default function PreferencesPage() {
         </motion.div>
       </div>
     </main>
-    <Footer />
     </PageBackground>
   );
 }

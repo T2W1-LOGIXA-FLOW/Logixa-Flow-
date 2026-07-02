@@ -214,7 +214,6 @@ export default function PricingPage() {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
     </PageBackground>
   );
