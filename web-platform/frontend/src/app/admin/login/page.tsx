@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { login } from '@/components/api';
+import { setAdminSession } from '@/lib/adminSession';
 
 export default function AdminLoginPage() {
   const [username, setUsername] = useState('');
@@ -40,6 +41,7 @@ export default function AdminLoginPage() {
       // Store token
       localStorage.setItem('adminToken', data.access_token);
       localStorage.setItem('logixa_token', data.access_token);
+      setAdminSession(data.access_token);
       if (rememberMe) {
         localStorage.setItem('adminUsername', username);
       }

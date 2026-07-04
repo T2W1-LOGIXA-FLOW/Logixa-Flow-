@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useEffect } from "react";
+import { clearAdminSession } from "@/lib/adminSession";
 
 const navigationItems = [
   {
@@ -61,6 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
+    clearAdminSession();
     window.location.href = "/admin/login";
   };
 
