@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { clearAdminSession } from "@/lib/adminSession";
 
 /**
  * Standardized error handling for admin pages
@@ -30,6 +31,7 @@ export function handleAuthError(error: unknown) {
   
   // Clear token and redirect to login
   localStorage.removeItem("adminToken");
+  clearAdminSession();
   window.location.href = "/admin/login";
 }
 

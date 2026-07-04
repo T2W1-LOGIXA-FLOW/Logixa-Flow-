@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { login } from "./api";
 import { useLocale } from "@/lib/LanguageContext";
+import { setAdminSession } from "@/lib/adminSession";
 import Skeleton from "./shadcn/Skeleton";
 import LivingLogo from "./LivingLogo";
 
@@ -23,6 +24,7 @@ export default function LoginForm() {
       const result = await login(String(form.get("username")), String(form.get("password")));
       localStorage.setItem("adminToken", result.access_token);
       localStorage.setItem("logixa_token", result.access_token);
+      setAdminSession(result.access_token);
       router.push("/admin");
     } catch {
       const translation = t("loginError");
