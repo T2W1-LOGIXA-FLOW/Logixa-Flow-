@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..database import get_db
+from ..llm.router import LLMRouter
 from ..security import require_admin
 
 router = APIRouter()
@@ -61,8 +62,7 @@ def chat_query(
     db.commit()
     db.refresh(user_message)
     
-    # Beta fallback. Production should route this through the AI agent pipeline.
-    ai_response = generate_ai_response(request.query, request.context, request.agent_id)
+    ai_response = generate_ai_response(request.query, request.context, request.agent_id, db)
     
     # Save agent message
     agent_message = models.ChatMessage(
@@ -94,22 +94,44 @@ def chat_query(
     )
 
 
-def generate_ai_response(query: str, context: list[schemas.ChatMessageBase], agent_id: str | None) -> dict:
+def generate_ai_response(
+    query: str,
+    context: list[schemas.ChatMessageBase],
+    agent_id: str | None,
+    db: Session,
+) -> dict:
     """
     Generate AI response using the agent system.
-    Beta fallback response until the production AI agent pipeline is connected.
+    Uses the configured LLM router when provider keys are available, with a local fallback.
     """
-    # Beta-safe response. Keep wording explicit so admins do not mistake it for live AI.
-    
     import os
     
     model_used = os.getenv("AI_AGENT_MODEL", "local-planner")
     agent_id = agent_id or "default"
-    
-    response_text = (
-        "Beta AI preview: this chat endpoint is not connected to the production agent pipeline yet. "
-        f"Received query: '{query}'."
+    context_lines = []
+    for message in context[-6:]:
+        context_lines.append(f"{message.role}: {message.content}")
+
+    prompt = (
+        "You are Logixa Flow's private admin AI assistant for supply-chain intelligence. "
+        "Answer clearly, practically, and only with information supported by the prompt or general logistics knowledge. "
+        "If the user asks for operational next steps, give concise steps.\n\n"
+        f"Agent ID: {agent_id}\n"
+        f"Recent context:\n{chr(10).join(context_lines) if context_lines else 'No previous context.'}\n\n"
+        f"User question: {query}"
     )
+
+    try:
+        router = LLMRouter(db)
+        provider = router.get_active_provider()
+        response_text = provider.generate(prompt)
+        model_used = getattr(provider, "model", provider.__class__.__name__)
+    except Exception:
+        response_text = (
+            "AI provider is not available yet. Add a valid GEMINI_API_KEY, OPENROUTER_API_KEY, "
+            "or GROQ_API_KEY in the backend environment, then redeploy. "
+            f"Received query: '{query}'."
+        )
     
     return {
         "role": "agent",

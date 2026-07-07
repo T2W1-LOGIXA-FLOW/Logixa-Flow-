@@ -43,7 +43,7 @@ export default function AgentControlCenter() {
   useEffect(() => {
     const saved = localStorage.getItem("adminToken") || localStorage.getItem("logixa_token");
     if (!saved) {
-      router.push("/login");
+      router.push("/admin/login");
       return;
     }
     setToken(saved);

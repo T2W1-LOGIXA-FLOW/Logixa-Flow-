@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import React from "react";
 
 export default function Footer() {
@@ -13,7 +14,7 @@ export default function Footer() {
           {/* 1. Left Logo & Tagline */}
           <div className="flex flex-col gap-3 max-w-xs">
             <div className="flex items-center gap-2">
-              <img src="/logo.svg" alt="Logixa Flow" className="h-8 w-auto" />
+              <Image src="/images/logo.svg" alt="Logixa Flow" width={32} height={32} className="h-8 w-auto" />
               <span className="text-white font-bold text-lg">Logixa Flow</span>
             </div>
             <p className="text-sm leading-relaxed">Actionable supply chain intelligence for Myanmar business teams.</p>
@@ -59,7 +60,7 @@ export default function Footer() {
 
         {/* Bottom Row: Copyright */}
         <div className="mt-8 pt-8 border-t border-slate-700/30 flex flex-col md:flex-row justify-between items-center text-xs">
-          <p>© 2026 Logixa Flow. All rights reserved.</p>
+          <p>(c) 2026 Logixa Flow. All rights reserved.</p>
           <div className="flex gap-4 mt-4 md:mt-0">
             <Link href="/terms" className="hover:text-cyan-400">Terms and Conditions</Link>
             <Link href="/privacy" className="hover:text-cyan-400">Privacy Policy</Link>

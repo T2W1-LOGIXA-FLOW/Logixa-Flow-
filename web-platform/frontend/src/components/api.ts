@@ -115,7 +115,7 @@ export interface DashboardMetric {
 }
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const API_TIMEOUT_MS = 5000;
+const API_TIMEOUT_MS = 30000;
 type NextFetchInit = RequestInit & { next?: { revalidate?: number | false } };
 
 async function fetchWithTimeout(input: RequestInfo | URL, init: NextFetchInit = {}) {

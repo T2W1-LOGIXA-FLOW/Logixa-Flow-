@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from .. import models
 from ..cache import cache_client, rate_limiter
-from ..config import provider_env_status, validate_env
+from ..config import ai_provider_configured, provider_env_status, validate_env
 from ..database import get_db
 from ..llm.router import LLMRouter
 from ..scheduler import run_daily_agent_preview_once
@@ -24,7 +24,7 @@ def system_status(
     return {
         "missing_env": validate_env(),
         "scheduler_enabled": os.getenv("ENABLE_SCHEDULER", "false").lower() == "true",
-        "ai_key_configured": bool(os.getenv("GEMINI_API_KEY")),
+        "ai_key_configured": ai_provider_configured(),
         "providers": provider_env_status(),
         "cache_backend": cache_client.backend,
         "rate_limit_backend": rate_limiter.backend,

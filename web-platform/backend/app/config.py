@@ -3,13 +3,21 @@ from __future__ import annotations
 import os
 
 
+AI_PROVIDER_ENV_KEYS = ("GEMINI_API_KEY", "OPENROUTER_API_KEY", "GROQ_API_KEY")
+
+
+def ai_provider_configured() -> bool:
+    """Return true when at least one text-generation provider key is configured."""
+    return any(bool(os.getenv(key)) for key in AI_PROVIDER_ENV_KEYS)
+
+
 def validate_env() -> list[str]:
     """Validate required environment variables."""
     required = ["JWT_SECRET", "ADMIN_PASSWORD"]
-    if os.getenv("REQUIRE_AI_KEY", "false").lower() == "true":
-        required.append("GEMINI_API_KEY")
     
     missing = [key for key in required if not os.getenv(key)]
+    if os.getenv("REQUIRE_AI_KEY", "false").lower() == "true" and not ai_provider_configured():
+        missing.append("one of GEMINI_API_KEY, OPENROUTER_API_KEY, or GROQ_API_KEY")
     
     # Production-specific checks
     is_production = os.getenv("ENVIRONMENT", "development").lower() in {"production", "prod"}
@@ -45,6 +53,12 @@ def provider_env_status() -> list[dict[str, str | bool]]:
             "key": "groq",
             "label": "Groq AI",
             "env": "GROQ_API_KEY",
+            "required": False,
+        },
+        {
+            "key": "huggingface",
+            "label": "Hugging Face Moderation",
+            "env": "HUGGINGFACE_API_KEY",
             "required": False,
         },
         {
