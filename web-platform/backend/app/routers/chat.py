@@ -123,9 +123,7 @@ def generate_ai_response(
 
     try:
         router = LLMRouter(db)
-        provider = router.get_active_provider()
-        response_text = provider.generate(prompt)
-        model_used = getattr(provider, "model", provider.__class__.__name__)
+        response_text, model_used = router.generate_with_provider(prompt)
     except Exception:
         response_text = (
             "AI provider is not available yet. Add a valid GEMINI_API_KEY, OPENROUTER_API_KEY, "

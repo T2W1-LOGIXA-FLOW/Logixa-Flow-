@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 import re
+import json
+from html import escape
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -11,6 +13,7 @@ from .. import models, schemas
 from ..analytics import log_analytics_event
 from ..database import get_db
 from ..integration_service import import_rss_feed
+from ..llm.router import LLMRouter
 from ..models import utc_now
 from ..security import require_admin
 
@@ -78,6 +81,33 @@ def score_source_grounding(sources: list[models.IntelligenceSource]) -> tuple[fl
     return round(confidence, 2), round(hallucination, 2)
 
 
+def parse_agent_json(text: str) -> dict[str, Any] | None:
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```(?:json)?", "", cleaned).removesuffix("```").strip()
+    try:
+        data = json.loads(cleaned)
+    except json.JSONDecodeError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def normalize_agent_brief(data: dict[str, Any] | None, message: str, sources: list[models.IntelligenceSource], raw_text: str = "") -> dict[str, str]:
+    fallback = generate_local_brief(message, sources)
+    if not data:
+        safe_text = raw_text.strip()
+        if safe_text:
+            fallback["content"] = f"{fallback['content']}<hr/><h3>Provider draft</h3><p>{escape(safe_text[:2500])}</p>"
+        return fallback
+    return {
+        "category": data.get("category") or (sources[0].category if sources else "Supply Chain"),
+        "title": data.get("title") or "AI Preview: Supply Chain Signal Brief",
+        "excerpt": data.get("excerpt") or "Private AI-generated draft for admin review.",
+        "content": data.get("content_html") or data.get("content") or fallback["content"],
+        "model": str(data.get("model") or ""),
+    }
+
+
 async def generate_agent_brief(
     message: str,
     sources: list[models.IntelligenceSource],
@@ -89,17 +119,12 @@ async def generate_agent_brief(
 
         rag_context = build_rag_context(db, message, [source.id for source in sources])
 
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
+    if db is None:
         brief = generate_local_brief(message, sources)
         if rag_context and "No retrieved" not in rag_context:
             brief["content"] = f"{brief['content']}<hr/><h3>Retrieved context</h3><pre>{rag_context[:4000]}</pre>"
         return brief
     try:
-        import google.generativeai as genai  # type: ignore
-
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(os.getenv("GEMINI_MODEL", "gemini-1.5-flash"))
         source_payload = [
             {
                 "title": source.title,
@@ -116,27 +141,20 @@ async def generate_agent_brief(
             "Do not invent facts outside the source notes or retrieved context. "
             f"Objective: {message}\nSources: {source_payload}\n\n{rag_context}"
         )
-        response = model.generate_content(prompt)
-        text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
-        import json
-
-        data: dict[str, Any] = json.loads(text)
+        text, model_used = LLMRouter(db).generate_with_provider(prompt)
+        data = parse_agent_json(text)
+        brief = normalize_agent_brief(data, message, sources, raw_text=text)
+        brief["model"] = model_used
         # estimate cost and log if DB provided
         try:
-            if db is not None:
-                char_count = len(text)
-                tokens = max(1, int(char_count / 4))
-                cost_per_1k = float(os.getenv("AI_COST_PER_1K", "0.002"))
-                amount = round((tokens / 1000.0) * cost_per_1k, 8)
-                log_analytics_event(db, "api_cost", {"service": "gemini_generate", "amount": amount, "tokens": tokens, "model": os.getenv("GEMINI_MODEL", "gemini-1.5-flash")})
+            char_count = len(text)
+            tokens = max(1, int(char_count / 4))
+            cost_per_1k = float(os.getenv("AI_COST_PER_1K", "0.002"))
+            amount = round((tokens / 1000.0) * cost_per_1k, 8)
+            log_analytics_event(db, "api_cost", {"service": "llm_generate", "amount": amount, "tokens": tokens, "model": model_used})
         except Exception:
             pass
-        return {
-            "category": data.get("category") or (sources[0].category if sources else "Supply Chain"),
-            "title": data.get("title") or "AI Preview: Supply Chain Signal Brief",
-            "excerpt": data.get("excerpt") or "Private AI-generated draft for admin review.",
-            "content": data.get("content_html") or data.get("content") or generate_local_brief(message, sources)["content"],
-        }
+        return brief
     except Exception:
         return generate_local_brief(message, sources)
 
@@ -215,7 +233,7 @@ async def run_agent(
         )
     brief = await generate_agent_brief(payload.message, sources, db=db)
     confidence_score, hallucination_score = score_source_grounding(sources)
-    run = models.AgentRun(objective=payload.message, model=os.getenv("AI_AGENT_MODEL", "local-planner"), status="completed")
+    run = models.AgentRun(objective=payload.message, model=brief.get("model") or os.getenv("AI_AGENT_MODEL", "local-planner"), status="completed")
     db.add(run)
     db.commit()
     db.refresh(run)

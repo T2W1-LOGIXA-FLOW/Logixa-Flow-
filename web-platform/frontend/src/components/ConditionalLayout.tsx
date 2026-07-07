@@ -7,7 +7,7 @@ import LayoutWrapper from "@/components/LayoutWrapper";
 
 export default function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAdminRoute = pathname?.startsWith("/admin");
+  const isAdminRoute = pathname?.startsWith("/admin") || pathname === "/agent";
 
   return (
     <div className="relative z-10 flex min-h-screen w-full flex-col">

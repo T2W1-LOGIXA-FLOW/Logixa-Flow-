@@ -5,6 +5,8 @@ export const metadata = {
   title: "Insights",
 };
 
+export const dynamic = "force-dynamic";
+
 const categories = ["Supply Chain", "Logistics", "Procurement", "Operations Excellence", "News"] as const;
 
 export default async function BlogList({

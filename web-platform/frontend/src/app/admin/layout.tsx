@@ -14,6 +14,8 @@ import {
   Calculator,
   Server,
   Rss,
+  Brain,
+  MessageSquare,
   LogOut,
   Menu,
   X
@@ -41,6 +43,8 @@ const navigationItems = [
     category: "AI & AUTOMATION",
     items: [
       { href: "/admin/agents", label: "AI Agents", icon: Bot },
+      { href: "/admin/agent-chat", label: "Agent Chat", icon: MessageSquare },
+      { href: "/admin/brain", label: "Brain Queue", icon: Brain },
       { href: "/admin/controllers", label: "Controllers", icon: Settings },
     ],
   },

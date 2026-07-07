@@ -56,8 +56,8 @@ class OpenRouterProvider(LLMProvider):
         return resp.json()["choices"][0]["message"]["content"]
 
 class GroqProvider(LLMProvider):
-    def __init__(self, model: str = "llama3-70b-8192", api_key: Optional[str] = None):
-        self.model = model
+    def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None):
+        self.model = model or os.getenv("GROQ_MODEL", "llama3-70b-8192")
         self.api_key = api_key or os.getenv("GROQ_API_KEY")
     
     def is_available(self) -> bool:
