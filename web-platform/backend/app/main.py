@@ -229,7 +229,10 @@ app.middleware("http")(stealth_mode_middleware)
 
 def _get_cors_origins() -> list[str]:
     """Get CORS origins from environment with production safety checks."""
-    cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,https://logixaflow.vercel.app")
+    cors_origins = os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:3000,http://localhost:3001,https://logixaflow.vercel.app,https://logixa-flow.vercel.app",
+    )
     is_production = os.getenv("ENVIRONMENT", "development").lower() in {"production", "prod"}
     
     origins = [origin.strip() for origin in cors_origins.split(",") if origin.strip()]

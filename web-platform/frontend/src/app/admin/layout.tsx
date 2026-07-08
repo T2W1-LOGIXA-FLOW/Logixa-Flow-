@@ -15,9 +15,13 @@ import {
   Server,
   Rss,
   Brain,
+  CreditCard,
+  Mail,
   MessageSquare,
   LogOut,
   Menu,
+  ShieldCheck,
+  UserCog,
   X
 } from "lucide-react";
 import { useState } from "react";
@@ -26,25 +30,28 @@ import { clearAdminSession } from "@/lib/adminSession";
 
 const navigationItems = [
   {
-    category: "DASHBOARD",
+    category: "OVERVIEW",
     items: [
-      { href: "/admin", label: "Overview", icon: LayoutDashboard },
+      { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/admin/system", label: "System Status", icon: Server },
     ],
   },
   {
-    category: "CONTENT",
+    category: "INSIGHTS",
     items: [
-      { href: "/admin/insights", label: "Insights", icon: FileText },
+      { href: "/admin/insights", label: "All Insights", icon: FileText },
       { href: "/admin/drafts", label: "Drafts", icon: FileEdit },
       { href: "/admin/articles", label: "Articles", icon: Newspaper },
+      { href: "/admin/submissions", label: "Submissions", icon: ShieldCheck },
     ],
   },
   {
-    category: "AI & AUTOMATION",
+    category: "AI AGENT",
     items: [
-      { href: "/admin/agents", label: "AI Agents", icon: Bot },
+      { href: "/agent", label: "Agent Control", icon: Bot },
       { href: "/admin/agent-chat", label: "Agent Chat", icon: MessageSquare },
       { href: "/admin/brain", label: "Brain Queue", icon: Brain },
+      { href: "/admin/agents", label: "Agent Profiles", icon: UserCog },
       { href: "/admin/controllers", label: "Controllers", icon: Settings },
     ],
   },
@@ -54,7 +61,15 @@ const navigationItems = [
       { href: "/admin/feeds", label: "Feeds", icon: Rss },
       { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
       { href: "/admin/estimator", label: "Estimator", icon: Calculator },
-      { href: "/admin/system", label: "System", icon: Server },
+    ],
+  },
+  {
+    category: "SETTINGS",
+    items: [
+      { href: "/admin/settings", label: "Admin Settings", icon: Settings },
+      { href: "/admin/settings/2fa", label: "Two-factor Auth", icon: ShieldCheck },
+      { href: "/admin/payments", label: "Payments", icon: CreditCard },
+      { href: "/admin/email-templates", label: "Email Templates", icon: Mail },
     ],
   },
 ];
