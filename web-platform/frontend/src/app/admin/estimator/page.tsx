@@ -8,6 +8,7 @@ import EstimatorForm from "@/components/estimator/EstimatorForm";
 import EstimatorResults from "@/components/estimator/EstimatorResults";
 import VehicleSelector from "@/components/estimator/VehicleSelector";
 import { Estimates as EstimatorEstimates } from "@/lib/estimatorUtils";
+import { getAdminSessionToken } from "@/lib/adminSession";
 
 interface VehicleType {
   id: string;
@@ -75,7 +76,7 @@ export default function PremiumLogisticsEstimator() {
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("adminToken");
+    const saved = getAdminSessionToken();
     if (!saved) {
       router.push("/admin/login");
       return;

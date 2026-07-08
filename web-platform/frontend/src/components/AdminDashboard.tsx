@@ -12,6 +12,7 @@ import ImportCalendar from "./ImportCalendar";
 import CostDashboard from "./CostDashboard";
 import InsightForm from "./InsightForm";
 import { WorkflowState } from "./WorkflowCards";
+import { getAdminSessionToken } from "@/lib/adminSession";
 import { 
   LayoutDashboard, 
   FileText, 
@@ -161,7 +162,7 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem("adminToken") || localStorage.getItem("logixa_token");
+    const saved = getAdminSessionToken();
     if (!saved) {
       router.push("/admin/login");
       return;

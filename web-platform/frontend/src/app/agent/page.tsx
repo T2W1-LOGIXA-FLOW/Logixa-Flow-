@@ -2,7 +2,6 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import AgentThinkingPanel from "@/components/AgentThinkingPanel";
@@ -13,12 +12,12 @@ import Skeleton from "@/components/shadcn/Skeleton";
 import Citations, { type Match } from "@/components/Citations";
 import { AgentRun, IntelligenceSource, Post, adminFetch } from "@/components/api";
 import PageBackground from "@/components/PageBackground";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 const categories: Post["category"][] = ["Supply Chain", "Logistics", "Procurement", "Operations Excellence", "News"];
 
 export default function AgentControlCenter() {
-  const router = useRouter();
-  const [token, setToken] = useState("");
+  const { token, isAuthenticated, isCheckingAuth } = useAdminAuth();
   const [message, setMessage] = useState("Generate a Myanmar-ready supply chain risk brief for admin preview.");
   const [sources, setSources] = useState<IntelligenceSource[]>([]);
   const [sourcesLoading, setSourcesLoading] = useState(false);
@@ -41,15 +40,12 @@ export default function AgentControlCenter() {
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem("adminToken") || localStorage.getItem("logixa_token");
-    if (!saved) {
-      router.push("/admin/login");
+    if (!isAuthenticated || !token) {
       return;
     }
-    setToken(saved);
     setSourcesLoading(true);
     setSourcesError(null);
-    adminFetch("/api/admin/sources", saved)
+    adminFetch("/api/admin/sources", token)
       .then((response) => response.json())
       .then((records: IntelligenceSource[]) => {
         setSources(records);
@@ -60,7 +56,7 @@ export default function AgentControlCenter() {
         setSourcesLoading(false);
         toast.error("Sources could not be loaded.");
       });
-  }, [router]);
+  }, [token, isAuthenticated]);
 
   async function createSource(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -142,7 +138,7 @@ export default function AgentControlCenter() {
     }
   }
 
-  if (!token) {
+  if (isCheckingAuth || !isAuthenticated || !token) {
     return (
       <PageBackground overlayOpacity={0.85}>
         <main className="page-shell agent-workspace">

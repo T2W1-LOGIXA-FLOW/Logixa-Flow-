@@ -30,7 +30,6 @@ export function handleAuthError(error: unknown) {
   toast.error("Authentication failed. Please log in again.");
   
   // Clear token and redirect to login
-  localStorage.removeItem("adminToken");
   clearAdminSession();
   window.location.href = "/admin/login";
 }

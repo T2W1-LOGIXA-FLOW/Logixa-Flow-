@@ -9,6 +9,7 @@ import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
 import { motion } from "framer-motion";
 import { adminFetch } from "@/components/api";
+import { getAdminSessionToken } from "@/lib/adminSession";
 
 interface Feed {
   id: number;
@@ -45,7 +46,7 @@ export default function FeedManager() {
     setLoading(true);
     setError(null);
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+      const token = getAdminSessionToken();
       if (!token) throw new Error("Admin login required");
       const response = await adminFetch("/api/admin/integration/feeds", token);
       if (!response.ok) throw new Error("Failed to fetch feeds");
@@ -68,7 +69,7 @@ export default function FeedManager() {
     }
 
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+      const token = getAdminSessionToken();
       if (!token) throw new Error("Admin login required");
       const response = await adminFetch("/api/admin/integration/feeds", token, {
         method: "POST",
@@ -94,7 +95,7 @@ export default function FeedManager() {
 
     setError(null);
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+      const token = getAdminSessionToken();
       if (!token) throw new Error("Admin login required");
       const response = await adminFetch(`/api/admin/integration/feeds/${feedId}`, token, {
         method: "DELETE",
@@ -115,7 +116,7 @@ export default function FeedManager() {
     toast.info("Scrape started...");
 
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+      const token = getAdminSessionToken();
       if (!token) throw new Error("Admin login required");
       const response = await adminFetch(`/api/admin/integration/feeds/${feedId}/scrape`, token, {
         method: "POST",

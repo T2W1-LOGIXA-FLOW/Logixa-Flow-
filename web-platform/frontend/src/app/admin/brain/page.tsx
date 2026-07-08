@@ -2,19 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { AiMemory, Post, adminFetch, IntelligenceSource } from "@/components/api";
 import EmptyState from "@/components/EmptyState";
 import Skeleton from "@/components/shadcn/Skeleton";
 import Citations, { Match } from "@/components/Citations";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 const filters: Array<AiMemory["status"] | "all"> = ["pending", "approved", "rejected", "published", "all"];
 
 export default function BrainReviewPage() {
-  const router = useRouter();
-  const [token, setToken] = useState("");
+  const { token, isAuthenticated, isCheckingAuth } = useAdminAuth();
   const [items, setItems] = useState<AiMemory[]>([]);
   const [filter, setFilter] = useState<AiMemory["status"] | "all">("pending");
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -24,16 +23,7 @@ export default function BrainReviewPage() {
   const [itemsError, setItemsError] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("adminToken");
-    if (!saved) {
-      router.push("/admin/login");
-      return;
-    }
-    setToken(saved);
-  }, [router]);
-
-  useEffect(() => {
-    if (!token) {
+    if (!isAuthenticated || !token) {
       return;
     }
     setItemsLoading(true);
@@ -51,7 +41,7 @@ export default function BrainReviewPage() {
         setItemsLoading(false);
         toast.error("Brain queue could not be loaded.");
       });
-  }, [filter, token]);
+  }, [filter, token, isAuthenticated]);
 
   const selected = useMemo(() => items.find((item) => item.id === selectedId) || items[0], [items, selectedId]);
 
@@ -94,7 +84,7 @@ export default function BrainReviewPage() {
     }
   }
 
-  if (!token) {
+  if (isCheckingAuth || !isAuthenticated || !token) {
     return (
       <main className="page-shell brain-review-page">
         <div className="max-w-4xl mx-auto py-8 space-y-6">

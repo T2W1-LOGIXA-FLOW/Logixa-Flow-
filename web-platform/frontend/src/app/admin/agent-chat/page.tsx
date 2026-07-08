@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Skeleton from "@/components/shadcn/Skeleton";
 import { AIInputWithLoading } from "@/components/ui/ai-input-with-loading";
 import { adminFetch } from "@/components/api";
 import { Home, ChevronRight, Zap, MessageCircle, Bot } from "lucide-react";
 import { AnimatedText } from "@/components/ui/animated-shiny-text";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 interface ChatMessage {
   id: string;
@@ -19,22 +19,16 @@ interface ChatMessage {
 }
 
 export default function AdminAgentChatPage() {
-  const router = useRouter();
-  const [token, setToken] = useState("");
+  const { token, isAuthenticated, isCheckingAuth } = useAdminAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
-  const [sessionLoading, setSessionLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("adminToken");
-    if (!saved) {
-      router.push("/admin/login");
-      return;
+    if (!isAuthenticated) {
+      setMessages([]);
     }
-    setToken(saved);
-    setSessionLoading(false);
-  }, [router]);
+  }, [isAuthenticated]);
 
   const handleAgentQuery = async (message: string) => {
     if (!message.trim()) return;
@@ -88,7 +82,7 @@ export default function AdminAgentChatPage() {
     }
   };
 
-  if (!token || sessionLoading) {
+  if (isCheckingAuth || !isAuthenticated || !token) {
     return (
       <main className="page-shell">
         <div className="max-w-4xl mx-auto py-8 space-y-6">

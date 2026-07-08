@@ -22,8 +22,6 @@ export default function LoginForm() {
     const form = new FormData(event.currentTarget);
     try {
       const result = await login(String(form.get("username")), String(form.get("password")));
-      localStorage.setItem("adminToken", result.access_token);
-      localStorage.setItem("logixa_token", result.access_token);
       setAdminSession(result.access_token);
       router.push("/admin");
     } catch {

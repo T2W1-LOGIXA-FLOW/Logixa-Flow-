@@ -182,6 +182,18 @@ export async function login(username: string, password: string) {
   return response.json() as Promise<{ access_token: string; role: string; token_type: string }>;
 }
 
+export async function validateAdminToken(token: string) {
+  if (!token) return false;
+  try {
+    const response = await fetchWithTimeout(`${API_URL}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function adminFetch(path: string, token: string, options: RequestInit = {}) {
   const headers = new Headers(options.headers);
   headers.set("Authorization", `Bearer ${token}`);

@@ -26,7 +26,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useEffect } from "react";
-import { clearAdminSession } from "@/lib/adminSession";
+import { validateAdminToken } from "@/components/api";
+import { clearAdminSession, getAdminSessionToken } from "@/lib/adminSession";
 
 const navigationItems = [
   {
@@ -77,26 +78,40 @@ const navigationItems = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const isLoginRoute = pathname === "/admin/login";
 
   const handleLogout = () => {
-    localStorage.removeItem("adminToken");
     clearAdminSession();
     window.location.href = "/admin/login";
   };
 
   useEffect(() => {
-    const bypassAuth = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_ADMIN_AUTH_BYPASS === 'true';
-    if (bypassAuth) {
-      return;
+    let cancelled = false;
+
+    async function checkSession() {
+      const bypassAuth = typeof process !== "undefined" && process.env.NEXT_PUBLIC_ADMIN_AUTH_BYPASS === "true";
+      if (bypassAuth || isLoginRoute) {
+        setAuthChecked(true);
+        return;
+      }
+      const token = getAdminSessionToken();
+      if (!token || !(await validateAdminToken(token))) {
+        if (cancelled) return;
+        clearAdminSession();
+        window.location.href = "/admin/login";
+        return;
+      }
+      if (!cancelled) {
+        setAuthChecked(true);
+      }
     }
-    if (isLoginRoute) {
-      return;
-    }
-    const token = localStorage.getItem("adminToken");
-    if (!token) {
-      window.location.href = "/admin/login";
-    }
+
+    checkSession();
+
+    return () => {
+      cancelled = true;
+    };
   }, [isLoginRoute]);
 
   // Set document title dynamically
@@ -107,6 +122,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (isLoginRoute) {
     return <>{children}</>;
+  }
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-[#020617] text-slate-300 flex items-center justify-center">
+        Checking admin session...
+      </div>
+    );
   }
 
   return (

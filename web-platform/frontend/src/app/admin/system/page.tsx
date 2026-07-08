@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { EnvProviderStatus, SystemStatus, adminFetch } from "@/components/api";
 import Skeleton from "@/components/shadcn/Skeleton";
 import IntegrationTriggers from "@/components/IntegrationTriggers";
+import { getAdminSessionToken } from "@/lib/adminSession";
 
 export default function AdminSystemPage() {
   const router = useRouter();
@@ -29,7 +30,7 @@ export default function AdminSystemPage() {
   }
 
   useEffect(() => {
-    const saved = localStorage.getItem("adminToken");
+    const saved = getAdminSessionToken();
     if (!saved) {
       router.push("/admin/login");
       return;

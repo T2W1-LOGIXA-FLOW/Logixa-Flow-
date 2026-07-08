@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { adminFetch } from "./api";
 import { toast } from "sonner";
+import { getAdminSessionToken } from "@/lib/adminSession";
 
 export default function Comments({ postId }: { postId: number }) {
   const [text, setText] = useState("");
@@ -11,7 +12,7 @@ export default function Comments({ postId }: { postId: number }) {
     if (!text.trim()) return;
     setSubmitting(true);
     try {
-      const token = localStorage.getItem("adminToken") || localStorage.getItem("logixa_token");
+      const token = getAdminSessionToken();
       if (!token) throw new Error("Login required");
       await adminFetch("/api/comments", token, {
         method: "POST",

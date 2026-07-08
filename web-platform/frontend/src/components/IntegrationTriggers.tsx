@@ -6,12 +6,13 @@ import Button from "./shadcn/Button";
 import Input from "./shadcn/Input";
 import Card from "./shadcn/Card";
 import { adminFetch } from "./api";
+import { getAdminSessionToken } from "@/lib/adminSession";
 
 export default function IntegrationTriggers({ token }: { token?: string }) {
   const [t, setT] = useState<string | null>(token || null);
   useEffect(() => {
     if (!t && typeof window !== "undefined") {
-      setT(localStorage.getItem("adminToken") || localStorage.getItem("logixa_token"));
+      setT(getAdminSessionToken());
     }
   }, [t]);
 

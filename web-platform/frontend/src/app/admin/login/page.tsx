@@ -5,8 +5,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { login } from '@/components/api';
-import { setAdminSession } from '@/lib/adminSession';
+import { login, validateAdminToken } from '@/components/api';
+import { clearAdminSession, getAdminSessionToken, setAdminSession } from '@/lib/adminSession';
 
 export default function AdminLoginPage() {
   const [username, setUsername] = useState('');
@@ -16,18 +16,38 @@ export default function AdminLoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
 
-  // Check if already logged in
   useEffect(() => {
-    const bypassAuth = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_ADMIN_AUTH_BYPASS === 'true';
-    const token = localStorage.getItem('adminToken');
+    let cancelled = false;
     const savedUsername = localStorage.getItem('adminUsername');
     if (savedUsername) {
       setUsername(savedUsername);
       setRememberMe(true);
     }
-    if (bypassAuth || token) {
-      router.push('/admin');
+
+    async function checkExistingSession() {
+      const bypassAuth = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_ADMIN_AUTH_BYPASS === 'true';
+      if (bypassAuth) {
+        router.push('/admin');
+        return;
+      }
+      const token = getAdminSessionToken();
+      if (!token) {
+        return;
+      }
+      const valid = await validateAdminToken(token);
+      if (cancelled) return;
+      if (valid) {
+        router.push('/admin');
+      } else {
+        clearAdminSession();
+      }
     }
+
+    checkExistingSession();
+
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,9 +58,6 @@ export default function AdminLoginPage() {
     try {
       const data = await login(username, password);
 
-      // Store token
-      localStorage.setItem('adminToken', data.access_token);
-      localStorage.setItem('logixa_token', data.access_token);
       setAdminSession(data.access_token);
       if (rememberMe) {
         localStorage.setItem('adminUsername', username);
