@@ -12,7 +12,11 @@ load_dotenv()
 DEFAULT_SQLITE = f"sqlite:///{Path(__file__).resolve().parents[1] / 'logixa_flow.db'}"
 DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_SQLITE)
 
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+if DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+else:
+    connect_args = {"connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT", "10"))}
+
 engine = create_engine(DATABASE_URL, connect_args=connect_args, pool_pre_ping=True)
 
 if DATABASE_URL.startswith("postgresql"):

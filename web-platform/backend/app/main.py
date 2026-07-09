@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import logging
 import os
+import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -88,25 +90,56 @@ def ensure_lightweight_migrations() -> None:
             connection.execute(text("CREATE INDEX IF NOT EXISTS ix_comments_parent_id ON comments (parent_id)"))
 
 
+def run_startup_tasks() -> None:
+    """Run database bootstrap, seeding, and scheduler after the app process is up."""
+    max_attempts = int(os.getenv("DB_CONNECT_RETRIES", "5"))
+    retry_delay = int(os.getenv("DB_CONNECT_RETRY_DELAY", "3"))
 
-# Guard bootstrap with environment variable
-if os.getenv("SKIP_DATABASE_BOOTSTRAP", "false").lower() != "true":
-    bootstrap_database()
-    ensure_lightweight_migrations()
-else:
-    logger.info("Skipping database bootstrap (SKIP_DATABASE_BOOTSTRAP=true)")
+    if os.getenv("SKIP_DATABASE_BOOTSTRAP", "false").lower() != "true":
+        for attempt in range(1, max_attempts + 1):
+            try:
+                bootstrap_database()
+                ensure_lightweight_migrations()
+                break
+            except Exception as exc:
+                if attempt >= max_attempts:
+                    logger.error("Database bootstrap failed after %s attempts: %s", max_attempts, exc)
+                    return
+                logger.warning(
+                    "Database bootstrap attempt %s/%s failed: %s",
+                    attempt,
+                    max_attempts,
+                    exc,
+                )
+                time.sleep(retry_delay)
+    else:
+        logger.info("Skipping database bootstrap (SKIP_DATABASE_BOOTSTRAP=true)")
 
-try:
-    with SessionLocal() as db:
-        from .rag.pgvector_store import ensure_pgvector_schema
+    try:
+        with SessionLocal() as db:
+            from .rag.pgvector_store import ensure_pgvector_schema
 
-        pgvector_status = ensure_pgvector_schema(db)
-        if pgvector_status.get("enabled"):
-            logger.info("pgvector ready for RAG similarity search")
-        elif database_profile() in {"neon", "supabase", "postgres"}:
-            logger.warning("pgvector not fully enabled: %s", pgvector_status.get("reason"))
-except Exception as exc:
-    logger.warning("pgvector startup check skipped: %s", exc)
+            pgvector_status = ensure_pgvector_schema(db)
+            if pgvector_status.get("enabled"):
+                logger.info("pgvector ready for RAG similarity search")
+            elif database_profile() in {"neon", "supabase", "postgres"}:
+                logger.warning("pgvector not fully enabled: %s", pgvector_status.get("reason"))
+    except Exception as exc:
+        logger.warning("pgvector startup check skipped: %s", exc)
+
+    if os.getenv("SKIP_SEEDING", "false").lower() != "true":
+        seed_app_settings()
+        seed_sample_posts()
+    else:
+        logger.info("Skipping seeding (SKIP_SEEDING=true)")
+
+    start_scheduler()
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    run_startup_tasks()
+    yield
 
 
 def seed_app_settings() -> None:
@@ -183,20 +216,11 @@ def seed_sample_posts() -> None:
         db.close()
 
 
-# Guard seeding with environment variable
-if os.getenv("SKIP_SEEDING", "false").lower() != "true":
-    seed_app_settings()
-    seed_sample_posts()
-else:
-    logger.info("Skipping seeding (SKIP_SEEDING=true)")
-
-# Scheduler is already guarded by ENABLE_SCHEDULER env var in start_scheduler()
-start_scheduler()
-
 app = FastAPI(
     title="Logixa Flow API",
     description="CMS and engagement API for Logixa Flow.",
     version="1.1.0",
+    lifespan=lifespan,
 )
 
 if os.getenv("USE_SLOWAPI", "true").lower() == "true":
