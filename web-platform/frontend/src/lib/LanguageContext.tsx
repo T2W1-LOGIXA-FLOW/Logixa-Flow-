@@ -285,6 +285,7 @@ const translations: Record<Locale, Record<string, string | string[]>> = {
     operatingModelBody:
       "Stream the decision-making model, approval workflows, and editorial signal into a single operating plane that supports execution and intelligence together.",
     latestUpdatesEyebrow: "Latest Updates",
+    recentlyPublished: "မကြာသေးမီ ထုတ်ဝေထားသော",
     sending: "ပို့နေသည်",
     contactName: "အမည်",
     contactEmail: "အီးမေးလ်",

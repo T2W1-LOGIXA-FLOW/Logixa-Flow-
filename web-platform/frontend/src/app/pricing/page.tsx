@@ -5,43 +5,47 @@ import PageBackground from "@/components/PageBackground";
 
 const PLANS = [
   {
-    id: "starter",
-    name: "Starter",
-    price: 29,
-    description: "For lean teams getting clarity fast",
+    id: "free",
+    name: "Free",
+    price: 0,
+    description: "Perfect for getting started",
     features: [
-      "Core SCM Categories",
-      "10 Insight Slots",
-      "3 Data Signals",
+      "Up to 5 contacts/month",
+      "Basic analytics",
       "Email support",
+      "Community access",
     ],
-    cta: "Start Free Trial",
+    cta: "Get Started",
     highlighted: false,
   },
   {
-    id: "professional",
-    name: "Professional",
-    price: 79,
-    description: "For growing operations teams",
+    id: "pro",
+    name: "Pro",
+    price: 29,
+    description: "For growing teams",
     features: [
-      "Core SCM Categories",
-      "100 Insight Slots",
-      "20 Data Signals",
+      "Unlimited contacts",
+      "Advanced analytics",
       "Priority support",
+      "Custom branding",
+      "API access",
+      "Webhooks",
     ],
-    cta: "Subscribe",
+    cta: "Start Pro Trial",
     highlighted: true,
   },
   {
     id: "enterprise",
     name: "Enterprise",
     price: null,
-    description: "For multi-site organizations",
+    description: "For large organizations",
     features: [
-      "Core SCM Categories",
-      "Unlimited Insight Slots",
-      "Unlimited Data Signals",
-      "Dedicated onboarding",
+      "Everything in Pro",
+      "Dedicated account manager",
+      "Custom integrations",
+      "SLA guarantee",
+      "On-premise option",
+      "Custom training",
     ],
     cta: "Contact Sales",
     highlighted: false,
@@ -75,10 +79,10 @@ export default function PricingPage() {
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-500 to-orange-500 bg-clip-text text-transparent">
-            Flexible Supply Chain Intelligence Plans
+            Simple, Transparent Pricing
           </h1>
           <p className="text-xl text-slate-400 mb-8">
-            Choose the right level of control, visibility, and automation for your supply chain operations.
+            Choose the perfect plan for your needs. Always flexible to scale.
           </p>
 
           {/* Billing Toggle */}
@@ -125,6 +129,7 @@ export default function PricingPage() {
               <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
               <p className="text-slate-400 text-sm mb-6">{plan.description}</p>
 
+              {/* Price */}
               <div className="mb-6">
                 {plan.price !== null ? (
                   <>
@@ -147,6 +152,7 @@ export default function PricingPage() {
                 )}
               </div>
 
+              {/* CTA Button */}
               <button
                 onClick={() => handleCheckout(plan.id)}
                 className={`w-full py-3 rounded-lg font-semibold transition-all mb-8 ${
@@ -158,9 +164,7 @@ export default function PricingPage() {
                 {plan.cta}
               </button>
 
-              <div className="mb-4 text-sm uppercase tracking-[0.2em] text-slate-500">
-                Plan details
-              </div>
+              {/* Features List */}
               <ul className="space-y-4">
                 {plan.features.map((feature, idx) => (
                   <li key={idx} className="flex items-center gap-3">

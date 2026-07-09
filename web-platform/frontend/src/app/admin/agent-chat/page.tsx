@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import Skeleton from "@/components/shadcn/Skeleton";
 import { AIInputWithLoading } from "@/components/ui/ai-input-with-loading";
 import { adminFetch } from "@/components/api";
-import { Home, ChevronRight, Zap, MessageCircle, Bot } from "lucide-react";
+import { Home, ChevronRight, Zap, MessageCircle, Bot, Copy, Trash2 } from "lucide-react";
 import { AnimatedText } from "@/components/ui/animated-shiny-text";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 
@@ -23,12 +23,18 @@ export default function AdminAgentChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
       setMessages([]);
     }
   }, [isAuthenticated]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleAgentQuery = async (message: string) => {
     if (!message.trim()) return;
@@ -82,6 +88,16 @@ export default function AdminAgentChatPage() {
     }
   };
 
+  const handleCopyMessage = (content: string) => {
+    navigator.clipboard.writeText(content);
+    toast.success("Message copied to clipboard");
+  };
+
+  const handleClearChat = () => {
+    setMessages([]);
+    toast.success("Chat cleared");
+  };
+
   if (isCheckingAuth || !isAuthenticated || !token) {
     return (
       <main className="page-shell">
@@ -110,24 +126,36 @@ export default function AdminAgentChatPage() {
       </nav>
 
       <section className="agent-header mb-8">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-lg bg-cyan-500/20">
-              <Bot className="h-6 w-6 text-cyan-400" />
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-slate-800">
+                <Bot className="h-6 w-6 text-slate-400" />
+              </div>
+              <div>
+                <p className="eyebrow">Interactive</p>
+                <AnimatedText
+                  text="Agent Chat"
+                  gradientColors="linear-gradient(90deg, #0891b2, #f97316)"
+                  gradientAnimationDuration={1.5}
+                  hoverEffect={true}
+                  textClassName="font-black text-2xl md:text-3xl"
+                  className="py-0"
+                />
+              </div>
             </div>
-            <div>
-              <p className="eyebrow">Interactive</p>
-              <AnimatedText
-                text="Agent Chat"
-                gradientColors="linear-gradient(90deg, #0891b2, #f97316)"
-                gradientAnimationDuration={1.5}
-                hoverEffect={true}
-                textClassName="font-black text-2xl md:text-3xl"
-                className="py-0"
-              />
-            </div>
+            <p className="text-muted mt-3">Chat with AI agents and get real-time responses</p>
           </div>
-          <p className="text-muted mt-3">Chat with AI agents and get real-time responses</p>
+          {messages.length > 0 && (
+            <button
+              onClick={handleClearChat}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              title="Clear chat"
+            >
+              <Trash2 className="h-4 w-4" />
+              Clear Chat
+            </button>
+          )}
         </div>
       </section>
 
@@ -138,18 +166,18 @@ export default function AdminAgentChatPage() {
       )}
 
       {/* Chat Messages Container */}
-      <div className="mb-6 bg-slate-900/50 border border-slate-700/50 rounded-xl overflow-hidden flex flex-col h-[500px]">
+      <div className="mb-6 bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-[500px]">
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-center">
               <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-cyan-500/20 w-fit mx-auto">
-                  <MessageCircle className="h-8 w-8 text-cyan-400" />
+                <div className="p-4 rounded-xl bg-slate-800 w-fit mx-auto">
+                  <MessageCircle className="h-8 w-8 text-slate-400" />
                 </div>
                 <div>
-                  <h3 className="text-primary font-semibold mb-2">Start a conversation</h3>
-                  <p className="text-muted text-sm">Ask the AI agent anything about your business</p>
+                  <h3 className="text-white font-semibold mb-2">Start a conversation</h3>
+                  <p className="text-slate-400 text-sm">Ask the AI agent anything about your business</p>
                 </div>
               </div>
             </div>
@@ -159,19 +187,28 @@ export default function AdminAgentChatPage() {
                 <div
                   className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
                     msg.role === "user"
-                      ? "bg-cyan-500/30 border border-cyan-500/50 text-cyan-100"
-                      : "bg-slate-800/50 border border-slate-700/50 text-slate-200"
+                      ? "bg-slate-800 text-white border border-slate-700"
+                      : "bg-slate-700/50 text-slate-200 border border-slate-600"
                   }`}
                 >
-                  <p className="text-sm leading-relaxed break-words">{msg.content}</p>
-                  <p className="text-xs opacity-60 mt-2">{new Date(msg.timestamp).toLocaleTimeString()}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm leading-relaxed break-words flex-1">{msg.content}</p>
+                    <button
+                      onClick={() => handleCopyMessage(msg.content)}
+                      className="text-slate-500 hover:text-slate-300 transition"
+                      title="Copy message"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">{new Date(msg.timestamp).toLocaleTimeString()}</p>
                 </div>
               </div>
             ))
           )}
           {loading && (
             <div className="flex justify-start">
-              <div className="bg-slate-800/50 border border-slate-700/50 text-slate-200 px-4 py-3 rounded-lg">
+              <div className="bg-slate-700/50 text-slate-200 px-4 py-3 rounded-lg border border-slate-600">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
                   <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
@@ -180,10 +217,11 @@ export default function AdminAgentChatPage() {
               </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input Area */}
-        <div className="border-t border-slate-700/50 bg-slate-900/30 p-4">
+        <div className="border-t border-slate-800 bg-slate-900/50 p-4">
           <AIInputWithLoading
             onSubmit={handleAgentQuery}
             placeholder="Ask the agent something..."

@@ -71,6 +71,7 @@ const CountUp = ({ end, duration = 1.5, suffix = "" }: { end: number | string; d
 };
 import MouseGlow from "@/components/MouseGlow";
 import PostCard from "@/components/PostCard";
+import NewsletterForm from "@/components/NewsletterForm";
 import CoverflowSlider from "@/components/3DCoverflowSlider";
 import { getPosts, Post } from "@/components/api";
 
@@ -641,7 +642,14 @@ export default function Home() {
                 Stream the decision-making model, approval workflows, and editorial signal into a single operating plane that supports execution and intelligence together.
               </p>
             </motion.div>
-            {/* Newsletter removed per design — no top subscription block on public pages */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true }}
+            >
+              <NewsletterForm />
+            </motion.div>
           </div>
         </div>
       </section>
