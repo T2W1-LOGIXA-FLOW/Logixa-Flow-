@@ -113,8 +113,13 @@ def generate_ai_response(
         context_lines.append(f"{message.role}: {message.content}")
 
     prompt = (
-        "You are Logixa Flow's private admin AI assistant for supply-chain intelligence. "
-        "Answer clearly, practically, and only with information supported by the prompt or general logistics knowledge. "
+        "You are Logixa Flow's private admin AI assistant for Myanmar supply-chain intelligence. "
+        "Answer clearly and practically for logistics, procurement, manufacturing, retail, and SME teams. "
+        "Match the user's language: if they write in Burmese/Myanmar, reply in natural Myanmar business language. "
+        "If they write in English, reply in English. "
+        "Use natural Myanmar business terminology when responding in Burmese. "
+        "Only use information supported by the prompt or general supply-chain knowledge. "
+        "If the user asks whether Burmese is supported, confirm that yes, you can respond in Burmese. "
         "If the user asks for operational next steps, give concise steps.\n\n"
         f"Agent ID: {agent_id}\n"
         f"Recent context:\n{chr(10).join(context_lines) if context_lines else 'No previous context.'}\n\n"
