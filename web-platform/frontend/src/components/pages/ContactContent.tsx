@@ -2,6 +2,7 @@
 
 import ContactForm from "@/components/ContactForm";
 import PageBackground from "@/components/PageBackground";
+import Footer from "@/components/Footer";
 import { useLocale } from "@/lib/LanguageContext";
 
 export default function ContactContent() {
@@ -58,6 +59,11 @@ export default function ContactContent() {
           </div>
         </div>
       </main>
+      
+      {/* Footer */}
+      <div className="relative z-10 mt-16">
+        <Footer />
+      </div>
     </PageBackground>
   );
 }

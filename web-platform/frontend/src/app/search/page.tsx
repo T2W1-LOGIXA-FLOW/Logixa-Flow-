@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getPosts, Post } from '@/components/api';
 import PostCard from '@/components/PostCard';
+import Footer from '@/components/Footer';
 import PageBackground from '@/components/PageBackground';
 
 export default function SearchPage() {
@@ -186,6 +187,7 @@ export default function SearchPage() {
         </div>
       </div>
     </main>
+    <Footer />
     </PageBackground>
   );
 }

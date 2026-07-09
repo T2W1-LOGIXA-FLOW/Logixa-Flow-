@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import Footer from "@/components/Footer";
 import PageBackground from "@/components/PageBackground";
 
 export const metadata: Metadata = {
@@ -111,6 +112,7 @@ export default function TermsPage() {
           <p className="text-slate-400 text-sm mt-12">Last updated: {new Date().toLocaleDateString()}</p>
         </div>
       </div>
+      <Footer />
     </div>
     </PageBackground>
   );

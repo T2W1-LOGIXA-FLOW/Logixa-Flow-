@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Footer from "@/components/Footer";
 import PageBackground from "@/components/PageBackground";
 
 const PLANS = [
@@ -217,6 +218,7 @@ export default function PricingPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
     </PageBackground>
   );
