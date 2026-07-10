@@ -282,16 +282,6 @@ body {
 
 /* ========== MISSING CSS CLASSES (Added 2026-06-11) ========== */
 
-/* Footer & Site Layout */
-.site-footer {
-  @apply bg-slate-950 border-t border-slate-800 text-slate-300;
-  padding: 3rem 2rem;
-}
-
-.site-footer-content {
-  @apply max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8;
-}
-
 /* Authentication & Login */
 .auth-shell {
   @apply min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4;
