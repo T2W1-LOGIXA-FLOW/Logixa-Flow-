@@ -9,11 +9,7 @@ import {
   ChevronRight
 } from "lucide-react";
 
-interface FooterProps {
-  variant?: "main" | "pages";
-}
-
-export default function Footer({ variant = "main" }: FooterProps) {
+export default function Footer() {
   const { t } = useLocale();
 
   const productLinks = [
@@ -44,8 +40,8 @@ export default function Footer({ variant = "main" }: FooterProps) {
 
   return (
     <footer className="bg-slate-900/95 border-t border-slate-700/50 backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Company Info */}
           <div className="lg:col-span-1">
             <div className="text-left">
@@ -100,7 +96,7 @@ export default function Footer({ variant = "main" }: FooterProps) {
           </div>
 
           {/* Product Links */}
-          <div className={variant === "pages" ? "ml-4 md:ml-8 lg:ml-12" : ""}>
+          <div>
             <h4 className="text-sm font-semibold text-white mb-4">Product</h4>
             <ul className="space-y-3">
               {productLinks.map((link) => (
@@ -118,7 +114,7 @@ export default function Footer({ variant = "main" }: FooterProps) {
           </div>
 
           {/* Company Links */}
-          <div className={variant === "pages" ? "ml-4 md:ml-8 lg:ml-12" : ""}>
+          <div>
             <h4 className="text-sm font-semibold text-white mb-4">Company</h4>
             <ul className="space-y-3">
               {companyLinks.map((link) => (
@@ -136,7 +132,7 @@ export default function Footer({ variant = "main" }: FooterProps) {
           </div>
 
           {/* Resources */}
-          <div className={variant === "pages" ? "ml-4 md:ml-8 lg:ml-12" : ""}>
+          <div>
             <h4 className="text-sm font-semibold text-white mb-4">Resources</h4>
             <ul className="space-y-3">
               {resourcesLinks.map((link) => (
@@ -155,7 +151,7 @@ export default function Footer({ variant = "main" }: FooterProps) {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-slate-700/50 mt-12 pt-8">
+        <div className="border-t border-slate-700/50 mt-8 pt-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-xs text-slate-400">
               {t("allRightsReserved")} © {new Date().getFullYear()} Logixa Flow
