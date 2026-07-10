@@ -8,6 +8,7 @@ import LayoutWrapper from "@/components/LayoutWrapper";
 export default function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdminRoute = pathname?.startsWith("/admin") || pathname === "/agent";
+  const isMainPage = pathname === "/";
 
   return (
     <div className="relative z-10 flex min-h-screen w-full flex-col">
@@ -19,7 +20,7 @@ export default function ConditionalLayout({ children }: { children: React.ReactN
       <main className="flex-1 w-full">{children}</main>
       {!isAdminRoute && (
         <LayoutWrapper>
-          <Footer />
+          <Footer variant={isMainPage ? "main" : "pages"} />
         </LayoutWrapper>
       )}
     </div>

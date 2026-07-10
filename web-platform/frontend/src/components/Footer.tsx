@@ -9,7 +9,11 @@ import {
   ChevronRight
 } from "lucide-react";
 
-export default function Footer() {
+interface FooterProps {
+  variant?: "main" | "pages";
+}
+
+export default function Footer({ variant = "main" }: FooterProps) {
   const { t } = useLocale();
 
   const productLinks = [
@@ -96,7 +100,7 @@ export default function Footer() {
           </div>
 
           {/* Product Links */}
-          <div>
+          <div className={variant === "pages" ? "ml-4 md:ml-8 lg:ml-12" : ""}>
             <h4 className="text-sm font-semibold text-white mb-4">Product</h4>
             <ul className="space-y-3">
               {productLinks.map((link) => (
@@ -114,7 +118,7 @@ export default function Footer() {
           </div>
 
           {/* Company Links */}
-          <div>
+          <div className={variant === "pages" ? "ml-4 md:ml-8 lg:ml-12" : ""}>
             <h4 className="text-sm font-semibold text-white mb-4">Company</h4>
             <ul className="space-y-3">
               {companyLinks.map((link) => (
@@ -132,7 +136,7 @@ export default function Footer() {
           </div>
 
           {/* Resources */}
-          <div>
+          <div className={variant === "pages" ? "ml-4 md:ml-8 lg:ml-12" : ""}>
             <h4 className="text-sm font-semibold text-white mb-4">Resources</h4>
             <ul className="space-y-3">
               {resourcesLinks.map((link) => (
