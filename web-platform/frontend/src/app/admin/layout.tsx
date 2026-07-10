@@ -28,6 +28,7 @@ import { useState } from "react";
 import { useEffect } from "react";
 import { validateAdminToken } from "@/components/api";
 import { clearAdminSession, getAdminSessionToken } from "@/lib/adminSession";
+import Footer from "@/components/Footer";
 
 const navigationItems = [
   {
@@ -246,6 +247,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {children}
           </div>
         </main>
+
+        {/* Footer */}
+        <Footer />
       </div>
     </div>
   );
