@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { subscribe } from "./api";
 import { useLocale } from "@/lib/LanguageContext";
 import Link from "next/link";
 import {
@@ -13,21 +11,6 @@ import {
 
 export default function Footer() {
   const { t } = useLocale();
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setStatus("loading");
-    try {
-      await subscribe(email);
-      setEmail("");
-      setStatus("success");
-      setTimeout(() => setStatus("idle"), 3000);
-    } catch {
-      setStatus("error");
-    }
-  }
 
   const productLinks = [
     { href: "/features", label: "Features" },
@@ -58,9 +41,9 @@ export default function Footer() {
   return (
     <footer className="bg-slate-950 border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-1">
             <div className="text-left">
               <h3 className="text-2xl font-bold bg-gradient-to-r from-[#00A3FF] to-[#FF6B00] bg-clip-text text-transparent mb-3">
                 Logixa Flow
@@ -148,10 +131,10 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Resources & Newsletter */}
+          {/* Resources */}
           <div>
             <h4 className="text-sm font-semibold text-white mb-4">Resources</h4>
-            <ul className="space-y-3 mb-6">
+            <ul className="space-y-3">
               {resourcesLinks.map((link) => (
                 <li key={link.href}>
                   <Link
@@ -164,34 +147,6 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
-
-            {/* Newsletter */}
-            <div>
-              <h4 className="text-sm font-semibold text-white mb-3">{t("weeklySignals")}</h4>
-              <form onSubmit={handleSubmit} className="space-y-2">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
-                  required
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-700 bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-                />
-                <button
-                  type="submit"
-                  disabled={status === "loading"}
-                  className="w-full px-4 py-2 text-sm font-bold rounded-lg bg-gradient-to-r from-[#00A3FF] to-[#FF6B00] text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
-                >
-                  {status === "loading" ? "..." : t("subscribe")}
-                </button>
-              </form>
-              {status === "success" && (
-                <p className="text-xs text-green-500 mt-2">{t("subscribed")}</p>
-              )}
-              {status === "error" && (
-                <p className="text-xs text-red-500 mt-2">{t("subscribeError")}</p>
-              )}
-            </div>
           </div>
         </div>
 
@@ -206,7 +161,7 @@ export default function Footer() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-xs text-slate-500 hover:text-cyan-400 transition-colors"
+                  className="text-sm text-slate-400 hover:text-cyan-400 transition-colors font-medium"
                 >
                   {link.label}
                 </Link>
