@@ -74,7 +74,7 @@ export default function PricingPage() {
   };
 
   return (
-    <PageBackground overlayOpacity={0.85}>
+    <PageBackground overlayOpacity={0.15}>
       <div className="min-h-screen text-slate-100 py-24 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}

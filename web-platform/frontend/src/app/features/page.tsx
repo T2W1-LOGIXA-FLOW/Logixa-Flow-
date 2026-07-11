@@ -37,7 +37,7 @@ const features = [
 
 export default function FeaturesPage() {
   return (
-    <PageBackground overlayOpacity={0.82}>
+    <PageBackground overlayOpacity={0.15}>
       <div className="min-h-screen px-4 py-24 text-slate-100">
         <div className="mx-auto flex max-w-7xl flex-col items-center">
           <div className="mb-14 max-w-3xl text-center">

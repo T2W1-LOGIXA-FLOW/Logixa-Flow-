@@ -21,7 +21,7 @@ export default function BlogContent({ posts, latestPosts, selectedCategory }: Bl
   const { t } = useLocale();
 
   return (
-    <PageBackground overlayOpacity={0.85}>
+    <PageBackground overlayOpacity={0.15}>
       <main className="relative min-h-screen py-16 md:py-20 overflow-hidden">
         <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8">
         {/* Header Section */}

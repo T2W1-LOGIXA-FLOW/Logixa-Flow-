@@ -5,7 +5,7 @@ import PageBackground from "@/components/PageBackground";
 
 export default function CheckoutCancelPage() {
   return (
-    <PageBackground overlayOpacity={0.85}>
+    <PageBackground overlayOpacity={0.15}>
       <div className="min-h-screen text-slate-100 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-8 text-center">

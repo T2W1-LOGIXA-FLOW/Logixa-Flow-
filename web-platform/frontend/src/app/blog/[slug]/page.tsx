@@ -86,7 +86,7 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
   };
 
   return (
-    <PageBackground overlayOpacity={0.85}>
+    <PageBackground overlayOpacity={0.15}>
       <main className="article-shell">
       <Script
         id="article-schema"

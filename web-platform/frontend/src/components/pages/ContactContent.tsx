@@ -22,7 +22,7 @@ export default function ContactContent() {
   ];
 
   return (
-    <PageBackground overlayOpacity={0.85}>
+    <PageBackground overlayOpacity={0.15}>
       <main className="relative min-h-screen overflow-hidden py-16 md:py-20">
         <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
