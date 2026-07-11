@@ -21,7 +21,7 @@ export default function PageBackground({
         />
         {/* Very Light Overlay - ပိုလင်းအောင် opacity ကို ပိုလျှော့တယ် */}
         <div 
-          className="absolute inset-0 bg-slate-800"
+          className="absolute inset-0 bg-slate-950"
           style={{ opacity: overlayOpacity }}
         />
       </div>
