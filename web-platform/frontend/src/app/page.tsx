@@ -654,8 +654,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* AI Agent Chat Section */}
-      <section className="py-24 bg-gradient-to-b from-slate-900/20 to-slate-950/20">
+      {/* AI Agent Chat Section - Temporarily commented out for testing */}
+      {/* <section className="py-24 bg-gradient-to-b from-slate-900/20 to-slate-950/20">
         <div className="mx-auto max-w-4xl px-4 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -735,7 +735,7 @@ export default function Home() {
             </motion.div>
           </motion.div>
         </div>
-      </section>
+      </section> */}
 
       </main>
     </>
