@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import LatestTicker from "@/components/LatestTicker";
 import BlogSearch from "@/components/BlogSearch";
 import PageBackground from "@/components/PageBackground";
-import Footer from "@/components/Footer";
 import { Post } from "@/components/api";
 import { useLocale } from "@/lib/LanguageContext";
 
@@ -72,11 +71,6 @@ export default function BlogContent({ posts, latestPosts, selectedCategory }: Bl
         </div>
         </div>
       </main>
-      
-      {/* Footer */}
-      <div className="relative z-10 mt-12">
-        <Footer />
-      </div>
     </PageBackground>
   );
 }
