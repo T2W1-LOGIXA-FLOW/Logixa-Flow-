@@ -40,7 +40,7 @@ export default function FAQPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <PageBackground overlayOpacity={0.15}>
+    <PageBackground overlayOpacity={0.82}>
       <div className="min-h-screen px-4 py-24 text-slate-100">
         <div className="mx-auto flex max-w-5xl flex-col items-center">
           <div className="mb-14 max-w-3xl text-center">

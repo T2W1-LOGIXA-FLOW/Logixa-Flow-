@@ -145,7 +145,7 @@ export default function AgentControlCenter() {
 
   if (!token) {
     return (
-      <PageBackground overlayOpacity={0.15}>
+      <PageBackground overlayOpacity={0.85}>
         <main className="page-shell agent-workspace">
         <div className="space-y-6 max-w-4xl mx-auto py-8">
           <div className="flex items-center justify-between">
