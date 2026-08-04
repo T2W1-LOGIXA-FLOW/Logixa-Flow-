@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import Button from "@/components/shadcn/Button";
-import LanguageToggle from "./LanguageToggle";
 import { useLocale } from "@/lib/LanguageContext";
 
 export default function MobileDrawer() {
@@ -25,15 +24,13 @@ export default function MobileDrawer() {
                 Close
               </Button>
             </div>
-            <div className="mt-4 flex items-center gap-2">
-              <LanguageToggle />
-            </div>
             <nav className="mt-4 flex flex-col gap-3 text-sm">
-              <Link href="/" className="hover:text-cyan-400">{t("home")}</Link>
-              <Link href="/blog" className="hover:text-cyan-400">{t("insights")}</Link>
-              <Link href="/estimator" className="hover:text-cyan-400">{t("estimator")}</Link>
-              <Link href="/about" className="hover:text-cyan-400">{t("about")}</Link>
-              <Link href="/contact" className="hover:text-cyan-400">{t("contact")}</Link>
+              <Link href="/" onClick={() => setOpen(false)} className="hover:text-cyan-400">{t("home")}</Link>
+              <Link href="/blog" onClick={() => setOpen(false)} className="hover:text-cyan-400">{t("insights")}</Link>
+              <Link href="/agent" onClick={() => setOpen(false)} className="hover:text-cyan-400">AI Agent</Link>
+              <Link href="/estimator" onClick={() => setOpen(false)} className="hover:text-cyan-400">{t("estimator")}</Link>
+              <Link href="/about" onClick={() => setOpen(false)} className="hover:text-cyan-400">{t("about")}</Link>
+              <Link href="/contact" onClick={() => setOpen(false)} className="hover:text-cyan-400">{t("contact")}</Link>
             </nav>
           </aside>
         </div>

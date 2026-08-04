@@ -94,6 +94,25 @@ def chat_query(
     )
 
 
+@router.post("/public-query")
+def public_chat_query(
+    request: schemas.ChatQueryRequest,
+    db: Session = Depends(get_db),
+) -> dict:
+    """
+    Public AI assistant endpoint for the website chat experience.
+
+    This route intentionally does not require admin auth and does not write
+    chat sessions to the admin database. Admin chat history stays private.
+    """
+    ai_response = generate_ai_response(request.query, request.context, request.agent_id or "public", db)
+    return {
+        "response": ai_response["content"],
+        "agent_id": ai_response["agent_id"],
+        "model_used": ai_response["model_used"],
+    }
+
+
 def generate_ai_response(
     query: str,
     context: list[schemas.ChatMessageBase],
@@ -113,7 +132,7 @@ def generate_ai_response(
         context_lines.append(f"{message.role}: {message.content}")
 
     prompt = (
-        "You are Logixa Flow's private admin AI assistant for Myanmar supply-chain intelligence. "
+        "You are Logixa Flow's AI assistant for Myanmar supply-chain intelligence. "
         "Answer clearly and practically for logistics, procurement, manufacturing, retail, and SME teams. "
         "Match the user's language: if they write in Burmese/Myanmar, reply in natural Myanmar business language. "
         "If they write in English, reply in English. "

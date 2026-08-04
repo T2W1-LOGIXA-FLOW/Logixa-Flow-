@@ -1,340 +1,233 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { Bot, CornerRightUp, Globe2, Loader2, MessageSquareText, ShieldCheck, Sparkles, Zap } from "lucide-react";
 
-import AgentThinkingPanel from "@/components/AgentThinkingPanel";
-import FeedbackRating from "@/components/FeedbackRating";
-import EmptyState from "@/components/EmptyState";
-import ErrorState from "@/components/ErrorState";
-import Skeleton from "@/components/shadcn/Skeleton";
-import Citations, { type Match } from "@/components/Citations";
-import { AgentRun, IntelligenceSource, Post, adminFetch } from "@/components/api";
-import Footer from "@/components/Footer";
 import PageBackground from "@/components/PageBackground";
+import { publicChatQuery } from "@/components/api";
 
-const categories: Post["category"][] = ["Supply Chain", "Logistics", "Procurement", "Operations Excellence", "News"];
+interface ChatMessage {
+  id: string;
+  role: "user" | "agent";
+  content: string;
+}
 
-export default function AgentControlCenter() {
-  const router = useRouter();
-  const [token, setToken] = useState("");
-  const [message, setMessage] = useState("Generate a Myanmar-ready supply chain risk brief for admin preview.");
-  const [sources, setSources] = useState<IntelligenceSource[]>([]);
-  const [sourcesLoading, setSourcesLoading] = useState(false);
-  const [sourcesError, setSourcesError] = useState<string | null>(null);
-  const [selectedSourceIds, setSelectedSourceIds] = useState<Set<number>>(new Set());
-  const [run, setRun] = useState<AgentRun | null>(null);
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [isRunning, setIsRunning] = useState(false);
-  const [sourceForm, setSourceForm] = useState({
-    title: "",
-    url: "",
-    category: "Supply Chain" as Post["category"],
-    trust_level: "standard" as IntelligenceSource["trust_level"],
-    notes: "",
-  });
-  const [rssForm, setRssForm] = useState({
-    feed_url: "",
-    category: "Supply Chain" as Post["category"],
-    trust_level: "standard" as IntelligenceSource["trust_level"],
-  });
+const quickPrompts = [
+  "What should a Myanmar importer check before choosing a supplier?",
+  "How can a small business reduce delivery delays?",
+  "Explain supply chain risk in simple terms.",
+];
 
-  useEffect(() => {
-    const saved = localStorage.getItem("adminToken") || localStorage.getItem("logixa_token");
-    if (!saved) {
-      router.push("/login");
-      return;
-    }
-    setToken(saved);
-    setSourcesLoading(true);
-    setSourcesError(null);
-    adminFetch("/api/admin/sources", saved)
-      .then((response) => response.json())
-      .then((records: IntelligenceSource[]) => {
-        setSources(records);
-        setSourcesLoading(false);
-      })
-      .catch(() => {
-        setSourcesError("Failed to load sources. Please try again.");
-        setSourcesLoading(false);
-        toast.error("Sources could not be loaded.");
-      });
-  }, [router]);
+export default function PublicAgentPage() {
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: "welcome",
+      role: "agent",
+      content:
+        "Hi, I am Logixa Flow AI. Ask me about logistics, sourcing, procurement, delivery planning, or Myanmar business operations.",
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  async function createSource(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!sourceForm.title.trim()) {
-      toast.error("Source title is required.");
-      return;
-    }
+  const context = useMemo(
+    () =>
+      messages
+        .filter((message) => message.id !== "welcome")
+        .slice(-6)
+        .map((message) => ({ role: message.role, content: message.content })),
+    [messages]
+  );
+
+  async function sendMessage(message: string) {
+    const trimmed = message.trim();
+    if (!trimmed || isSending) return;
+
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      content: trimmed,
+    };
+
+    setMessages((current) => [...current, userMessage]);
+    setInput("");
+    setError("");
+    setIsSending(true);
+
     try {
-      const response = await adminFetch("/api/admin/sources", token, {
-        method: "POST",
-        body: JSON.stringify({
-          ...sourceForm,
-          url: sourceForm.url.trim() || null,
-          source_type: sourceForm.url.trim() ? "url" : "manual",
-        }),
+      const response = await publicChatQuery({
+        query: trimmed,
+        context,
+        agent_id: "public-agent",
       });
-      const source = (await response.json()) as IntelligenceSource;
-      setSources((current) => [source, ...current]);
-      setSelectedSourceIds((current) => new Set(current).add(source.id));
-      setSourceForm({ title: "", url: "", category: "Supply Chain", trust_level: "standard", notes: "" });
-      toast.success("Source saved and selected.");
-    } catch {
-      toast.error("Failed to save source. Please try again.");
-    }
-  }
 
-  function toggleSource(id: number) {
-    setSelectedSourceIds((current) => {
-      const next = new Set(current);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }
-
-  async function runAgent() {
-    setIsRunning(true);
-    const loadingToast = toast.loading("Agent run started…");
-    setMatches([]);
-    try {
-      const response = await adminFetch("/api/agent/run", token, {
-        method: "POST",
-        body: JSON.stringify({ message, source_ids: Array.from(selectedSourceIds) }),
-      });
-      const data = (await response.json()) as AgentRun;
-      setRun(data);
-      toast.success("Agent run complete — draft is in the preview queue.", { id: loadingToast });
-      // fetch RAG matches so we can show citations
-      try {
-        const r = await adminFetch(`/api/admin/rag/search?q=${encodeURIComponent(message)}&top_k=6`, token);
-        const j = await r.json();
-        setMatches(j.matches || []);
-      } catch {
-        // ignore citation fetch failures
-      }
+      setMessages((current) => [
+        ...current,
+        {
+          id: `agent-${Date.now()}`,
+          role: "agent",
+          content: response.response,
+        },
+      ]);
     } catch {
-      toast.error("Agent run failed. Check backend logs or API key settings.", { id: loadingToast });
+      setError("The AI agent could not respond right now. Please try again in a moment.");
     } finally {
-      setIsRunning(false);
+      setIsSending(false);
+      inputRef.current?.focus();
     }
   }
 
-  async function importRss(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    try {
-      const response = await adminFetch("/api/admin/sources/fetch-rss", token, {
-        method: "POST",
-        body: JSON.stringify({ ...rssForm, limit: 8 }),
-      });
-      const result = (await response.json()) as { imported: number; skipped: number };
-      const refreshed = await adminFetch("/api/admin/sources", token);
-      setSources((await refreshed.json()) as IntelligenceSource[]);
-      toast.success(`RSS import complete. Imported ${result.imported}, skipped ${result.skipped}.`);
-    } catch {
-      toast.error("RSS import failed. Check the feed URL.");
-    }
-  }
-
-  if (!token) {
-    return (
-      <PageBackground overlayOpacity={0.85}>
-        <main className="page-shell agent-workspace">
-        <div className="space-y-6 max-w-4xl mx-auto py-8">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2 w-3/4">
-              <Skeleton className="h-6 w-1/2" />
-              <Skeleton className="h-8 w-1/3" />
-            </div>
-            <Skeleton className="h-10 w-24" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Skeleton className="h-48 w-full" />
-            <Skeleton className="h-48 w-full" />
-          </div>
-        </div>
-      </main>
-      </PageBackground>
-    );
+    void sendMessage(input);
   }
 
   return (
-    <PageBackground overlayOpacity={0.85}>
-      <main className="page-shell agent-workspace min-h-screen">
-      <section className="agent-header">
-        <div>
-          <p className="eyebrow">AI Agent</p>
-          <h1>Logixa Brain Control</h1>
-          <p className="muted">Collect sources, run a grounded draft, and hold output in preview until admin review.</p>
-        </div>
-        <Link className="ghost-button" href="/admin/brain">
-          Review Queue
-        </Link>
-      </section>
+    <PageBackground overlayOpacity={0.88}>
+      <main className="min-h-screen px-4 py-10 text-white sm:px-6 lg:px-8">
+        <section className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[0.9fr_1.4fr] lg:items-stretch">
+          <aside className="logixa-card flex flex-col justify-between p-6 md:p-8">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-300">Public AI Agent</p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                Ask Logixa Flow about supply chain decisions.
+              </h1>
+              <p className="mt-5 text-sm leading-7 text-slate-300 sm:text-base">
+                Get practical guidance for logistics, procurement, sourcing, delivery planning, and Myanmar business operations.
+              </p>
+            </div>
 
-      <section className="agent-grid">
-        <form className="admin-panel agent-source-form" onSubmit={createSource}>
-          <p className="eyebrow">Source Intake</p>
-          <h2>Add source</h2>
-          <label>
-            Title
-            <input value={sourceForm.title} onChange={(event) => setSourceForm((current) => ({ ...current, title: event.target.value }))} />
-          </label>
-          <label>
-            URL
-            <input value={sourceForm.url} onChange={(event) => setSourceForm((current) => ({ ...current, url: event.target.value }))} />
-          </label>
-          <label>
-            Category
-            <select value={sourceForm.category} onChange={(event) => setSourceForm((current) => ({ ...current, category: event.target.value as Post["category"] }))}>
-              {categories.map((category) => (
-                <option key={category}>{category}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Trust
-            <select value={sourceForm.trust_level} onChange={(event) => setSourceForm((current) => ({ ...current, trust_level: event.target.value as IntelligenceSource["trust_level"] }))}>
-              <option value="standard">standard</option>
-              <option value="verified">verified</option>
-              <option value="high">high</option>
-            </select>
-          </label>
-          <label>
-            Notes
-            <textarea value={sourceForm.notes} onChange={(event) => setSourceForm((current) => ({ ...current, notes: event.target.value }))} />
-          </label>
-          <button className="primary-button" type="submit">
-            Save Source
-          </button>
-        </form>
-
-        <section className="admin-panel agent-run-panel">
-          <p className="eyebrow">Private Draft Generator</p>
-          <h2>Run agent</h2>
-          <textarea value={message} onChange={(event) => setMessage(event.target.value)} />
-          <div className="source-picker">
-            {sourcesError ? (
-              <ErrorState
-                title="Failed to load sources"
-                description={sourcesError}
-                actionLabel="Retry"
-                actionOnClick={() => {
-                  setSourcesError(null);
-                  setSourcesLoading(true);
-                  adminFetch("/api/admin/sources", token)
-                    .then((response) => response.json())
-                    .then((records: IntelligenceSource[]) => {
-                      setSources(records);
-                      setSourcesLoading(false);
-                    })
-                    .catch(() => {
-                      setSourcesError("Failed to load sources. Please try again.");
-                      setSourcesLoading(false);
-                      toast.error("Sources could not be loaded.");
-                    });
-                }}
-              />
-            ) : sourcesLoading ? (
-              <div className="source-picker-empty">
-                <Skeleton className="h-16 w-full mb-2" />
-                <Skeleton className="h-16 w-full mb-2" />
-                <Skeleton className="h-16 w-full" />
+            <div className="mt-8 grid gap-3">
+              <div className="rounded-lg border border-cyan-400/15 bg-slate-950/40 p-4">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck className="h-5 w-5 text-cyan-300" />
+                  <p className="font-semibold">Public-safe assistant</p>
+                </div>
+                <p className="mt-2 text-sm text-slate-400">No admin login is required for this page.</p>
               </div>
-            ) : sources.length ? (
-              sources.map((source) => (
-                <button className={selectedSourceIds.has(source.id) ? "active" : ""} key={source.id} type="button" onClick={() => toggleSource(source.id)}>
-                  <span>{source.category}</span>
-                  <strong>{source.title}</strong>
-                </button>
-              ))
-            ) : (
-              <div className="source-picker-empty">
-                <EmptyState
-                  icon="📚"
-                  title="No sources yet"
-                  description="Add a source to ground the agent with context, or run with the prompt only."
-                  actionLabel="Add Source"
-                  actionOnClick={() => {
-                    const form = document.querySelector(".agent-source-form") as HTMLElement;
-                    form?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                />
+              <div className="rounded-lg border border-cyan-400/15 bg-slate-950/40 p-4">
+                <div className="flex items-center gap-3">
+                  <Globe2 className="h-5 w-5 text-orange-300" />
+                  <p className="font-semibold">Myanmar-ready context</p>
+                </div>
+                <p className="mt-2 text-sm text-slate-400">Built for operators, importers, SMEs, and logistics teams.</p>
               </div>
-            )}
-          </div>
-          <button className="primary-button" disabled={isRunning} type="button" onClick={runAgent}>
-            {isRunning ? "Running..." : "Run Agent"}
-          </button>
+            </div>
+
+            <Link
+              href="/contact"
+              className="mt-8 inline-flex w-fit items-center gap-2 rounded-full border border-cyan-400/30 px-5 py-3 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300 hover:bg-cyan-400/10"
+            >
+              Talk to Logixa Flow
+              <CornerRightUp className="h-4 w-4" />
+            </Link>
+          </aside>
+
+          <section className="logixa-card overflow-hidden p-0">
+            <div className="border-b border-cyan-400/10 bg-slate-950/45 p-5 sm:p-6">
+              <div className="flex items-center gap-3">
+                <div className="rounded-xl bg-cyan-400/10 p-3 text-cyan-300">
+                  <Bot className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Live Chat</p>
+                  <h2 className="text-xl font-bold">Logixa AI Assistant</h2>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex h-[58vh] min-h-[430px] flex-col sm:h-[620px]">
+              <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
+                {messages.map((message) => (
+                  <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div
+                      className={`max-w-[86%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-lg sm:max-w-[72%] ${
+                        message.role === "user"
+                          ? "border border-cyan-300/30 bg-cyan-500/20 text-cyan-50"
+                          : "border border-white/10 bg-slate-950/60 text-slate-100"
+                      }`}
+                    >
+                      {message.content}
+                    </div>
+                  </div>
+                ))}
+
+                {isSending ? (
+                  <div className="flex justify-start">
+                    <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm text-slate-300">
+                      <Loader2 className="h-4 w-4 animate-spin text-cyan-300" />
+                      Thinking...
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              {error ? (
+                <div className="mx-4 mb-3 rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-100 sm:mx-6">
+                  {error}
+                </div>
+              ) : null}
+
+              <div className="border-t border-cyan-400/10 bg-slate-950/45 p-4 sm:p-6">
+                <div className="mb-4 grid gap-2 sm:grid-cols-3">
+                  {quickPrompts.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => void sendMessage(prompt)}
+                      className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-left text-xs text-slate-300 transition hover:border-cyan-300/40 hover:text-white"
+                    >
+                      <Zap className="mb-1 h-3.5 w-3.5 text-cyan-300" />
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+
+                <form onSubmit={handleSubmit} className="flex gap-3">
+                  <label className="sr-only" htmlFor="public-agent-input">
+                    Ask the AI agent
+                  </label>
+                  <textarea
+                    id="public-agent-input"
+                    ref={inputRef}
+                    value={input}
+                    onChange={(event) => setInput(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        void sendMessage(input);
+                      }
+                    }}
+                    placeholder="Ask about suppliers, shipping delays, sourcing, or operating plans..."
+                    rows={2}
+                    className="min-h-[56px] flex-1 resize-none rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSending || !input.trim()}
+                    className="inline-flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20 transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-45"
+                    aria-label="Send message"
+                  >
+                    {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <MessageSquareText className="h-5 w-5" />}
+                  </button>
+                </form>
+              </div>
+            </div>
+          </section>
         </section>
-      </section>
 
-      <form className="admin-panel rss-import-panel" onSubmit={importRss}>
-        <p className="eyebrow">RSS Intake</p>
-        <h2>Import feed sources</h2>
-        <div className="rss-import-grid">
-          <label>
-            Feed URL
-            <input value={rssForm.feed_url} onChange={(event) => setRssForm((current) => ({ ...current, feed_url: event.target.value }))} />
-          </label>
-          <label>
-            Category
-            <select value={rssForm.category} onChange={(event) => setRssForm((current) => ({ ...current, category: event.target.value as Post["category"] }))}>
-              {categories.map((category) => (
-                <option key={category}>{category}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Trust
-            <select value={rssForm.trust_level} onChange={(event) => setRssForm((current) => ({ ...current, trust_level: event.target.value as IntelligenceSource["trust_level"] }))}>
-              <option value="standard">standard</option>
-              <option value="verified">verified</option>
-              <option value="high">high</option>
-            </select>
-          </label>
-          <button className="primary-button" type="submit">
-            Import RSS
-          </button>
-        </div>
-      </form>
-
-      <section className="admin-panel">
-        <p className="eyebrow">Agent Trace</p>
-        <h2>Reasoning timeline</h2>
-        {run ? (
-          <AgentThinkingPanel steps={run.steps || []} />
-        ) : (
-          <EmptyState
-            icon="🤖"
-            title="No agent runs yet"
-            description="Run the agent above to generate a grounded draft and see the reasoning timeline here."
-          />
-        )}
-      </section>
-
-      {run?.memory ? (
-        <section className="admin-panel preview-draft-panel">
-          <p className="eyebrow">Preview Only</p>
-          <h2>{run.memory.source_title}</h2>
-          <p className="muted">{run.memory.summary}</p>
-          <div className="draft-preview" dangerouslySetInnerHTML={{ __html: run.memory.content }} />
-          <Citations matches={matches} sources={sources} />
-          {run.id && token && (
-            <FeedbackRating runId={run.id} token={token} />
-          )}
+        <section className="mx-auto mt-8 grid max-w-7xl gap-4 md:grid-cols-3">
+          {["Practical answers", "Operational next steps", "English and Myanmar support"].map((item) => (
+            <div key={item} className="rounded-xl border border-cyan-400/10 bg-slate-950/40 p-5 text-sm text-slate-300">
+              <Sparkles className="mb-3 h-5 w-5 text-cyan-300" />
+              <p className="font-semibold text-white">{item}</p>
+            </div>
+          ))}
         </section>
-      ) : null}
-    </main>
-    <Footer />
+      </main>
     </PageBackground>
   );
 }

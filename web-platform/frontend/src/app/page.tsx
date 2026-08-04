@@ -684,28 +684,28 @@ export default function Home() {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button
-                  onClick={() => window.location.href = "/admin/agent-chat"}
+                  onClick={() => window.location.href = "/agent"}
                   className="text-left p-4 rounded-lg bg-slate-900/40 hover:bg-slate-800/50 transition border border-white/10 hover:border-cyan-500/50 backdrop-blur"
                 >
                   <p className="font-semibold text-white">{t("aiQuestion1")}</p>
                   <p className="text-sm text-slate-400">{t("aiQuestion1Desc")}</p>
                 </button>
                 <button
-                  onClick={() => window.location.href = "/admin/agent-chat"}
+                  onClick={() => window.location.href = "/agent"}
                   className="text-left p-4 rounded-lg bg-slate-900/40 hover:bg-slate-800/50 transition border border-white/10 hover:border-cyan-500/50 backdrop-blur"
                 >
                   <p className="font-semibold text-white">{t("aiQuestion2")}</p>
                   <p className="text-sm text-slate-400">{t("aiQuestion2Desc")}</p>
                 </button>
                 <button
-                  onClick={() => window.location.href = "/admin/agent-chat"}
+                  onClick={() => window.location.href = "/agent"}
                   className="text-left p-4 rounded-lg bg-slate-900/40 hover:bg-slate-800/50 transition border border-white/10 hover:border-cyan-500/50 backdrop-blur"
                 >
                   <p className="font-semibold text-white">{t("aiQuestion3")}</p>
                   <p className="text-sm text-slate-400">{t("aiQuestion3Desc")}</p>
                 </button>
                 <button
-                  onClick={() => window.location.href = "/admin/agent-chat"}
+                  onClick={() => window.location.href = "/agent"}
                   className="text-left p-4 rounded-lg bg-slate-900/40 hover:bg-slate-800/50 transition border border-white/10 hover:border-cyan-500/50 backdrop-blur"
                 >
                   <p className="font-semibold text-white">{t("aiQuestion4")}</p>
@@ -720,7 +720,7 @@ export default function Home() {
               className="flex justify-center mt-8"
             >
               <Link
-                href="/admin/agent-chat"
+                href="/agent"
                 className="inline-flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-cyan-600 to-orange-600 rounded-full text-white font-semibold hover:shadow-lg hover:shadow-cyan-500/20 hover:scale-105 transition"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">

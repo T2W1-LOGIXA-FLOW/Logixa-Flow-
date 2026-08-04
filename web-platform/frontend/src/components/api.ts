@@ -205,6 +205,20 @@ export async function adminFetch(path: string, token: string, options: RequestIn
   return response;
 }
 
+export async function publicChatQuery(payload: {
+  query: string;
+  context?: { role: "user" | "agent" | "system"; content: string }[];
+  agent_id?: string;
+}) {
+  const response = await fetchWithTimeout(`${API_URL}/api/chat/public-query`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error("Public chat failed");
+  return response.json() as Promise<{ response: string; agent_id: string; model_used: string }>;
+}
+
 export async function getPost(slug: string): Promise<Post | null> {
   try {
     const response = await fetchWithTimeout(`${API_URL}/api/posts/${slug}`, { next: { revalidate: 60 } });
