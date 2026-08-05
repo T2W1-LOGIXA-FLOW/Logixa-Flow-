@@ -11,13 +11,11 @@ export default function Footer() {
   const productLinks = [
     { href: "/features", label: "Features" },
     { href: "/pricing", label: "Pricing" },
-    { href: "/estimator", label: "Estimator" },
     { href: "/agent", label: "AI Agent" },
   ];
 
   const companyLinks = [
     { href: "/about", label: "About Us" },
-    { href: "/blog", label: "Blog" },
     { href: "/contact", label: "Contact" },
     { href: "/case-studies", label: "Case Studies" },
   ];
