@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Footer from "@/components/Footer";
 import PageBackground from "@/components/PageBackground";
 
 export default function CheckoutSuccessPage() {
@@ -98,7 +97,6 @@ export default function CheckoutSuccessPage() {
         </div>
       </div>
     </div>
-    <Footer />
     </PageBackground>
   );
 }
