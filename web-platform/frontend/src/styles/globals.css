@@ -836,8 +836,14 @@ body {
 
 /* Page Heading - Unified across all pages */
 .page-heading {
-  @apply space-y-4 max-w-3xl;
-  padding: 2rem 3rem !important;
+  @apply max-w-3xl space-y-4;
+  padding: 1.5rem !important;
+}
+
+@media (min-width: 768px) {
+  .page-heading {
+    padding: 2rem 3rem !important;
+  }
 }
 
 .page-heading h1 {
@@ -850,7 +856,7 @@ body {
 
 /* Blog Page Specific */
 .blog-heading-grid {
-  @apply grid grid-cols-1 lg:grid-cols-3 gap-8;
+  @apply grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-8;
 }
 
 .blog-heading-section {
@@ -859,15 +865,17 @@ body {
 
 /* Category Tabs */
 .category-tabs {
-  @apply flex flex-wrap gap-3 py-6 border-b border-slate-800;
+  @apply flex gap-2 overflow-x-auto px-2 py-4 sm:flex-wrap sm:gap-3 sm:px-0 sm:py-5;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.45) transparent;
 }
 
 .category-tab {
-  @apply relative px-4 py-2 text-sm md:text-base font-medium text-slate-300 transition-all duration-200 border-b-2 border-transparent hover:text-cyan-400 hover:border-cyan-400/40 rounded-t;
+  @apply relative shrink-0 rounded-lg border border-transparent px-4 py-2 text-sm font-medium text-slate-300 transition-all duration-200 hover:border-cyan-400/40 hover:text-cyan-300 md:text-base;
 }
 
 .category-tab.active {
-  @apply text-cyan-400 border-cyan-400/60 font-semibold bg-cyan-500/10;
+  @apply border-cyan-400/40 bg-cyan-500/15 font-semibold text-cyan-300;
 }
 
 
@@ -915,7 +923,7 @@ body {
 }
 
 .ticker-item {
-  @apply block p-3 rounded-lg bg-slate-800/30 border border-slate-700/50 hover:bg-slate-800/50 hover:border-cyan-500/30 transition-all;
+  @apply block rounded-lg border border-slate-700/50 bg-slate-950/30 p-3 transition-all hover:border-cyan-500/30 hover:bg-slate-900/50;
 }
 
 .ticker-item span {
@@ -927,21 +935,21 @@ body {
 }
 
 .search-input {
-  @apply w-full px-4 py-3 rounded-lg border text-white placeholder-slate-500 focus:outline-none transition-all;
-  background: rgba(30, 41, 59, 0.5);
-  border-color: rgba(100, 116, 139, 0.4);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  @apply w-full rounded-lg border px-4 py-3 text-white placeholder-slate-500 transition-all focus:outline-none;
+  background: rgba(15, 23, 42, 0.62);
+  border-color: rgba(125, 211, 252, 0.18);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
 }
 
 .search-input:hover {
-  @apply border-slate-600/80;
-  background: rgba(30, 41, 59, 0.7);
+  @apply border-cyan-400/30;
+  background: rgba(15, 23, 42, 0.78);
 }
 
 .search-input:focus {
   @apply border-cyan-400/60 ring-1 ring-cyan-400/30;
-  background: rgba(30, 41, 59, 0.9);
+  background: rgba(15, 23, 42, 0.92);
 }
 
 .search-status,

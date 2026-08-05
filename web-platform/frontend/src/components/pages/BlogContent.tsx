@@ -21,17 +21,17 @@ export default function BlogContent({ posts, latestPosts, selectedCategory }: Bl
   const { t } = useLocale();
 
   return (
-    <PageBackground overlayOpacity={0.15}>
-      <main className="relative min-h-screen py-16 md:py-20 overflow-hidden">
+    <PageBackground overlayOpacity={0.72} brightness={1.15}>
+      <main className="relative min-h-screen overflow-hidden px-4 py-12 sm:px-6 md:py-16">
         <div className="relative z-10 mx-auto max-w-7xl px-4 lg:px-8">
         {/* Header Section */}
-        <div className="blog-heading-grid mb-8">
+        <div className="blog-heading-grid mb-6 md:mb-8">
           <div className="blog-heading-section">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, ease: "easeOut" }}
-              className="logixa-card page-heading"
+              className="logixa-card page-heading min-h-full"
             >
               <p className="eyebrow">{t("blogEyebrow")}</p>
               <h1>{t("blogTitle")}</h1>
@@ -42,13 +42,13 @@ export default function BlogContent({ posts, latestPosts, selectedCategory }: Bl
               </p>
             </motion.div>
           </div>
-          <div className="logixa-card">
+          <div className="logixa-card min-h-full p-5 md:p-6">
             <LatestTicker posts={latestPosts} />
           </div>
         </div>
 
         {/* Category Tabs */}
-        <div className="logixa-card mb-8">
+        <div className="logixa-card mb-6 md:mb-8">
           <div className="category-tabs" aria-label="Insight categories">
             <Link className={!selectedCategory ? "category-tab active" : "category-tab"} href="/blog">
               {t("blogAllCategory")}

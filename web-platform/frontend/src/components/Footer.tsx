@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChevronRight, Mail, MapPin, Phone } from "lucide-react";
 
 export default function Footer() {
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
+
   const productLinks = [
     { href: "/features", label: "Features" },
     { href: "/pricing", label: "Pricing" },
@@ -31,8 +35,23 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-slate-950 border-t border-slate-800 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-6 py-8">
+    <footer
+      className={
+        isHomePage
+          ? "bg-slate-950 border-t border-slate-800 backdrop-blur-md"
+          : "relative overflow-hidden border-t border-cyan-400/10 bg-slate-950/55 backdrop-blur-md"
+      }
+    >
+      {!isHomePage ? (
+        <>
+          <div
+            className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-35"
+            style={{ backgroundImage: "url('/images/page.jpg.png')" }}
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-slate-950/55 via-slate-950/70 to-slate-950/90" />
+        </>
+      ) : null}
+      <div className={`relative mx-auto max-w-7xl px-6 ${isHomePage ? "py-8" : "py-10 md:py-12"}`}>
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div>
             <h3 className="mb-3 bg-gradient-to-r from-[#00A3FF] to-[#FF6B00] bg-clip-text text-2xl font-bold text-transparent">
