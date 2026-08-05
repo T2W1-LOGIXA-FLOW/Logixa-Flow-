@@ -178,7 +178,7 @@ export default function Home() {
         <div className="absolute top-1/4 left-1/4 w-96 h-96 z-[2] pointer-events-none bg-cyan-500/3 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 z-[2] pointer-events-none bg-orange-500/2 rounded-full blur-3xl animate-pulse" />
 
-        <div className="relative z-10 text-center space-y-12 max-w-5xl mx-auto px-6 py-12">
+        <div className="relative z-10 mx-auto max-w-5xl space-y-8 px-4 py-10 text-center sm:space-y-12 sm:px-6 sm:py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -189,11 +189,11 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="relative inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-cyan-500/20 via-cyan-500/10 to-cyan-500/20 border border-cyan-500/30 backdrop-blur-xl shadow-2xl"
+              className="relative inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-gradient-to-r from-cyan-500/20 via-cyan-500/10 to-cyan-500/20 px-4 py-2 shadow-2xl backdrop-blur-xl sm:gap-3 sm:px-6 sm:py-3"
             >
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/10 via-transparent to-cyan-500/10 animate-pulse" />
               <div className="w-2 h-2 bg-cyan-500 rounded-full animate-ping" />
-              <span className="relative z-10 text-sm font-bold text-cyan-400 tracking-wider uppercase">
+              <span className="relative z-10 text-xs font-bold uppercase tracking-wider text-cyan-400 sm:text-sm">
                 Supply Chain Intelligence
               </span>
               <div className="w-2 h-2 bg-cyan-500 rounded-full animate-ping animation-delay-500" />
@@ -204,9 +204,9 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, delay: 0.3 }}
-                className="text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-black tracking-tighter leading-[0.85] select-none"
+                className="select-none text-[2.7rem] font-black leading-[0.92] tracking-tighter sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
               >
-                <span className="block font-light text-slate-400 mb-3 text-4xl md:text-6xl lg:text-7xl">
+                <span className="mb-3 block text-3xl font-light text-slate-400 sm:text-4xl md:text-6xl lg:text-7xl">
                   Intelligence-Powered
                 </span>
                 <span className="block relative">
@@ -234,13 +234,13 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.8 }}
               className="max-w-3xl mx-auto space-y-4"
             >
-              <p className="text-xl md:text-2xl text-slate-300 leading-relaxed font-medium">
+              <p className="text-base font-medium leading-relaxed text-slate-300 sm:text-xl md:text-2xl">
                 Actionable logistics intelligence, market signal analysis, and{" "}
                 <span className="text-white font-semibold bg-gradient-to-r from-cyan-500/20 to-orange-500/20 px-2 py-1 rounded-md">
                   execution-ready guidance
                 </span>
               </p>
-              <p className="text-lg text-slate-400 leading-relaxed">
+              <p className="text-sm leading-relaxed text-slate-400 sm:text-lg">
                 Deep-dive supply chain intelligence, procurement signal clarity, and operational strategy for Myanmar business teams.
               </p>
             </motion.div>
@@ -250,7 +250,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 1 }}
-            className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-4"
+            className="flex flex-col items-center justify-center gap-4 pt-4 sm:flex-row sm:gap-6"
           >
             <motion.button
               whileHover={{
@@ -260,7 +260,7 @@ export default function Home() {
                 y: -2,
               }}
               whileTap={{ scale: 0.98 }}
-              className="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cyan-500 via-cyan-500 to-cyan-600 text-white rounded-full font-semibold text-lg shadow-xl hover:shadow-cyan-500/30 transition-all duration-500 overflow-hidden border border-cyan-400/20"
+              className="group relative inline-flex w-full items-center justify-center gap-3 overflow-hidden rounded-full border border-cyan-400/20 bg-gradient-to-r from-cyan-500 via-cyan-500 to-cyan-600 px-6 py-3 text-base font-semibold text-white shadow-xl transition-all duration-500 hover:shadow-cyan-500/30 sm:w-auto sm:px-8 sm:py-4 sm:text-lg"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <motion.div
@@ -304,10 +304,10 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
               whileHover={{ scale: 1.02, y: -8 }}
-              className="lenis-card p-8 h-full flex flex-col justify-center items-center text-center"
+              className="lenis-card flex h-full flex-col items-center justify-center p-6 text-center sm:p-8"
             >
               <p className="text-sm uppercase tracking-wider text-slate-400 mb-2">Flow Index</p>
-              <div className="text-6xl font-bold bg-gradient-to-r from-cyan-600 to-orange-600 bg-clip-text text-transparent"><CountUp end="97.4" /></div>
+              <div className="text-4xl font-bold bg-gradient-to-r from-cyan-600 to-orange-600 bg-clip-text text-transparent sm:text-5xl md:text-6xl"><CountUp end="97.4" /></div>
               <p className="text-sm text-slate-300 mt-3">Supply chain signal pulse</p>
             </motion.div>
 
@@ -317,10 +317,10 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.1 }}
               viewport={{ once: true }}
               whileHover={{ scale: 1.02, y: -8 }}
-              className="lenis-card p-8 h-full flex flex-col justify-center items-center text-center"
+              className="lenis-card flex h-full flex-col items-center justify-center p-6 text-center sm:p-8"
             >
               <p className="text-sm uppercase tracking-wider text-slate-400 mb-2">Active Users</p>
-              <div className="text-6xl font-bold bg-gradient-to-r from-cyan-600 to-orange-600 bg-clip-text text-transparent"><CountUp end="2,347" /></div>
+              <div className="text-4xl font-bold bg-gradient-to-r from-cyan-600 to-orange-600 bg-clip-text text-transparent sm:text-5xl md:text-6xl"><CountUp end="2,347" /></div>
               <p className="text-sm text-slate-300 mt-3">Connected operators</p>
             </motion.div>
 
@@ -330,10 +330,10 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.2 }}
               viewport={{ once: true }}
               whileHover={{ scale: 1.02, y: -8 }}
-              className="lenis-card p-8 h-full flex flex-col justify-center items-center text-center"
+              className="lenis-card flex h-full flex-col items-center justify-center p-6 text-center sm:p-8"
             >
               <p className="text-sm uppercase tracking-wider text-slate-400 mb-2">Uptime</p>
-              <div className="text-6xl font-bold bg-gradient-to-r from-cyan-600 to-orange-600 bg-clip-text text-transparent"><CountUp end="99.97%" /></div>
+              <div className="text-4xl font-bold bg-gradient-to-r from-cyan-600 to-orange-600 bg-clip-text text-transparent sm:text-5xl md:text-6xl"><CountUp end="99.97%" /></div>
               <p className="text-sm text-slate-300 mt-3">Enterprise standard</p>
             </motion.div>
 
@@ -343,10 +343,10 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.3 }}
               viewport={{ once: true }}
               whileHover={{ scale: 1.02, y: -8 }}
-              className="lenis-card p-8 h-full flex flex-col justify-center items-center text-center"
+              className="lenis-card flex h-full flex-col items-center justify-center p-6 text-center sm:p-8"
             >
               <p className="text-sm uppercase tracking-wider text-slate-400 mb-2">Growth Rate</p>
-              <div className="text-6xl font-bold bg-gradient-to-r from-cyan-600 to-orange-600 bg-clip-text text-transparent"><CountUp end="8,450+" /></div>
+              <div className="text-4xl font-bold bg-gradient-to-r from-cyan-600 to-orange-600 bg-clip-text text-transparent sm:text-5xl md:text-6xl"><CountUp end="8,450+" /></div>
               <p className="text-sm text-slate-300 mt-3">Active operations</p>
             </motion.div>
           </div>
@@ -407,12 +407,12 @@ export default function Home() {
               className="logixa-card flex h-full w-full flex-col justify-between p-6 md:min-h-[420px] md:p-8"
             >
               <div className="mb-4">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="text-xl font-bold">Logixa Flow</h3>
                     <p className="text-sm text-slate-300">Myanmar Intelligence</p>
                   </div>
-                  <div className="flex justify-between items-center gap-6">
+                  <div className="flex items-center gap-4 sm:gap-6">
                     <div className="text-center">
                       <div className="text-2xl font-extrabold">42</div>
                       <div className="text-sm text-slate-400">Active Logistics</div>
@@ -514,7 +514,7 @@ export default function Home() {
             className="logixa-card overflow-hidden p-0"
           >
             <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.6fr] gap-6">
-              <div className="flex flex-col justify-center p-8 md:p-10 min-h-[360px] rounded-lg bg-slate-950/35 backdrop-blur-sm border border-cyan-500/10">
+              <div className="flex min-h-[300px] flex-col justify-center rounded-lg border border-cyan-500/10 bg-slate-950/35 p-5 backdrop-blur-sm sm:min-h-[360px] sm:p-8 md:p-10">
                 <p className="text-cyan-400 text-xs uppercase tracking-wider font-semibold">GLOBAL NETWORK</p>
                 <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">Global Edge Network</h2>
                 <p className="mt-4 text-slate-300 leading-relaxed">
@@ -535,7 +535,7 @@ export default function Home() {
                   </li>
                 </ul>
               </div>
-              <div className="min-h-[360px] p-6 rounded-lg bg-slate-950/35 backdrop-blur-sm border border-cyan-500/10">
+              <div className="min-h-[280px] rounded-lg border border-cyan-500/10 bg-slate-950/35 p-3 backdrop-blur-sm sm:min-h-[360px] sm:p-6">
                 <WorldMap
                   dots={[
                     { start: { lat: 37.7749, lng: -122.4194, label: "San Francisco" }, end: { lat: 51.5074, lng: -0.1278, label: "London" } },
@@ -601,7 +601,7 @@ export default function Home() {
       {/* Stats Band */}
       <section className="py-24">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4 md:gap-6">
             {stats.map((stat, idx) => (
               <motion.div
                 key={stat.label}
@@ -609,13 +609,13 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: idx * 0.1 }}
                 viewport={{ once: true }}
-                className="logixa-card p-8 text-center"
+                className="logixa-card p-6 text-center sm:p-8"
               >
                 <motion.div
                   whileInView={{ scale: 1 }}
                   initial={{ scale: 0.8 }}
                   transition={{ duration: 0.6, delay: idx * 0.1 + 0.2 }}
-                  className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-cyan-600 to-orange-600 bg-clip-text text-transparent"
+                  className="text-4xl font-bold bg-gradient-to-r from-cyan-600 to-orange-600 bg-clip-text text-transparent sm:text-5xl md:text-6xl"
                 >
                   {stat.value}
                 </motion.div>

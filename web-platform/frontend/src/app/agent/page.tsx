@@ -87,9 +87,9 @@ export default function PublicAgentPage() {
 
   return (
     <PageBackground overlayOpacity={0.88}>
-      <main className="min-h-screen px-4 py-10 text-white sm:px-6 lg:px-8">
-        <section className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[0.9fr_1.4fr] lg:items-stretch">
-          <aside className="logixa-card flex flex-col justify-between p-6 md:p-8">
+      <main className="min-h-screen px-4 py-8 text-white sm:px-6 sm:py-10 lg:px-8">
+        <section className="mx-auto grid max-w-7xl gap-5 sm:gap-6 lg:grid-cols-[0.9fr_1.4fr] lg:items-stretch">
+          <aside className="logixa-card flex flex-col justify-between p-5 sm:p-6 md:p-8">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-300">Public AI Agent</p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
@@ -139,12 +139,12 @@ export default function PublicAgentPage() {
               </div>
             </div>
 
-            <div className="flex h-[58vh] min-h-[430px] flex-col sm:h-[620px]">
+            <div className="flex h-[560px] max-h-[72vh] min-h-[500px] flex-col sm:h-[620px] sm:max-h-none">
               <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
                 {messages.map((message) => (
                   <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                     <div
-                      className={`max-w-[86%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-lg sm:max-w-[72%] ${
+                      className={`max-w-[86%] whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-sm leading-6 shadow-lg sm:max-w-[72%] ${
                         message.role === "user"
                           ? "border border-cyan-300/30 bg-cyan-500/20 text-cyan-50"
                           : "border border-white/10 bg-slate-950/60 text-slate-100"
@@ -178,7 +178,7 @@ export default function PublicAgentPage() {
                       key={prompt}
                       type="button"
                       onClick={() => void sendMessage(prompt)}
-                      className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-left text-xs text-slate-300 transition hover:border-cyan-300/40 hover:text-white"
+                      className="min-h-[72px] rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-left text-xs text-slate-300 transition hover:border-cyan-300/40 hover:text-white"
                     >
                       <Zap className="mb-1 h-3.5 w-3.5 text-cyan-300" />
                       {prompt}
@@ -203,7 +203,7 @@ export default function PublicAgentPage() {
                     }}
                     placeholder="Ask about suppliers, shipping delays, sourcing, or operating plans..."
                     rows={2}
-                    className="min-h-[56px] flex-1 resize-none rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/50"
+                    className="max-h-40 min-h-[56px] flex-1 resize-none rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/50"
                   />
                   <button
                     type="submit"

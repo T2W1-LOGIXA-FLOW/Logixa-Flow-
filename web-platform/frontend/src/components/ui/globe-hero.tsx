@@ -63,7 +63,7 @@ const DotGlobeHero = React.forwardRef<
     <div
       ref={containerRef}
       className={cn(
-        "relative w-full h-screen overflow-hidden",
+        "relative w-full min-h-[760px] overflow-hidden sm:min-h-screen",
         className
       )}
       {...props}
@@ -76,7 +76,7 @@ const DotGlobeHero = React.forwardRef<
         />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center justify-center h-full">
+      <div className="relative z-10 flex min-h-[760px] flex-col items-center justify-center sm:min-h-screen">
         {children}
       </div>
 
