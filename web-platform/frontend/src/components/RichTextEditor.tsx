@@ -5,7 +5,7 @@ import { useRef } from "react";
 const tools = [
   { label: "B", command: "bold" },
   { label: "I", command: "italic" },
-  { label: "•", command: "insertUnorderedList" },
+  { label: "UL", command: "insertUnorderedList" },
   { label: "H2", command: "formatBlock", value: "h2" },
   { label: "P", command: "formatBlock", value: "p" },
 ];

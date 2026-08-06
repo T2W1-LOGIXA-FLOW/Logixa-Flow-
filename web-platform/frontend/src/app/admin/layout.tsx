@@ -28,7 +28,6 @@ import { useState } from "react";
 import { useEffect } from "react";
 import { validateAdminToken } from "@/components/api";
 import { clearAdminSession, getAdminSessionToken } from "@/lib/adminSession";
-import Footer from "@/components/Footer";
 
 const navigationItems = [
   {
@@ -134,11 +133,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="admin-shell flex min-h-screen bg-slate-950 text-slate-100">
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-950/75 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -146,19 +145,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar */}
       <aside
         className={`
-          fixed lg:static inset-y-0 left-0 z-50
-          w-64 bg-slate-950 border-r border-slate-800
+          fixed lg:sticky lg:top-0 inset-y-0 left-0 z-50
+          w-[18rem] border-r border-cyan-400/10 bg-slate-950/95
+          shadow-2xl shadow-black/40 backdrop-blur-xl
           transform transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          flex flex-col
+          flex h-screen flex-col
         `}
       >
         {/* Header */}
-        <div className="p-6 border-b border-slate-800">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold text-white">
-              Logixa Flow
-            </h1>
+        <div className="border-b border-slate-800/80 p-5">
+          <div className="flex items-center justify-between gap-3">
+            <Link href="/admin" className="flex items-center gap-3" onClick={() => setSidebarOpen(false)}>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-sky-500 to-orange-400 text-sm font-black text-white shadow-lg shadow-cyan-500/20">
+                LF
+              </span>
+              <span>
+                <span className="block text-base font-bold text-white">
+                  Logixa Flow
+                </span>
+                <span className="text-xs text-slate-500">Admin command center</span>
+              </span>
+            </Link>
             <button
               onClick={() => setSidebarOpen(false)}
               className="lg:hidden text-slate-400 hover:text-white transition"
@@ -168,19 +176,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <X className="h-5 w-5" />
             </button>
           </div>
-          <p className="text-xs text-slate-500 mt-1">Admin Dashboard</p>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-6">
           {navigationItems.map((section) => (
             <div key={section.category}>
-              <h3 className="text-xs font-medium text-slate-600 uppercase tracking-wider mb-3 px-3">
+              <h3 className="mb-3 px-3 text-[0.68rem] font-bold uppercase tracking-[0.24em] text-slate-500">
                 {section.category}
               </h3>
               <div className="space-y-1">
                 {section.items.map((item) => {
-                  const isActive = pathname === item.href;
+                  const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
                   const Icon = item.icon;
                   return (
                     <Link
@@ -188,11 +195,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       href={item.href}
                       onClick={() => setSidebarOpen(false)}
                       className={`
-                        flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
+                        flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm
                         transition-all duration-200
                         ${isActive
-                          ? 'bg-slate-800 text-white border-l-2 border-cyan-500 font-medium'
-                          : 'text-slate-400 hover:text-white hover:bg-slate-900 font-normal'
+                          ? 'border border-cyan-400/30 bg-cyan-500/10 text-cyan-100 shadow-[0_0_24px_rgba(14,165,233,0.12)]'
+                          : 'border border-transparent text-slate-400 hover:border-slate-700/80 hover:bg-slate-900/80 hover:text-white'
                         }
                       `}
                     >
@@ -207,11 +214,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-800">
+        <div className="border-t border-slate-800/80 p-4">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm
-              text-slate-400 hover:text-white hover:bg-slate-900 transition-all duration-200"
+            className="flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-sm
+              text-slate-400 transition-all duration-200 hover:border-red-400/30 hover:bg-red-500/10 hover:text-red-100"
           >
             <LogOut className="h-4 w-4" />
             Logout
@@ -220,10 +227,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen bg-slate-950">
+      <div className="flex min-h-screen flex-1 flex-col bg-[radial-gradient(circle_at_50%_0%,rgba(14,165,233,0.10),transparent_32%),#020617]">
         {/* Top Bar */}
-        <div className="sticky top-0 z-30 bg-slate-950 border-b border-slate-800 lg:pl-64">
-          <div className="flex items-center justify-between px-6 py-4">
+        <div className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
+          <div className="flex items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
             <button
               onClick={() => setSidebarOpen(true)}
               className="lg:hidden text-slate-400 hover:text-white transition"
@@ -232,6 +239,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             >
               <Menu className="h-6 w-6" />
             </button>
+            <div className="hidden text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 lg:block">
+              Admin Workspace
+            </div>
             <div className="flex items-center gap-4">
               <div className="hidden md:flex items-center gap-2 text-sm text-slate-400">
                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
@@ -242,14 +252,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Content Area */}
-        <main className="flex-1 p-6 lg:p-8 overflow-y-auto bg-slate-950">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 overflow-x-hidden px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-7xl">
             {children}
           </div>
         </main>
-
-        {/* Footer */}
-        <Footer />
       </div>
     </div>
   );

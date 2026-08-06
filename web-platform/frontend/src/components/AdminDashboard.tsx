@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -13,15 +13,15 @@ import CostDashboard from "./CostDashboard";
 import InsightForm from "./InsightForm";
 import { WorkflowState } from "./WorkflowCards";
 import { getAdminSessionToken } from "@/lib/adminSession";
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Calendar, 
-  DollarSign, 
-  Bot, 
-  Brain, 
-  BarChart3, 
-  Server, 
+import {
+  LayoutDashboard,
+  FileText,
+  Calendar,
+  DollarSign,
+  Bot,
+  Brain,
+  BarChart3,
+  Server,
   Rss,
   TrendingUp,
   TrendingDown,
@@ -93,7 +93,7 @@ const workflowStates: WorkflowState[] = [
   {
     id: "draft",
     label: "Draft",
-    icon: "✍️",
+    icon: "??",
     description: "Content creation in progress",
     count: 12,
     color: "orange",
@@ -101,7 +101,7 @@ const workflowStates: WorkflowState[] = [
   {
     id: "pending-review",
     label: "Pending Review",
-    icon: "👁️",
+    icon: "???",
     description: "Awaiting editorial approval",
     count: 5,
     color: "orange",
@@ -109,7 +109,7 @@ const workflowStates: WorkflowState[] = [
   {
     id: "approved",
     label: "Approved",
-    icon: "✓",
+    icon: "?",
     description: "Cleared for publication",
     count: 3,
     color: "green",
@@ -117,7 +117,7 @@ const workflowStates: WorkflowState[] = [
   {
     id: "published",
     label: "Published",
-    icon: "🚀",
+    icon: "??",
     description: "Live on the website",
     count: 47,
     color: "blue",
@@ -125,12 +125,19 @@ const workflowStates: WorkflowState[] = [
   {
     id: "needs-edit",
     label: "Needs Edit",
-    icon: "⚠️",
+    icon: "??",
     description: "Requires revisions",
     count: 2,
     color: "slate",
   },
 ];
+
+const workflowColorTokens = {
+  orange: "#fb923c",
+  green: "#22c55e",
+  blue: "#38bdf8",
+  slate: "#94a3b8",
+} as const;
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -225,14 +232,14 @@ export default function AdminDashboard() {
   if (!token) {
     return (
       <div className="max-w-4xl mx-auto py-8 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2 w-3/4">
             <Skeleton className="h-6 w-1/2" />
             <Skeleton className="h-8 w-1/3" />
           </div>
           <Skeleton className="h-10 w-24" />
         </div>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Skeleton className="h-24" />
           <Skeleton className="h-24" />
           <Skeleton className="h-24" />
@@ -282,9 +289,9 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8">
       {/* Header Area */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-cyan-400 to-orange-400 rounded-lg flex items-center justify-center">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-4 sm:items-center">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-orange-400">
             <span className="text-2xl font-bold text-white">LF</span>
           </div>
           <div>
@@ -298,7 +305,10 @@ export default function AdminDashboard() {
       </div>
 
       {/* Navigation Tabs */}
-      <nav className="flex gap-1" aria-label="Admin actions">
+      <nav
+        className="flex gap-2 overflow-x-auto rounded-2xl border border-slate-800/70 bg-slate-950/50 p-1 [scrollbar-width:none]"
+        aria-label="Admin actions"
+      >
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = view === item.id;
@@ -306,9 +316,9 @@ export default function AdminDashboard() {
             <button
               key={item.id}
               className={`
-                flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium transition-all duration-200
-                ${isActive 
-                  ? 'bg-[#0f172a] text-[#38bdf8] border-b-2 border-[#38bdf8]' 
+                flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200
+                ${isActive
+                  ? 'bg-[#0f172a] text-[#38bdf8] shadow-[0_0_0_1px_rgba(56,189,248,0.25)]'
                   : 'text-[#64748b] hover:bg-[#1e293b] hover:text-[#e2e8f0]'
                 }
               `}
@@ -331,7 +341,7 @@ export default function AdminDashboard() {
       {view === "overview" ? (
         <div className="space-y-8">
           {/* Premium Workspace */}
-          <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6 shadow-sm">
+          <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 shadow-sm sm:p-6">
             <p className="text-xs font-semibold text-[#38bdf8] uppercase tracking-widest mb-2">Premium Workspace</p>
             <h2 className="text-xl font-bold text-white mb-3">One brand system for public insights and internal AI operations.</h2>
             <p className="text-sm text-[#94a3b8] mb-6 max-w-3xl">
@@ -340,12 +350,18 @@ export default function AdminDashboard() {
             </p>
 
             {/* Workflow Stepper */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="mb-6 grid grid-cols-1 gap-3 lg:grid-cols-4">
               {workflowSteps.map((step, index) => (
-                <div key={step.id} className="flex items-center flex-1">
-                  <div className="flex items-center gap-2">
+                <div
+                  key={step.id}
+                  className={`flex items-center gap-3 rounded-xl border p-3 ${
+                    index < 2
+                      ? "border-cyan-400/35 bg-cyan-500/10"
+                      : "border-slate-700/60 bg-slate-900/40"
+                  }`}
+                >
                     <div className={`
-                      w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+                      flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold
                       ${index < 2 ? 'bg-[#38bdf8] text-white shadow-lg shadow-[#38bdf8]/20' : 'bg-[#475569] text-[#94a3b8]'}
                     `}>
                       {step.id}
@@ -353,19 +369,12 @@ export default function AdminDashboard() {
                     <span className={`text-sm font-medium ${index < 2 ? 'text-[#38bdf8]' : 'text-[#475569]'}`}>
                       {step.title}
                     </span>
-                  </div>
-                  {index < workflowSteps.length - 1 && (
-                    <div className={`
-                      flex-1 h-0.5 mx-2
-                      ${index < 2 ? 'bg-[#38bdf8]' : 'bg-[#475569]'}
-                    `} />
-                  )}
                 </div>
               ))}
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="px-3 py-1 bg-[rgba(59,130,246,0.15)] text-[#60a5fa] border border-[rgba(59,130,246,0.3)] rounded-lg text-xs">
                   Logixa Flow OS / Admin Only
                 </div>
@@ -381,7 +390,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Command Modules */}
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             {[
               {
                 label: "Command Center",
@@ -417,7 +426,7 @@ export default function AdminDashboard() {
             </p>
 
             {metricsLoading ? (
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {[1, 2, 3, 4].map((i) => (
                   <Skeleton key={i} className="h-32" />
                 ))}
@@ -441,14 +450,14 @@ export default function AdminDashboard() {
               />
             ) : metricsAreZero || dashboardSignals.length === 0 ? (
               <EmptyState
-                icon="📊"
+                icon="??"
                 title="No metrics yet"
                 description="Run the agent, publish insights, or import sources to populate your control tower signals."
                 actionLabel="Open AI Agent"
                 actionHref="/agent"
               />
             ) : (
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {[
                   { label: "Supply Chain Disruption Risk", value: "Low", status: "green", trend: null },
                   { label: "Market Demand Shifts", value: "+12%", status: "green", trend: "up" },
@@ -477,30 +486,37 @@ export default function AdminDashboard() {
               Track content through each stage: from drafting through editorial review to publication. Click any state card for more details.
             </p>
 
-            <div className="grid grid-cols-5 gap-4">
-              {workflowStates.map((state) => (
-                <button
-                  key={state.id}
-                  onClick={() => {
-                    toast.info(`Viewing ${state.id} items...`);
-                    setView("drafts");
-                  }}
-                  className={`
-                    relative rounded-lg p-4 border-t-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg
-                    bg-[rgba(${parseInt(state.color.slice(1), 16)}, ${parseInt(state.color.slice(3, 5), 16)}, ${parseInt(state.color.slice(5, 7), 16)}, 0.05)]
-                  `}
-                  style={{ borderColor: state.color }}
-                >
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center mb-2" style={{ backgroundColor: state.color }}>
-                    <span className="text-sm">{state.icon}</span>
-                  </div>
-                  <h3 className="text-sm font-bold text-white mb-1">{state.label}</h3>
-                  <p className="text-xs text-[#94a3b8] mb-3">{state.description}</p>
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: `rgba(${parseInt(state.color.slice(1), 16)}, ${parseInt(state.color.slice(3, 5), 16)}, ${parseInt(state.color.slice(5, 7), 16)}, 0.15)`, color: state.color }}>
-                    {state.count} items
-                  </span>
-                </button>
-              ))}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              {workflowStates.map((state) => {
+                const color = workflowColorTokens[state.color as keyof typeof workflowColorTokens] ?? "#38bdf8";
+
+                return (
+                  <button
+                    key={state.id}
+                    onClick={() => {
+                      toast.info(`Viewing ${state.id} items...`);
+                      setView("drafts");
+                    }}
+                    className="relative rounded-lg border border-slate-700/70 border-t-4 bg-[#1e293b]/70 p-4 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+                    style={{ borderTopColor: color }}
+                  >
+                    <div
+                      className="mb-2 flex h-8 w-8 items-center justify-center rounded-full"
+                      style={{ backgroundColor: color }}
+                    >
+                      <span className="text-sm">{state.icon}</span>
+                    </div>
+                    <h3 className="mb-1 text-sm font-bold text-white">{state.label}</h3>
+                    <p className="mb-3 text-xs text-[#94a3b8]">{state.description}</p>
+                    <span
+                      className="inline-block rounded-full px-3 py-1 text-xs font-bold"
+                      style={{ backgroundColor: `${color}24`, color }}
+                    >
+                      {state.count} items
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -509,7 +525,7 @@ export default function AdminDashboard() {
             <p className="text-xs font-semibold text-[#38bdf8] uppercase tracking-widest mb-2">Quick Actions</p>
             <h2 className="text-xl font-bold text-white mb-6">Workflow Shortcuts</h2>
 
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {quickActions.map((action) => {
                 const Icon = action.icon;
                 return (
@@ -541,7 +557,7 @@ export default function AdminDashboard() {
 
             <div className="space-y-6">
               {/* Toggle Switches */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {[
                   ["flowIndex", "Flow Index panel"],
                   ["premiumMap", "Premium map visual"],
@@ -568,7 +584,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* Input Fields */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <div>
                   <label className="block text-sm text-[#94a3b8] mb-2">Hero Visual Image URL</label>
                   <input
@@ -608,7 +624,7 @@ export default function AdminDashboard() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 {[
                   ["index", "Flow Index"],
                   ["disruptionRisk", "Disruption Risk"],
@@ -642,14 +658,14 @@ export default function AdminDashboard() {
             <p className="text-xs font-semibold text-[#38bdf8] uppercase tracking-widest mb-2">WRITER AGENT</p>
             <h2 className="text-xl font-bold text-white mb-6">AI Model Switcher</h2>
 
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
                 <label htmlFor="active-model" className="block text-sm text-[#94a3b8] mb-2">Active Model</label>
                 <select
                   id="active-model"
                   value={aiModel}
                   onChange={(event) => setAiModel(event.target.value as AIModel)}
-                  className="w-full px-4 py-2.5 bg-[#1e293b] border border-[#334155] rounded-lg text-white focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/20 transition-all"
+                className="w-full px-4 py-2.5 bg-[#1e293b] border border-[#334155] rounded-lg text-white focus:border-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8]/20 transition-all"
                 >
                   <option value="gemini">Gemini</option>
                   <option value="llama3">OpenRouter Llama 3</option>
@@ -659,7 +675,7 @@ export default function AdminDashboard() {
               </div>
               <button
                 type="submit"
-                className="px-6 py-2.5 bg-[#3b82f6] text-white rounded-lg text-sm font-medium hover:bg-[#2563eb] transition-colors flex items-center gap-2 mt-6"
+                className="flex items-center justify-center gap-2 rounded-lg bg-[#3b82f6] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#2563eb]"
               >
                 <Plus className="w-4 h-4" />
                 Save AI Model
@@ -698,7 +714,7 @@ export default function AdminDashboard() {
               }}
             />
           ) : draftsLoading ? (
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <Skeleton className="h-24" />
               <Skeleton className="h-24" />
               <Skeleton className="h-24" />
@@ -706,13 +722,13 @@ export default function AdminDashboard() {
           ) : drafts.length ? (
             <div className="space-y-4">
               {drafts.map((draft) => (
-                <article className="flex items-center justify-between p-4 bg-[#1e293b] border border-[#334155] rounded-lg" key={draft.id}>
+                <article className="flex flex-col gap-3 rounded-lg border border-[#334155] bg-[#1e293b] p-4 sm:flex-row sm:items-center sm:justify-between" key={draft.id}>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="px-2 py-0.5 bg-[#f59e0b]/20 text-[#f59e0b] rounded text-xs font-medium">Draft</span>
                       <strong className="text-white">{draft.title}</strong>
                     </div>
-                    <p className="text-sm text-[#94a3b8]">{draft.category} · {draft.excerpt || "No excerpt yet."}</p>
+                    <p className="text-sm text-[#94a3b8]">{draft.category} � {draft.excerpt || "No excerpt yet."}</p>
                   </div>
                   <button
                     className="px-4 py-2 bg-[#3b82f6] text-white rounded-lg text-sm font-medium hover:bg-[#2563eb] transition-colors"
@@ -725,7 +741,7 @@ export default function AdminDashboard() {
             </div>
           ) : (
             <EmptyState
-              icon="📝"
+              icon="??"
               title="No drafts yet"
               description="Create your first insight or run the AI agent to generate draft content."
               actionLabel="Create Insight"

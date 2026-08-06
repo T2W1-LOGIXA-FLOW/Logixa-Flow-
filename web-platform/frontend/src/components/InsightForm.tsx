@@ -59,46 +59,51 @@ export default function InsightForm({
         submit(event.currentTarget, "draft");
       }}
     >
-      <p className="eyebrow">CMS</p>
-      <h2>Create Insight</h2>
-      <label>
-        Title
-        <input name="title" required minLength={3} />
-      </label>
-      <label>
-        Slug
-        <input name="slug" placeholder="optional, auto-generated from title" />
-      </label>
-      <label>
-        Type
-        <select name="type" defaultValue="analysis">
-          <option value="news">News</option>
-          <option value="education">Education</option>
-          <option value="analysis">Analysis</option>
-        </select>
-      </label>
-      <label>
-        Category
-        <select name="category" defaultValue="Supply Chain">
-          <option value="Supply Chain">Supply Chain</option>
-          <option value="Logistics">Logistics</option>
-          <option value="Procurement">Procurement</option>
-          <option value="Operations Excellence">Operations Excellence</option>
-          <option value="News">News</option>
-        </select>
-      </label>
-      <label>
-        Excerpt
-        <textarea name="excerpt" rows={3} />
-      </label>
-      <label>
-        Featured Photo
-        <input name="image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
-      </label>
-      <label>
-        Content
-        <RichTextEditor value={contentHtml} onChange={setContentHtml} />
-      </label>
+      <div className="admin-form-heading">
+        <p className="eyebrow">CMS</p>
+        <h2>Create Insight</h2>
+        <p>Compose, stage, and publish public insight content from one clean workspace.</p>
+      </div>
+      <div className="admin-form-grid">
+        <label className="admin-field admin-field-half">
+          Title
+          <input className="admin-control" name="title" required minLength={3} />
+        </label>
+        <label className="admin-field admin-field-half">
+          Slug
+          <input className="admin-control" name="slug" placeholder="optional, auto-generated from title" />
+        </label>
+        <label className="admin-field admin-field-third">
+          Type
+          <select className="admin-control" name="type" defaultValue="analysis">
+            <option value="news">News</option>
+            <option value="education">Education</option>
+            <option value="analysis">Analysis</option>
+          </select>
+        </label>
+        <label className="admin-field admin-field-third">
+          Category
+          <select className="admin-control" name="category" defaultValue="Supply Chain">
+            <option value="Supply Chain">Supply Chain</option>
+            <option value="Logistics">Logistics</option>
+            <option value="Procurement">Procurement</option>
+            <option value="Operations Excellence">Operations Excellence</option>
+            <option value="News">News</option>
+          </select>
+        </label>
+        <label className="admin-field admin-field-third">
+          Featured Photo
+          <input className="admin-control admin-file" name="image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+        </label>
+        <label className="admin-field admin-field-full">
+          Excerpt
+          <textarea className="admin-control" name="excerpt" rows={3} />
+        </label>
+        <label className="admin-field admin-field-full">
+          Content
+          <RichTextEditor value={contentHtml} onChange={setContentHtml} />
+        </label>
+      </div>
       <div className="dual-action-row">
         <button className="ghost-button" type="submit">
           Save as Draft
