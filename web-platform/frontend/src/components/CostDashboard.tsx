@@ -31,7 +31,40 @@ interface CostSummaryPayload {
   daily?: DailyRow[];
   rows?: DailyRow[];
   data?: DailyRow[];
-};
+}
+
+const planningCards = [
+  {
+    label: "Frontend",
+    value: "Vercel Free",
+    detail: "Public UI hosting. Watch bandwidth, image size, and build minutes.",
+  },
+  {
+    label: "Backend",
+    value: "Render Free",
+    detail: "API runtime. Free instances can sleep, so keep /health monitoring visible.",
+  },
+  {
+    label: "Database",
+    value: "PostgreSQL",
+    detail: "Track storage, backups, and connection limits before beta traffic grows.",
+  },
+  {
+    label: "Object Storage",
+    value: "Cloudflare R2",
+    detail: "Best next step for uploads and media with S3-compatible settings.",
+  },
+  {
+    label: "Cache / Queue",
+    value: "Upstash Redis",
+    detail: "Use for agent jobs, rate limits, and background workflow state.",
+  },
+  {
+    label: "AI Spend",
+    value: "Provider Keys",
+    detail: "Monitor Gemini, OpenRouter, and Groq usage before heavy automation.",
+  },
+];
 
 function readMetricValue(record: Record<string, unknown>, key: string): string {
   const value = record[key];
@@ -117,15 +150,30 @@ export default function CostDashboard({
         <div>
           <p className="eyebrow">Cost Insights</p>
           <h2>Cloud & Services Spend</h2>
-          <p className="muted">Daily cost rollups, service breakdowns, and quick summary metrics from the billing connector.</p>
+          <p className="muted">
+            Free-tier planning, API spend assumptions, and billing metrics when the connector is available.
+          </p>
         </div>
         <Button type="button" variant="ghost" disabled={loading} onClick={() => loadCosts(true)}>
           Refresh
         </Button>
       </div>
 
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {planningCards.map((card) => (
+          <article
+            key={card.label}
+            className="rounded-2xl border border-cyan-400/15 bg-slate-950/45 p-4 shadow-xl shadow-black/10"
+          >
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{card.label}</span>
+            <strong className="mt-2 block text-lg text-white">{card.value}</strong>
+            <p className="mt-2 text-sm leading-6 text-slate-400">{card.detail}</p>
+          </article>
+        ))}
+      </div>
+
       {loading ? (
-        <div className="admin-metric-grid">
+        <div className="admin-metric-grid mt-6">
           <Skeleton className="h-24" />
           <Skeleton className="h-24" />
           <Skeleton className="h-24" />
@@ -140,9 +188,9 @@ export default function CostDashboard({
         />
       ) : !hasCostData ? (
         <EmptyState
-          icon="💰"
-          title="No cost data yet"
-          description="Connect billing or run agent workloads to populate spend metrics."
+          icon="$"
+          title="No billing feed connected yet"
+          description="Planning cards above remain usable. Connect billing or run agent workloads to populate spend metrics."
           actionLabel="Refresh"
           actionOnClick={() => loadCosts(true)}
         />

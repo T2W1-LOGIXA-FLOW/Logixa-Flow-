@@ -354,6 +354,29 @@ export default function PremiumLogisticsEstimator() {
     );
   }
 
+  const estimatorCards = [
+    {
+      label: "Vehicle profiles",
+      value: String(Math.max(vehicles.length - 1, 0)),
+      detail: "Saved backend profiles",
+    },
+    {
+      label: "Saved estimates",
+      value: String(savedEstimates.length),
+      detail: "Recent capacity checks",
+    },
+    {
+      label: "Current vehicle",
+      value: selectedVehicle.name,
+      detail: "Active planning mode",
+    },
+    {
+      label: "Export format",
+      value: "CSV",
+      detail: "History export ready",
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-slate-700/50 bg-slate-900/70 p-6 shadow-2xl backdrop-blur-xl">
@@ -410,6 +433,19 @@ export default function PremiumLogisticsEstimator() {
             {showHistory ? "Hide History" : "Show History"}
           </button>
         </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {estimatorCards.map((card) => (
+          <article
+            key={card.label}
+            className="rounded-2xl border border-cyan-400/15 bg-slate-900/70 p-4 shadow-xl shadow-black/10 backdrop-blur-xl"
+          >
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{card.label}</span>
+            <strong className="mt-2 block truncate text-2xl font-black text-white">{card.value}</strong>
+            <p className="mt-2 text-sm text-slate-400">{card.detail}</p>
+          </article>
+        ))}
       </div>
 
       {showHistory && (

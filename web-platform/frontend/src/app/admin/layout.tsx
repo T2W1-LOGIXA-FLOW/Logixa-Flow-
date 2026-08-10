@@ -16,6 +16,7 @@ import {
   Rss,
   Brain,
   CreditCard,
+  DollarSign,
   Mail,
   MessageSquare,
   LogOut,
@@ -61,6 +62,7 @@ const navigationItems = [
     items: [
       { href: "/admin/feeds", label: "Feeds", icon: Rss },
       { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+      { href: "/admin/costs", label: "Finance & Costs", icon: DollarSign },
       { href: "/admin/estimator", label: "Estimator", icon: Calculator },
     ],
   },
