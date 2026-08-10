@@ -3,115 +3,119 @@ import PageBackground from "@/components/PageBackground";
 
 export const metadata: Metadata = {
   title: "Terms of Service | Logixa Flow",
-  description: "Read our terms of service and conditions of use for Logixa Flow.",
+  description: "Terms for using Logixa Flow public pages, admin tools, and AI-assisted workflows.",
   openGraph: {
     title: "Terms of Service",
     description: "Logixa Flow Terms of Service",
   },
 };
 
+const sections = [
+  {
+    title: "1. Acceptance",
+    body: [
+      "By accessing Logixa Flow, you agree to these Terms of Service. If you do not agree, do not use the website, admin workspace, API, or AI-assisted features.",
+      "Some features may be available only to administrators or approved beta users.",
+    ],
+  },
+  {
+    title: "2. Service Scope",
+    body: [
+      "Logixa Flow provides supply chain intelligence pages, content management tools, AI-assisted draft workflows, source intake, analytics, estimators, and related operational features.",
+      "The product is designed to support business research and decision workflows. It does not replace professional, legal, financial, logistics, customs, or procurement advice.",
+    ],
+  },
+  {
+    title: "3. Beta and Availability",
+    body: [
+      "Beta features may change, pause, fail, or be removed. Free hosting and third-party services may introduce cold starts, rate limits, storage limits, provider downtime, or queue delays.",
+      "We may update features, design, integrations, and data models as the product improves.",
+    ],
+  },
+  {
+    title: "4. Accounts and Admin Access",
+    body: [
+      "Administrators are responsible for keeping passwords, API keys, JWT secrets, deployment settings, and access tokens secure. Do not share admin credentials with unauthorized users.",
+      "We may restrict or revoke access if activity creates security, legal, abuse, or operational risk.",
+    ],
+  },
+  {
+    title: "5. Content and Uploads",
+    body: [
+      "You are responsible for content, files, source notes, prompts, and other material submitted to the service. You must have the rights needed to submit and use that material.",
+      "Do not upload unlawful, harmful, infringing, confidential third-party, or malware-related content.",
+    ],
+  },
+  {
+    title: "6. AI Output",
+    body: [
+      "AI-generated output may be inaccurate, incomplete, outdated, or unsuitable for publication. Admin review is required before using AI output in business decisions or public content.",
+      "You remain responsible for fact-checking, editing, approving, and publishing content created with AI assistance.",
+    ],
+  },
+  {
+    title: "7. Payments and Integrations",
+    body: [
+      "Payment, email, storage, database, cache, and AI integrations may be provided by third parties. Their own terms and policies apply to those services.",
+      "Costs from third-party providers are the responsibility of the account or organization that enables them.",
+    ],
+  },
+  {
+    title: "8. Acceptable Use",
+    body: [
+      "Do not use Logixa Flow to attack systems, scrape unlawfully, spam users, bypass security controls, misrepresent content, violate privacy rights, or process information you are not allowed to use.",
+    ],
+  },
+  {
+    title: "9. Intellectual Property",
+    body: [
+      "Logixa Flow, its interface, brand elements, and platform code are protected by intellectual property laws. User-submitted content remains subject to the rights held by the user or original owner.",
+    ],
+  },
+  {
+    title: "10. Disclaimers and Liability",
+    body: [
+      "The service is provided as is and as available. To the fullest extent allowed by law, Logixa Flow disclaims implied warranties and is not liable for indirect, incidental, special, consequential, or lost-profit damages from use of the service.",
+    ],
+  },
+  {
+    title: "11. Changes and Contact",
+    body: [
+      "We may revise these terms as the service evolves. Questions about these terms can be sent to legal@logixaflow.com.",
+    ],
+  },
+];
+
 export default function TermsPage() {
   return (
     <PageBackground overlayOpacity={0.85}>
       <div className="min-h-screen text-slate-100">
-      <div className="max-w-4xl mx-auto px-4 py-16 md:py-24">
-        <h1 className="text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r from-cyan-500 to-orange-500 bg-clip-text text-transparent">
-          Terms of Service
-        </h1>
+        <div className="mx-auto max-w-4xl px-4 py-16 md:py-24">
+          <div className="rounded-lg border border-cyan-400/20 bg-slate-950/70 p-6 shadow-2xl shadow-cyan-950/20 md:p-8">
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">Logixa Flow Terms</p>
+            <h1 className="bg-gradient-to-r from-cyan-400 to-orange-400 bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
+              Terms of Service
+            </h1>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300">Last updated: August 10, 2026</p>
+          </div>
 
-        <div className="prose prose-invert max-w-none space-y-8">
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">1. Agreement to Terms</h2>
-            <p>
-              By accessing and using this website, you accept and agree to be bound by the terms and provision of this agreement.
-              If you do not agree to abide by the above, please do not use this service.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">2. Use License</h2>
-            <p>
-              Permission is granted to temporarily download one copy of the materials (information or software) on Logixa Flow&apos;s website
-              for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under
-              this license you may not:
-            </p>
-            <ul className="list-disc list-inside space-y-2 mt-4">
-              <li>Modifying or copying the materials</li>
-              <li>Using the materials for any commercial purpose or for any public display</li>
-              <li>Attempting to decompile or reverse engineer any software contained on the website</li>
-              <li>Removing any copyright or other proprietary notations from the materials</li>
-              <li>Transferring the materials to another person or &quot;mirroring&quot; the materials on any other server</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">3. Disclaimer</h2>
-            <p>
-              The materials on Logixa Flow&apos;s website are provided on an &apos;as is&apos; basis. Logixa Flow makes no warranties, expressed or
-              implied, and hereby disclaims and negates all other warranties including, without limitation, implied warranties or
-              conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other
-              violation of rights.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">4. Limitations</h2>
-            <p>
-              In no event shall Logixa Flow or its suppliers be liable for any damages (including, without limitation, damages for loss
-              of data or profit, or due to business interruption) arising out of the use or inability to use the materials on Logixa
-              Flow&apos;s website, even if Logixa Flow or an authorized representative has been notified orally or in writing of the possibility
-              of such damage.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">5. Accuracy of Materials</h2>
-            <p>
-              The materials appearing on Logixa Flow&apos;s website could include technical, typographical, or photographic errors. Logixa Flow
-              does not warrant that any of the materials on its website are accurate, complete, or current. Logixa Flow may make changes to
-              the materials contained on its website at any time without notice.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">6. Links</h2>
-            <p>
-              Logixa Flow has not reviewed all of the sites linked to its website and is not responsible for the contents of any such linked
-              site. The inclusion of any link does not imply endorsement by Logixa Flow of the site. Use of any such linked website is at the
-              user&apos;s own risk.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">7. Modifications</h2>
-            <p>
-              Logixa Flow may revise these terms of service for its website at any time without notice. By using this website, you are
-              agreeing to be bound by the then current version of these terms of service.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">8. Governing Law</h2>
-            <p>
-              These terms and conditions are governed by and construed in accordance with the laws of [Your Country/State] and you
-              irrevocably submit to the exclusive jurisdiction of the courts located therein.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">9. Contact Information</h2>
-            <p>
-              If you have any questions about these Terms of Service, please contact us at:{" "}
-              <a href="mailto:legal@logixaflow.com" className="text-cyan-500 hover:text-cyan-400">
-                legal@logixaflow.com
-              </a>
-            </p>
-          </section>
-
-          <p className="text-slate-400 text-sm mt-12">Last updated: {new Date().toLocaleDateString()}</p>
+          <div className="mt-8 space-y-5">
+            {sections.map((section) => (
+              <section
+                key={section.title}
+                className="rounded-lg border border-cyan-400/15 bg-slate-950/65 p-5 shadow-xl shadow-slate-950/30"
+              >
+                <h2 className="mb-3 text-xl font-bold text-white">{section.title}</h2>
+                <div className="space-y-3 text-sm leading-7 text-slate-300">
+                  {section.body.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
     </PageBackground>
   );
 }

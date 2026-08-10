@@ -1,151 +1,79 @@
-# AI Agents API Key Configuration Guide
+# AI Agents Setup
 
-## 🤖 Where to Add AI Agent API Keys
+AI features are handled by the backend. The public frontend should call the backend and should not hold AI provider secrets.
 
-AI agents read API keys from the **project root `.env` file**. The agents directory automatically loads configuration from:
+## Backend Variables
 
-```
-D:\1 main\logixa-flow-github-clean\.env
-```
+Add provider keys to the Render backend environment, local root `.env`, or `web-platform/backend/.env`:
 
-### 📋 Required API Keys
-
-Depending on which LLM provider you choose, add the corresponding keys to `.env`:
-
-#### 1. **Gemini AI (Google)** - Recommended
-```env
+```text
 LLM_PROVIDER=gemini
 GEMINI_API_KEY=your-gemini-api-key
-GEMINI_MODEL_NAME=gemini-2.5-flash
-```
-
-#### 2. **OpenRouter AI** - Free tier available
-```env
-LLM_PROVIDER=openrouter
-OPENROUTER_API_KEY=your-openrouter-key
-OPENROUTER_MODEL_NAME=meta-llama/llama-3-8b-instruct:free
-OPENROUTER_FALLBACK_MODEL_NAME=deepseek/deepseek-r1:free
-```
-
-#### 3. **Groq AI** - Fast, free tier
-```env
-LLM_PROVIDER=groq
-GROQ_API_KEY=your-groq-key
-GROQ_MODEL_NAME=llama-3.1-8b-instant
-```
-
-#### 4. **HuggingFace** - Optional
-```env
-HF_TOKEN=your-huggingface-token
-HUGGINGFACE_API_KEY=your-huggingface-token
-HUGGINGFACE_MODEL_NAME=
-```
-
-### 🔑 Additional Configuration
-
-```env
-# Agent Pipeline Settings
-TEMPERATURE=0.55
-PIPELINE_BATCH_LIMIT=3
+OPENROUTER_API_KEY=your-openrouter-api-key
+GROQ_API_KEY=your-groq-api-key
+HUGGINGFACE_API_KEY=your-huggingface-api-key
+REQUIRE_AI_KEY=false
 STRICT_LLM_ERRORS=false
-ENABLE_SCHEDULER=false
-AUTO_APPROVE_PUBLISH=false
-
-# Backend Connection
-BACKEND_URL=http://localhost:8000
-API_SECRET_TOKEN=change-this-before-public-deploy
-
-# Memory and Similarity
-MIN_SIMILARITY_TO_MERGE=0.74
 ```
 
-## 🚀 Production Deployment API Keys
+Only one provider is required for the app to answer. Multiple providers improve fallback options.
 
-### For Render Backend (render.yaml)
+## Local Agent Pipeline
 
-The `render.yaml` file includes these optional AI keys (set `sync: false`):
+Backend:
 
-```yaml
-- key: GEMINI_API_KEY
-  sync: false
-- key: OPENROUTER_API_KEY
-  sync: false
-- key: GROQ_API_KEY
-  sync: false
-- key: REDIS_URL
-  sync: false
-```
-
-**In Render Dashboard:**
-1. Go to your backend service
-2. Navigate to Environment Variables
-3. Add your chosen AI provider API keys
-4. Set `REQUIRE_AI_KEY=false` for basic functionality without AI
-
-### For Vercel Frontend
-
-Frontend does NOT need AI API keys directly. The frontend calls the backend, and the backend handles AI operations.
-
-Only set in Vercel:
-```env
-NEXT_PUBLIC_API_URL=https://your-backend-url.onrender.com
-```
-
-## 🧪 Testing AI Configuration
-
-### Local Preview
 ```powershell
-# 1. Add API keys to .env in project root
-# 2. Start backend
-cd web-platform/backend
+cd web-platform\backend
 python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
 
-# 3. Run agents (in new terminal)
+Agent pipeline:
+
+```powershell
 cd agents
 python main_pipeline.py
 ```
 
-### Production Check
-After deployment, check AI status:
-```bash
-# Access the admin diagnostics endpoint
-GET https://your-backend.onrender.com/api/admin/diagnostics
+Shared variables:
+
+```text
+BACKEND_URL=http://localhost:8000
+API_SECRET_TOKEN=change-this-before-public-deploy
+TEMPERATURE=0.55
+PIPELINE_BATCH_LIMIT=3
+MIN_SIMILARITY_TO_MERGE=0.74
+ENABLE_SCHEDULER=false
+AUTO_APPROVE_PUBLISH=false
 ```
 
-## ⚠️ Security Notes
+## Production
 
-1. **Never commit `.env` files** - They are in `.gitignore`
-2. **Use environment-specific keys** - Different keys for dev/prod
-3. **Rotate keys regularly** - Especially for production
-4. **Monitor usage** - Track API costs and rate limits
-5. **Fallback configuration** - Set `REQUIRE_AI_KEY=false` if AI is optional
+For the current deployment, Render can run the web API and lightweight AI endpoints. A separate Koyeb worker is optional and should only be deployed after a stable worker command is finalized.
 
-## 📊 Cost Estimates
+Optional worker variables:
 
-Current configuration per 1k tokens:
-```env
-AI_COST_PER_1K=0.002
-EMBEDDING_COST_PER_1K=0.0004
+```text
+DATABASE_URL=postgresql://...
+REDIS_URL=rediss://...
+BACKEND_URL=https://your-render-backend.onrender.com
+API_SECRET_TOKEN=...
+GEMINI_API_KEY=...
+OPENROUTER_API_KEY=...
+GROQ_API_KEY=...
+HUGGINGFACE_API_KEY=...
 ```
 
-- **Gemini 2.5 Flash**: ~$0.075/1M input tokens, ~$0.30/1M output tokens
-- **OpenRouter Free Tier**: Rate-limited but free
-- **Groq Llama 3.1**: Free tier available with rate limits
+## Checks
 
-## 🔧 Troubleshooting
+1. Open the backend `/health` endpoint.
+2. Confirm AI provider status is ready in admin system status.
+3. Test the public `/agent` page.
+4. Test the admin agent chat.
+5. Confirm no provider key appears in browser source, Vercel logs, GitHub, or screenshots.
 
-### Agents not connecting to backend
-- Check `BACKEND_URL` in `.env`
-- Verify `API_SECRET_TOKEN` matches backend
-- Ensure backend is running
+## Security
 
-### AI API errors
-- Verify API key is valid
-- Check provider rate limits
-- Try different LLM provider
-- Set `STRICT_LLM_ERRORS=false` for debugging
-
-### Memory not saving
-- Check `data/` directory permissions
-- Verify SQLite database file creation
-- Check `MIN_SIMILARITY_TO_MERGE` threshold
+- Never commit real API keys.
+- Rotate any key that was pasted into a public place or committed by mistake.
+- Keep production keys in Render or a secret manager.
+- Keep Vercel limited to public `NEXT_PUBLIC_*` variables.

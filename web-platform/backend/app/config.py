@@ -4,11 +4,22 @@ import os
 
 
 AI_PROVIDER_ENV_KEYS = ("GEMINI_API_KEY", "OPENROUTER_API_KEY", "GROQ_API_KEY")
+S3_ENV_KEYS = ("S3_ENDPOINT_URL", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_BUCKET", "S3_PUBLIC_BASE_URL")
 
 
 def ai_provider_configured() -> bool:
     """Return true when at least one text-generation provider key is configured."""
     return any(bool(os.getenv(key)) for key in AI_PROVIDER_ENV_KEYS)
+
+
+def upload_storage_configured() -> bool:
+    """Return true when the selected upload storage backend is usable."""
+    backend = os.getenv("UPLOAD_STORAGE_BACKEND", os.getenv("STORAGE_BACKEND", "local")).lower()
+    if backend == "local":
+        return True
+    if backend in {"r2", "s3"}:
+        return all(bool(os.getenv(key)) for key in S3_ENV_KEYS)
+    return False
 
 
 def validate_env() -> list[str]:
@@ -68,6 +79,13 @@ def provider_env_status() -> list[dict[str, str | bool]]:
             "required": False,
         },
         {
+            "key": "upload_storage",
+            "label": "Upload Storage",
+            "env": "UPLOAD_STORAGE_BACKEND",
+            "required": False,
+            "configured_override": upload_storage_configured(),
+        },
+        {
             "key": "jwt",
             "label": "JWT Secret",
             "env": "JWT_SECRET",
@@ -91,7 +109,7 @@ def provider_env_status() -> list[dict[str, str | bool]]:
     for provider in providers:
         env_name = str(provider["env"])
         value = os.getenv(env_name)
-        configured = bool(value)
+        configured = bool(provider.get("configured_override", bool(value)))
         status.append(
             {
                 "key": str(provider["key"]),

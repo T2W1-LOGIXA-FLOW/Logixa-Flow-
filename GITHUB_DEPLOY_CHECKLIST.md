@@ -1,6 +1,12 @@
-# GitHub and Beta Deploy Checklist
+# GitHub and Deploy Checklist
 
-## Before `git add .`
+## Before Commit
+
+Run:
+
+```powershell
+git status --short
+```
 
 These files and folders must not be committed:
 
@@ -16,61 +22,63 @@ These files and folders must not be committed:
 - `logs/`
 - `uploads/`
 
-They are covered by `.gitignore`. Do not use `git add -f` on any secret or generated file.
+They are covered by `.gitignore`. Do not use `git add -f` on secrets or generated files.
 
-## Recommended Fresh Git Setup
+## Secret Check
 
-The old `.git` folder showed object corruption. Use a fresh Git repo before pushing.
+Before pushing, search for accidental secrets:
 
 ```powershell
-cd "D:\1 main\Logixa Flow ver.1.1.1.00"
-Rename-Item .git .git_corrupt_backup
-git init
-git branch -M main
-git add .
-git status --short
+git ls-files | ForEach-Object {
+  Select-String -Path $_ -Pattern "AIza|sk-or-v1|gsk_|hf_[A-Za-z0-9]" -CaseSensitive -List -ErrorAction SilentlyContinue
+}
 ```
 
-Check `git status --short` before committing. It must not show `.env`, `.env.local`, `node_modules`, `.next`, `.venv`, or local databases.
+If any real key appears, remove it, rotate the leaked key, and commit the cleanup before deploying again.
 
-Then:
+## Commit and Push
 
 ```powershell
-git commit -m "Prepare Logixa Flow beta deploy"
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-git push -u origin main
+git add .
+git status --short
+git commit -m "Prepare Logixa Flow deployment"
+git push origin main
 ```
 
 ## Vercel Frontend
 
-- Framework: Next.js
-- Root directory: `web-platform/frontend`
-- Install command: `npm install`
-- Build command: `npm run build`
-
-Required environment variable:
+Settings:
 
 ```text
-NEXT_PUBLIC_API_URL=https://your-backend-url.onrender.com
+Framework: Next.js
+Root directory: web-platform/frontend
+Install command: npm install
+Build command: npm run build
 ```
 
-**Example:**
+Required variables:
+
 ```text
-NEXT_PUBLIC_API_URL=https://logixa-flow-backend.onrender.com
+NEXT_PUBLIC_API_URL=https://your-render-backend.onrender.com
+NEXT_PUBLIC_SITE_URL=https://your-vercel-domain.vercel.app
 ```
 
-Do not add `DATABASE_URL` to Vercel for the beta deploy. The frontend calls the Render backend, and the backend owns database access.
+Do not add backend secrets to Vercel.
 
-### AI Keys for Frontend
-Frontend does NOT need AI API keys. All AI operations are handled by the backend.
+## Render Backend
 
-## Backend
-
-Deploy the FastAPI backend separately on Render, Railway, Fly.io, or a VPS.
-
-Required production environment variables:
+Settings:
 
 ```text
+Root directory: web-platform/backend
+Runtime: Docker
+Health check path: /health
+```
+
+Required variables:
+
+```text
+DATABASE_PROFILE=supabase
 DATABASE_URL=postgresql://...
 ADMIN_USERNAME=...
 ADMIN_PASSWORD=...
@@ -78,37 +86,36 @@ JWT_SECRET=...
 API_SECRET_TOKEN=...
 ENVIRONMENT=production
 CORS_ORIGINS=https://your-vercel-domain.vercel.app
+```
+
+AI variables:
+
+```text
+GEMINI_API_KEY=...
+OPENROUTER_API_KEY=...
+GROQ_API_KEY=...
+HUGGINGFACE_API_KEY=...
+LLM_PROVIDER=gemini
 REQUIRE_AI_KEY=false
 ```
 
-Optional AI provider keys (add one or more):
+Storage and cache:
 
 ```text
-GEMINI_API_KEY=your-gemini-key
-OPENROUTER_API_KEY=your-openrouter-key
-GROQ_API_KEY=your-groq-key
-REDIS_URL=redis://...
+REDIS_URL=rediss://...
+UPLOAD_STORAGE_BACKEND=r2
+S3_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com
+S3_ACCESS_KEY_ID=...
+S3_SECRET_ACCESS_KEY=...
+S3_BUCKET=...
+S3_PUBLIC_BASE_URL=https://your-public-r2-domain
 ```
 
-**Important:** AI keys are optional. Set `REQUIRE_AI_KEY=false` to run without AI features.
+## Deployment Validation
 
-Use PostgreSQL for beta users. SQLite is local preview only.
-
-## AI Agents Configuration
-
-AI agents read API keys from the project root `.env` file. See `AI_AGENTS_SETUP.md` for detailed configuration.
-
-**For Production Deployment:**
-- AI agents are optional for basic functionality
-- Add AI keys to Render backend environment variables
-- Set `REQUIRE_AI_KEY=false` if AI features are not required
-- Agents can be run separately as background services
-
-**Required for AI Agents:**
-```text
-# In project root .env or Render backend
-LLM_PROVIDER=gemini
-GEMINI_API_KEY=your-gemini-key
-BACKEND_URL=https://your-backend-url.onrender.com
-API_SECRET_TOKEN=your-secure-token
-```
+- Backend `/health` opens and returns healthy status.
+- Vercel public pages load: `/`, `/about`, `/contact`, `/blog`, `/agent`.
+- Admin login works at `/admin/login`.
+- AI chat returns a backend response, not "provider unavailable".
+- Image upload returns a public R2 URL.
+- No `.env`, `node_modules`, `.next`, `.venv`, local databases, or uploaded files appear in GitHub.

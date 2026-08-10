@@ -3,128 +3,112 @@ import PageBackground from "@/components/PageBackground";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | Logixa Flow",
-  description: "Read our privacy policy to understand how we collect and use your data.",
+  description: "How Logixa Flow handles account, contact, content, analytics, and AI feature data.",
   openGraph: {
     title: "Privacy Policy",
     description: "Logixa Flow Privacy Policy",
   },
 };
 
+const sections = [
+  {
+    title: "1. Overview",
+    body: [
+      "Logixa Flow provides supply chain intelligence, content workflows, admin tools, and AI-assisted operations features. This policy explains what information we collect, how we use it, and the choices available to users and administrators.",
+      "This policy is written for the Logixa Flow beta service. It is not a substitute for legal advice, and production launches should be reviewed against the laws that apply to your users and business.",
+    ],
+  },
+  {
+    title: "2. Information We Collect",
+    body: [
+      "We may collect contact details submitted through forms, newsletter subscriptions, admin account details, uploaded media, support messages, usage events, device and browser data, and content created or reviewed inside the admin workspace.",
+      "When AI features are used, prompts, source notes, draft content, and related context may be processed so the service can generate, summarize, classify, or review supply chain intelligence.",
+    ],
+  },
+  {
+    title: "3. How We Use Information",
+    body: [
+      "We use information to operate the website, authenticate administrators, publish and manage insights, respond to contact requests, improve reliability, prevent abuse, monitor service health, and provide AI-assisted workflow features.",
+      "We may also use aggregated or de-identified operational data to understand product performance and improve the service.",
+    ],
+  },
+  {
+    title: "4. AI Features",
+    body: [
+      "AI features may send prompts and context to configured AI providers such as Gemini, OpenRouter, Groq, or other services enabled by the administrator. Secret values are not intentionally exposed in the admin status views.",
+      "Users and administrators should avoid submitting passwords, private keys, payment data, or confidential third-party information into AI prompts unless the relevant provider and data handling terms have been reviewed.",
+    ],
+  },
+  {
+    title: "5. Service Providers",
+    body: [
+      "The service may rely on hosting, database, object storage, cache, analytics, email, payment, and AI providers. Examples include Vercel, Render or another API host, Supabase, Cloudflare R2, Upstash, and configured AI providers.",
+      "These providers process information only as needed to support the service features that are enabled.",
+    ],
+  },
+  {
+    title: "6. Cookies and Local Storage",
+    body: [
+      "We may use cookies, browser storage, and similar technologies for authentication, preferences, security, analytics, and feature behavior. Disabling cookies may prevent some parts of the service from working correctly.",
+    ],
+  },
+  {
+    title: "7. Retention and Security",
+    body: [
+      "We keep information only as long as needed for the service, legal obligations, operational records, or security purposes. Administrators can remove or update published content and drafts through the management workflow.",
+      "We use reasonable technical and organizational measures to protect data, but no internet service can guarantee absolute security.",
+    ],
+  },
+  {
+    title: "8. Your Choices",
+    body: [
+      "Depending on your location, you may request access, correction, deletion, restriction, export, or withdrawal from marketing messages. We may need to verify your request before acting on it.",
+    ],
+  },
+  {
+    title: "9. Children",
+    body: [
+      "Logixa Flow is intended for business and professional use. We do not knowingly collect personal information from children under 18.",
+    ],
+  },
+  {
+    title: "10. Contact",
+    body: [
+      "Questions about this policy can be sent to privacy@logixaflow.com.",
+    ],
+  },
+];
+
 export default function PrivacyPage() {
   return (
     <PageBackground overlayOpacity={0.85}>
       <div className="min-h-screen text-slate-100">
-      <div className="max-w-4xl mx-auto px-4 py-16 md:py-24">
-        <h1 className="text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r from-cyan-500 to-orange-500 bg-clip-text text-transparent">
-          Privacy Policy
-        </h1>
+        <div className="mx-auto max-w-4xl px-4 py-16 md:py-24">
+          <div className="rounded-lg border border-cyan-400/20 bg-slate-950/70 p-6 shadow-2xl shadow-cyan-950/20 md:p-8">
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">Logixa Flow Policy</p>
+            <h1 className="bg-gradient-to-r from-cyan-400 to-orange-400 bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
+              Privacy Policy
+            </h1>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300">Last updated: August 10, 2026</p>
+          </div>
 
-        <div className="prose prose-invert max-w-none space-y-8">
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">1. Introduction</h2>
-            <p>
-              Logixa Flow (&quot;we&quot; or &quot;us&quot; or &quot;our&quot;) operates the website. This page informs you of our policies regarding the collection,
-              use, and disclosure of personal data when you use our Service and the choices you have associated with that data.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">2. Information Collection and Use</h2>
-            <p>We collect several different types of information for various purposes to provide and improve our Service to you.</p>
-
-            <h3 className="text-xl font-semibold text-slate-200 mt-4 mb-2">Types of Data Collected:</h3>
-            <ul className="list-disc list-inside space-y-2">
-              <li>Personal Data: Name, email address, phone number, cookies and usage data</li>
-              <li>Usage Data: Browser type and version, IP address, pages visited, time and date of visit</li>
-              <li>Device Data: Device type, operating system, unique device identifiers</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">3. Use of Data</h2>
-            <p>Logixa Flow uses the collected data for various purposes:</p>
-            <ul className="list-disc list-inside space-y-2">
-              <li>To provide and maintain our Service</li>
-              <li>To notify you about changes to our Service</li>
-              <li>To allow you to participate in interactive features of our Service</li>
-              <li>To provide customer care and support</li>
-              <li>To gather analysis or valuable information so we can improve our Service</li>
-              <li>To monitor the usage of our Service</li>
-              <li>To detect, prevent and address technical issues</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">4. Security of Data</h2>
-            <p>
-              The security of your data is important to us, but remember that no method of transmission over the Internet or method of
-              electronic storage is 100% secure. While we strive to use commercially acceptable means to protect your Personal Data, we
-              cannot guarantee its absolute security.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">5. Cookies</h2>
-            <p>
-              We use cookies and similar tracking technologies to track activity on our Service and hold certain information. You can
-              instruct your browser to refuse all cookies or to indicate when a cookie is being sent. However, if you do not accept cookies,
-              you may not be able to use some portions of our Service.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">6. Third-Party Links</h2>
-            <p>
-              Our Service may contain links to other sites that are not operated by us. If you click on a third party link, you will be
-              directed to that third party&apos;s site. We strongly advise you to review the Privacy Policy of every site you visit. We have no
-              control over and assume no responsibility for the content, privacy policies or practices of any third party sites or services.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">7. Children&apos;s Privacy</h2>
-            <p>
-              Our Service does not address anyone under the age of 18 (&quot;Children&quot;). We do not knowingly collect personally identifiable
-              information from children under 18. If we become aware that we have collected personal data from a child under 18 without
-              verifiable parental consent, we take steps to remove such data and terminate the child&apos;s account.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">8. Changes to This Privacy Policy</h2>
-            <p>
-              We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on
-              this page and updating the &quot;effective date&quot; at the bottom of this Privacy Policy.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">9. Your Rights</h2>
-            <p>Depending on your location, you may have the following rights:</p>
-            <ul className="list-disc list-inside space-y-2">
-              <li>The right to access your personal data</li>
-              <li>The right to correct inaccurate data</li>
-              <li>The right to request deletion of your data</li>
-              <li>The right to restrict processing of your data</li>
-              <li>The right to data portability</li>
-              <li>The right to opt-out of marketing communications</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">10. Contact Us</h2>
-            <p>
-              If you have any questions about this Privacy Policy, please contact us at:{" "}
-              <a href="mailto:privacy@logixaflow.com" className="text-cyan-500 hover:text-cyan-400">
-                privacy@logixaflow.com
-              </a>
-            </p>
-          </section>
-
-          <p className="text-slate-400 text-sm mt-12">Last updated: {new Date().toLocaleDateString()}</p>
+          <div className="mt-8 space-y-5">
+            {sections.map((section) => (
+              <section
+                key={section.title}
+                className="rounded-lg border border-cyan-400/15 bg-slate-950/65 p-5 shadow-xl shadow-slate-950/30"
+              >
+                <h2 className="mb-3 text-xl font-bold text-white">{section.title}</h2>
+                <div className="space-y-3 text-sm leading-7 text-slate-300">
+                  {section.body.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
     </PageBackground>
   );
 }

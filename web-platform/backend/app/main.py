@@ -13,7 +13,7 @@ from sqlalchemy import inspect, text
 
 from . import models
 from .cache import cache_client, rate_limiter
-from .config import ai_provider_configured, validate_env
+from .config import ai_provider_configured, upload_storage_configured, validate_env
 from .database import Base, SessionLocal, engine
 from .db_bootstrap import bootstrap_database, database_profile
 from .logging_config import setup_logging
@@ -352,6 +352,8 @@ def health() -> dict[str, object]:
         "rag_chunks": embedding_count,
         "cache_backend": cache_client.backend,
         "rate_limit_backend": rate_limiter.backend,
+        "upload_storage_backend": os.getenv("UPLOAD_STORAGE_BACKEND", "local"),
+        "upload_storage_configured": upload_storage_configured(),
         "use_slowapi": os.getenv("USE_SLOWAPI", "true").lower() == "true",
         "integration_feeds": len([item for item in os.getenv("INTEGRATION_RSS_FEEDS", "").split(",") if item.strip()]) or 3,
     }

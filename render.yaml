@@ -6,22 +6,26 @@ services:
     dockerfilePath: ./web-platform/backend/Dockerfile
     dockerContext: ./web-platform/backend
     envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: logixa-flow-db
-          property: connectionString
       - key: PORT
         value: 8000
       - key: ENVIRONMENT
         value: production
+      - key: DATABASE_PROFILE
+        value: supabase
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
       - key: JWT_SECRET
         generateValue: true
+      - key: JWT_ADMIN_SECRET
+        generateValue: true
+      - key: ADMIN_USERNAME
+        value: admin
       - key: ADMIN_PASSWORD
         generateValue: true
       - key: API_SECRET_TOKEN
         generateValue: true
-      - key: CORS_ORIGINS
-        value: https://*.vercel.app,https://localhost:3000
       - key: REQUIRE_AI_KEY
         value: false
       - key: GEMINI_API_KEY
@@ -30,11 +34,23 @@ services:
         sync: false
       - key: GROQ_API_KEY
         sync: false
+      - key: HUGGINGFACE_API_KEY
+        sync: false
       - key: REDIS_URL
         sync: false
-
-databases:
-  - name: logixa-flow-db
-    databaseName: logixa_flow
-    user: logixa_user
-    plan: free
+      - key: ENABLE_SCHEDULER
+        value: false
+      - key: UPLOAD_STORAGE_BACKEND
+        value: r2
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_REGION
+        value: auto
+      - key: S3_PUBLIC_BASE_URL
+        sync: false

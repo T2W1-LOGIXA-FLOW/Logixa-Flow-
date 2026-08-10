@@ -1,18 +1,20 @@
 # Logixa Flow
 
-Logixa Flow is a supply-chain intelligence platform with:
+Logixa Flow is a supply-chain intelligence platform for Myanmar-ready SCM insights, AI-assisted drafting, admin review, and public publishing.
 
-- Next.js frontend in `web-platform/frontend`
-- FastAPI backend in `web-platform/backend`
-- Optional AI content agents in `agents`
-- PostgreSQL for deployment and SQLite for local preview
+## Project Structure
+
+- `web-platform/frontend`: Next.js public site and admin UI
+- `web-platform/backend`: FastAPI API, auth, CMS, uploads, AI endpoints
+- `agents`: optional background AI/content workflows
+- `render.yaml`: Render backend blueprint
 
 ## Local Preview
 
 Backend:
 
 ```powershell
-cd "D:\1 main\Logixa Flow ver.1.1.1.00\web-platform\backend"
+cd web-platform\backend
 python -m pip install -r requirements.txt
 python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
@@ -20,33 +22,39 @@ python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 Frontend:
 
 ```powershell
-cd "D:\1 main\Logixa Flow ver.1.1.1.00\web-platform\frontend"
+cd web-platform\frontend
 npm install
 npm run dev -- -p 3000
 ```
 
 Open:
 
-- Site: http://localhost:3000
-- API docs: http://127.0.0.1:8000/docs
+- Site: `http://localhost:3000`
+- API docs: `http://127.0.0.1:8000/docs`
+- Health: `http://127.0.0.1:8000/health`
 
 ## Deployment Shape
 
 - Frontend: Vercel, root directory `web-platform/frontend`
-- Backend: Render, Railway, Fly.io, or VPS
-- Database: hosted PostgreSQL
+- Backend API: Render web service, root directory `web-platform/backend`
+- Database: Supabase PostgreSQL
+- Upload storage: Cloudflare R2 or another S3-compatible bucket
+- Cache/queue helper: Upstash Redis
+- Optional uptime ping: cron-job.org calling `/health`
 
-Required frontend variable:
+Vercel only needs public frontend variables:
 
 ```text
-NEXT_PUBLIC_API_URL=https://your-backend-url
+NEXT_PUBLIC_API_URL=https://your-render-backend.onrender.com
+NEXT_PUBLIC_SITE_URL=https://your-vercel-domain.vercel.app
 ```
 
-The beta frontend does not need `DATABASE_URL`; database access belongs to the backend.
+Do not put `DATABASE_URL`, AI provider keys, admin passwords, or JWT secrets in Vercel unless a specific frontend server route requires them.
 
-Required backend variables depend on enabled features, but normally include:
+Render backend variables normally include:
 
 ```text
+DATABASE_PROFILE=supabase
 DATABASE_URL=postgresql://...
 ADMIN_USERNAME=...
 ADMIN_PASSWORD=...
@@ -54,9 +62,18 @@ JWT_SECRET=...
 API_SECRET_TOKEN=...
 ENVIRONMENT=production
 CORS_ORIGINS=https://your-vercel-domain.vercel.app
+GEMINI_API_KEY=...
+OPENROUTER_API_KEY=...
+GROQ_API_KEY=...
+HUGGINGFACE_API_KEY=...
+REDIS_URL=rediss://...
+UPLOAD_STORAGE_BACKEND=r2
+S3_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com
+S3_ACCESS_KEY_ID=...
+S3_SECRET_ACCESS_KEY=...
+S3_BUCKET=...
+S3_PUBLIC_BASE_URL=https://your-public-r2-domain
 ```
-
-Do not commit real `.env` files. Keep only `.env.example` files in the repo.
 
 ## Checks
 
@@ -74,8 +91,16 @@ cd web-platform\backend
 python -m pytest -q
 ```
 
-## Notes
+Repo hygiene:
 
-- Local build folders, virtual environments, uploaded files, SQLite databases, and QA logs are ignored.
-- `node_modules` and `.venv` are local-only and should be recreated with install commands.
-- Some beta features intentionally show beta/demo notices until the production integrations are connected.
+```powershell
+git diff --check
+git status --short
+```
+
+## Security Notes
+
+- Never commit real `.env` files, API keys, database URLs, JWT secrets, or admin passwords.
+- Keep only `.env.example` files in the repo.
+- `node_modules`, `.next`, `.venv`, SQLite databases, uploads, caches, and logs are local/generated files.
+- CORS origins must be exact frontend origins. Do not use `https://*.vercel.app`; the backend framework expects exact origins.
