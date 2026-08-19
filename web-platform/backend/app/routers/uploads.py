@@ -30,10 +30,10 @@ def _public_url(filename: str) -> str:
     public_base = os.getenv("S3_PUBLIC_BASE_URL") or os.getenv("UPLOAD_PUBLIC_BASE_URL")
     if public_base:
         return f"{public_base.rstrip('/')}/{filename}"
-    if _storage_backend() in {"r2", "s3"}:
+    if _storage_backend() in {"b2", "r2", "s3"}:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="S3_PUBLIC_BASE_URL is required when using R2 or S3 uploads",
+            detail="S3_PUBLIC_BASE_URL is required when using B2, R2, or S3 uploads",
         )
     return f"/uploads/{filename}"
 
@@ -42,7 +42,7 @@ def _upload_to_s3(file: UploadFile, filename: str) -> str:
     if boto3 is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="boto3 is required for R2 or S3 uploads",
+            detail="boto3 is required for B2, R2, or S3 uploads",
         )
 
     required = {
@@ -87,7 +87,7 @@ def upload_image(file: UploadFile = File(...), _=Depends(require_admin)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only image uploads are allowed")
 
     filename = f"{uuid4().hex}{extension}"
-    if _storage_backend() in {"r2", "s3"}:
+    if _storage_backend() in {"b2", "r2", "s3"}:
         return schemas.UploadOut(url=_upload_to_s3(file, filename))
 
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)

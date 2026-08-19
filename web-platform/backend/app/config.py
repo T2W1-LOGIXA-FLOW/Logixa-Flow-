@@ -17,7 +17,7 @@ def upload_storage_configured() -> bool:
     backend = os.getenv("UPLOAD_STORAGE_BACKEND", os.getenv("STORAGE_BACKEND", "local")).lower()
     if backend == "local":
         return True
-    if backend in {"r2", "s3"}:
+    if backend in {"b2", "r2", "s3"}:
         return all(bool(os.getenv(key)) for key in S3_ENV_KEYS)
     return False
 

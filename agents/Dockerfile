@@ -10,4 +10,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY agents/ .
 
-CMD ["python", "main_pipeline.py"]
+CMD ["python", "worker_loop.py"]

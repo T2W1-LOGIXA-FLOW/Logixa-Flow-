@@ -41,7 +41,7 @@ services:
       - key: ENABLE_SCHEDULER
         value: false
       - key: UPLOAD_STORAGE_BACKEND
-        value: r2
+        value: b2
       - key: S3_ENDPOINT_URL
         sync: false
       - key: S3_ACCESS_KEY_ID
@@ -51,6 +51,43 @@ services:
       - key: S3_BUCKET
         sync: false
       - key: S3_REGION
-        value: auto
+        value: us-west-004
       - key: S3_PUBLIC_BASE_URL
         sync: false
+  - type: worker
+    name: logixa-flow-worker
+    runtime: docker
+    plan: free
+    dockerfilePath: ./agents/Dockerfile
+    dockerContext: .
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: BACKEND_URL
+        sync: false
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: LLM_PROVIDER
+        value: gemini
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: HUGGINGFACE_API_KEY
+        sync: false
+      - key: PIPELINE_BATCH_LIMIT
+        value: 3
+      - key: AUTO_APPROVE_PUBLISH
+        value: false
+      - key: WORKER_MODE
+        value: web-pipeline
+      - key: WORKER_INTERVAL_SECONDS
+        value: 3600
+      - key: WORKER_RUN_ON_START
+        value: true
+      - key: WORKER_ONCE
+        value: false

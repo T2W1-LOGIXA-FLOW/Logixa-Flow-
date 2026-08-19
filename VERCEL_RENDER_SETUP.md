@@ -1,81 +1,119 @@
-# Vercel, Render, Supabase, R2, and Upstash Setup
+# Logixa Flow Split Deployment Setup
 
-This guide is for the current free-tier-friendly Logixa Flow deployment.
-
-## Architecture
+This is the current target setup:
 
 ```text
-Users
-  -> Vercel frontend (Next.js)
-  -> Render backend API (FastAPI)
-  -> Supabase PostgreSQL
-  -> Cloudflare R2 uploads
-  -> Upstash Redis cache/queue helper
+Vercel        -> Frontend public site
+Render        -> FastAPI backend API
+Render Worker -> Background AI/agent pipeline
+Supabase      -> PostgreSQL database
+Upstash       -> Redis cache/queue URL
+Backblaze B2  -> Object storage, replacing MinIO
+cron-job.org  -> Keep Render backend warm
 ```
 
-Optional:
+Render is still used, but only for the backend API and the background worker.
+Database, Redis, and object storage are split out to managed services.
 
-- `cron-job.org` can ping the Render `/health` endpoint every 10 minutes.
-- Koyeb can run a separate background worker later, after a stable worker entrypoint is finalized.
+## 1. Supabase Database
 
-## 1. Backend on Render
-
-Preferred setup:
-
-1. Create a Render Web Service from the GitHub repo.
-2. Use root directory `web-platform/backend`.
-3. Use Docker runtime.
-4. Use Dockerfile path `Dockerfile` when root directory is set, or `web-platform/backend/Dockerfile` when deploying from repo root.
-5. Add the environment variables below.
-
-Required Render environment variables:
+Create or keep the Supabase PostgreSQL database, then copy the production
+connection string into the Render backend:
 
 ```text
 DATABASE_PROFILE=supabase
 DATABASE_URL=postgresql://...
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=<secure-password>
-JWT_SECRET=<long-random-secret>
-API_SECRET_TOKEN=<long-random-token>
-ENVIRONMENT=production
-CORS_ORIGINS=https://your-vercel-domain.vercel.app
 ```
 
-AI variables:
+Use the pooled connection string when Supabase provides one. Keep the database
+URL out of GitHub and Vercel.
+
+## 2. Backblaze B2 Storage
+
+Create a Backblaze B2 bucket for uploaded files and generate an S3-compatible
+application key.
+
+Render backend variables:
 
 ```text
-GEMINI_API_KEY=...
-OPENROUTER_API_KEY=...
-GROQ_API_KEY=...
-HUGGINGFACE_API_KEY=...
-LLM_PROVIDER=gemini
-REQUIRE_AI_KEY=false
+UPLOAD_STORAGE_BACKEND=b2
+S3_ENDPOINT_URL=https://s3.<region>.backblazeb2.com
+S3_ACCESS_KEY_ID=<backblaze-key-id>
+S3_SECRET_ACCESS_KEY=<backblaze-application-key>
+S3_BUCKET=<bucket-name>
+S3_REGION=<bucket-region>
+S3_PUBLIC_BASE_URL=https://<public-bucket-or-custom-domain>
 ```
 
-Upstash Redis:
+Example regions look like `us-west-004` or another region shown in Backblaze.
+Use the exact endpoint and region from your B2 bucket page.
+
+## 3. Upstash Redis
+
+Create an Upstash Redis database and copy the TLS URL:
 
 ```text
 REDIS_URL=rediss://...
 ```
 
-Cloudflare R2 uploads:
+Add it to the Render backend. Add the same value to the Render worker only if
+you later run queue-based jobs directly from the worker.
+
+## 4. Render Backend API
+
+Create a Render Web Service from the GitHub repo.
+
+Recommended settings:
 
 ```text
-UPLOAD_STORAGE_BACKEND=r2
-S3_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com
-S3_ACCESS_KEY_ID=...
-S3_SECRET_ACCESS_KEY=...
-S3_BUCKET=logixa-flow-uploads
-S3_PUBLIC_BASE_URL=https://your-public-r2-domain
+Runtime: Docker
+Branch: main
+Root Directory: web-platform/backend
+Dockerfile Path: Dockerfile
+Health Check Path: /health
+Auto-Deploy: On Commit
 ```
 
-Health check path:
+Required backend variables:
 
 ```text
-/health
+ENVIRONMENT=production
+DATABASE_PROFILE=supabase
+DATABASE_URL=postgresql://...
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=<secure-admin-password>
+JWT_SECRET=<long-random-secret>
+JWT_ADMIN_SECRET=<long-random-secret>
+API_SECRET_TOKEN=<long-random-token>
+CORS_ORIGINS=https://logixa-flow.vercel.app,https://your-preview-domain.vercel.app
+REDIS_URL=rediss://...
 ```
 
-## 2. Frontend on Vercel
+AI variables:
+
+```text
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=<gemini-key>
+OPENROUTER_API_KEY=<openrouter-key>
+GROQ_API_KEY=<groq-key>
+HUGGINGFACE_API_KEY=<huggingface-key>
+REQUIRE_AI_KEY=false
+STRICT_LLM_ERRORS=false
+```
+
+Storage variables:
+
+```text
+UPLOAD_STORAGE_BACKEND=b2
+S3_ENDPOINT_URL=https://s3.<region>.backblazeb2.com
+S3_ACCESS_KEY_ID=<backblaze-key-id>
+S3_SECRET_ACCESS_KEY=<backblaze-application-key>
+S3_BUCKET=<bucket-name>
+S3_REGION=<bucket-region>
+S3_PUBLIC_BASE_URL=https://<public-bucket-or-custom-domain>
+```
+
+## 5. Vercel Frontend
 
 Vercel project settings:
 
@@ -87,86 +125,91 @@ Build Command: npm run build
 Output Directory: .next
 ```
 
-Required Vercel environment variables:
+Required Vercel variables:
 
 ```text
 NEXT_PUBLIC_API_URL=https://your-render-backend.onrender.com
-NEXT_PUBLIC_SITE_URL=https://your-vercel-domain.vercel.app
+NEXT_PUBLIC_SITE_URL=https://logixa-flow.vercel.app
 ```
 
 Do not add backend secrets to Vercel:
 
-- `DATABASE_URL`
-- `ADMIN_PASSWORD`
-- `JWT_SECRET`
-- `API_SECRET_TOKEN`
-- AI provider API keys
-- R2 secret key
-
-## 3. Supabase PostgreSQL
-
-Use the Supabase connection string as the backend `DATABASE_URL`.
-
-Recommended:
-
-- Use the pooled production connection string when available.
-- Include SSL mode if Supabase provides it.
-- Keep the URL only in Render, local `.env`, or a secure secret manager.
-
-## 4. Cloudflare R2
-
-1. Create an R2 bucket for uploads.
-2. Create an R2 API token/access key with bucket read/write permissions.
-3. Set `UPLOAD_STORAGE_BACKEND=r2` on Render.
-4. Set the `S3_*` variables.
-5. Configure a public bucket domain or custom domain and use it as `S3_PUBLIC_BASE_URL`.
-
-The backend upload API returns public URLs from `S3_PUBLIC_BASE_URL`.
-
-## 5. Upstash Redis
-
-1. Create an Upstash Redis database.
-2. Copy the `rediss://` URL.
-3. Add it to Render as `REDIS_URL`.
-
-Redis is optional for basic usage. The app has fallback behavior, but Redis is recommended for production-like behavior.
-
-## 6. Keep Render Warm
-
-Use `cron-job.org`:
-
 ```text
-GET https://your-render-backend.onrender.com/health
-Every 10 minutes
+DATABASE_URL
+ADMIN_PASSWORD
+JWT_SECRET
+JWT_ADMIN_SECRET
+API_SECRET_TOKEN
+GEMINI_API_KEY
+OPENROUTER_API_KEY
+GROQ_API_KEY
+HUGGINGFACE_API_KEY
+S3_SECRET_ACCESS_KEY
 ```
 
-Render free services can still be slower than paid instances, but this reduces cold starts.
+## 6. Render Worker
 
-## 7. CORS
+The worker uses `agents/Dockerfile` and runs `python worker_loop.py`.
 
-Use exact origins only:
-
-```text
-CORS_ORIGINS=https://logixa-flow.vercel.app,https://your-preview-domain.vercel.app
-```
-
-Do not use:
+Recommended settings:
 
 ```text
-CORS_ORIGINS=https://*.vercel.app
+Service Type: Background Worker
+Runtime: Docker
+Branch: main
+Docker Build Context Directory: .
+Dockerfile Path: agents/Dockerfile
+Docker Command: leave blank, or use python worker_loop.py
 ```
 
-The backend CORS middleware expects exact origins.
+Worker variables:
+
+```text
+BACKEND_URL=https://your-render-backend.onrender.com
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=<same-admin-password-as-backend>
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=<gemini-key>
+OPENROUTER_API_KEY=<openrouter-key>
+GROQ_API_KEY=<groq-key>
+HUGGINGFACE_API_KEY=<huggingface-key>
+PIPELINE_BATCH_LIMIT=3
+AUTO_APPROVE_PUBLISH=false
+WORKER_MODE=web-pipeline
+WORKER_INTERVAL_SECONDS=3600
+WORKER_RUN_ON_START=true
+WORKER_ONCE=false
+```
+
+Note: Render background workers may require a paid instance type depending on
+the current Render plan. If the worker cannot run on your plan, keep the backend
+deployed first and run the agent manually from admin until you upgrade or move
+the worker to another host.
+
+## 7. Keep Render Warm
+
+Create a cron-job.org job:
+
+```text
+Method: GET
+URL: https://your-render-backend.onrender.com/health
+Schedule: every 10 minutes
+```
+
+This reduces Render free-tier cold starts, but it does not make free instances
+equivalent to paid always-on infrastructure.
 
 ## 8. Validation
 
 After deploy:
 
 1. Open `https://your-render-backend.onrender.com/health`.
-2. Confirm `database` is healthy.
-3. Confirm `upload_storage_backend` is `r2`.
-4. Confirm `upload_storage_configured` is `true`.
-5. Open the Vercel public site.
-6. Test `/about`, `/contact`, `/blog`, and `/agent`.
-7. Test `/admin/login`.
-8. Upload a small image from admin and confirm the returned URL uses the R2 public domain.
+2. Confirm database status is healthy.
+3. Confirm upload storage is configured.
+4. Open `https://logixa-flow.vercel.app`.
+5. Test `/about`, `/contact`, `/blog`, and `/agent`.
+6. Test `/admin/login`.
+7. Test admin system status and confirm AI provider keys are ready.
+8. Upload a small image from admin and confirm the URL uses Backblaze B2 or the public custom storage domain.
+9. Confirm cron-job.org shows successful `/health` checks.
+10. Confirm worker logs show repeated `web-pipeline` runs.
