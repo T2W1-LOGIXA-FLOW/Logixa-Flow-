@@ -276,9 +276,11 @@ origins = _get_cors_origins()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",  
     allow_credentials=True,
     allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
+)
 )
 
 uploads_dir = Path(__file__).resolve().parents[1] / "uploads"
