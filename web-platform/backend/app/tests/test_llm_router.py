@@ -29,6 +29,36 @@ def test_router_uses_selected_provider_if_available(monkeypatch):
     provider = router.get_active_provider()
     assert provider.__class__.__name__ == "GeminiProvider"
 
+
+def test_router_cleans_wrapped_provider_env_values(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", ' "fake_key_123" ')
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+
+    db = MagicMock()
+    setting = models.AppSetting(key="writer_ai_model", value="gemini")
+    db.query().filter().first.return_value = setting
+
+    router = LLMRouter(db)
+    provider = router.get_active_provider()
+    assert provider.__class__.__name__ == "GeminiProvider"
+    assert provider.api_key == "fake_key_123"
+
+
+def test_router_diagnostics_identifies_local_fallback(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+
+    db = MagicMock()
+    setting = models.AppSetting(key="writer_ai_model", value="gemini")
+    db.query().filter().first.return_value = setting
+
+    diagnostics = LLMRouter(db).diagnostics()
+    assert diagnostics["selected_provider"] == "gemini"
+    assert diagnostics["active_provider"] == "local"
+    assert diagnostics["fallback_active"] is True
+
 def test_router_fallback_chain(monkeypatch):
     # No Gemini, but Groq key exists
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
@@ -59,3 +89,22 @@ def test_router_generate_calls_provider(monkeypatch):
     
     # Restore
     router.providers["gemini"].generate = original_generate
+
+
+def test_router_logs_provider_failure_before_local_fallback(monkeypatch, caplog):
+    monkeypatch.setenv("GEMINI_API_KEY", "fake")
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+
+    db = MagicMock()
+    setting = models.AppSetting(key="writer_ai_model", value="gemini")
+    db.query().filter().first.return_value = setting
+
+    router = LLMRouter(db)
+    router.providers["gemini"].generate = MagicMock(side_effect=RuntimeError("provider down"))
+
+    response, model = router.generate_with_provider("test prompt")
+
+    assert model == "local"
+    assert "[Fallback Local Mode]" in response
+    assert "LLM provider failed" in caplog.text

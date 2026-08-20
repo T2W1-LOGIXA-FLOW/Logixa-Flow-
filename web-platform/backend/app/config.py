@@ -7,9 +7,21 @@ AI_PROVIDER_ENV_KEYS = ("GEMINI_API_KEY", "OPENROUTER_API_KEY", "GROQ_API_KEY")
 S3_ENV_KEYS = ("S3_ENDPOINT_URL", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_BUCKET", "S3_PUBLIC_BASE_URL")
 
 
+def clean_env_value(key: str) -> str:
+    value = os.getenv(key, "")
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        value = value[1:-1].strip()
+    return value
+
+
+def env_configured(key: str) -> bool:
+    return bool(clean_env_value(key))
+
+
 def ai_provider_configured() -> bool:
     """Return true when at least one text-generation provider key is configured."""
-    return any(bool(os.getenv(key)) for key in AI_PROVIDER_ENV_KEYS)
+    return any(env_configured(key) for key in AI_PROVIDER_ENV_KEYS)
 
 
 def upload_storage_configured() -> bool:
@@ -18,7 +30,7 @@ def upload_storage_configured() -> bool:
     if backend == "local":
         return True
     if backend in {"b2", "r2", "s3"}:
-        return all(bool(os.getenv(key)) for key in S3_ENV_KEYS)
+        return all(env_configured(key) for key in S3_ENV_KEYS)
     return False
 
 
@@ -26,7 +38,7 @@ def validate_env() -> list[str]:
     """Validate required environment variables."""
     required = ["JWT_SECRET", "ADMIN_PASSWORD"]
     
-    missing = [key for key in required if not os.getenv(key)]
+    missing = [key for key in required if not env_configured(key)]
     if os.getenv("REQUIRE_AI_KEY", "false").lower() == "true" and not ai_provider_configured():
         missing.append("one of GEMINI_API_KEY, OPENROUTER_API_KEY, or GROQ_API_KEY")
     
@@ -34,8 +46,8 @@ def validate_env() -> list[str]:
     is_production = os.getenv("ENVIRONMENT", "development").lower() in {"production", "prod"}
     if is_production:
         # Check for default secrets in production
-        jwt_secret = os.getenv("JWT_SECRET", "")
-        api_secret = os.getenv("API_SECRET_TOKEN", "")
+        jwt_secret = clean_env_value("JWT_SECRET")
+        api_secret = clean_env_value("API_SECRET_TOKEN")
         
         if jwt_secret in {"change-me-in-production", ""}:
             missing.append("JWT_SECRET (cannot use default in production)")
@@ -108,8 +120,7 @@ def provider_env_status() -> list[dict[str, str | bool]]:
     status: list[dict[str, str | bool]] = []
     for provider in providers:
         env_name = str(provider["env"])
-        value = os.getenv(env_name)
-        configured = bool(provider.get("configured_override", bool(value)))
+        configured = bool(provider.get("configured_override", env_configured(env_name)))
         status.append(
             {
                 "key": str(provider["key"]),

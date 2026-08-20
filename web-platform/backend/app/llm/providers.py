@@ -1,8 +1,18 @@
 from abc import ABC, abstractmethod
 import os
-import json
 import requests
 from typing import Optional
+
+
+def clean_env_value(name: str) -> Optional[str]:
+    value = os.getenv(name)
+    if value is None:
+        return None
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        value = value[1:-1].strip()
+    return value or None
+
 
 class LLMProvider(ABC):
     @abstractmethod
@@ -15,7 +25,7 @@ class LLMProvider(ABC):
 
 class GeminiProvider(LLMProvider):
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
+        self.api_key = api_key or clean_env_value("GEMINI_API_KEY")
     
     def is_available(self) -> bool:
         return bool(self.api_key)
@@ -34,7 +44,7 @@ class GeminiProvider(LLMProvider):
 class OpenRouterProvider(LLMProvider):
     def __init__(self, model: str, api_key: Optional[str] = None):
         self.model = model  # e.g., "meta-llama/llama-3-70b-instruct"
-        self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
+        self.api_key = api_key or clean_env_value("OPENROUTER_API_KEY")
     
     def is_available(self) -> bool:
         return bool(self.api_key)
@@ -57,8 +67,8 @@ class OpenRouterProvider(LLMProvider):
 
 class GroqProvider(LLMProvider):
     def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None):
-        self.model = model or os.getenv("GROQ_MODEL", "llama3-70b-8192")
-        self.api_key = api_key or os.getenv("GROQ_API_KEY")
+        self.model = model or clean_env_value("GROQ_MODEL") or "llama3-70b-8192"
+        self.api_key = api_key or clean_env_value("GROQ_API_KEY")
     
     def is_available(self) -> bool:
         return bool(self.api_key)
@@ -84,4 +94,4 @@ class FallbackLocalProvider(LLMProvider):
         return True
     
     def generate(self, prompt: str, **kwargs) -> str:
-        return "[Fallback Local Mode] This is a simulated response. Please set an API key for Gemini/Groq/OpenRouter to get real AI responses."
+        return "[Fallback Local Mode] This is a simulated backend response. Add GEMINI_API_KEY, OPENROUTER_API_KEY, or GROQ_API_KEY to the backend environment and redeploy to enable real AI responses."

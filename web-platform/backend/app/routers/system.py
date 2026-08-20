@@ -51,4 +51,7 @@ def ai_provider_status(db: Session = Depends(get_db), _=Depends(require_admin)):
     status = {}
     for name, provider in llm_router.providers.items():
         status[name] = provider.is_available()
-    return {"providers": status}
+    return {
+        "providers": status,
+        "diagnostics": llm_router.diagnostics(),
+    }
