@@ -1,5 +1,5 @@
-import os
 import logging
+import re
 
 from sqlalchemy.orm import Session
 from .providers import (
@@ -16,16 +16,36 @@ from .. import models
 logger = logging.getLogger(__name__)
 
 
+_SECRET_PATTERNS = [
+    re.compile(r"([?&](?:key|api_key|token|access_token)=)([^&\s]+)", re.IGNORECASE),
+    re.compile(r"(Bearer\s+)[A-Za-z0-9._\-]+", re.IGNORECASE),
+    re.compile(r"\bAIza[0-9A-Za-z_\-]{20,}\b"),
+    re.compile(r"\bsk-or-v1-[0-9A-Za-z_\-]{20,}\b"),
+    re.compile(r"\bgsk_[0-9A-Za-z_\-]{20,}\b"),
+    re.compile(r"\bhf_[0-9A-Za-z_\-]{20,}\b"),
+]
+
+
+def sanitize_provider_error(message: str) -> str:
+    sanitized = message
+    for pattern in _SECRET_PATTERNS:
+        if pattern.groups:
+            sanitized = pattern.sub(r"\1[redacted]", sanitized)
+        else:
+            sanitized = pattern.sub("[redacted]", sanitized)
+    return sanitized
+
+
 class LLMRouter:
     def __init__(self, db: Session):
         self.db = db
         self.providers = {
             "gemini": GeminiProvider(),
             "openrouter-llama": OpenRouterProvider(
-                model=clean_env_value("OPENROUTER_LLAMA_MODEL") or "meta-llama/llama-3-70b-instruct"
+                model=clean_env_value("OPENROUTER_LLAMA_MODEL") or "meta-llama/llama-3.3-70b-instruct:free"
             ),
             "openrouter-deepseek": OpenRouterProvider(
-                model=clean_env_value("OPENROUTER_DEEPSEEK_MODEL") or "deepseek/deepseek-r1"
+                model=clean_env_value("OPENROUTER_DEEPSEEK_MODEL") or "deepseek/deepseek-r1:free"
             ),
             "groq": GroqProvider(),
             "local": FallbackLocalProvider(),
@@ -87,7 +107,9 @@ class LLMRouter:
             try:
                 return provider.generate(prompt, **kwargs), getattr(provider, "model", name)
             except Exception as exc:
-                error_summary = f"{name}: {exc.__class__.__name__}: {str(exc)[:300]}"
+                error_summary = sanitize_provider_error(
+                    f"{name}: {exc.__class__.__name__}: {str(exc)[:300]}"
+                )
                 provider_errors.append(error_summary)
                 logger.warning("LLM provider failed; trying next provider. %s", error_summary)
                 continue

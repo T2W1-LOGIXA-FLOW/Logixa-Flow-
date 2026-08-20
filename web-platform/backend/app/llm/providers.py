@@ -24,17 +24,17 @@ class LLMProvider(ABC):
         pass
 
 class GeminiProvider(LLMProvider):
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
+        self.model = model or clean_env_value("GEMINI_MODEL") or "gemini-2.5-flash"
         self.api_key = api_key or clean_env_value("GEMINI_API_KEY")
     
     def is_available(self) -> bool:
         return bool(self.api_key)
     
     def generate(self, prompt: str, **kwargs) -> str:
-        # Minimal working example – replace with actual Gemini API call
         if not self.is_available():
             raise Exception("Gemini API key missing")
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.api_key}"
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
         resp = requests.post(url, json=payload, timeout=30)
         resp.raise_for_status()
@@ -67,7 +67,7 @@ class OpenRouterProvider(LLMProvider):
 
 class GroqProvider(LLMProvider):
     def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None):
-        self.model = model or clean_env_value("GROQ_MODEL") or "llama3-70b-8192"
+        self.model = model or clean_env_value("GROQ_MODEL") or "llama-3.1-8b-instant"
         self.api_key = api_key or clean_env_value("GROQ_API_KEY")
     
     def is_available(self) -> bool:
@@ -94,4 +94,4 @@ class FallbackLocalProvider(LLMProvider):
         return True
     
     def generate(self, prompt: str, **kwargs) -> str:
-        return "[Fallback Local Mode] This is a simulated backend response. Add GEMINI_API_KEY, OPENROUTER_API_KEY, or GROQ_API_KEY to the backend environment and redeploy to enable real AI responses."
+        return "[Fallback Local Model] This is a simulated backend response. Add a valid GEMINI_API_KEY, OPENROUTER_API_KEY, or GROQ_API_KEY to the backend environment and redeploy to enable real AI responses."
