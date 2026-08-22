@@ -8,6 +8,10 @@ from .providers import (
     GroqProvider,
     LLMProvider,
     OpenRouterProvider,
+    CerebrasProvider,   
+    MistralProvider,   
+    CohereProvider,    
+    NvidiaNimProvider,
     clean_env_value,
 )
 from .. import models
@@ -48,6 +52,10 @@ class LLMRouter:
                 model=clean_env_value("OPENROUTER_DEEPSEEK_MODEL") or "deepseek/deepseek-r1:free"
             ),
             "groq": GroqProvider(),
+            "cerebras": CerebrasProvider(),
+            "mistral": MistralProvider(),
+            "cohere": CohereProvider(),
+            "nvidia": NvidiaNimProvider(),
             "local": FallbackLocalProvider(),
         }
 
@@ -64,7 +72,7 @@ class LLMRouter:
 
     def _provider_order(self) -> list[tuple[str, LLMProvider]]:
         selected = self._selected_provider_name()
-        names = [selected, "gemini", "groq", "openrouter-llama", "openrouter-deepseek", "local"]
+        names = [selected, "gemini", "groq", "cerebras", "mistral", "cohere", "nvidia", "openrouter-llama", "openrouter-deepseek", "local"]
         ordered: list[tuple[str, LLMProvider]] = []
         seen: set[str] = set()
         for name in names:
