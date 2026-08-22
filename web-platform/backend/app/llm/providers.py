@@ -24,7 +24,7 @@ class LLMProvider(ABC):
         pass
 
 class GeminiProvider(LLMProvider):
-    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
+    def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None):
         self.model = model or clean_env_value("GEMINI_MODEL") or "gemini-2.5-flash"
         self.api_key = api_key or clean_env_value("GEMINI_API_KEY")
     
@@ -34,9 +34,15 @@ class GeminiProvider(LLMProvider):
     def generate(self, prompt: str, **kwargs) -> str:
         if not self.is_available():
             raise Exception("Gemini API key missing")
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.api_key}"
+        
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent"
+        headers = {
+            "x-goog-api-key": self.api_key,
+            "Content-Type": "application/json"
+        }
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
-        resp = requests.post(url, json=payload, timeout=30)
+        
+        resp = requests.post(url, json=payload, headers=headers, timeout=60)
         resp.raise_for_status()
         data = resp.json()
         return data["candidates"][0]["content"]["parts"][0]["text"]
