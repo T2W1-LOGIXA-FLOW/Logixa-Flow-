@@ -25,7 +25,7 @@ class LLMProvider(ABC):
 
 class GeminiProvider(LLMProvider):
     def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None):
-        self.model = model or clean_env_value("GEMINI_MODEL") or "gemini-3.7-flash"
+        self.model = model or clean_env_value("GEMINI_MODEL") or "gemini-2.5-flash"
         self.api_key = api_key or clean_env_value("GEMINI_API_KEY")
     
     def is_available(self) -> bool:
