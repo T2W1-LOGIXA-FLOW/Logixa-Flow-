@@ -31,6 +31,36 @@ def test_router_uses_selected_provider_if_available(monkeypatch):
     assert provider.model == "gemini-2.5-flash"
 
 
+def test_router_prefers_admin_provider_key_for_admin_role(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("USER_GEMINI_API_KEY", raising=False)
+    monkeypatch.setenv("ADMIN_GEMINI_API_KEY", "admin_key_123")
+
+    db = MagicMock()
+    setting = models.AppSetting(key="writer_ai_model", value="gemini")
+    db.query().filter().first.return_value = setting
+
+    router = LLMRouter(db, role="admin")
+    provider = router.get_active_provider()
+    assert provider.__class__.__name__ == "GeminiProvider"
+    assert provider.api_key == "admin_key_123"
+
+
+def test_router_prefers_user_provider_key_for_user_role(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("ADMIN_GEMINI_API_KEY", raising=False)
+    monkeypatch.setenv("USER_GEMINI_API_KEY", "user_key_123")
+
+    db = MagicMock()
+    setting = models.AppSetting(key="writer_ai_model", value="gemini")
+    db.query().filter().first.return_value = setting
+
+    router = LLMRouter(db, role="user")
+    provider = router.get_active_provider()
+    assert provider.__class__.__name__ == "GeminiProvider"
+    assert provider.api_key == "user_key_123"
+
+
 def test_router_cleans_wrapped_provider_env_values(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", ' "fake_key_123" ')
     monkeypatch.delenv("GROQ_API_KEY", raising=False)

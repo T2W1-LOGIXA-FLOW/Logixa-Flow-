@@ -31,6 +31,11 @@ def list_metrics(db: Session = Depends(get_db)):
     return db.query(models.DashboardMetric).order_by(models.DashboardMetric.display_order.asc()).all()
 
 
+@router.get("/admin/metrics", response_model=list[schemas.DashboardMetricOut])
+def admin_metrics(db: Session = Depends(get_db), _=Depends(require_admin)):
+    return list_metrics(db)
+
+
 @router.patch("/metrics/{metric_key}", response_model=schemas.DashboardMetricOut)
 def update_metric(
     metric_key: str,

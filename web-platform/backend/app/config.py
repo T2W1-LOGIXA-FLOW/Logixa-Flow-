@@ -10,6 +10,22 @@ AI_PROVIDER_ENV_KEYS = (
 S3_ENV_KEYS = ("S3_ENDPOINT_URL", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_BUCKET", "S3_PUBLIC_BASE_URL")
 
 
+def resolve_ai_key_for_role(role: str, provider_env_key: str) -> str:
+    """Resolve a role-aware provider key with a clear user/admin split.
+
+    Role-specific keys are preferred so public user flows and admin/agent flows can
+    use separate credentials without leaking admin access into the public assistant.
+    """
+    normalized_role = (role or "").strip().lower()
+    if normalized_role in {"user", "admin"}:
+        role_key = f"{normalized_role.upper()}_{provider_env_key}"
+        value = clean_env_value(role_key)
+        if value:
+            return value
+    value = clean_env_value(provider_env_key)
+    return value or ""
+
+
 def clean_env_value(key: str) -> str:
     value = os.getenv(key, "")
     value = value.strip()
@@ -22,9 +38,11 @@ def env_configured(key: str) -> bool:
     return bool(clean_env_value(key))
 
 
-def ai_provider_configured() -> bool:
-    """Return true when at least one text-generation provider key is configured."""
-    return any(env_configured(key) for key in AI_PROVIDER_ENV_KEYS)
+def ai_provider_configured(role: str | None = None) -> bool:
+    """Return true when a provider key is configured for the given role or globally."""
+    if role:
+        return any(bool(resolve_ai_key_for_role(role, key)) for key in AI_PROVIDER_ENV_KEYS)
+    return any(env_configured(key) or env_configured(f"USER_{key}") or env_configured(f"ADMIN_{key}") for key in AI_PROVIDER_ENV_KEYS)
 
 
 def upload_storage_configured() -> bool:
@@ -42,8 +60,8 @@ def validate_env() -> list[str]:
     required = ["JWT_SECRET", "ADMIN_PASSWORD"]
     
     missing = [key for key in required if not env_configured(key)]
-    if os.getenv("REQUIRE_AI_KEY", "false").lower() == "true" and not ai_provider_configured():
-        missing.append("one of GEMINI_API_KEY, OPENROUTER_API_KEY, or GROQ_API_KEY")
+    if os.getenv("REQUIRE_AI_KEY", "false").lower() == "true" and not ai_provider_configured("user") and not ai_provider_configured("admin"):
+        missing.append("one of GEMINI_API_KEY, OPENROUTER_API_KEY, or GROQ_API_KEY, or their USER_/ADMIN_ variants")
     
     # Production-specific checks
     is_production = os.getenv("ENVIRONMENT", "development").lower() in {"production", "prod"}
@@ -123,7 +141,7 @@ def provider_env_status() -> list[dict[str, str | bool]]:
     status: list[dict[str, str | bool]] = []
     for provider in providers:
         env_name = str(provider["env"])
-        configured = bool(provider.get("configured_override", env_configured(env_name)))
+        configured = bool(provider.get("configured_override", env_configured(env_name) or env_configured(f"USER_{env_name}") or env_configured(f"ADMIN_{env_name}")))
         status.append(
             {
                 "key": str(provider["key"]),

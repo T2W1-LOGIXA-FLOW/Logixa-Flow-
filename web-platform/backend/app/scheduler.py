@@ -72,13 +72,13 @@ def run_daily_agent_preview_once() -> int | None:
 
 def scheduler_status() -> dict[str, object]:
     return {
-        "enabled": os.getenv("ENABLE_SCHEDULER", "false").lower() == "true",
+        "enabled": os.getenv("ENABLE_SCHEDULER", "true").lower() == "true",
         "interval_hours": max(int(os.getenv("SCHEDULER_INTERVAL_HOURS", "24")), 1),
     }
 
 
 def start_scheduler() -> None:
-    if os.getenv("ENABLE_SCHEDULER", "false").lower() != "true":
+    if os.getenv("ENABLE_SCHEDULER", "true").lower() != "true":
         return
     interval_hours = max(int(os.getenv("SCHEDULER_INTERVAL_HOURS", "24")), 1)
 

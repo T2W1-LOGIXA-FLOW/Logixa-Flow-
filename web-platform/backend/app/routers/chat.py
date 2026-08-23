@@ -62,7 +62,7 @@ def chat_query(
     db.commit()
     db.refresh(user_message)
     
-    ai_response = generate_ai_response(request.query, request.context, request.agent_id, db)
+    ai_response = generate_ai_response(request.query, request.context, request.agent_id, db, role="admin")
     
     # Save agent message
     agent_message = models.ChatMessage(
@@ -105,7 +105,7 @@ def public_chat_query(
     This route intentionally does not require admin auth and does not write
     chat sessions to the admin database. Admin chat history stays private.
     """
-    ai_response = generate_ai_response(request.query, request.context, request.agent_id or "public", db)
+    ai_response = generate_ai_response(request.query, request.context, request.agent_id or "public", db, role="user")
     return {
         "response": ai_response["content"],
         "agent_id": ai_response["agent_id"],
@@ -118,6 +118,7 @@ def generate_ai_response(
     context: list[schemas.ChatMessageBase],
     agent_id: str | None,
     db: Session,
+    role: str = "admin",
 ) -> dict:
     """
     Generate AI response using the agent system.
@@ -146,7 +147,7 @@ def generate_ai_response(
     )
 
     try:
-        router = LLMRouter(db)
+        router = LLMRouter(db, role=role)
         response_text, model_used = router.generate_with_provider(prompt)
     except Exception:
         response_text = (

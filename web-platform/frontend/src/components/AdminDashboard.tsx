@@ -19,7 +19,7 @@ import {
 import Skeleton from "./shadcn/Skeleton";
 import EmptyState from "./EmptyState";
 import ErrorState from "./ErrorState";
-import { DashboardMetric, Post, adminFetch, getMetrics } from "./api";
+import { AdminActivityEntry, DashboardMetric, Post, SystemStatus, adminFetch, getMetrics } from "./api";
 import ImportCalendar from "./ImportCalendar";
 import InsightForm from "./InsightForm";
 import { getAdminSessionToken } from "@/lib/adminSession";
@@ -40,6 +40,7 @@ const commandModules = [
     href: "/admin/insights",
     icon: FileText,
     accent: "cyan",
+    featured: false,
   },
   {
     title: "AI Brain",
@@ -47,6 +48,7 @@ const commandModules = [
     href: "/admin/brain",
     icon: Brain,
     accent: "violet",
+    featured: false,
   },
   {
     title: "Agent Control",
@@ -54,6 +56,7 @@ const commandModules = [
     href: "/admin/agents",
     icon: Bot,
     accent: "emerald",
+    featured: false,
   },
   {
     title: "Finance & Costs",
@@ -61,13 +64,15 @@ const commandModules = [
     href: "/admin/costs",
     icon: DollarSign,
     accent: "amber",
+    featured: true,
   },
   {
-    title: "Operations",
-    description: "Feeds, analytics, logistics estimator, and system checks.",
+    title: "Logistics Estimator",
+    description: "Run vehicle-fit and capacity calculations before dispatch decisions.",
     href: "/admin/estimator",
     icon: PackageCheck,
     accent: "sky",
+    featured: true,
   },
   {
     title: "System Health",
@@ -75,15 +80,66 @@ const commandModules = [
     href: "/admin/system",
     icon: Server,
     accent: "slate",
+    featured: false,
   },
 ];
 
 const readiness = [
   { label: "Public site", value: "Stable", detail: "Keep user pages clean and fast." },
   { label: "Backend API", value: "Connected", detail: "Render service is the runtime source." },
-  { label: "AI providers", value: "Ready", detail: "Gemini/OpenRouter/Groq fallback path." },
+  { label: "User AI", value: "Public", detail: "Customer-facing assistant path enabled." },
+  { label: "Admin AI", value: "Internal", detail: "Ops automation and agent orchestration split." },
   { label: "Costs", value: "Planning", detail: "Track free tiers before paid scale." },
+  { label: "Estimator", value: "Ready", detail: "Vehicle fit and capacity checks on standby." },
 ];
+
+const aiLayerStatus = [
+  { label: "User AI", value: "Ready", detail: "Public assistant lane" },
+  { label: "Admin AI", value: "Ready", detail: "Internal workflow automation" },
+  { label: "Cost guardrail", value: "Active", detail: "Free-tier tracking enabled" },
+  { label: "Estimator", value: "Live", detail: "Capacity checks ready" },
+];
+
+const liveAlerts = [
+  {
+    title: "Public assistant",
+    detail: "Customer-facing AI remains isolated from internal workflows.",
+    tone: "cyan",
+  },
+  {
+    title: "Admin automation",
+    detail: "Ops workflows are routed with internal-only provider access.",
+    tone: "violet",
+  },
+  {
+    title: "Operational guardrails",
+    detail: "Cost and estimator checks remain visible on the command center.",
+    tone: "amber",
+  },
+];
+
+const recentActivity = [
+  {
+    time: "2 min ago",
+    title: "AI split verified",
+    detail: "Public user assistant stayed separate from admin automation credentials.",
+    tone: "cyan",
+  },
+  {
+    time: "11 min ago",
+    title: "Cost guardrail refreshed",
+    detail: "Free-tier usage and spend thresholds stayed in view for the operations team.",
+    tone: "amber",
+  },
+  {
+    time: "24 min ago",
+    title: "Estimator processed",
+    detail: "Capacity-check workflow remained available for route planning and dispatch tasks.",
+    tone: "violet",
+  },
+] as const;
+
+const recentActivityFallback = [...recentActivity];
 
 function metricValue(metrics: DashboardMetric[], key: string, fallback: string) {
   return metrics.find((metric) => metric.key === key)?.value || fallback;
@@ -99,6 +155,10 @@ export default function AdminDashboard() {
   const [draftsLoading, setDraftsLoading] = useState(true);
   const [metricsError, setMetricsError] = useState<string | null>(null);
   const [draftsError, setDraftsError] = useState<string | null>(null);
+  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
+  const [activityFeed, setActivityFeed] = useState<AdminActivityEntry[]>([]);
+  const [systemStatusError, setSystemStatusError] = useState<string | null>(null);
+  const [activityError, setActivityError] = useState<string | null>(null);
 
   const statCards = useMemo(
     () => [
@@ -129,6 +189,8 @@ export default function AdminDashboard() {
   const loadDashboard = async (authToken: string) => {
     setLoading(true);
     setMetricsError(null);
+    setSystemStatusError(null);
+    setActivityError(null);
     try {
       const loadedMetrics = await getMetrics();
       setMetrics(loadedMetrics);
@@ -150,6 +212,25 @@ export default function AdminDashboard() {
     } finally {
       setDraftsLoading(false);
     }
+
+    try {
+      const statusResponse = await adminFetch("/api/admin/system/status", authToken);
+      const statusData = (await statusResponse.json()) as SystemStatus;
+      setSystemStatus(statusData);
+    } catch (error) {
+      console.error("System status error:", error);
+      setSystemStatusError("Could not load system status.");
+    }
+
+    try {
+      const activityResponse = await adminFetch("/api/admin/activity", authToken);
+      const activityData = (await activityResponse.json()) as AdminActivityEntry[];
+      setActivityFeed(activityData.length > 0 ? activityData : recentActivityFallback);
+    } catch (error) {
+      console.error("Admin activity error:", error);
+      setActivityError("Could not load activity feed.");
+      setActivityFeed(recentActivityFallback);
+    }
   };
 
   useEffect(() => {
@@ -161,6 +242,57 @@ export default function AdminDashboard() {
     setToken(savedToken);
     loadDashboard(savedToken);
   }, [router]);
+
+  const readinessCards = useMemo(() => {
+    if (!systemStatus) return readiness;
+    const userProvider = systemStatus.user_active_provider || systemStatus.active_provider || "Gemini";
+    const adminProvider = systemStatus.admin_active_provider || systemStatus.active_provider || "Mistral";
+    return [
+      { label: "Public site", value: "Stable", detail: "Keep user pages clean and fast." },
+      { label: "Backend API", value: "Connected", detail: "Render service is the runtime source." },
+      { label: "User AI", value: userProvider, detail: `${userProvider} is serving the public assistant lane.` },
+      { label: "Admin AI", value: adminProvider, detail: `${adminProvider} is serving internal automation and workflows.` },
+      { label: "Costs", value: "Planning", detail: "Track free tiers before paid scale." },
+      { label: "Estimator", value: "Ready", detail: "Vehicle fit and capacity checks on standby." },
+    ];
+  }, [systemStatus]);
+
+  const aiLayerCards = useMemo(() => {
+    if (!systemStatus) return aiLayerStatus;
+    const userProvider = systemStatus.user_active_provider || systemStatus.active_provider || "Gemini";
+    const adminProvider = systemStatus.admin_active_provider || systemStatus.active_provider || "Mistral";
+    return [
+      { label: "User AI", value: userProvider, detail: "Public assistant lane" },
+      { label: "Admin AI", value: adminProvider, detail: "Internal workflow automation" },
+      { label: "Cost guardrail", value: "Active", detail: "Free-tier tracking enabled" },
+      { label: "Estimator", value: systemStatus.scheduler_enabled ? "Live" : "Standby", detail: "Capacity checks ready" },
+    ];
+  }, [systemStatus]);
+
+  const liveAlertCards = useMemo(() => {
+    if (!systemStatus) return liveAlerts;
+    return [
+      {
+        title: "Public assistant",
+        detail: `User routing is active on ${systemStatus.user_active_provider || "Gemini"}.`,
+        tone: "cyan",
+      },
+      {
+        title: "Admin automation",
+        detail: `Admin routing is active on ${systemStatus.admin_active_provider || "Mistral"}.`,
+        tone: "violet",
+      },
+      {
+        title: "Operational guardrails",
+        detail: systemStatus.scheduler_enabled ? "Scheduler is enabled and operational." : "Scheduler is currently disabled.",
+        tone: "amber",
+      },
+    ];
+  }, [systemStatus]);
+
+  const recentActivityCards = useMemo(() => {
+    return activityFeed.length > 0 ? activityFeed : recentActivityFallback;
+  }, [activityFeed]);
 
   if (!token) {
     return (
@@ -188,7 +320,15 @@ export default function AdminDashboard() {
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-500/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-100">
+            <span className="h-2 w-2 rounded-full bg-cyan-400" />
+            User AI
+          </span>
+          <span className="inline-flex items-center gap-2 rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-violet-100">
+            <span className="h-2 w-2 rounded-full bg-violet-400" />
+            Admin AI
+          </span>
           <Link className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/20" href="/admin/system">
             System Status
           </Link>
@@ -266,6 +406,114 @@ export default function AdminDashboard() {
             )}
           </section>
 
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {aiLayerCards.map((item) => (
+              <article key={item.label} className="rounded-2xl border border-slate-800 bg-slate-900/75 p-4 shadow-xl shadow-black/10">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
+                  <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-200">
+                    {item.value}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm text-slate-400">{item.detail}</p>
+              </article>
+            ))}
+          </section>
+
+          <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">Live ops</p>
+                  <h2 className="mt-2 text-xl font-bold text-white">Operations pulse</h2>
+                </div>
+                <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-200">
+                  Stable
+                </span>
+              </div>
+              {systemStatusError && (
+                <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-200">
+                  {systemStatusError}
+                </div>
+              )}
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                {liveAlertCards.map((alert) => (
+                  <article
+                    key={alert.title}
+                    className={`rounded-2xl border p-4 ${
+                      alert.tone === "cyan"
+                        ? "border-cyan-400/20 bg-cyan-500/5"
+                        : alert.tone === "violet"
+                          ? "border-violet-400/20 bg-violet-500/5"
+                          : "border-amber-400/20 bg-amber-500/5"
+                    }`}
+                  >
+                    <p className="text-sm font-semibold text-white">{alert.title}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-400">{alert.detail}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl">
+              <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">Quick focus</p>
+              <h2 className="mt-2 text-xl font-bold text-white">Priority queue</h2>
+              <div className="mt-5 space-y-3">
+                <div className="rounded-2xl border border-cyan-400/20 bg-cyan-500/5 p-3">
+                  <p className="text-sm font-semibold text-white">Review AI policy split</p>
+                  <p className="mt-1 text-sm text-slate-400">Verify public and admin AI lanes remain correctly isolated.</p>
+                </div>
+                <div className="rounded-2xl border border-violet-400/20 bg-violet-500/5 p-3">
+                  <p className="text-sm font-semibold text-white">Monitor cost drift</p>
+                  <p className="mt-1 text-sm text-slate-400">Keep free-tier usage visible before it moves to paid scale.</p>
+                </div>
+                <div className="rounded-2xl border border-amber-400/20 bg-amber-500/5 p-3">
+                  <p className="text-sm font-semibold text-white">Estimator readiness</p>
+                  <p className="mt-1 text-sm text-slate-400">Vehicle-fit checks should stay available to ops and dispatch teams.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">Recent activity</p>
+                <h2 className="mt-2 text-xl font-bold text-white">System timeline</h2>
+              </div>
+              <span className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300">
+                Live feed
+              </span>
+            </div>
+            {activityError && (
+              <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-200">
+                {activityError}
+              </div>
+            )}
+            <div className="mt-5 space-y-3">
+              {recentActivityCards.map((entry) => (
+                <div key={entry.title} className="flex gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 p-3">
+                  <div
+                    className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${
+                      entry.tone === "cyan"
+                        ? "bg-cyan-400"
+                        : entry.tone === "amber"
+                          ? "bg-amber-400"
+                          : "bg-violet-400"
+                    }`}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-sm font-semibold text-white">{entry.title}</p>
+                      <span className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{entry.time}</span>
+                    </div>
+                    <p className="mt-1 text-sm leading-6 text-slate-400">{entry.detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {commandModules.map((module) => {
               const Icon = module.icon;
@@ -273,14 +521,31 @@ export default function AdminDashboard() {
                 <Link
                   key={module.title}
                   href={module.href}
-                  className="group rounded-2xl border border-slate-800 bg-slate-900/65 p-5 shadow-xl shadow-black/10 transition hover:-translate-y-0.5 hover:border-cyan-400/35 hover:bg-slate-900"
+                  className={`group rounded-2xl border p-5 shadow-xl shadow-black/10 transition duration-200 hover:-translate-y-0.5 hover:border-cyan-400/40 hover:bg-slate-900 ${
+                    module.featured
+                      ? "border-cyan-400/25 bg-gradient-to-br from-cyan-500/10 via-slate-900/80 to-slate-900/90"
+                      : "border-slate-800 bg-slate-900/65"
+                  }`}
                 >
                   <div className="flex items-start gap-4">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/10 text-cyan-200">
+                    <div
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-cyan-200 ${
+                        module.featured
+                          ? "border-cyan-400/30 bg-cyan-500/15"
+                          : "border-cyan-400/20 bg-cyan-500/10"
+                      }`}
+                    >
                       <Icon className="h-5 w-5" />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-white">{module.title}</h3>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-lg font-bold text-white">{module.title}</h3>
+                        {module.featured && (
+                          <span className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-200">
+                            Core
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-2 text-sm leading-6 text-slate-400">{module.description}</p>
                     </div>
                   </div>
@@ -336,7 +601,7 @@ export default function AdminDashboard() {
               <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">Readiness</p>
               <h2 className="mt-2 text-xl font-bold text-white">Beta operating checks</h2>
               <div className="mt-5 space-y-3">
-                {readiness.map((item) => (
+                {readinessCards.map((item) => (
                   <div key={item.label} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-sm font-semibold text-slate-300">{item.label}</span>

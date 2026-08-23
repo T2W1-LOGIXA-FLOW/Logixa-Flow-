@@ -49,6 +49,15 @@ NEXT_PUBLIC_API_URL=https://your-render-backend.onrender.com
 NEXT_PUBLIC_SITE_URL=https://your-vercel-domain.vercel.app
 ```
 
+Separate AI keys by role when both user and admin experiences use AI:
+
+```text
+USER_GEMINI_API_KEY=...
+ADMIN_GEMINI_API_KEY=...
+USER_OPENROUTER_API_KEY=...
+ADMIN_OPENROUTER_API_KEY=...
+```
+
 Do not put `DATABASE_URL`, AI provider keys, admin passwords, or JWT secrets in Vercel unless a specific frontend server route requires them.
 
 Render backend variables normally include:

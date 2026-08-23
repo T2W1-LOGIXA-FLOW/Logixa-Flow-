@@ -14,6 +14,20 @@ def clean_env_value(name: str) -> Optional[str]:
     return value or None
 
 
+def resolve_provider_key(provider_env_name: str, role: str = "admin") -> Optional[str]:
+    normalized_role = (role or "").strip().lower()
+    candidates = []
+    if normalized_role in {"user", "admin"}:
+        candidates.append(f"{normalized_role.upper()}_{provider_env_name}")
+    candidates.append(provider_env_name)
+
+    for env_name in candidates:
+        value = clean_env_value(env_name)
+        if value:
+            return value
+    return None
+
+
 class LLMProvider(ABC):
     @abstractmethod
     def generate(self, prompt: str, **kwargs) -> str:
@@ -24,9 +38,9 @@ class LLMProvider(ABC):
         pass
 
 class GeminiProvider(LLMProvider):
-    def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None):
+    def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None, role: str = "admin"):
         self.model = model or clean_env_value("GEMINI_MODEL") or "gemini-2.5-flash"
-        self.api_key = api_key or clean_env_value("GEMINI_API_KEY")
+        self.api_key = api_key or resolve_provider_key("GEMINI_API_KEY", role)
     
     def is_available(self) -> bool:
         return bool(self.api_key)
@@ -48,9 +62,9 @@ class GeminiProvider(LLMProvider):
         return data["candidates"][0]["content"]["parts"][0]["text"]
 
 class OpenRouterProvider(LLMProvider):
-    def __init__(self, model: str, api_key: Optional[str] = None):
+    def __init__(self, model: str, api_key: Optional[str] = None, role: str = "admin"):
         self.model = model  # e.g., "meta-llama/llama-3-70b-instruct"
-        self.api_key = api_key or clean_env_value("OPENROUTER_API_KEY")
+        self.api_key = api_key or resolve_provider_key("OPENROUTER_API_KEY", role)
     
     def is_available(self) -> bool:
         return bool(self.api_key)
@@ -72,9 +86,9 @@ class OpenRouterProvider(LLMProvider):
         return resp.json()["choices"][0]["message"]["content"]
 
 class GroqProvider(LLMProvider):
-    def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None):
+    def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None, role: str = "admin"):
         self.model = model or clean_env_value("GROQ_MODEL") or "llama-3.1-8b-instant"
-        self.api_key = api_key or clean_env_value("GROQ_API_KEY")
+        self.api_key = api_key or resolve_provider_key("GROQ_API_KEY", role)
     
     def is_available(self) -> bool:
         return bool(self.api_key)
@@ -103,9 +117,9 @@ class FallbackLocalProvider(LLMProvider):
         return "[Fallback Local Model] This is a simulated backend response. Add a valid GEMINI_API_KEY, OPENROUTER_API_KEY, or GROQ_API_KEY to the backend environment and redeploy to enable real AI responses."
         
 class CerebrasProvider(LLMProvider):
-    def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None):
-        self.model = model or clean_env_value("CEREBRAS_MODEL") or "llama-3.3-70b"
-        self.api_key = api_key or clean_env_value("CEREBRAS_API_KEY")
+    def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None, role: str = "admin"):
+        self.model = model or clean_env_value("CEREBRAS_MODEL") or "gpt-oss-120b"
+        self.api_key = api_key or resolve_provider_key("CEREBRAS_API_KEY", role)
     
     def is_available(self) -> bool:
         return bool(self.api_key)
@@ -128,9 +142,9 @@ class CerebrasProvider(LLMProvider):
 
 
 class MistralProvider(LLMProvider):
-    def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None):
+    def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None, role: str = "admin"):
         self.model = model or clean_env_value("MISTRAL_MODEL") or "mistral-small-latest"
-        self.api_key = api_key or clean_env_value("MISTRAL_API_KEY")
+        self.api_key = api_key or resolve_provider_key("MISTRAL_API_KEY", role)
     
     def is_available(self) -> bool:
         return bool(self.api_key)
@@ -153,9 +167,9 @@ class MistralProvider(LLMProvider):
 
 
 class CohereProvider(LLMProvider):
-    def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None):
+    def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None, role: str = "admin"):
         self.model = model or clean_env_value("COHERE_MODEL") or "command-r-plus"
-        self.api_key = api_key or clean_env_value("COHERE_API_KEY")
+        self.api_key = api_key or resolve_provider_key("COHERE_API_KEY", role)
     
     def is_available(self) -> bool:
         return bool(self.api_key)
@@ -178,9 +192,9 @@ class CohereProvider(LLMProvider):
 
 
 class NvidiaNimProvider(LLMProvider):
-    def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None):
+    def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None, role: str = "admin"):
         self.model = model or clean_env_value("NVIDIA_NIM_MODEL") or "meta/llama-3.1-8b-instruct"
-        self.api_key = api_key or clean_env_value("NVIDIA_NIM_API_KEY")
+        self.api_key = api_key or resolve_provider_key("NVIDIA_NIM_API_KEY", role)
     
     def is_available(self) -> bool:
         return bool(self.api_key)

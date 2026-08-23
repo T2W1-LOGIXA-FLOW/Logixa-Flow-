@@ -78,8 +78,16 @@ export interface SystemStatus {
   scheduler_enabled: boolean;
   ai_key_configured: boolean;
   // Optional fields provided by /admin/system/status for diagnostics
+  user_active_provider?: string;
+  user_active_model?: string;
+  admin_active_provider?: string;
+  admin_active_model?: string;
   active_provider?: string;
   active_model?: string;
+  scheduler_status?: {
+    enabled: boolean;
+    interval_hours: number;
+  };
   providers: {
     key: string;
     label: string;
@@ -115,6 +123,13 @@ export interface DashboardMetric {
   value: string;
   display_order: number;
   updated_at: string;
+}
+
+export interface AdminActivityEntry {
+  time?: string | null;
+  title: string;
+  detail: string;
+  tone: "cyan" | "violet" | "amber";
 }
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";

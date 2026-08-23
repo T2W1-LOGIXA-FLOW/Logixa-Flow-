@@ -41,23 +41,32 @@ def sanitize_provider_error(message: str) -> str:
 
 
 class LLMRouter:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, role: str = "admin"):
         self.db = db
-        self.providers = {
-            "gemini": GeminiProvider(),
-            "openrouter-llama": OpenRouterProvider(
-                model=clean_env_value("OPENROUTER_LLAMA_MODEL") or "meta-llama/llama-3.3-70b-instruct:free"
-            ),
-            "openrouter-deepseek": OpenRouterProvider(
-                model=clean_env_value("OPENROUTER_DEEPSEEK_MODEL") or "deepseek/deepseek-r1:free"
-            ),
-            "groq": GroqProvider(),
-            "cerebras": CerebrasProvider(),
-            "mistral": MistralProvider(),
-            "cohere": CohereProvider(),
-            "nvidia": NvidiaNimProvider(),
-            "local": FallbackLocalProvider(),
-        }
+        self.role = (role or "admin").strip().lower()
+        if self.role == "user":
+            self.providers = {
+                "gemini": GeminiProvider(role=self.role),
+                "local": FallbackLocalProvider(),
+            }
+        else:
+            self.providers = {
+                "gemini": GeminiProvider(role=self.role),
+                "openrouter-llama": OpenRouterProvider(
+                    model=clean_env_value("OPENROUTER_LLAMA_MODEL") or "meta-llama/llama-3.3-70b-instruct:free",
+                    role=self.role,
+                ),
+                "openrouter-deepseek": OpenRouterProvider(
+                    model=clean_env_value("OPENROUTER_DEEPSEEK_MODEL") or "deepseek/deepseek-r1:free",
+                    role=self.role,
+                ),
+                "groq": GroqProvider(role=self.role),
+                "cerebras": CerebrasProvider(role=self.role),
+                "mistral": MistralProvider(role=self.role),
+                "cohere": CohereProvider(role=self.role),
+                "nvidia": NvidiaNimProvider(role=self.role),
+                "local": FallbackLocalProvider(),
+            }
 
     def _selected_provider_name(self) -> str:
         setting = self.db.query(models.AppSetting).filter(
@@ -68,7 +77,10 @@ class LLMRouter:
             "llama3": "openrouter-llama",
             "deepseek": "openrouter-deepseek",
         }
-        return aliases.get(selected, selected)
+        selected = aliases.get(selected, selected)
+        if self.role == "user" and selected not in {"gemini", "local"}:
+            return "gemini"
+        return selected
 
     def _provider_order(self) -> list[tuple[str, LLMProvider]]:
         selected = self._selected_provider_name()

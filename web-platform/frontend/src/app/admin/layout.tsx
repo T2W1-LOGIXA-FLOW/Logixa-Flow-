@@ -23,7 +23,10 @@ import {
   Menu,
   ShieldCheck,
   UserCog,
-  X
+  X,
+  ArrowUpRight,
+  RefreshCw,
+  Sparkles
 } from "lucide-react";
 import { useState } from "react";
 import { useEffect } from "react";
@@ -80,12 +83,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const isLoginRoute = pathname === "/admin/login";
 
   const handleLogout = () => {
     clearAdminSession();
     window.location.href = "/admin/login";
   };
+
+  const quickActions = [
+    { label: "Refresh", href: pathname, icon: RefreshCw, action: () => { setIsRefreshing(true); setTimeout(() => window.location.reload(), 250); } },
+    { label: "System", href: "/admin/system", icon: Server, action: undefined },
+    { label: "Open site", href: "/", icon: ArrowUpRight, action: undefined },
+  ];
 
   useEffect(() => {
     let cancelled = false;
@@ -234,30 +244,86 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden text-slate-400 hover:text-white transition"
+              className="lg:hidden rounded-lg border border-slate-700/80 bg-slate-900/80 p-2 text-slate-300 transition duration-200 hover:border-cyan-400/40 hover:text-white active:scale-95"
               aria-label="Open sidebar"
               title="Open sidebar"
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5" />
             </button>
-            <div className="hidden text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 lg:block">
-              Admin Workspace
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500 lg:text-xs">
+              <span className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-500/5 px-2 py-1 text-cyan-200">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                Ops online
+              </span>
+              <span className="hidden rounded-full border border-slate-700 bg-slate-900/80 px-2 py-1 text-slate-300 sm:inline-flex">
+                Admin Workspace
+              </span>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="hidden md:flex items-center gap-2 text-sm text-slate-400">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                System Online
-              </div>
+            <div className="flex items-center gap-2 md:gap-3">
+              <span className="hidden rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-200 md:inline-flex">
+                Live
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/25 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
+                <span className="h-2 w-2 rounded-full bg-cyan-400" />
+                User AI
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-400/25 bg-violet-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-100">
+                <span className="h-2 w-2 rounded-full bg-violet-400" />
+                Admin AI
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/80 px-2.5 py-1 text-xs text-slate-300">
+                <Sparkles className="h-3.5 w-3.5 text-cyan-300" />
+                Status stable
+              </span>
             </div>
           </div>
         </div>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-x-hidden px-4 py-6 sm:px-6 lg:px-8">
+        <main className="flex-1 overflow-x-hidden px-4 pb-24 pt-6 sm:px-6 lg:px-8">
           <div className="mx-auto w-full max-w-7xl">
             {children}
           </div>
         </main>
+
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-800/80 bg-slate-950/90 px-4 py-3 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-2">
+            <div className="hidden items-center gap-2 text-xs text-slate-400 sm:flex">
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+              Command center ready
+            </div>
+            <div className="flex flex-1 items-center justify-end gap-2">
+              {quickActions.map(({ label, href, icon: Icon, action }) => {
+                const buttonClass = "inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-xs font-semibold text-slate-200 shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:border-cyan-400/50 hover:bg-slate-800 hover:text-white active:scale-[0.97] active:border-cyan-400/60 active:bg-cyan-500/10 focus:outline-none focus:ring-2 focus:ring-cyan-400/60 touch-manipulation";
+                if (action) {
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={action}
+                      className={`${buttonClass} ${isRefreshing && label === "Refresh" ? "cursor-wait border-cyan-400/60 bg-cyan-500/10 text-cyan-100 shadow-[0_0_0_1px_rgba(34,211,238,0.2)]" : ""}`}
+                      aria-label={label}
+                      aria-busy={isRefreshing && label === "Refresh"}
+                    >
+                      <Icon className={`h-3.5 w-3.5 ${isRefreshing && label === "Refresh" ? "animate-spin" : ""}`} />
+                      {label}
+                    </button>
+                  );
+                }
+                return (
+                  <Link
+                    key={label}
+                    href={href}
+                    className={buttonClass}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
