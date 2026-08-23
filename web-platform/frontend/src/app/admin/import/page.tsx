@@ -58,7 +58,7 @@ export default function AdminImportPage() {
           </div>
           <div className="flex gap-3">
             <button type="submit" disabled={loading} className="primary-button">
-              {loading ? "Uploading..." : "Submit"}
+              {loading ? "Uploading..." : "Upload"}
             </button>
             <button type="button" onClick={() => setFile(null)} className="ghost-button">
               Clear

@@ -6,23 +6,16 @@ import Link from "next/link";
 import {
   LayoutDashboard,
   FileText,
-  FileEdit,
-  Newspaper,
   Bot,
   Settings,
   BarChart3,
   Calculator,
   Server,
-  Rss,
   Brain,
-  CreditCard,
   DollarSign,
-  Mail,
   MessageSquare,
   LogOut,
   Menu,
-  ShieldCheck,
-  UserCog,
   X,
   ArrowUpRight,
   RefreshCw,
@@ -36,46 +29,29 @@ import { clearAdminSession, getAdminSessionToken } from "@/lib/adminSession";
 const navigationItems = [
   {
     category: "OVERVIEW",
+    items: [{ href: "/admin", label: "Overview", icon: LayoutDashboard }],
+  },
+  {
+    category: "CORE OPS",
     items: [
-      { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/admin/system", label: "System Status", icon: Server },
+      { href: "/admin/agents", label: "Agents", icon: Bot },
+      { href: "/admin/workflows", label: "Workflows", icon: MessageSquare },
+      { href: "/admin/deployments", label: "Deployments", icon: Server },
+      { href: "/admin/content", label: "Content", icon: FileText },
+      { href: "/admin/memory", label: "Memory", icon: Brain },
     ],
   },
   {
-    category: "CONTENT STUDIO",
+    category: "FINANCE & PLANNING",
     items: [
-      { href: "/admin/insights", label: "Insights", icon: FileText },
-      { href: "/admin/drafts", label: "Drafts", icon: FileEdit },
-      { href: "/admin/articles", label: "Articles", icon: Newspaper },
-      { href: "/admin/submissions", label: "Submissions", icon: ShieldCheck },
-    ],
-  },
-  {
-    category: "AI & MEMORY",
-    items: [
-      { href: "/admin/brain", label: "AI Memory", icon: Brain },
-      { href: "/agent", label: "AI Control", icon: Bot },
-      { href: "/admin/agent-chat", label: "Agent Chat", icon: MessageSquare },
-      { href: "/admin/agents", label: "Agent Profiles", icon: UserCog },
-    ],
-  },
-  {
-    category: "OPERATIONS",
-    items: [
-      { href: "/admin/feeds", label: "Feeds", icon: Rss },
-      { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-      { href: "/admin/costs", label: "Finance & Costs", icon: DollarSign },
+      { href: "/admin/costs", label: "Costs", icon: DollarSign },
       { href: "/admin/estimator", label: "Estimator", icon: Calculator },
+      { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
     ],
   },
   {
     category: "SETTINGS",
-    items: [
-      { href: "/admin/settings", label: "Admin Settings", icon: Settings },
-      { href: "/admin/settings/2fa", label: "Two-factor Auth", icon: ShieldCheck },
-      { href: "/admin/payments", label: "Payments", icon: CreditCard },
-      { href: "/admin/email-templates", label: "Email Templates", icon: Mail },
-    ],
+    items: [{ href: "/admin/settings", label: "Settings", icon: Settings }],
   },
 ];
 

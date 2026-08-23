@@ -37,6 +37,27 @@ def record_cost(payload: CostRecord, db: Session = Depends(get_db), _: dict = De
     return {"ok": True, "id": evt.id}
 
 
+@router.get("/admin/costs")
+def admin_costs_index(
+    start: Optional[str] = Query(default=None, description="Start date YYYY-MM-DD"),
+    end: Optional[str] = Query(default=None, description="End date YYYY-MM-DD"),
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_admin),
+) -> dict:
+    return costs_summary(start=start, end=end, db=db, _=_)
+
+
+@router.get("/admin/costs/trend")
+def admin_costs_trend(
+    start: Optional[str] = Query(default=None, description="Start date YYYY-MM-DD"),
+    end: Optional[str] = Query(default=None, description="End date YYYY-MM-DD"),
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_admin),
+) -> dict:
+    summary = costs_summary(start=start, end=end, db=db, _=_)
+    return {"trend": summary.get("daily", [])}
+
+
 @router.get("/admin/costs/summary")
 def costs_summary(
     start: Optional[str] = Query(default=None, description="Start date YYYY-MM-DD"),

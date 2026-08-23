@@ -24,14 +24,46 @@ services:
         value: https://your-vercel-domain.vercel.app
       - key: REQUIRE_AI_KEY
         value: false
+      - key: USER_AI_PROVIDER
+        value: gemini
+      - key: USER_AI_MODEL
+        value: gemini-2.5-flash
+      - key: USER_GEMINI_API_KEY
+        sync: false
+      - key: ADMIN_AI_PROVIDER
+        value: mistral
+      - key: ADMIN_AI_MODEL
+        value: mistral-small-latest
+      - key: ADMIN_MISTRAL_API_KEY
+        sync: false
       - key: GEMINI_API_KEY
         sync: false
       - key: OPENROUTER_API_KEY
         sync: false
+      - key: OPENROUTER_LLAMA_MODEL
+        value: meta-llama/llama-3.3-70b-instruct:free
       - key: GROQ_API_KEY
         sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: CEREBRAS_API_KEY
+        sync: false
+      - key: CEREBRAS_MODEL
+        value: gpt-oss-120b
+      - key: COHERE_API_KEY
+        sync: false
+      - key: COHERE_MODEL
+        value: command-r-plus
+      - key: NVIDIA_NIM_API_KEY
+        sync: false
+      - key: NVIDIA_NIM_MODEL
+        value: meta/llama-3.1-8b-instruct
       - key: REDIS_URL
         sync: false
+      - key: ENABLE_SCHEDULER
+        value: true
+      - key: SCHEDULER_INTERVAL_HOURS
+        value: "24"
 
 databases:
   - name: logixa-flow-db
