@@ -159,28 +159,18 @@ export default function FeedManager() {
   }
 
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-      <div style={{ marginBottom: 24 }}>
+    <div className="admin-panel">
+      <div className="mb-6">
         <Button onClick={() => setShowAddForm(!showAddForm)} variant="default">
           {showAddForm ? "Cancel" : "Add New Feed"}
         </Button>
       </div>
 
       {showAddForm && (
-        <form
-          onSubmit={handleAddFeed}
-          style={{
-            padding: 16,
-            marginBottom: 24,
-            border: "1px solid #ddd",
-            borderRadius: 8,
-            backgroundColor: "#fafafa",
-          }}
-        >
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", marginBottom: 4, fontWeight: "bold" }}>
-              Feed URL *
-            </label>
+        <form onSubmit={handleAddFeed} className="p-4 mb-6 rounded-xl bg-slate-900 border border-slate-800">
+
+          <div className="mb-3">
+            <label className="block mb-2 font-bold">Feed URL *</n              </label>
             <Input
               type="url"
               placeholder="https://example.com/feed"
@@ -190,10 +180,8 @@ export default function FeedManager() {
             />
           </div>
 
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", marginBottom: 4, fontWeight: "bold" }}>
-              Title
-            </label>
+          <div className="mb-3">
+            <label className="block mb-2 font-bold">Title</label>
             <Input
               type="text"
               placeholder="Feed title (optional)"
@@ -202,19 +190,12 @@ export default function FeedManager() {
             />
           </div>
 
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", marginBottom: 4, fontWeight: "bold" }}>
-              Category
-            </label>
+          <div className="mb-3">
+            <label className="block mb-2 font-bold">Category</label>
             <select
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              style={{
-                width: "100%",
-                padding: 8,
-                border: "1px solid #ddd",
-                borderRadius: 4,
-              }}
+              className="w-full p-2 rounded border border-slate-700 bg-slate-900 text-slate-100"
             >
               <option value="Supply Chain">Supply Chain</option>
               <option value="Logistics">Logistics</option>
@@ -224,19 +205,12 @@ export default function FeedManager() {
             </select>
           </div>
 
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", marginBottom: 4, fontWeight: "bold" }}>
-              Trust Level
-            </label>
+          <div className="mb-3">
+            <label className="block mb-2 font-bold">Trust Level</label>
             <select
               value={formData.trust_level}
               onChange={(e) => setFormData({ ...formData, trust_level: e.target.value })}
-              style={{
-                width: "100%",
-                padding: 8,
-                border: "1px solid #ddd",
-                borderRadius: 4,
-              }}
+              className="w-full p-2 rounded border border-slate-700 bg-slate-900 text-slate-100"
             >
               <option value="standard">Standard</option>
               <option value="verified">Verified</option>
@@ -259,23 +233,17 @@ export default function FeedManager() {
           actionOnClick={() => setShowAddForm(true)}
         />
       ) : (
-      <div style={{ overflowX: "auto" }}>
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            border: "1px solid #ddd",
-          }}
-        >
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse border border-slate-700">
           <thead>
-            <tr style={{ backgroundColor: "#f5f5f5", borderBottom: "2px solid #ddd" }}>
-              <th style={{ padding: 12, textAlign: "left" }}>Title</th>
-              <th style={{ padding: 12, textAlign: "left" }}>URL</th>
-              <th style={{ padding: 12, textAlign: "left" }}>Category</th>
-              <th style={{ padding: 12, textAlign: "left" }}>Trust Level</th>
-              <th style={{ padding: 12, textAlign: "left" }}>Last Scrape</th>
-              <th style={{ padding: 12, textAlign: "left" }}>Status</th>
-              <th style={{ padding: 12, textAlign: "center" }}>Actions</th>
+            <tr className="bg-slate-800 border-b border-slate-700">
+              <th className="px-4 py-3 text-left">Title</th>
+              <th className="px-4 py-3 text-left">URL</th>
+              <th className="px-4 py-3 text-left">Category</th>
+              <th className="px-4 py-3 text-left">Trust Level</th>
+              <th className="px-4 py-3 text-left">Last Scrape</th>
+              <th className="px-4 py-3 text-left">Status</th>
+              <th className="px-4 py-3 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -287,10 +255,9 @@ export default function FeedManager() {
                 key={feed.id}
                 style={{ borderBottom: "1px solid #ddd" }}
               >
-                <td style={{ padding: 12 }}>{feed.title || feed.url}</td>
+                <td className="px-4 py-3">{feed.title || feed.url}</td>
                 <td
                   style={{
-                    padding: 12,
                     maxWidth: 200,
                     overflow: "hidden",
                     textOverflow: "ellipsis",

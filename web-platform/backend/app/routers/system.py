@@ -21,10 +21,15 @@ def system_status(
     db: Session = Depends(get_db),
     _: dict = Depends(require_admin),
 ) -> dict[str, object]:
+    # include LLM diagnostics so frontend can show active provider/model
+    llm_router = LLMRouter(db)
+    diagnostics = llm_router.diagnostics()
     return {
         "missing_env": validate_env(),
-        "scheduler_enabled": os.getenv("ENABLE_SCHEDULER", "false").lower() == "true",
+        "scheduler_enabled": os.getenv("ENABLE_SCHEDULER", "true").lower() == "true",
         "ai_key_configured": ai_provider_configured(),
+        "active_provider": diagnostics.get("active_provider"),
+        "active_model": diagnostics.get("active_model"),
         "providers": provider_env_status(),
         "cache_backend": cache_client.backend,
         "rate_limit_backend": rate_limiter.backend,

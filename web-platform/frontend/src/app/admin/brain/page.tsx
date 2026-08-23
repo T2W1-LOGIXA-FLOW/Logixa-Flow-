@@ -109,11 +109,11 @@ export default function BrainReviewPage() {
       <section className="agent-header">
         <div>
           <p className="eyebrow">Human Review</p>
-          <h1>AI Brain Queue</h1>
+          <h1>AI Memory</h1>
           <p className="muted">Agent output stays private here until an admin approves or publishes it.</p>
         </div>
-        <Link className="ghost-button" href="/agent">
-          Run Agent
+        <Link className="ghost-button" href="/admin/drafts">
+          Create Draft
         </Link>
       </section>
 
@@ -163,9 +163,13 @@ export default function BrainReviewPage() {
           ) : items.length ? (
             items.map((item) => (
               <button className={selected?.id === item.id ? "active" : ""} key={item.id} type="button" onClick={() => setSelectedId(item.id)}>
-                <span>{item.status}</span>
-                <strong>{item.source_title}</strong>
-                <small>{item.category}</small>
+                <div className="flex items-center justify-between w-full">
+                  <div className="text-left">
+                    <strong className="block text-sm leading-tight">{item.source_title}</strong>
+                    <small className="text-xs text-slate-400">{item.category}</small>
+                  </div>
+                  <span className="ml-3 text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-300 font-medium">{item.status}</span>
+                </div>
               </button>
             ))
           ) : (
@@ -174,8 +178,8 @@ export default function BrainReviewPage() {
                 icon="🧠"
                 title={`No ${filter} items`}
                 description="Run the AI agent to generate drafts for review, or select a different filter."
-                actionLabel="Run Agent"
-                actionHref="/agent"
+                actionLabel="Create Draft"
+                actionHref="/admin/drafts"
               />
             </div>
           )}

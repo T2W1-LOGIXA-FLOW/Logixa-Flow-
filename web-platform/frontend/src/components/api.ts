@@ -77,6 +77,9 @@ export interface SystemStatus {
   missing_env: string[];
   scheduler_enabled: boolean;
   ai_key_configured: boolean;
+  // Optional fields provided by /admin/system/status for diagnostics
+  active_provider?: string;
+  active_model?: string;
   providers: {
     key: string;
     label: string;
