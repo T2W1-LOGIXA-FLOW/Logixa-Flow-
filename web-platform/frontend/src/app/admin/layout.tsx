@@ -39,22 +39,21 @@ const navigationItems = [
     ],
   },
   {
-    category: "INSIGHTS",
+    category: "CONTENT STUDIO",
     items: [
-      { href: "/admin/insights", label: "All Insights", icon: FileText },
+      { href: "/admin/insights", label: "Insights", icon: FileText },
       { href: "/admin/drafts", label: "Drafts", icon: FileEdit },
       { href: "/admin/articles", label: "Articles", icon: Newspaper },
       { href: "/admin/submissions", label: "Submissions", icon: ShieldCheck },
     ],
   },
   {
-    category: "AI AGENT",
+    category: "AI & MEMORY",
     items: [
-      { href: "/agent", label: "Agent Control", icon: Bot },
+      { href: "/admin/brain", label: "AI Memory", icon: Brain },
+      { href: "/agent", label: "AI Control", icon: Bot },
       { href: "/admin/agent-chat", label: "Agent Chat", icon: MessageSquare },
-      { href: "/admin/brain", label: "Brain Queue", icon: Brain },
       { href: "/admin/agents", label: "Agent Profiles", icon: UserCog },
-      { href: "/admin/controllers", label: "Controllers", icon: Settings },
     ],
   },
   {

@@ -5,9 +5,11 @@ import FeedManager from "../../../components/FeedManager";
 
 export default function FeedsPage() {
   return (
-    <div style={{ padding: 20 }}>
-      <h1 style={{ marginBottom: 12 }}>Feed Management</h1>
-      <FeedManager />
-    </div>
+    <main className="page-shell">
+      <div className="admin-panel">
+        <h1 className="text-2xl font-bold mb-4">Feed Management</h1>
+        <FeedManager />
+      </div>
+    </main>
   );
 }

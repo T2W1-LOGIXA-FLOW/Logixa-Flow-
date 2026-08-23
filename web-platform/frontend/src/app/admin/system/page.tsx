@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -20,15 +20,13 @@ export default function AdminSystemPage() {
     const response = await adminFetch("/api/admin/system/status", savedToken);
     setStatus((await response.json()) as SystemStatus);
 
-    const frontendResponse = await fetch("/api/admin/env-status", {
-      headers: { Authorization: `Bearer ${savedToken}` },
-    });
+    // Use adminFetch for the frontend env-status so proper auth headers are included
+    const frontendResponse = await adminFetch("/api/admin/env-status", savedToken);
     if (frontendResponse.ok) {
       const data = (await frontendResponse.json()) as { providers: EnvProviderStatus[] };
       setFrontendProviders(data.providers);
     }
   }
-
   useEffect(() => {
     const saved = getAdminSessionToken();
     if (!saved) {
@@ -127,6 +125,20 @@ export default function AdminSystemPage() {
         <p className="eyebrow">Provider Health</p>
         <h2>API keys and service configuration</h2>
         <p className="muted">Backend process checks. Secret values are never exposed.</p>
+        <div className="mt-4 flex gap-4 items-center">
+          {status?.active_provider && (
+            <div className="px-3 py-2 rounded bg-slate-900 border border-slate-700">
+              <div className="text-xs text-slate-400">Active Provider</div>
+              <div className="font-semibold text-white">{status.active_provider}</div>
+            </div>
+          )}
+          {status?.active_model && (
+            <div className="px-3 py-2 rounded bg-slate-900 border border-slate-700">
+              <div className="text-xs text-slate-400">Active Model</div>
+              <div className="font-semibold text-white">{status.active_model}</div>
+            </div>
+          )}
+        </div>
         <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {(status?.providers || []).map((provider) => (
             <article
