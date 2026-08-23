@@ -7,7 +7,7 @@ import { adminFetch } from "@/components/api";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 export default function AdminImportPage() {
-  const { token, isAuthenticated } = useAdminAuth();
+  const { token } = useAdminAuth();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -27,8 +27,8 @@ export default function AdminImportPage() {
       });
       const data = await res.json();
       toast.success(`Imported ${data.imported} items`);
-    } catch (err: any) {
-      toast.error(err?.message || "Import failed");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Import failed");
     } finally {
       setLoading(false);
     }

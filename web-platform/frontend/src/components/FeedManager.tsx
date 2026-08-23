@@ -170,7 +170,7 @@ export default function FeedManager() {
         <form onSubmit={handleAddFeed} className="p-4 mb-6 rounded-xl bg-slate-900 border border-slate-800">
 
           <div className="mb-3">
-            <label className="block mb-2 font-bold">Feed URL *</n              </label>
+            <label className="block mb-2 font-bold">Feed URL *</label>
             <Input
               type="url"
               placeholder="https://example.com/feed"
