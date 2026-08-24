@@ -349,11 +349,11 @@ export default function AdminDashboard() {
     <div className="space-y-8 pb-10">
       <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-cyan-400/25 via-sky-500/20 to-orange-400/25 text-lg font-black text-white shadow-lg shadow-cyan-500/10">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#1E293B] bg-gradient-to-br from-[#22D3EE] via-[#F59E0B] to-[#22D3EE] text-lg font-black text-white shadow-lg shadow-[#22D3EE]/10">
             LF
           </div>
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">Admin Dashboard</p>
+            <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#22D3EE]">Admin Dashboard</p>
             <h1 className="mt-2 text-3xl font-black tracking-tight text-white sm:text-4xl">
               Logixa Flow Operations
             </h1>
@@ -407,9 +407,9 @@ export default function AdminDashboard() {
           <section className="rounded-3xl border border-cyan-400/15 bg-slate-900/70 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-7">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">Priority Workspace</p>
+                <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#22D3EE]">Priority Workspace</p>
                 <h2 className="mt-2 text-2xl font-bold text-white">Important work only on the dashboard.</h2>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-[#94A3B8]">
                   Core controls stay here. Detailed tools live under their module pages so the admin area stays fast and readable on desktop and mobile.
                 </p>
               </div>
@@ -445,10 +445,10 @@ export default function AdminDashboard() {
                                 { label: "Profit", value: finance.profit != null ? "$" + Number(finance.profit).toLocaleString() : "-", detail: "Profit = Revenue - Expenses" },
                 { label: "Projects", value: finance.projects_count != null ? String(finance.projects_count) : "-", detail: "Active tracked projects" },
               ] : statCards).map((card) => (
-                <article key={card.label} className="rounded-2xl border border-slate-800 bg-slate-900/75 p-5 shadow-xl shadow-black/10">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{card.label}</p>
-                  <strong className="mt-3 block text-3xl font-black text-white">{card.value}</strong>
-                  <p className="mt-2 text-sm text-slate-400">{card.detail}</p>
+                <article key={card.label} className="rounded-2xl border border-[#1E293B] bg-[#101728] p-5 shadow-xl shadow-[0_10px_30px_rgba(2,15,30,0.6)] hover:border-[#22D3EE]/50 hover:shadow-[0_0_15px_rgba(34,211,238,0.12)]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#94A3B8]">{card.label}</p>
+                  <strong className="mt-3 block text-3xl font-black text-[#E2E8F0]">{card.value}</strong>
+                                    <p className="mt-2 text-sm text-[#94A3B8]">{card.detail}</p>
                 </article>
               ))
             )}
@@ -472,7 +472,7 @@ export default function AdminDashboard() {
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">API Usage</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#22D3EE]">API Usage</p>
                   <h2 className="mt-2 text-xl font-bold text-white">Requests over time</h2>
                 </div>
               </div>
@@ -482,26 +482,26 @@ export default function AdminDashboard() {
                 ) : (
                   <ResponsiveContainer width="100%" height={240}>
                     <LineChart data={usageTrend} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                      <CartesianGrid stroke="#1f2937" />
-                      <XAxis dataKey="date" tick={{ fill: '#94a3b8' }} />
-                      <YAxis tick={{ fill: '#94a3b8' }} />
+                      <CartesianGrid stroke="#1E293B" />
+                      <XAxis dataKey="date" tick={{ fill: '#94A3B8' }} />
+                      <YAxis tick={{ fill: '#94A3B8' }} />
                       <Tooltip />
-                      <Line type="monotone" dataKey="tokens" stroke="#06b6d4" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="cost" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="tokens" stroke="#22D3EE" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="cost" stroke="#F59E0B" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
               </div>
 
               {/* Donut chart: API key usage share */}
-              <div className="mt-4 rounded-2xl bg-slate-900/60 p-3">
-                <h3 className="text-xs font-semibold text-slate-400">API Key Usage Share</h3>
+              <div className="mt-4 rounded-2xl bg-[#101728] p-3 border border-[#1E293B]">
+                              <h3 className="text-xs font-semibold text-[#94A3B8]">API Key Usage Share</h3>
                 <div style={{ width: 180, height: 180 }} className="mx-auto mt-3">
                   <ResponsiveContainer width={180} height={180}>
                     <PieChart>
                       <Pie data={usageByKey} dataKey="tokens" nameKey="api_key_name" cx="50%" cy="50%" innerRadius={48} outerRadius={72} paddingAngle={3}>
                         {usageByKey.map((entry, idx) => (
-                          <Cell key={`cell-${idx}`} fill={["#06b6d4", "#06b6d4", "#10b981", "#34d399", "#60a5fa"][idx % 5]} />
+                          <Cell key={`cell-${idx}`} fill={["#22D3EE","#F59E0B","#10B981"][idx % 3]} />
                         ))}
                       </Pie>
                     </PieChart>
@@ -513,7 +513,7 @@ export default function AdminDashboard() {
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">Revenue vs Expenses</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#22D3EE]">Revenue vs Expenses</p>
                   <h2 className="mt-2 text-xl font-bold text-white">Latest summary</h2>
                 </div>
               </div>
@@ -622,9 +622,9 @@ export default function AdminDashboard() {
                   <div
                     className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${
                       entry.tone === "cyan"
-                        ? "bg-cyan-400"
+                                              ? "bg-[#22D3EE]"
                         : entry.tone === "amber"
-                          ? "bg-amber-400"
+                                                ? "bg-[#F59E0B]"
                           : "bg-violet-400"
                     }`}
                   />
@@ -647,18 +647,16 @@ export default function AdminDashboard() {
                 <Link
                   key={module.title}
                   href={module.href}
-                  className={`group rounded-2xl border p-5 shadow-xl shadow-black/10 transition duration-200 hover:-translate-y-0.5 hover:border-cyan-400/40 hover:bg-slate-900 ${
-                    module.featured
-                      ? "border-cyan-400/25 bg-gradient-to-br from-cyan-500/10 via-slate-900/80 to-slate-900/90"
-                      : "border-slate-800 bg-slate-900/65"
+                  className={`group rounded-2xl border p-5 shadow-xl shadow-black/10 transition duration-200 hover:-translate-y-0.5 hover:border-[#22D3EE]/40 hover:bg-[#101728] ${
+                    module.featured ? "border-[#1E293B] bg-gradient-to-br from-[#22D3EE]/10 via-[#101728] to-[#0A0F1E]" : "border-[#1E293B] bg-[#101728]"
                   }`}
                 >
                   <div className="flex items-start gap-4">
                     <div
-                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-cyan-200 ${
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-[#22D3EE] ${
                         module.featured
-                          ? "border-cyan-400/30 bg-cyan-500/15"
-                          : "border-cyan-400/20 bg-cyan-500/10"
+                                                ? "border-[#22D3EE]/30 bg-[#22D3EE]/8"
+                                                : "border-[#22D3EE]/20 bg-[#22D3EE]/8"
                       }`}
                     >
                       <Icon className="h-5 w-5" />

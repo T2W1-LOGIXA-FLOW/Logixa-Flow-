@@ -134,7 +134,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside
         className={`
           fixed lg:sticky lg:top-0 inset-y-0 left-0 z-50
-          w-[18rem] border-r border-cyan-400/10 bg-slate-950/95
+          w-72 border-r border-[#1E293B] bg-[#0A0F1E]
           shadow-2xl shadow-black/40 backdrop-blur-xl
           transform transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -145,7 +145,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="border-b border-slate-800/80 p-5">
           <div className="flex items-center justify-between gap-3">
             <Link href="/admin" className="flex items-center gap-3" onClick={() => setSidebarOpen(false)}>
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-sky-500 to-orange-400 text-sm font-black text-white shadow-lg shadow-cyan-500/20">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#22D3EE] via-[#F59E0B] to-[#22D3EE] text-sm font-black text-white shadow-lg shadow-[#22D3EE]/20">
                 LF
               </span>
               <span>
@@ -186,8 +186,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm
                         transition-all duration-200
                         ${isActive
-                          ? 'border border-cyan-400/30 bg-cyan-500/10 text-cyan-100 shadow-[0_0_24px_rgba(14,165,233,0.12)]'
-                          : 'border border-transparent text-slate-400 hover:border-slate-700/80 hover:bg-slate-900/80 hover:text-white hover:shadow-lg hover:shadow-cyan-500/20'
+                                                  ? 'bg-[#22D3EE]/10 text-[#22D3EE] border-l-2 border-[#22D3EE] shadow-[0_0_18px_rgba(34,211,238,0.08)]'
+                                                  : 'border border-transparent text-[#94A3B8] hover:bg-[#101728] hover:border-[#22D3EE]/20 hover:text-[#22D3EE]'
                         }
                       `}
                     >
