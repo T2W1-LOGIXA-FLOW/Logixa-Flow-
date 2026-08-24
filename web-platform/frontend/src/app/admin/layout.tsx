@@ -44,7 +44,7 @@ const navigationItems = [
   {
     category: "FINANCE & PLANNING",
     items: [
-      { href: "/admin/costs", label: "Costs", icon: DollarSign },
+      { href: "/admin/finance", label: "Finance", icon: DollarSign },
       { href: "/admin/usage", label: "Usage", icon: BarChart3 },
       { href: "/admin/estimator", label: "Estimator", icon: Calculator },
       { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
