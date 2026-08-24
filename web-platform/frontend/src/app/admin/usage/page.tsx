@@ -48,7 +48,7 @@ export default function UsagePage() {
         <div className="grid gap-6 md:grid-cols-2">
           <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
             <h2 className="text-lg font-semibold text-white">Usage by key</h2>
-            <div className="mt-4 overflow-x-auto">
+            <div className="mt-4 overflow-x-auto rounded-lg bg-slate-900 p-2">
               <table className="w-full table-auto text-sm">
                 <thead>
                   <tr className="text-slate-400">
@@ -61,7 +61,7 @@ export default function UsagePage() {
                 </thead>
                 <tbody>
                   {rows.map((r) => (
-                    <tr key={`${String(r.provider)}-${String(r.api_key_name)}`} className="border-t border-slate-800">
+                    <tr key={`${String(r.provider)}-${String(r.api_key_name)}`} className="border-t border-slate-800 hover:bg-slate-800/40 transition">
                       <td className="px-3 py-2 text-slate-200">{String(r.provider)}</td>
                       <td className="px-3 py-2 text-slate-200">{String(r.api_key_name)}</td>
                       <td className="px-3 py-2 text-right text-slate-200">{Number(r.tokens || 0)}</td>

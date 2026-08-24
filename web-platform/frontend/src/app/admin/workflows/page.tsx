@@ -108,11 +108,14 @@ export default function AdminWorkflowsPage() {
     data: {
       ...n.data,
       label: (
+      <div className="flex items-center gap-3">
+        {(n.data?.status === 'running') && <span className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse shadow-lg shadow-yellow-500/20" />}
         <div>
           <div className="font-bold">{n.data?.label}</div>
           <div className="text-xs text-slate-400 mt-1">{(n.data?.status || 'idle').toString()}</div>
         </div>
-      ),
+      </div>
+    ),
     },
   }));
 

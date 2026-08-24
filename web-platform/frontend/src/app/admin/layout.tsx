@@ -187,7 +187,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         transition-all duration-200
                         ${isActive
                           ? 'border border-cyan-400/30 bg-cyan-500/10 text-cyan-100 shadow-[0_0_24px_rgba(14,165,233,0.12)]'
-                          : 'border border-transparent text-slate-400 hover:border-slate-700/80 hover:bg-slate-900/80 hover:text-white'
+                          : 'border border-transparent text-slate-400 hover:border-slate-700/80 hover:bg-slate-900/80 hover:text-white hover:shadow-lg hover:shadow-cyan-500/20'
                         }
                       `}
                     >
@@ -234,6 +234,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </span>
               <span className="hidden rounded-full border border-slate-700 bg-slate-900/80 px-2 py-1 text-slate-300 sm:inline-flex">
                 Admin Workspace
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/8 px-2 py-1 text-emerald-200">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-md shadow-emerald-400/30" />
+                Live
               </span>
             </div>
             <div className="flex items-center gap-2 md:gap-3">

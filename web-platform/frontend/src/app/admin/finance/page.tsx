@@ -160,7 +160,7 @@ export default function AdminFinancePage() {
               </div>
             </div>
 
-            <div className="mt-4 overflow-x-auto">
+            <div className="mt-4 overflow-x-auto rounded-lg bg-slate-900 p-2">
               <table className="w-full table-auto text-sm">
                 <thead>
                   <tr className="text-slate-400">
@@ -174,7 +174,7 @@ export default function AdminFinancePage() {
                 </thead>
                 <tbody>
                   {projects.map((p) => (
-                    <tr key={p.id} className="border-t border-slate-800">
+                    <tr key={p.id} className="border-t border-slate-800 hover:bg-slate-800/40 transition">
                       <td className="px-3 py-2 text-slate-200">{p.name}</td>
                       <td className="px-3 py-2 text-right text-slate-200">${Number(p.estimated_revenue || 0).toLocaleString()}</td>
                       <td className="px-3 py-2 text-right text-slate-200">${Number(p.estimated_cost || 0).toLocaleString()}</td>

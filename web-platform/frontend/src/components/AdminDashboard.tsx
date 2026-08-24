@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import Skeleton from "./shadcn/Skeleton";
 import EmptyState from "./EmptyState";
-import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import ErrorState from "./ErrorState";
 import { AdminActivityEntry, DashboardMetric, Post, SystemStatus, adminFetch, getMetrics } from "./api";
 import ImportCalendar from "./ImportCalendar";
@@ -153,6 +153,7 @@ export default function AdminDashboard() {
   const [metrics, setMetrics] = useState<DashboardMetric[]>([]);
   const [finance, setFinance] = useState<Record<string, unknown> | null>(null);
   const [usageTrend, setUsageTrend] = useState<Record<string, unknown>[]>([]);
+  const [usageByKey, setUsageByKey] = useState<Record<string, unknown>[]>([]);
   const [usageError, setUsageError] = useState<string | null>(null);
   const [financeError, setFinanceError] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Post[]>([]);
@@ -228,6 +229,18 @@ export default function AdminDashboard() {
       console.error("Usage trend error:", err);
       setUsageError("Could not load usage trend.");
       setUsageTrend([]);
+    }
+
+    // Fetch usage by key (donut)
+    try {
+      const resp = await adminFetch("/api/admin/usage", authToken).catch(() => null);
+      if (resp) {
+        const j = await resp.json();
+        setUsageByKey(j.usage_by_key || []);
+      }
+    } catch (err) {
+      console.error("Usage by key error:", err);
+      setUsageByKey([]);
     }
 
     setDraftsLoading(true);
@@ -479,8 +492,24 @@ export default function AdminDashboard() {
                   </ResponsiveContainer>
                 )}
               </div>
-            </div>
 
+              {/* Donut chart: API key usage share */}
+              <div className="mt-4 rounded-2xl bg-slate-900/60 p-3">
+                <h3 className="text-xs font-semibold text-slate-400">API Key Usage Share</h3>
+                <div style={{ width: 180, height: 180 }} className="mx-auto mt-3">
+                  <ResponsiveContainer width={180} height={180}>
+                    <PieChart>
+                      <Pie data={usageByKey} dataKey="tokens" nameKey="api_key_name" cx="50%" cy="50%" innerRadius={48} outerRadius={72} paddingAngle={3}>
+                        {usageByKey.map((entry, idx) => (
+                          <Cell key={`cell-${idx}`} fill={["#06b6d4", "#06b6d4", "#10b981", "#34d399", "#60a5fa"][idx % 5]} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+ 
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -493,15 +522,25 @@ export default function AdminDashboard() {
                   <div className="text-sm text-red-300">{financeError}</div>
                 ) : (
                   <ResponsiveContainer width="100%" height={240}>
-                    <BarChart data={[{ name: 'Totals', revenue: finance?.revenue || 0, expenses: finance?.expenses || 0 }]}>
+                    <AreaChart data={[{ name: 'Totals', revenue: finance?.revenue || 0, expenses: finance?.expenses || 0 }]}>
+                      <defs>
+                        <linearGradient id="gradRev" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.6}/>
+                          <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.05}/>
+                        </linearGradient>
+                        <linearGradient id="gradExp" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.6}/>
+                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.05}/>
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid stroke="#1f2937" />
                       <XAxis dataKey="name" tick={{ fill: '#94a3b8' }} />
                       <YAxis tick={{ fill: '#94a3b8' }} />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="revenue" fill="#06b6d4" />
-                      <Bar dataKey="expenses" fill="#f59e0b" />
-                    </BarChart>
+                      <Area type="monotone" dataKey="revenue" stroke="#06b6d4" fillOpacity={1} fill="url(#gradRev)" />
+                      <Area type="monotone" dataKey="expenses" stroke="#f59e0b" fillOpacity={1} fill="url(#gradExp)" />
+                    </AreaChart>
                   </ResponsiveContainer>
                 )}
               </div>
