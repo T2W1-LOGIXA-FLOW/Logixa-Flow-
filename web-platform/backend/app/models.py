@@ -305,3 +305,47 @@ class ChatMessage(Base):
     cost_estimate = Column(Float, nullable=True)  # Estimated cost in USD
     json_metadata = Column(Text, nullable=True)  # JSON metadata
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
+
+
+class ApiUsageLog(Base):
+    __tablename__ = "api_usage_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    provider = Column(String(120), nullable=False, index=True)
+    api_key_name = Column(String(255), nullable=True)
+    role = Column(String(50), nullable=False, index=True)
+    model = Column(String(255), nullable=True, index=True)
+    tokens_used = Column(Integer, nullable=True)
+    cost = Column(Float, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
+
+
+class ProjectRevenue(Base):
+    __tablename__ = "project_revenues"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False, index=True)
+    estimated_revenue = Column(Float, default=0.0, nullable=False)
+    estimated_cost = Column(Float, default=0.0, nullable=False)
+    actual_revenue = Column(Float, default=0.0, nullable=False)
+    actual_cost = Column(Float, default=0.0, nullable=False)
+    status = Column(String(40), default="planned", nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
+
+
+class ExpenseCategory(Base):
+    __tablename__ = "expense_categories"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False, unique=True, index=True)
+    budget = Column(Float, default=0.0, nullable=False)
+
+
+class CompanyBudget(Base):
+    __tablename__ = "company_budgets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    total_budget = Column(Float, default=0.0, nullable=False)
+    spent_amount = Column(Float, default=0.0, nullable=False)
+    currency = Column(String(10), default="USD", nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)

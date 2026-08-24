@@ -125,7 +125,42 @@ class LLMRouter:
         provider_errors: list[str] = []
         for name, provider in self._provider_order():
             try:
-                return provider.generate(prompt, **kwargs), getattr(provider, "model", name)
+                response = provider.generate(prompt, **kwargs)
+                model_name = getattr(provider, "model", name)
+
+                # Rough token estimate: average 4 characters per token
+                total_chars = len(prompt or "") + len(response or "")
+                tokens_estimated = max(1, total_chars // 4)
+
+                try:
+                    cost_per_1k = float(clean_env_value("AI_COST_PER_1K") or 0.0)
+                except Exception:
+                    cost_per_1k = 0.0
+                cost_estimate = (tokens_estimated / 1000.0) * cost_per_1k
+
+                api_key_name = f"{self.role.capitalize()} {name.replace('-', ' ').title()} Key"
+
+                # Persist usage log; guard so logging failures don't stop generation
+                try:
+                    log = models.ApiUsageLog(
+                        provider=name,
+                        api_key_name=api_key_name,
+                        role=self.role,
+                        model=model_name,
+                        tokens_used=tokens_estimated,
+                        cost=cost_estimate,
+                        created_at=models.utc_now(),
+                    )
+                    self.db.add(log)
+                    self.db.commit()
+                except Exception:
+                    logger.exception("Failed to persist ApiUsageLog")
+                    try:
+                        self.db.rollback()
+                    except Exception:
+                        pass
+
+                return response, model_name
             except Exception as exc:
                 error_summary = sanitize_provider_error(
                     f"{name}: {exc.__class__.__name__}: {str(exc)[:300]}"

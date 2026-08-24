@@ -18,7 +18,7 @@ from .database import Base, SessionLocal, engine
 from .db_bootstrap import bootstrap_database, database_profile
 from .logging_config import setup_logging
 from .middleware import rate_limit_middleware, security_headers_middleware, stealth_mode_middleware
-from .routers import admin, agent, analytics, auth, chat, contacts, controllers, costs, diagnostics, email_templates, estimator, integration, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads
+from .routers import admin, agent, analytics, auth, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads
 from .scheduler import scheduler_status, start_scheduler
 
 logger = logging.getLogger(__name__)
@@ -298,6 +298,8 @@ app.include_router(uploads.router, prefix="/api", tags=["uploads"])
 app.include_router(agent.router, prefix="/api", tags=["agent"])
 app.include_router(analytics.router, prefix="/api", tags=["analytics"])
 app.include_router(costs.router, prefix="/api", tags=["costs"])
+app.include_router(usage.router, prefix="/api", tags=["usage"])
+app.include_router(finance.router, prefix="/api", tags=["finance"])
 app.include_router(system.router, prefix="/api", tags=["system"])
 app.include_router(integration.router, prefix="/api", tags=["integration"])
 app.include_router(rag.router, prefix="/api", tags=["rag"])
