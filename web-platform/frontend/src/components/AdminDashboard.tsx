@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Skeleton from "./shadcn/Skeleton";
 import EmptyState from "./EmptyState";
+import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar, ResponsiveContainer, Legend } from 'recharts';
 import ErrorState from "./ErrorState";
 import { AdminActivityEntry, DashboardMetric, Post, SystemStatus, adminFetch, getMetrics } from "./api";
 import ImportCalendar from "./ImportCalendar";
@@ -150,6 +151,10 @@ export default function AdminDashboard() {
   const [view, setView] = useState<AdminView>("overview");
   const [token, setToken] = useState("");
   const [metrics, setMetrics] = useState<DashboardMetric[]>([]);
+  const [finance, setFinance] = useState<Record<string, unknown> | null>(null);
+  const [usageTrend, setUsageTrend] = useState<Record<string, unknown>[]>([]);
+  const [usageError, setUsageError] = useState<string | null>(null);
+  const [financeError, setFinanceError] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [draftsLoading, setDraftsLoading] = useState(true);
@@ -199,6 +204,30 @@ export default function AdminDashboard() {
       setMetricsError("Could not load dashboard metrics.");
     } finally {
       setLoading(false);
+    }
+
+    // Fetch finance summary
+    try {
+      setFinanceError(null);
+      const finResp = await adminFetch("/api/admin/finance/summary", authToken);
+      const finJson = await finResp.json();
+      setFinance(finJson);
+    } catch (err) {
+      console.error("Finance summary error:", err);
+      setFinanceError("Could not load finance summary.");
+      setFinance(null);
+    }
+
+    // Fetch usage trend
+    try {
+      setUsageError(null);
+      const usageResp = await adminFetch("/api/admin/usage/trend", authToken);
+      const usageJson = await usageResp.json();
+      setUsageTrend(usageJson.daily || []);
+    } catch (err) {
+      console.error("Usage trend error:", err);
+      setUsageError("Could not load usage trend.");
+      setUsageTrend([]);
     }
 
     setDraftsLoading(true);
@@ -396,7 +425,13 @@ export default function AdminDashboard() {
                 />
               </div>
             ) : (
-              statCards.map((card) => (
+              // Use Finance KPIs if available
+              (finance ? [
+                { label: "Revenue", value: finance.revenue != null ? "$" + Number(finance.revenue).toLocaleString() : "-", detail: "Revenue (actual or estimated)" },
+                                { label: "Expenses", value: finance.expenses != null ? "$" + Number(finance.expenses).toLocaleString() : "-", detail: "Total expenses (actual + budgets)" },
+                                { label: "Profit", value: finance.profit != null ? "$" + Number(finance.profit).toLocaleString() : "-", detail: "Profit = Revenue - Expenses" },
+                { label: "Projects", value: finance.projects_count != null ? String(finance.projects_count) : "-", detail: "Active tracked projects" },
+              ] : statCards).map((card) => (
                 <article key={card.label} className="rounded-2xl border border-slate-800 bg-slate-900/75 p-5 shadow-xl shadow-black/10">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{card.label}</p>
                   <strong className="mt-3 block text-3xl font-black text-white">{card.value}</strong>
@@ -420,6 +455,58 @@ export default function AdminDashboard() {
             ))}
           </section>
 
+          <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">API Usage</p>
+                  <h2 className="mt-2 text-xl font-bold text-white">Requests over time</h2>
+                </div>
+              </div>
+              <div style={{ width: '100%', height: 240 }} className="mt-4">
+                {usageError ? (
+                  <div className="text-sm text-red-300">{usageError}</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={240}>
+                    <LineChart data={usageTrend} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                      <CartesianGrid stroke="#1f2937" />
+                      <XAxis dataKey="date" tick={{ fill: '#94a3b8' }} />
+                      <YAxis tick={{ fill: '#94a3b8' }} />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="tokens" stroke="#06b6d4" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="cost" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">Revenue vs Expenses</p>
+                  <h2 className="mt-2 text-xl font-bold text-white">Latest summary</h2>
+                </div>
+              </div>
+              <div style={{ width: '100%', height: 240 }} className="mt-4">
+                {financeError ? (
+                  <div className="text-sm text-red-300">{financeError}</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={240}>
+                    <BarChart data={[{ name: 'Totals', revenue: finance?.revenue || 0, expenses: finance?.expenses || 0 }]}>
+                      <CartesianGrid stroke="#1f2937" />
+                      <XAxis dataKey="name" tick={{ fill: '#94a3b8' }} />
+                      <YAxis tick={{ fill: '#94a3b8' }} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="revenue" fill="#06b6d4" />
+                      <Bar dataKey="expenses" fill="#f59e0b" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+          </section>
           <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl">
               <div className="flex items-center justify-between gap-3">
