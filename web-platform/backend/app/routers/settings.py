@@ -12,13 +12,14 @@ AI_MODEL_KEY = "writer_ai_model"
 
 
 def get_setting(db: Session, key: str, default: str) -> str:
+    """
+    Read AppSetting value for `key`. This helper does NOT mutate the database.
+    Seeding of default AppSetting rows is performed at startup instead.
+    """
     setting = db.query(models.AppSetting).filter(models.AppSetting.key == key).first()
-    if not setting:
-        setting = models.AppSetting(key=key, value=default)
-        db.add(setting)
-        db.commit()
-        db.refresh(setting)
-    return setting.value
+    if setting:
+        return setting.value
+    return default
 
 
 @router.get("/settings/ai", response_model=schemas.AISettingOut)

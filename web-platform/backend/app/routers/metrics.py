@@ -18,17 +18,26 @@ DEFAULT_METRICS = [
 
 
 def ensure_default_metrics(db: Session) -> None:
-    for key, title, value, order in DEFAULT_METRICS:
-        exists = db.query(models.DashboardMetric).filter(models.DashboardMetric.key == key).first()
-        if not exists:
-            db.add(models.DashboardMetric(key=key, title=title, value=value, display_order=order))
-    db.commit()
+    """
+    No-op in request handlers. Seeding of default metrics is performed at startup to avoid
+    mutating GET requests. This keeps GET idempotent and safe for health checks/crawlers.
+    """
+    return
 
 
 @router.get("/metrics", response_model=list[schemas.DashboardMetricOut])
 def list_metrics(db: Session = Depends(get_db)):
-    ensure_default_metrics(db)
-    return db.query(models.DashboardMetric).order_by(models.DashboardMetric.display_order.asc()).all()
+    """Return metrics from DB. If no metrics are configured, return a non-mutating
+    in-memory default list so that frontend can display sensible defaults without
+    writing to the database."""
+    metrics = db.query(models.DashboardMetric).order_by(models.DashboardMetric.display_order.asc()).all()
+    if not metrics:
+        # Return defaults as Pydantic-validated objects without persisting them.
+        return [
+            schemas.DashboardMetricOut(id=None, key=key, title=title, value=value, display_order=order, updated_at="")
+            for key, title, value, order in DEFAULT_METRICS
+        ]
+    return metrics
 
 
 @router.get("/admin/metrics", response_model=list[schemas.DashboardMetricOut])

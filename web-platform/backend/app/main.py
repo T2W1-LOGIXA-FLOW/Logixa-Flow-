@@ -18,7 +18,7 @@ from .database import Base, SessionLocal, engine
 from .db_bootstrap import bootstrap_database, database_profile
 from .logging_config import setup_logging
 from .middleware import rate_limit_middleware, security_headers_middleware, stealth_mode_middleware
-from .routers import admin, agent, analytics, auth, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads
+from .routers import admin, agent, analytics, auth, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, integration_triggers, admin_env, workflows, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads
 from .scheduler import scheduler_status, start_scheduler
 
 logger = logging.getLogger(__name__)
@@ -143,7 +143,7 @@ async def lifespan(_: FastAPI):
 
 
 def seed_app_settings() -> None:
-    """Initialize AppSettings with default values for LLM routing and integration."""
+    """Initialize AppSettings with default values for LLM routing, integration and default metrics."""
     db = SessionLocal()
     try:
         # Default LLM model selection (can be changed via admin dashboard)
@@ -167,6 +167,21 @@ def seed_app_settings() -> None:
                 logger.info(f"AppSetting '{key}' created")
             except Exception as inner_exc:
                 logger.warning(f"Failed to seed AppSetting '{key}': {inner_exc}")
+        
+        # Seed default dashboard metrics (moved from request-time seeding)
+        try:
+            metrics_seeded = 0
+            for key, title, value, order in metrics.DEFAULT_METRICS:
+                exists = db.query(models.DashboardMetric).filter(models.DashboardMetric.key == key).first()
+                if exists:
+                    continue
+                db.add(models.DashboardMetric(key=key, title=title, value=value, display_order=order))
+                metrics_seeded += 1
+            if metrics_seeded:
+                logger.info(f"Seeded {metrics_seeded} default dashboard metrics")
+        except Exception as inner_exc:
+            logger.warning("Failed to seed default metrics: %s", inner_exc)
+            db.rollback()
         
         db.commit()
         logger.info(f"AppSettings seeded successfully ({seeded_count} new settings)")

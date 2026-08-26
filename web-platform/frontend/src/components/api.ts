@@ -204,7 +204,7 @@ export async function validateAdminToken(token: string) {
   if (!token) return false;
   try {
     const response = await fetchWithTimeout(`${API_URL}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     return response.ok;
   } catch {
