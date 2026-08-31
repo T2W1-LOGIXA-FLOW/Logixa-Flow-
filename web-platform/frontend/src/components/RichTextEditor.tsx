@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { sanitizeHtml } from "@/lib/sanitize-html";
 
 const tools = [
   { label: "B", command: "bold" },
@@ -21,7 +22,7 @@ export default function RichTextEditor({
 
   function run(command: string, valueArg?: string) {
     document.execCommand(command, false, valueArg);
-    onChange(editorRef.current?.innerHTML || "");
+    onChange(sanitizeHtml(editorRef.current?.innerHTML || ""));
   }
 
   return (
@@ -37,8 +38,8 @@ export default function RichTextEditor({
         ref={editorRef}
         className="rich-surface"
         contentEditable
-        dangerouslySetInnerHTML={{ __html: value }}
-        onInput={(event) => onChange(event.currentTarget.innerHTML)}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(value) }}
+        onInput={(event) => onChange(sanitizeHtml(event.currentTarget.innerHTML))}
         role="textbox"
         aria-label="Insight rich text content"
         suppressContentEditableWarning

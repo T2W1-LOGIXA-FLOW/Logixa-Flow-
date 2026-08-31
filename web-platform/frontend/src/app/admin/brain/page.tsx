@@ -9,6 +9,7 @@ import EmptyState from "@/components/EmptyState";
 import Skeleton from "@/components/shadcn/Skeleton";
 import Citations, { Match } from "@/components/Citations";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { sanitizeHtml } from "@/lib/sanitize-html";
 
 const filters: Array<AiMemory["status"] | "all"> = ["pending", "approved", "rejected", "published", "all"];
 
@@ -44,6 +45,7 @@ export default function BrainReviewPage() {
   }, [filter, token, isAuthenticated]);
 
   const selected = useMemo(() => items.find((item) => item.id === selectedId) || items[0], [items, selectedId]);
+  const safeSelectedContent = useMemo(() => sanitizeHtml(selected?.content || ""), [selected?.content]);
 
   async function refresh(nextFilter = filter) {
     const path = nextFilter === "all" ? "/api/admin/brain" : `/api/admin/brain?status=${nextFilter}`;
@@ -210,7 +212,7 @@ export default function BrainReviewPage() {
                   Publish
                 </button>
               </div>
-              <div className="draft-preview" dangerouslySetInnerHTML={{ __html: selected.content }} />
+              <div className="draft-preview" dangerouslySetInnerHTML={{ __html: safeSelectedContent }} />
               <Citations matches={matches} sources={sourcesList} />
             </>
           ) : (

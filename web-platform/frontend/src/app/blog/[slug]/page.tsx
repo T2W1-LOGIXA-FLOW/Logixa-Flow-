@@ -6,6 +6,7 @@ import { assetUrl, getPost } from "@/components/api";
 import ShareButtons from "@/components/ShareButtons";
 import BlogPDFExport from "@/components/BlogPDFExport";
 import PageBackground from "@/components/PageBackground";
+import { sanitizeHtml } from "@/lib/sanitize-html";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -55,6 +56,7 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
   }
   const image = assetUrl(post.image_url);
   const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const sanitizedContent = sanitizeHtml(post.content_html || "");
 
   // JSON-LD Structured Data for Article
   const articleSchema = {
@@ -103,7 +105,7 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
           <Image src={image} alt={post.title || ""} fill className="object-cover rounded-md article-image" />
         </div>
       ) : null}
-      <article className="article-body" dangerouslySetInnerHTML={{ __html: post.content_html }} />
+      <article className="article-body" dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
       <div className="mt-8 flex gap-2 flex-wrap items-center">
         <ShareButtons title={post.title} url={`${site}/blog/${post.slug}`} description={post.excerpt} />
         <BlogPDFExport title={post.title} htmlContent={post.content_html} publishedAt={post.published_at || undefined} />

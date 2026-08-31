@@ -1,5 +1,7 @@
 "use client";
 
+import { sanitizeHtml } from "@/lib/sanitize-html";
+
 export interface PDFOptions {
   filename?: string;
   title?: string;
@@ -11,6 +13,7 @@ export interface PDFOptions {
 }
 
 export function exportHTMLToPDF(html: string, options: PDFOptions = {}) {
+  const sanitizedHtml = sanitizeHtml(html);
   const {
     title = "Document",
     marginTop = 10,
@@ -50,7 +53,7 @@ export function exportHTMLToPDF(html: string, options: PDFOptions = {}) {
       </style>
     </head>
     <body>
-      ${html}
+      ${sanitizedHtml}
       <script>
         window.onload = () => {
           window.print();
@@ -91,12 +94,13 @@ export function generatePDFTemplate({
   content: string;
   footer?: string;
 }): string {
+  const safeContent = sanitizeHtml(content);
   return `
     <div style="padding: 20px;">
       <h1 style="text-align: center; margin-bottom: 10px;">${title}</h1>
       ${subtitle ? `<p style="text-align: center; color: #666; margin-bottom: 30px;">${subtitle}</p>` : ""}
       <hr style="margin: 20px 0; border: 1px solid #ddd;" />
-      <div>${content}</div>
+      <div>${safeContent}</div>
       ${footer ? `<hr style="margin: 20px 0; border: 1px solid #ddd;" /><p style="text-align: center; color: #999; font-size: 12px;">${footer}</p>` : ""}
     </div>
   `;
@@ -141,11 +145,11 @@ export function convertCSVToPDF(
     <table>
       <thead>
         <tr>
-          ${headers.map((h) => `<th>${h}</th>`).join("")}
+          ${headers.map((h) => `<th>${sanitizeHtml(h)}</th>`).join("")}
         </tr>
       </thead>
       <tbody>
-        ${rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}
+        ${rows.map((row) => `<tr>${row.map((cell) => `<td>${sanitizeHtml(cell)}</td>`).join("")}</tr>`).join("")}
       </tbody>
     </table>
   `;
