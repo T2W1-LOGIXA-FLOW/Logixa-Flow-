@@ -30,10 +30,13 @@ ENV/
 
 # Environment & secrets
 .env
-.env.local
-.env.*.local
-.env.production
-.env.development
+.env.*
+!.env.example
+!.env.local.example
+!.env.production.example
+!web-platform/frontend/.env.example
+!web-platform/frontend/.env.local.example
+!web-platform/backend/.env.example
 *.pem
 *.key
 *.cert

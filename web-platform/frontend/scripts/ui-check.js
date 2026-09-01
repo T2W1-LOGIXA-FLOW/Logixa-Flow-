@@ -1,3 +1,4 @@
+// This UI check script is a local QA/debug helper only. It is not part of the production app bundle and is intentionally kept for debugging browser UI checks.
 const puppeteer = require('puppeteer');
 
 (async () => {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const CSP_REPORT_ONLY_DIRECTIVES = [
+const CSP_DIRECTIVES = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.google-analytics.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -18,17 +18,31 @@ const CSP_REPORT_ONLY_DIRECTIVES = [
   "report-to csp-endpoint",
 ].join("; ");
 
+const HSTS_DIRECTIVE = "max-age=31536000; includeSubDomains; preload";
+
+function applyCspHeaders(response: NextResponse, request: NextRequest) {
+  const isHttps =
+    request.nextUrl.protocol === "https:" ||
+    request.headers.get("x-forwarded-proto") === "https";
+
+  if (isHttps) {
+    response.headers.set("Strict-Transport-Security", HSTS_DIRECTIVE);
+  }
+
+  response.headers.set("Content-Security-Policy", CSP_DIRECTIVES);
+  response.headers.set("Content-Security-Policy-Report-Only", CSP_DIRECTIVES);
+  response.headers.set(
+    "Reporting-Endpoints",
+    `csp-endpoint="${new URL("/api/csp-report", request.url).toString()}"`
+  );
+  return response;
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname === "/admin/login" || pathname === "/admin/forgot-password") {
-    const response = NextResponse.next();
-    response.headers.set("Content-Security-Policy-Report-Only", CSP_REPORT_ONLY_DIRECTIVES);
-    response.headers.set(
-      "Reporting-Endpoints",
-      `csp-endpoint="${new URL("/api/csp-report", request.url).toString()}"`
-    );
-    return response;
+    return applyCspHeaders(NextResponse.next(), request);
   }
 
   if (pathname.startsWith("/admin")) {
@@ -43,14 +57,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const response = NextResponse.next();
-  response.headers.set("Content-Security-Policy-Report-Only", CSP_REPORT_ONLY_DIRECTIVES);
-  response.headers.set(
-    "Reporting-Endpoints",
-    `csp-endpoint="${new URL("/api/csp-report", request.url).toString()}"`
-  );
-
-  return response;
+  return applyCspHeaders(NextResponse.next(), request);
 }
 
 export const config = {
