@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { sendConfirmationEmail, sendAdminNotification } from "@/lib/email";
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeHtml } from "@/lib/sanitize-html";
 
 // Validation schema
 const contactSchema = z.object({
@@ -52,11 +52,11 @@ export async function POST(request: NextRequest) {
 
     // Sanitize inputs
     const sanitizedData = {
-      name: DOMPurify.sanitize(data.name),
-      email: DOMPurify.sanitize(data.email),
-      phone: data.phone ? DOMPurify.sanitize(data.phone) : undefined,
-      subject: DOMPurify.sanitize(data.subject),
-      message: DOMPurify.sanitize(data.message),
+      name: sanitizeHtml(data.name),
+      email: sanitizeHtml(data.email),
+      phone: data.phone ? sanitizeHtml(data.phone) : undefined,
+      subject: sanitizeHtml(data.subject),
+      message: sanitizeHtml(data.message),
     };
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;

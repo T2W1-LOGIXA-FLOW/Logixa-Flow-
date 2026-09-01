@@ -1,4 +1,51 @@
-import createDOMPurify from "isomorphic-dompurify";
+import createDOMPurify from "dompurify";
+
+function getSanitizerWindow(): Window | undefined {
+  if (typeof window !== "undefined") {
+    return window;
+  }
+
+  if (typeof globalThis !== "undefined" && "document" in globalThis) {
+    const globalDocument = (globalThis as { document?: Document }).document;
+    if (globalDocument?.defaultView) {
+      return globalDocument.defaultView;
+    }
+  }
+
+  if (typeof process === "undefined" || !process.versions?.node) {
+    return undefined;
+  }
+
+  try {
+    type JSDOMLike = new (markup: string) => { window: Window };
+    const dynamicRequire = new Function("return require('jsdom')") as () => {
+      JSDOM: JSDOMLike;
+    };
+    const { JSDOM } = dynamicRequire();
+    return new JSDOM("<!doctype html><html><body></body></html>").window as Window;
+  } catch {
+    return undefined;
+  }
+}
+
+const SANITIZE_FORBIDDEN_TAGS = new Set([
+  "script",
+  "style",
+  "iframe",
+  "object",
+  "embed",
+  "svg",
+  "math",
+  "form",
+  "input",
+  "button",
+  "video",
+  "audio",
+  "link",
+  "meta",
+  "base",
+  "template",
+]);
 
 export const SANITIZE_ALLOWED_TAGS = [
   "p",
@@ -46,35 +93,85 @@ export const SANITIZE_ALLOWED_ATTR = [
 
 const SAFE_URL_REGEXP = /^(?:(?:https?:|mailto:|tel:)|\/|#)/i;
 
-export function sanitizeHtml(input: string): string {
-  const purifier = createDOMPurify(typeof window !== "undefined" ? window : undefined);
+function getTextContent(input: string): string {
+  return input.replace(/<[^>]+>/g, "").trim();
+}
 
+function sanitizeFallback(input: string): string {
+  const fallbackWindow = getSanitizerWindow() as (Window & { DOMParser?: typeof DOMParser }) | undefined;
+  if (!fallbackWindow?.DOMParser || !fallbackWindow.document) {
+    return input;
+  }
+
+  const parser = new fallbackWindow.DOMParser();
+  const doc = parser.parseFromString(`<body>${input}</body>`, "text/html");
+  const body = doc.body;
+
+  const sanitizeNode = (node: Node): string => {
+    if (node.nodeType === node.TEXT_NODE) {
+      return node.textContent ?? "";
+    }
+
+    if (node.nodeType !== node.ELEMENT_NODE) {
+      return "";
+    }
+
+    const element = node as Element;
+    const tagName = element.tagName.toLowerCase();
+
+    if (SANITIZE_FORBIDDEN_TAGS.has(tagName)) {
+      return "";
+    }
+
+    if (!SANITIZE_ALLOWED_TAGS.includes(tagName)) {
+      const childHtml = Array.from(element.childNodes).map(sanitizeNode).join("");
+      return childHtml;
+    }
+
+    const safeElement = doc.createElement(tagName);
+
+    for (const attribute of Array.from(element.attributes)) {
+      const attributeName = attribute.name.toLowerCase();
+      const attributeValue = attribute.value;
+
+      if (attributeName.startsWith("on") || attributeName === "style" || !SANITIZE_ALLOWED_ATTR.includes(attributeName)) {
+        continue;
+      }
+
+      if ((attributeName === "href" || attributeName === "src") && !SAFE_URL_REGEXP.test(attributeValue)) {
+        continue;
+      }
+
+      if (attributeName === "target" && attributeValue.toLowerCase() === "_blank") {
+        safeElement.setAttribute("rel", "noopener noreferrer");
+        continue;
+      }
+
+      safeElement.setAttribute(attributeName, attributeValue);
+    }
+
+    safeElement.innerHTML = Array.from(element.childNodes).map(sanitizeNode).join("");
+    return safeElement.outerHTML;
+  };
+
+  return Array.from(body.childNodes).map(sanitizeNode).join("");
+}
+
+export function sanitizeHtml(input: string): string {
+  const purifier = createDOMPurify(getSanitizerWindow() as Parameters<typeof createDOMPurify>[0]);
   const sanitized = purifier.sanitize(input, {
     ALLOWED_TAGS: SANITIZE_ALLOWED_TAGS,
     ALLOWED_ATTR: SANITIZE_ALLOWED_ATTR,
-    FORBID_TAGS: [
-      "script",
-      "style",
-      "iframe",
-      "object",
-      "embed",
-      "svg",
-      "math",
-      "form",
-      "input",
-      "button",
-      "video",
-      "audio",
-      "link",
-      "meta",
-      "base",
-      "template",
-    ],
+    FORBID_TAGS: Array.from(SANITIZE_FORBIDDEN_TAGS),
     FORBID_ATTR: ["style"],
     ADD_ATTR: ["class"],
     ALLOWED_URI_REGEXP: SAFE_URL_REGEXP,
     KEEP_CONTENT: false,
   });
+
+  if (getTextContent(input).length > 0 && getTextContent(sanitized).length === 0) {
+    return sanitizeFallback(input);
+  }
 
   return sanitized.replace(/<a\b([^>]*)target\s*=\s*["']_blank["']([^>]*)>/gi, (match, before, after) => {
     const attrs = `${before}${after}`;
