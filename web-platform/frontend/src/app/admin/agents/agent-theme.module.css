@@ -1,0 +1,195 @@
+.agentPage {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.cardBody {
+  display: grid;
+  gap: 1rem;
+  padding: 1.1rem;
+}
+
+.cardHeader,
+.metaRow,
+.timelineHeader,
+.messageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.eyebrow {
+  color: #67e8f9;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.objective {
+  color: #f8fafc;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.muted {
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
+
+.metaLabel {
+  color: #64748b;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.timeline {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem;
+}
+
+.timelineTitle {
+  color: #e2e8f0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.timelineList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.timelineItem {
+  position: relative;
+  display: grid;
+  grid-template-columns: 0.65rem 1fr;
+  gap: 0.75rem;
+}
+
+.timelineItem:not(:last-child)::before {
+  position: absolute;
+  top: 0.7rem;
+  bottom: -0.75rem;
+  left: 0.28rem;
+  width: 1px;
+  background: #334155;
+  content: "";
+}
+
+.timelineDot {
+  z-index: 1;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-top: 0.25rem;
+  border: 1px solid #22d3ee;
+  border-radius: 999px;
+  background: #0f172a;
+}
+
+.timelineDetail {
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.sessionShell {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.sessionShell h2 {
+  color: #f8fafc;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.sessionShell p {
+  color: #94a3b8;
+  font-size: 0.82rem;
+}
+
+.messageList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.message {
+  border: 1px solid #1e293b;
+  border-radius: 0.75rem;
+  background: rgb(15 23 42 / 0.72);
+  padding: 0.85rem;
+}
+
+.messageUser {
+  border-color: rgb(34 211 238 / 0.25);
+}
+
+.messageRole {
+  color: #67e8f9;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.messageText {
+  margin-top: 0.45rem;
+  color: #e2e8f0;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.errorState {
+  border: 1px solid rgb(248 113 113 / 0.35);
+  border-radius: 0.75rem;
+  background: rgb(127 29 29 / 0.2);
+  padding: 0.9rem 1rem;
+  color: #fecaca;
+}
+
+.errorTitle {
+  font-weight: 700;
+}
+
+.errorDetail {
+  margin-top: 0.25rem;
+  color: #fca5a5;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 900px) {
+  .metricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .metricGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agentPage *,
+  .agentPage *::before,
+  .agentPage *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

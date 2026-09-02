@@ -3,15 +3,17 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import Skeleton from "@/components/shadcn/Skeleton";
-import { adminFetch, AgentRun } from "@/components/api";
-import { Plus, MessageCircle } from "lucide-react";
-import { AnimatedText } from "@/components/ui/animated-shiny-text";
+import { adminFetch, AgentRun, AgentRunsPage } from "@/components/api";
+import { ChevronLeft, ChevronRight, Plus, MessageCircle } from "lucide-react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import AdminBreadcrumb from "@/components/admin/AdminBreadcrumb";
 import AdminSearchBar from "@/components/admin/AdminSearchBar";
 import AdminGridSkeleton from "@/components/admin/AdminGridSkeleton";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
+import AdminAgentCard from "@/components/admin/agent/AdminAgentCard";
+import AdminAgentMetrics from "@/components/admin/agent/AdminAgentMetrics";
+import AdminAgentErrorState from "@/components/admin/agent/AdminAgentErrorState";
+import styles from "./agent-theme.module.css";
 
 export default function AdminAgentsPage() {
   const { token, isAuthenticated } = useAdminAuth();
@@ -19,13 +21,35 @@ export default function AdminAgentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [totalRuns, setTotalRuns] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const pageSize = 20;
 
   const loadAgents = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await adminFetch("/api/admin/agent/runs?limit=20", token);
+      const params = new URLSearchParams({
+        limit: String(pageSize),
+        offset: String(offset),
+      });
+      if (searchQuery.trim()) {
+        params.set("search", searchQuery.trim());
+      }
+      const response = await adminFetch(`/api/admin/agent/runs?${params.toString()}`, token);
       const data = await response.json();
-      setAgents(Array.isArray(data) ? data : []);
+      if (Array.isArray(data)) {
+        setAgents(data);
+        setTotalRuns(data.length);
+        setHasMore(false);
+      } else if (data && Array.isArray(data.items)) {
+        const page = data as AgentRunsPage;
+        setAgents(page.items);
+        setTotalRuns(page.total);
+        setHasMore(page.has_more);
+      } else {
+        throw new Error("Invalid agent runs response");
+      }
       setError(null);
     } catch {
       setError("Failed to load agents");
@@ -33,7 +57,7 @@ export default function AdminAgentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [offset, searchQuery, token]);
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
@@ -42,38 +66,25 @@ export default function AdminAgentsPage() {
     loadAgents();
   }, [token, isAuthenticated, loadAgents]);
 
-  const filteredAgents = agents.filter(agent =>
-    agent.status?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    agent.id?.toString().toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   if (!isAuthenticated) {
     return (
       <main className="page-shell">
         <div className="max-w-4xl mx-auto py-8 space-y-6">
-          <Skeleton className="h-8 w-1/2" />
-          <Skeleton className="h-64 w-full" />
+          <AdminGridSkeleton />
         </div>
       </main>
     );
   }
 
   return (
-    <main className="page-shell">
+    <main className={`page-shell ${styles.agentPage}`}>
       <AdminBreadcrumb currentPage="AI Agents" />
 
       <section className="agent-header">
         <div>
           <p className="eyebrow">AI Management</p>
-          <AnimatedText
-            text="AI Agents"
-            gradientColors="linear-gradient(90deg, #0891b2, #ffffff, #f97316)"
-            gradientAnimationDuration={1.5}
-            hoverEffect={true}
-            textClassName="font-black text-3xl md:text-4xl"
-            className="py-0"
-          />
-          <p className="text-muted">Manage and monitor active AI agents</p>
+          <h1 className="text-3xl font-black text-white md:text-4xl">Agent Runs</h1>
+          <p className="text-muted">Persisted execution history from the current API result set. Live monitoring and agent configuration management are not connected.</p>
         </div>
         <div className="flex gap-3">
           <Link className="primary-button inline-flex items-center gap-2" href="/admin/agent-chat">
@@ -87,61 +98,63 @@ export default function AdminAgentsPage() {
         </div>
       </section>
 
-      {error && <p className="admin-status error">{error}</p>}
+      {error && <AdminAgentErrorState kind="api" detail={error} />}
 
       <AdminSearchBar
         value={searchQuery}
-        onChange={setSearchQuery}
+        onChange={(value) => {
+          setOffset(0);
+          setSearchQuery(value);
+        }}
         placeholder="Search agents..."
       />
 
+      {!loading && !error && <AdminAgentMetrics runs={agents} />}
+
       {loading ? (
         <AdminGridSkeleton />
-      ) : filteredAgents.length === 0 ? (
+      ) : agents.length === 0 ? (
         <AdminEmptyState
-          title={searchQuery ? "No agents found" : "No agent runs found"}
-          description={searchQuery ? "No agents found matching your search" : "Run the AI agent to get started"}
-          actionLabel="Run AI Agent"
-          actionHref="/admin/agent-chat"
+          title={searchQuery ? "No agent runs found" : "0 loaded runs"}
+          description={searchQuery ? "No persisted runs match the current server-side search." : "The current API result set contains no persisted Agent Runs."}
+          actionLabel={searchQuery ? undefined : "Run AI Agent"}
+          actionHref={searchQuery ? undefined : "/admin/agent-chat"}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAgents.map((agent) => (
-            <div key={agent.id} className="admin-panel group flex flex-col">
-              <div className="flex items-start justify-between mb-3">
-                <p className="eyebrow text-cyan-400">Agent Run</p>
-                <span
-                  className={`text-xs px-3 py-1 rounded-full font-medium ${
-                    agent.status === "completed"
-                      ? "bg-green-500/20 text-green-300"
-                      : agent.status === "failed"
-                        ? "bg-red-500/20 text-red-300"
-                        : "bg-blue-500/20 text-blue-300"
-                  }`}
-                >
-                  {agent.status}
-                </span>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-primary group-hover:text-cyan-300 transition">{agent.id}</h3>
-                <p className="text-sm text-secondary mt-3">Steps: {agent.steps?.length || 0}</p>
-              </div>
-              <div className="space-y-3 mt-4 pt-4 border-t border-slate-700/30">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted">{new Date(agent.created_at || "").toLocaleString()}</span>
-                </div>
-                <div className="flex gap-2">
-                  <Link href={`/admin/brain?id=${agent.id}`} className="flex-1 px-3 py-2 rounded text-xs font-medium bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 transition">
-                    Details
-                  </Link>
-                  <button className="flex-1 px-3 py-2 rounded text-xs font-medium bg-slate-700/50 text-slate-300 hover:bg-slate-700 transition">
-                    Retry
-                  </button>
-                </div>
-              </div>
+        <>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {agents.map((agent) => (
+              <AdminAgentCard key={agent.id} run={agent} />
+            ))}
+          </div>
+          <nav className="mt-6 flex items-center justify-between" aria-label="Agent runs pagination">
+            <span className="text-sm text-slate-400">
+              Loaded {agents.length} of {totalRuns} runs
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="ghost-button inline-flex items-center gap-2"
+                onClick={() => setOffset(Math.max(0, offset - pageSize))}
+                disabled={offset === 0 || loading}
+                aria-label="Previous agent runs page"
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                Previous
+              </button>
+              <button
+                type="button"
+                className="ghost-button inline-flex items-center gap-2"
+                onClick={() => setOffset(offset + pageSize)}
+                disabled={!hasMore || loading}
+                aria-label="Next agent runs page"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+              </button>
             </div>
-          ))}
-        </div>
+          </nav>
+        </>
       )}
     </main>
   );

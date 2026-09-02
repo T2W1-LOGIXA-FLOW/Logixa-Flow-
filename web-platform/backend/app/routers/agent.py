@@ -6,7 +6,7 @@ import json
 from html import escape
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
@@ -267,13 +267,40 @@ async def run_agent(
     return serialize_run(db, run)
 
 
-@router.get("/admin/agent/runs", response_model=list[schemas.AgentRunOut])
+@router.get("/admin/agent/runs", response_model=schemas.AgentRunsPage)
 def list_agent_runs(
+    limit: int = Query(default=20, ge=1, le=50),
+    offset: int = Query(default=0, ge=0),
+    status_filter: str | None = Query(default=None, alias="status", max_length=40),
+    search: str | None = Query(default=None, min_length=1, max_length=120),
     db: Session = Depends(get_db),
     _: dict = Depends(require_admin),
-) -> list[schemas.AgentRunOut]:
-    runs = db.query(models.AgentRun).order_by(models.AgentRun.created_at.desc()).limit(30).all()
-    return [serialize_run(db, run) for run in runs]
+) -> schemas.AgentRunsPage:
+    query = db.query(models.AgentRun)
+    normalized_status = status_filter.strip().lower() if status_filter else ""
+    normalized_search = search.strip() if search else ""
+    if normalized_status:
+        query = query.filter(models.AgentRun.status == normalized_status)
+    if normalized_search:
+        pattern = f"%{normalized_search}%"
+        query = query.filter(
+            models.AgentRun.objective.ilike(pattern) | models.AgentRun.model.ilike(pattern)
+        )
+
+    total = query.count()
+    runs = (
+        query.order_by(models.AgentRun.created_at.desc(), models.AgentRun.id.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+    return schemas.AgentRunsPage(
+        items=[serialize_run(db, run) for run in runs],
+        total=total,
+        limit=limit,
+        offset=offset,
+        has_more=offset + len(runs) < total,
+    )
 
 
 @router.post("/admin/agent/feedback", response_model=schemas.AgentFeedbackOut, status_code=status.HTTP_201_CREATED)
@@ -353,11 +380,54 @@ def publish_memory(
     memory_id: int,
     payload: schemas.BrainPublishRequest,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    response: Response = None,
+    admin: dict = Depends(require_admin),
 ) -> models.Post:
     memory = db.query(models.AiMemoryBrain).filter(models.AiMemoryBrain.id == memory_id).first()
     if not memory:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memory item not found")
+    if memory.post_slug:
+        post = db.query(models.Post).filter(models.Post.slug == memory.post_slug).first()
+        if not post:
+            log_analytics_event(
+                db,
+                "brain_publish_conflict",
+                {
+                    "actor": str(admin.get("sub", "admin")),
+                    "action": "publish",
+                    "object": {"memory_id": memory.id, "post_slug": memory.post_slug},
+                    "result": "linked_post_unavailable",
+                },
+            )
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Linked brain post is unavailable")
+        if payload.publish_now and (not post.is_published or post.status != "published"):
+            post.status = "published"
+            post.is_published = True
+            post.published_at = post.published_at or utc_now()
+            memory.status = "published"
+            memory.is_public = True
+            db.commit()
+            db.refresh(post)
+            result = "republished_linked"
+            event_type = "brain_published"
+        else:
+            result = "idempotent"
+            event_type = "brain_publish_idempotent"
+        if response is not None:
+            response.headers["X-Brain-Publish-Result"] = result
+        db.commit()
+        db.refresh(memory)
+        log_analytics_event(
+            db,
+            event_type,
+            {
+                "actor": str(admin.get("sub", "admin")),
+                "action": "publish",
+                "object": {"memory_id": memory.id, "post_id": post.id, "post_slug": post.slug},
+                "result": result,
+            },
+        )
+        return post
     slug = unique_slug(db, memory.source_title)
     post = models.Post(
         title=memory.source_title,
@@ -377,8 +447,53 @@ def publish_memory(
     memory.post_slug = slug
     db.commit()
     db.refresh(post)
-    log_analytics_event(db, "brain_published" if payload.publish_now else "brain_draft_created", {"memory_id": memory.id, "post_slug": slug})
+    if response is not None:
+        response.headers["X-Brain-Publish-Result"] = "created"
+    log_analytics_event(
+        db,
+        "brain_published" if payload.publish_now else "brain_draft_created",
+        {
+            "actor": str(admin.get("sub", "admin")),
+            "action": "publish",
+            "object": {"memory_id": memory.id, "post_id": post.id, "post_slug": slug},
+            "result": "created",
+        },
+    )
     return post
+
+
+@router.patch("/admin/brain/{memory_id}/unpublish", response_model=schemas.AiMemoryOut)
+def unpublish_memory(
+    memory_id: int,
+    db: Session = Depends(get_db),
+    admin: dict = Depends(require_admin),
+) -> models.AiMemoryBrain:
+    memory = db.query(models.AiMemoryBrain).filter(models.AiMemoryBrain.id == memory_id).first()
+    if not memory or memory.status != "published" or not memory.is_public or not memory.post_slug:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Published brain item not found")
+
+    post = db.query(models.Post).filter(models.Post.slug == memory.post_slug).first()
+    if not post or not post.is_published or post.status != "published":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Published brain item not found")
+
+    post.is_published = False
+    post.status = "draft"
+    post.published_at = None
+    memory.is_public = False
+    memory.status = "approved"
+    db.commit()
+    db.refresh(memory)
+    log_analytics_event(
+        db,
+        "brain_unpublished",
+        {
+            "actor": str(admin.get("sub", "admin")),
+            "action": "unpublish",
+            "object": {"memory_id": memory.id, "post_slug": memory.post_slug},
+            "result": "soft_unpublished",
+        },
+    )
+    return memory
 
 
 @router.post("/admin/brain/{memory_id}/rate", response_model=schemas.AiMemoryOut)

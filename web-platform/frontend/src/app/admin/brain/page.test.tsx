@@ -38,7 +38,9 @@ vi.mock("@/components/api", () => ({
         id: 1,
         source_title: "Alpha memory",
         category: "ops",
-        status: "pending",
+        status: "published",
+        is_public: true,
+        post_slug: "alpha-memory",
         summary: "Example summary",
         content: "<script>alert(1)</script><p>Preview safe</p>",
       },
@@ -54,5 +56,36 @@ describe("Brain review page", () => {
     expect(screen.getAllByText("Alpha memory")).toHaveLength(2);
     expect(screen.getByText("Preview safe")).toBeInTheDocument();
     expect(screen.queryByText(/alert\(1\)/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Unpublish" })).toBeEnabled();
+  });
+
+  it("requires confirmation and disables unpublish while pending", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const { adminFetch } = await import("@/components/api");
+    vi.mocked(adminFetch).mockImplementation((path) => {
+      if (path.includes("/unpublish")) {
+        return new Promise(() => undefined);
+      }
+      return Promise.resolve({
+        json: async () => [
+          {
+            id: 1,
+            source_title: "Alpha memory",
+            category: "ops",
+            status: "published",
+            is_public: true,
+            post_slug: "alpha-memory",
+            summary: "Example summary",
+            content: "<script>alert(1)</script><p>Preview safe</p>",
+          },
+        ],
+      } as Response);
+    });
+    render(<BrainReviewPage />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Unpublish" })).toBeInTheDocument());
+
+    screen.getByRole("button", { name: "Unpublish" }).click();
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining("reversible soft-unpublish"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Unpublish" })).toBeDisabled());
   });
 });

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { EnvProviderStatus, SystemStatus, adminFetch } from "@/components/api";
+import { SystemStatus, adminFetch } from "@/components/api";
 import Skeleton from "@/components/shadcn/Skeleton";
 import IntegrationTriggers from "@/components/IntegrationTriggers";
 import { getAdminSessionToken } from "@/lib/adminSession";
@@ -13,19 +13,12 @@ export default function AdminSystemPage() {
   const router = useRouter();
   const [token, setToken] = useState("");
   const [status, setStatus] = useState<SystemStatus | null>(null);
-  const [frontendProviders, setFrontendProviders] = useState<EnvProviderStatus[]>([]);
   const [message, setMessage] = useState("");
 
   async function loadStatus(savedToken: string) {
     const response = await adminFetch("/api/admin/system/status", savedToken);
     setStatus((await response.json()) as SystemStatus);
 
-    // Use adminFetch for the frontend env-status so proper auth headers are included
-    const frontendResponse = await adminFetch("/api/admin/env-status", savedToken);
-    if (frontendResponse.ok) {
-      const data = (await frontendResponse.json()) as { providers: EnvProviderStatus[] };
-      setFrontendProviders(data.providers);
-    }
   }
   useEffect(() => {
     const saved = getAdminSessionToken();
@@ -174,51 +167,6 @@ export default function AdminSystemPage() {
                   : provider.required
                     ? "Required before production use."
                     : "Optional. The system can continue with fallback behavior."}
-              </p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="admin-panel">
-        <p className="eyebrow">Frontend Environment</p>
-        <h2>Payments, email, and public runtime</h2>
-        <p className="muted">Next.js runtime checks for Stripe, email, and public URL configuration.</p>
-        <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {frontendProviders.map((provider) => (
-            <article
-              key={provider.key}
-              className={`rounded-xl border p-4 ${
-                provider.state === "ready"
-                  ? "border-emerald-500/30 bg-emerald-500/5"
-                  : provider.state === "missing"
-                    ? "border-red-500/30 bg-red-500/5"
-                    : "border-slate-700/60 bg-slate-900/40"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="text-base font-semibold text-white">{provider.label}</h3>
-                  <p className="mt-1 text-xs text-slate-400">{provider.env}</p>
-                </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${
-                    provider.state === "ready"
-                      ? "bg-emerald-500/15 text-emerald-300"
-                      : provider.state === "missing"
-                        ? "bg-red-500/15 text-red-300"
-                        : "bg-slate-700/60 text-slate-300"
-                  }`}
-                >
-                  {provider.state}
-                </span>
-              </div>
-              <p className="mt-4 text-sm text-slate-300">
-                {provider.configured
-                  ? "Configured without exposing the secret value."
-                  : provider.required
-                    ? "Required before production use."
-                    : "Optional until this integration is active."}
               </p>
             </article>
           ))}

@@ -284,11 +284,14 @@ class ChatSession(Base):
     __tablename__ = "chat_sessions"
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(String(64), unique=True, nullable=False, index=True)  # UUID for public facing
+    owner_id = Column(String(255), nullable=True, index=True)  # JWT subject for admin-owned sessions
     user_email = Column(String(255), nullable=True)  # If user is logged in
     title = Column(String(255), nullable=True, default="New Conversation")
     agent_id = Column(String(100), nullable=True)  # Which agent this session is for
     context = Column(Text, nullable=True)  # JSON context for the session
     is_active = Column(Boolean, default=True, nullable=False)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_by = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 

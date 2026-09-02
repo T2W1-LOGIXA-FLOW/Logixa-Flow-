@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import json
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status, Request
@@ -15,29 +16,68 @@ from ..cache import cache_client
 router = APIRouter()
 
 
+def _admin_owner_id(admin: dict) -> str:
+    owner_id = admin.get("sub")
+    if not isinstance(owner_id, str) or not owner_id.strip():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin identity required",
+        )
+    return owner_id.strip()
+
+
+def _record_chat_audit(
+    db: Session,
+    *,
+    actor_id: str,
+    action: str,
+    session_id: str,
+    result: str,
+    deletion_mode: str | None = None,
+) -> None:
+    details = {
+        "actor_id": actor_id,
+        "action": action,
+        "object": session_id,
+        "result": result,
+    }
+    if deletion_mode is not None:
+        details["deletion_mode"] = deletion_mode
+    db.add(
+        models.AnalyticsEvent(
+            event_type="admin_chat_audit",
+            details=json.dumps(details, ensure_ascii=True),
+        )
+    )
+
+
 @router.post("/query", response_model=schemas.ChatQueryResponse)
 def chat_query(
     request: schemas.ChatQueryRequest,
     user_ip: str | None = Query(default=None),
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    admin: dict = Depends(require_admin),
 ):
     """
     Process a chat query with AI integration.
     """
-    # Get or create chat session
+    owner_id = _admin_owner_id(admin)
     session: models.ChatSession | None = None
     
     if request.session_id:
         session = db.query(models.ChatSession).filter(
             models.ChatSession.session_id == request.session_id,
+            models.ChatSession.owner_id == owner_id,
             models.ChatSession.is_active == True
         ).first()
+        if not session:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     
     if not session:
         # Create new session
         session = models.ChatSession(
             session_id=str(uuid4()),
+            owner_id=owner_id,
             title=request.query[:50] + "..." if len(request.query) > 50 else request.query,
             agent_id=request.agent_id or "default",
             is_active=True,
@@ -198,14 +238,18 @@ def get_chat_sessions(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    admin: dict = Depends(require_admin),
 ):
     """
     Get all chat sessions for the admin.
     """
+    owner_id = _admin_owner_id(admin)
     sessions = (
         db.query(models.ChatSession)
-        .filter(models.ChatSession.is_active == True)
+        .filter(
+            models.ChatSession.owner_id == owner_id,
+            models.ChatSession.is_active == True,
+        )
         .order_by(models.ChatSession.updated_at.desc())
         .limit(limit)
         .offset(offset)
@@ -218,13 +262,15 @@ def get_chat_sessions(
 def get_chat_session(
     session_id: str,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    admin: dict = Depends(require_admin),
 ):
     """
     Get a specific chat session by session_id.
     """
+    owner_id = _admin_owner_id(admin)
     session = db.query(models.ChatSession).filter(
         models.ChatSession.session_id == session_id,
+        models.ChatSession.owner_id == owner_id,
         models.ChatSession.is_active == True
     ).first()
     
@@ -240,14 +286,15 @@ def get_chat_messages(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    admin: dict = Depends(require_admin),
 ):
     """
     Get all messages for a specific chat session.
     """
-    # First find the session
+    owner_id = _admin_owner_id(admin)
     session = db.query(models.ChatSession).filter(
         models.ChatSession.session_id == session_id,
+        models.ChatSession.owner_id == owner_id,
         models.ChatSession.is_active == True
     ).first()
     
@@ -272,13 +319,15 @@ def update_session_title(
     session_id: str,
     title: str,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    admin: dict = Depends(require_admin),
 ):
     """
     Update the title of a chat session.
     """
+    owner_id = _admin_owner_id(admin)
     session = db.query(models.ChatSession).filter(
         models.ChatSession.session_id == session_id,
+        models.ChatSession.owner_id == owner_id,
         models.ChatSession.is_active == True
     ).first()
     
@@ -297,13 +346,16 @@ def update_session_title(
 def delete_session(
     session_id: str,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    admin: dict = Depends(require_admin),
 ):
     """
     Delete a chat session (soft delete by setting is_active to False).
     """
+    owner_id = _admin_owner_id(admin)
     session = db.query(models.ChatSession).filter(
-        models.ChatSession.session_id == session_id
+        models.ChatSession.session_id == session_id,
+        models.ChatSession.owner_id == owner_id,
+        models.ChatSession.is_active == True,
     ).first()
     
     if not session:
@@ -311,7 +363,17 @@ def delete_session(
     
     # Soft delete
     session.is_active = False
+    session.deleted_at = datetime.now(timezone.utc)
+    session.deleted_by = owner_id
     session.updated_at = datetime.now(timezone.utc)
+    _record_chat_audit(
+        db,
+        actor_id=owner_id,
+        action="delete_session",
+        session_id=session_id,
+        result="success",
+        deletion_mode="soft_delete",
+    )
     db.commit()
     
     return None
@@ -320,14 +382,26 @@ def delete_session(
 @router.get("/stats")
 def get_chat_stats(
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    admin: dict = Depends(require_admin),
 ):
     """
     Get statistics about chat usage.
     """
-    total_sessions = db.query(models.ChatSession).filter(models.ChatSession.is_active == True).count()
-    total_messages = db.query(models.ChatMessage).count()
+    owner_id = _admin_owner_id(admin)
+    active_sessions = db.query(models.ChatSession).filter(
+        models.ChatSession.owner_id == owner_id,
+        models.ChatSession.is_active == True,
+    )
+    total_sessions = active_sessions.count()
+    total_messages = db.query(models.ChatMessage).join(
+        models.ChatSession,
+        models.ChatMessage.session_id == models.ChatSession.id,
+    ).filter(
+        models.ChatSession.owner_id == owner_id,
+        models.ChatSession.is_active == True,
+    ).count()
     active_sessions_today = db.query(models.ChatSession).filter(
+        models.ChatSession.owner_id == owner_id,
         models.ChatSession.is_active == True,
         models.ChatSession.created_at >= datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     ).count()

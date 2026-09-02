@@ -22,6 +22,7 @@ export default function BrainReviewPage() {
   const [sourcesList] = useState<IntelligenceSource[]>([]);
   const [itemsLoading, setItemsLoading] = useState(false);
   const [itemsError, setItemsError] = useState<string | null>(null);
+  const [actionPending, setActionPending] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
@@ -78,11 +79,42 @@ export default function BrainReviewPage() {
         body: JSON.stringify({ publish_now: publishNow }),
       });
       const post = (await response.json()) as Post;
-      toast.success(publishNow ? `Published: ${post.slug}` : `CMS draft created: ${post.slug}`);
+      const result = response.headers.get("X-Brain-Publish-Result");
+      toast.success(
+        result === "idempotent"
+          ? `Already linked: ${post.slug}`
+          : result === "republished_linked"
+            ? `Republished linked post: ${post.slug}`
+            : publishNow
+              ? `Published: ${post.slug}`
+              : `CMS draft created: ${post.slug}`,
+      );
       await refresh(publishNow ? "published" : "approved");
       setFilter(publishNow ? "published" : "approved");
     } catch {
       toast.error("Failed to publish. Please try again.");
+    }
+  }
+
+  async function unpublish() {
+    if (!selected || selected.status !== "published" || !selected.is_public || !selected.post_slug) {
+      return;
+    }
+    const confirmed = window.confirm(
+      "Unpublish this linked post? This reversible soft-unpublish keeps the brain memory and post for recovery but removes public visibility.",
+    );
+    if (!confirmed) {
+      return;
+    }
+    setActionPending(true);
+    try {
+      await adminFetch(`/api/admin/brain/${selected.id}/unpublish`, token, { method: "PATCH" });
+      toast.success("Content unpublished and kept for recovery.");
+      await refresh("published");
+    } catch {
+      toast.error("Failed to unpublish. Please try again.");
+    } finally {
+      setActionPending(false);
     }
   }
 
@@ -136,24 +168,6 @@ export default function BrainReviewPage() {
                 icon="⚠️"
                 title="Failed to load brain queue"
                 description={itemsError}
-                actionLabel="Retry"
-                actionOnClick={() => {
-                  setItemsError(null);
-                  setItemsLoading(true);
-                  const path = filter === "all" ? "/api/admin/brain" : `/api/admin/brain?status=${filter}`;
-                  adminFetch(path, token)
-                    .then((response) => response.json())
-                    .then((records: AiMemory[]) => {
-                      setItems(records);
-                      setSelectedId(records[0]?.id || null);
-                      setItemsLoading(false);
-                    })
-                    .catch(() => {
-                      setItemsError("Failed to load brain queue. Please try again.");
-                      setItemsLoading(false);
-                      toast.error("Brain queue could not be loaded.");
-                    });
-                }}
               />
             </div>
           ) : itemsLoading ? (
@@ -199,18 +213,23 @@ export default function BrainReviewPage() {
                 <span className={`brain-status ${selected.status}`}>{selected.status}</span>
               </div>
               <div className="brain-actions">
-                <button className="ghost-button" type="button" onClick={() => brainAction("approve")}>
+                <button className="ghost-button" type="button" onClick={() => brainAction("approve")} disabled={actionPending}>
                   Approve
                 </button>
-                <button className="ghost-button danger" type="button" onClick={() => brainAction("reject")}>
+                <button className="ghost-button danger" type="button" onClick={() => brainAction("reject")} disabled={actionPending}>
                   Reject
                 </button>
-                <button className="ghost-button" type="button" onClick={() => publish(false)}>
+                <button className="ghost-button" type="button" onClick={() => publish(false)} disabled={actionPending}>
                   Create CMS Draft
                 </button>
-                <button className="primary-button" type="button" onClick={() => publish(true)}>
+                <button className="primary-button" type="button" onClick={() => publish(true)} disabled={actionPending}>
                   Publish
                 </button>
+                {selected.status === "published" && selected.is_public && selected.post_slug ? (
+                  <button className="ghost-button danger" type="button" onClick={unpublish} disabled={actionPending}>
+                    Unpublish
+                  </button>
+                ) : null}
               </div>
               <div className="draft-preview" dangerouslySetInnerHTML={{ __html: safeSelectedContent }} />
               <Citations matches={matches} sources={sourcesList} />

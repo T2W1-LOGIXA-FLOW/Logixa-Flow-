@@ -1,0 +1,156 @@
+.shell {
+  --admin-bg: #020617;
+  --admin-surface: #0a0f1e;
+  --admin-surface-raised: #101728;
+  --admin-border: #1e293b;
+  --admin-text: #f8fafc;
+  --admin-muted: #94a3b8;
+  --admin-cyan: #22d3ee;
+  --admin-blue: #2563eb;
+  --admin-orange: #f59e0b;
+  --admin-violet: #8b5cf6;
+  --admin-success: #10b981;
+  --admin-warning: #f59e0b;
+  --admin-danger: #ef4444;
+  background: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+.sidebar {
+  background: color-mix(in srgb, var(--admin-surface) 94%, transparent);
+  border-color: var(--admin-border);
+}
+
+.navLink {
+  border: 1px solid transparent;
+  color: var(--admin-muted);
+}
+
+.navLink:hover,
+.navLink:focus-visible {
+  background: color-mix(in srgb, var(--admin-surface-raised) 88%, transparent);
+  border-color: color-mix(in srgb, var(--admin-cyan) 24%, transparent);
+  color: var(--admin-cyan);
+}
+
+.navLink:focus-visible,
+.action:focus-visible,
+.menuButton:focus-visible,
+.closeButton:focus-visible {
+  outline: 2px solid var(--admin-cyan);
+  outline-offset: 2px;
+}
+
+.navLinkActive {
+  background: color-mix(in srgb, var(--admin-cyan) 10%, transparent);
+  border-left: 2px solid var(--admin-cyan);
+  color: var(--admin-cyan);
+}
+
+.topbar {
+  background: color-mix(in srgb, var(--admin-bg) 88%, transparent);
+  border-color: color-mix(in srgb, var(--admin-border) 80%, transparent);
+}
+
+.statusBadge,
+.action {
+  border: 1px solid var(--admin-border);
+  background: color-mix(in srgb, var(--admin-surface-raised) 82%, transparent);
+  color: var(--admin-text);
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.statusDot {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--admin-muted);
+}
+
+.success .statusDot {
+  background: var(--admin-success);
+}
+
+.cyan .statusDot {
+  background: var(--admin-cyan);
+}
+
+.violet .statusDot {
+  background: var(--admin-violet);
+}
+
+.warning .statusDot {
+  background: var(--admin-warning);
+}
+
+.danger .statusDot {
+  background: var(--admin-danger);
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.action:hover {
+  border-color: color-mix(in srgb, var(--admin-cyan) 50%, transparent);
+  background: color-mix(in srgb, var(--admin-cyan) 10%, var(--admin-surface-raised));
+}
+
+.card {
+  border: 1px solid color-mix(in srgb, var(--admin-border) 90%, transparent);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--admin-surface-raised) 80%, transparent);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.16);
+}
+
+.metricCard {
+  min-width: 0;
+  padding: 1rem;
+}
+
+.metricLabel {
+  color: var(--admin-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.metricValue {
+  display: block;
+  margin-top: 0.4rem;
+  color: var(--admin-text);
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell *,
+  .shell *::before,
+  .shell *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

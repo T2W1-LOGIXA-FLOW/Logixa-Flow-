@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { getAdminSessionToken } from "@/lib/adminSession";
-import { adminFetch } from "@/components/api";
 import ReactFlow, { Background, Controls, applyEdgeChanges, applyNodeChanges, addEdge, ReactFlowProvider, MiniMap, type Node, type Edge, type NodeChange, type EdgeChange, type Connection } from "reactflow";
 import 'reactflow/dist/style.css';
 
@@ -17,45 +15,8 @@ export default function AdminWorkflowsPage() {
   const loadWorkflows = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const token = getAdminSessionToken();
-    try {
-      if (token) {
-        const resp = await adminFetch("/api/admin/workflows", token).catch(() => null);
-        if (resp) {
-          const json = await resp.json().catch(() => null);
-          if (json && Array.isArray(json.nodes) && Array.isArray(json.edges)) {
-            setNodes(json.nodes);
-            setEdges(json.edges);
-            setLoading(false);
-            return;
-          }
-        }
-      }
-      // Fallback to mock data
-      const mockNodes = [
-        { id: "1", position: { x: 50, y: 50 }, data: { label: "Start", status: "success" }, style: { border: '1px solid #065f46' } },
-        { id: "2", position: { x: 300, y: 50 }, data: { label: "Fetch Data", status: "running" }, style: { border: '1px solid #a16207' } },
-        { id: "3", position: { x: 550, y: 50 }, data: { label: "Process", status: "idle" }, style: { border: '1px solid #94a3b8' } },
-        { id: "4", position: { x: 800, y: 50 }, data: { label: "Publish", status: "failed" }, style: { border: '1px solid #991b1b' } },
-      ];
-      const mockEdges = [
-        { id: 'e1-2', source: '1', target: '2' },
-        { id: 'e2-3', source: '2', target: '3' },
-        { id: 'e3-4', source: '3', target: '4' },
-      ];
-      setNodes(
-        mockNodes.map((n) => ({
-          ...n,
-          data: { ...n.data, label: `${n.data.label}` },
-        })),
-      );
-      setEdges(mockEdges);
-    } catch (err) {
-      console.error(err);
-      setError("Could not load workflows");
-    } finally {
-      setLoading(false);
-    }
+    setError("Workflow monitoring is unavailable: no backend workflow capability is enabled.");
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -67,19 +28,7 @@ export default function AdminWorkflowsPage() {
   const onConnect = useCallback((params: Connection) => setEdges((eds) => addEdge(params, eds)), []);
 
   const runNow = async () => {
-    const token = getAdminSessionToken();
-    if (!token) {
-      setError("Admin session missing");
-      return;
-    }
-    try {
-      await adminFetch("/api/admin/workflows/run", token, { method: "POST" }).catch(() => null);
-      // refresh view
-      loadWorkflows();
-    } catch (err) {
-      console.error(err);
-      setError("Failed to run workflows");
-    }
+    setError("Workflow execution is unavailable: no backend workflow capability is enabled.");
   };
 
   const nodeColor = (status: NodeStatus) => {
@@ -128,7 +77,7 @@ export default function AdminWorkflowsPage() {
           <p className="muted">Monitor automation sequences, approvals, and operational handoffs in the admin layer.</p>
         </div>
         <div>
-          <button onClick={runNow} className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-100">Run Now</button>
+          <button disabled onClick={runNow} className="rounded-xl border border-slate-600 bg-slate-800/50 px-4 py-2 text-sm font-semibold text-slate-400">Run Now (Unavailable)</button>
         </div>
       </section>
 

@@ -18,8 +18,6 @@ export default function IntegrationTriggers({ token }: { token?: string }) {
 
   const [emailTo, setEmailTo] = useState("");
   const [emailSub, setEmailSub] = useState("Test from Logixa Flow");
-  const [pdfSlug, setPdfSlug] = useState("");
-  const [webhookUrl, setWebhookUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function triggerEmail() {
@@ -43,60 +41,10 @@ export default function IntegrationTriggers({ token }: { token?: string }) {
     }
   }
 
-  async function triggerPDF() {
-    if (!t) {
-      toast.error("Missing admin token");
-      return;
-    }
-    if (!pdfSlug.trim()) {
-      toast.error("Provide post slug to export as PDF");
-      return;
-    }
-    setLoading(true);
-    try {
-      const resp = await adminFetch(`/api/admin/integration/trigger-pdf`, t, {
-        method: "POST",
-        body: JSON.stringify({ slug: pdfSlug.trim() }),
-      });
-      const res = await resp.json();
-      toast.success(res?.message || "PDF generation queued");
-    } catch (e) {
-      console.error(e);
-      toast.error("PDF trigger failed");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function triggerWebhook() {
-    if (!t) {
-      toast.error("Missing admin token");
-      return;
-    }
-    if (!webhookUrl.trim()) {
-      toast.error("Provide webhook URL");
-      return;
-    }
-    setLoading(true);
-    try {
-      const resp = await adminFetch(`/api/admin/integration/trigger-webhook`, t, {
-        method: "POST",
-        body: JSON.stringify({ url: webhookUrl.trim() }),
-      });
-      const res = await resp.json();
-      toast.success(res?.message || "Webhook fired");
-    } catch (e) {
-      console.error(e);
-      toast.error("Webhook trigger failed");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <Card>
       <p className="eyebrow">Integrations</p>
-      <h2>Email, PDF export, and Webhook triggers</h2>
+      <h2>Email trigger</h2>
       <div className="space-y-4 mt-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
@@ -114,29 +62,9 @@ export default function IntegrationTriggers({ token }: { token?: string }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div>
-            <label className="block text-sm">Post Slug for PDF</label>
-            <Input value={pdfSlug} onChange={(e) => setPdfSlug((e.target as HTMLInputElement).value)} placeholder="post-slug" />
-          </div>
-          <div className="col-span-2 flex items-end">
-            <Button variant="ghost" onClick={triggerPDF} disabled={loading}>
-              {loading ? "Queuing..." : "Generate PDF"}
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div>
-            <label className="block text-sm">Webhook URL</label>
-            <Input value={webhookUrl} onChange={(e) => setWebhookUrl((e.target as HTMLInputElement).value)} placeholder="https://example.com/hook" />
-          </div>
-          <div className="col-span-2 flex items-end">
-            <Button variant="destructive" onClick={triggerWebhook} disabled={loading}>
-              {loading ? "Firing..." : "Send Webhook"}
-            </Button>
-          </div>
-        </div>
+        <p className="text-sm text-slate-400">
+          PDF export and webhook delivery are unavailable because no backend implementation is currently enabled.
+        </p>
       </div>
     </Card>
   );

@@ -211,6 +211,14 @@ class AgentRunOut(BaseModel):
     updated_at: datetime
 
 
+class AgentRunsPage(BaseModel):
+    items: list[AgentRunOut]
+    total: int
+    limit: int
+    offset: int
+    has_more: bool
+
+
 class AgentFeedbackRequest(BaseModel):
     run_id: int
     rating: Literal["positive", "negative"]

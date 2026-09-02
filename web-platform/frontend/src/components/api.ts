@@ -65,6 +65,14 @@ export interface AgentRun {
   updated_at: string;
 }
 
+export interface AgentRunsPage {
+  items: AgentRun[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
 export interface AnalyticsData {
   date: string;
   agent_runs: number;
@@ -130,6 +138,28 @@ export interface AdminActivityEntry {
   title: string;
   detail: string;
   tone: "cyan" | "violet" | "amber";
+}
+
+export interface AdminChatSession {
+  id: number;
+  session_id: string;
+  title: string;
+  agent_id?: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminChatMessage {
+  id: number;
+  session_id: number;
+  role: "user" | "agent" | "system";
+  content: string;
+  agent_id?: string | null;
+  model_used?: string | null;
+  tokens_used?: number | null;
+  cost_estimate?: number | null;
+  created_at: string;
 }
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -221,6 +251,36 @@ export async function adminFetch(path: string, token: string, options: RequestIn
   const response = await fetchWithTimeout(`${API_URL}${path}`, { ...options, headers });
   if (!response.ok) throw new Error(await response.text());
   return response;
+}
+
+export async function listAdminChatSessions(token: string): Promise<AdminChatSession[]> {
+  try {
+    const response = await adminFetch("/api/chat/sessions", token);
+    return (await response.json()) as AdminChatSession[];
+  } catch {
+    throw new Error("Admin chat sessions unavailable");
+  }
+}
+
+export async function getAdminChatSession(token: string, sessionId: string): Promise<AdminChatSession> {
+  try {
+    const response = await adminFetch(`/api/chat/sessions/${encodeURIComponent(sessionId)}`, token);
+    return (await response.json()) as AdminChatSession;
+  } catch {
+    throw new Error("Admin chat session unavailable");
+  }
+}
+
+export async function getAdminChatMessages(token: string, sessionId: string): Promise<AdminChatMessage[]> {
+  try {
+    const response = await adminFetch(
+      `/api/chat/sessions/${encodeURIComponent(sessionId)}/messages`,
+      token,
+    );
+    return (await response.json()) as AdminChatMessage[];
+  } catch {
+    throw new Error("Admin chat history unavailable");
+  }
 }
 
 export async function publicChatQuery(payload: {
