@@ -88,4 +88,36 @@ describe("Brain review page", () => {
     expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining("reversible soft-unpublish"));
     await waitFor(() => expect(screen.getByRole("button", { name: "Unpublish" })).toBeDisabled());
   });
+
+  it("surfaces a publish conflict without claiming success", async () => {
+    const { adminFetch } = await import("@/components/api");
+    const { toast } = await import("sonner");
+    vi.mocked(toast.error).mockClear();
+    vi.mocked(adminFetch).mockImplementation((path) => {
+      if (path.includes("/publish")) {
+        return Promise.reject(new Error("publish conflict"));
+      }
+      return Promise.resolve({
+        json: async () => [
+          {
+            id: 1,
+            source_title: "Alpha memory",
+            category: "ops",
+            status: "approved",
+            is_public: false,
+            post_slug: null,
+            summary: "Example summary",
+            content: "<p>Preview safe</p>",
+          },
+        ],
+      } as Response);
+    });
+
+    render(<BrainReviewPage />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Publish" })).toBeInTheDocument());
+
+    screen.getByRole("button", { name: "Publish" }).click();
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Failed to publish. Please try again."));
+  });
 });

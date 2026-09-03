@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-import { API_URL, AnalyticsData, adminFetch } from "@/components/api";
+import { AnalyticsData, adminFetch } from "@/components/api";
 import MetricsChart from "@/components/charts/MetricsChart";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 
@@ -21,36 +21,6 @@ export default function AdminAnalyticsPage() {
       .then((data: AnalyticsData[]) => setRecords(data))
       .catch(() => setStatus("Analytics could not be loaded."));
   }, [token, isAuthenticated]);
-
-  useEffect(() => {
-    if (!token) return;
-    let es: EventSource | null = null;
-    try {
-      es = new EventSource(`${API_URL}/api/admin/analytics/stream?token=${token}`);
-      es.onmessage = (e) => {
-        try {
-          const parsed = JSON.parse(e.data);
-          if (parsed.records) setRecords(parsed.records as AnalyticsData[]);
-        } catch {
-          // ignore parse errors
-        }
-      };
-      es.onerror = () => {
-        // close on error; browser will retry automatically for some errors
-        try {
-          es?.close();
-        } catch {}
-      };
-    } catch {
-      // EventSource may throw on some environments
-      console.warn("SSE not available");
-    }
-    return () => {
-      try {
-        es?.close();
-      } catch {}
-    };
-  }, [token]);
 
   const totals = useMemo(
     () =>
@@ -84,6 +54,7 @@ export default function AdminAnalyticsPage() {
       </section>
 
       {status ? <p className="admin-status">{status}</p> : null}
+      <p className="admin-status">Live analytics streaming is unavailable; showing the latest authenticated snapshot.</p>
 
       <section className="admin-metric-grid">
         <article className="admin-metric-card cyan">
