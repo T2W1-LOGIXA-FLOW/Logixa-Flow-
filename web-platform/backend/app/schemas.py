@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl
 
@@ -9,6 +11,52 @@ PostType = Literal["news", "education", "analysis"]
 PostCategory = Literal["Supply Chain", "Logistics", "Procurement", "Operations Excellence", "News"]
 PostStatus = Literal["draft", "published"]
 BrainStatus = Literal["pending", "approved", "rejected", "published"]
+
+
+class RAGIngestionErrorType(str, Enum):
+    validation = "validation"
+    transient = "transient"
+    embedding = "embedding"
+    database = "database"
+    unknown = "unknown"
+
+
+class RAGRetryInfo(BaseModel):
+    retryable: bool
+    attempt: int = Field(ge=1)
+    max_attempts: int = Field(ge=1)
+
+
+class RAGCorrelationId(BaseModel):
+    correlation_id: UUID
+
+
+class RAGIngestionError(BaseModel):
+    error_type: RAGIngestionErrorType
+    message: str
+    retry: RAGRetryInfo
+    correlation: RAGCorrelationId
+
+
+class RAGSearchErrorType(str, Enum):
+    validation = "validation"
+    transient = "transient"
+    backend = "backend"
+    unknown = "unknown"
+
+
+class RAGErrorRateMetrics(BaseModel):
+    operation: str
+    errors: int = Field(ge=0)
+    alert_threshold: int = Field(ge=1)
+    alert_triggered: bool
+
+
+class RAGSearchError(BaseModel):
+    error_type: RAGSearchErrorType
+    message: str
+    retry: RAGRetryInfo
+    correlation: RAGCorrelationId
 
 
 class PostBase(BaseModel):

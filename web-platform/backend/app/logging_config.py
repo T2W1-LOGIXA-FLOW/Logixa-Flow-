@@ -19,7 +19,21 @@ class JsonLogFormatter(logging.Formatter):
         }
         if record.exc_info:
             payload["exception"] = self.formatException(record.exc_info)
-        for key in ("request_id", "path", "method", "status_code", "duration_ms"):
+        for key in (
+            "request_id",
+            "path",
+            "method",
+            "status_code",
+            "duration_ms",
+            "correlation_id",
+            "operation",
+            "error_type",
+            "attempt",
+            "retryable",
+            "error_count",
+            "alert_threshold",
+            "alert_triggered",
+        ):
             if hasattr(record, key):
                 payload[key] = getattr(record, key)
         return json.dumps(payload, ensure_ascii=False)
