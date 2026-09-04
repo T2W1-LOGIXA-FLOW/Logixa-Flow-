@@ -33,6 +33,8 @@ class JsonLogFormatter(logging.Formatter):
             "error_count",
             "alert_threshold",
             "alert_triggered",
+            "fallback_used",
+            "fallback_strategy",
         ):
             if hasattr(record, key):
                 payload[key] = getattr(record, key)

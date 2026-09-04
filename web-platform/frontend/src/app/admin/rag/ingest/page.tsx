@@ -21,17 +21,36 @@ type IngestError = {
   correlation?: { correlation_id?: string };
 };
 
+type BatchFile = {
+  file_name: string;
+  status: string;
+  chunks: number;
+  error?: string;
+  recovery?: { retryable?: boolean; attempts?: number; max_attempts?: number };
+};
+
+type BatchResult = {
+  batch_id: string;
+  total_files: number;
+  completed_files: number;
+  failed_files: number;
+  total_chunks: number;
+  files: BatchFile[];
+};
+
 export default function AdminRagIngestPage() {
   const { token, isAuthenticated } = useAdminAuth();
   const [result, setResult] = useState<IngestResult | null>(null);
   const [error, setError] = useState<IngestError | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [running, setRunning] = useState(false);
+  const [batch, setBatch] = useState<BatchResult | null>(null);
 
   const ingest = useCallback(async () => {
     if (!token || !isAuthenticated) return;
     setRunning(true);
     setError(null);
+    setBatch(null);
     try {
       const response = await adminFetch("/api/admin/rag/ingest/sources", token, { method: "POST" });
       setResult((await response.json()) as IngestResult);
@@ -48,9 +67,27 @@ export default function AdminRagIngestPage() {
     }
   }, [isAuthenticated, token]);
 
+  const ingestBatch = useCallback(async (files: FileList | null) => {
+    if (!token || !isAuthenticated || !files?.length) return;
+    setRunning(true);
+    setError(null);
+    setResult(null);
+    const body = new FormData();
+    Array.from(files).forEach((file) => body.append("files", file));
+    try {
+      const response = await adminFetch("/api/admin/rag/ingest/batch", token, { method: "POST", body });
+      setBatch((await response.json()) as BatchResult);
+    } catch {
+      setError({ message: "Batch ingestion failed. Retry the failed files or contact an administrator." });
+    } finally {
+      setRunning(false);
+    }
+  }, [isAuthenticated, token]);
+
   useEffect(() => {
     setResult(null);
     setError(null);
+    setBatch(null);
     setDetailsOpen(false);
   }, [token]);
 
@@ -67,10 +104,33 @@ export default function AdminRagIngestPage() {
         <button className="primary-button" type="button" onClick={ingest} disabled={running}>
           {running ? "Ingesting..." : "Start ingestion"}
         </button>
+        <label className="mt-4 block">
+          <span className="muted">Batch file upload</span>
+          <input
+            className="mt-2 block"
+            type="file"
+            multiple
+            accept=".txt,.md,.csv,.json"
+            onChange={(event) => void ingestBatch(event.target.files)}
+            disabled={running}
+          />
+        </label>
         {result ? (
           <div role="status" className="admin-status">
             <p>Processed {result.sources ?? 0} sources and {result.brain_items ?? 0} brain items.</p>
             <p>Created {result.chunks ?? 0} chunks in {result.attempts ?? 1} attempt(s). Errors: {result.errors ?? 0}.</p>
+          </div>
+        ) : null}
+        {batch ? (
+          <div role="status" className="admin-status">
+            <p>Batch {batch.batch_id}: {batch.completed_files}/{batch.total_files} files completed, {batch.failed_files} failed, {batch.total_chunks} chunks.</p>
+            {batch.files.map((file) => (
+              <div key={file.file_name}>
+                <p>{file.file_name}: {file.status} ({file.chunks} chunks)</p>
+                {file.error ? <p>{file.error}</p> : null}
+                {file.recovery?.retryable ? <p>Recovery available: retry up to {file.recovery.max_attempts ?? 3} attempts.</p> : null}
+              </div>
+            ))}
           </div>
         ) : null}
         {error ? (

@@ -314,6 +314,93 @@ def get_chat_messages(
     return messages
 
 
+@router.get("/sessions/{session_id}/restore", response_model=schemas.ChatSessionRestoreOut)
+def restore_chat_session(
+    session_id: str,
+    db: Session = Depends(get_db),
+    admin: dict = Depends(require_admin),
+):
+    owner_id = _admin_owner_id(admin)
+    session = db.query(models.ChatSession).filter(
+        models.ChatSession.session_id == session_id,
+        models.ChatSession.owner_id == owner_id,
+        models.ChatSession.is_active == True,
+    ).first()
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    messages = (
+        db.query(models.ChatMessage)
+        .filter(models.ChatMessage.session_id == session.id)
+        .order_by(models.ChatMessage.created_at.asc())
+        .all()
+    )
+    return {"session": session, "messages": messages}
+
+
+@router.post("/sessions/{session_id}/transfer")
+def transfer_chat_session(
+    session_id: str,
+    transfer: schemas.ChatOwnershipTransfer,
+    db: Session = Depends(get_db),
+    admin: dict = Depends(require_admin),
+):
+    owner_id = _admin_owner_id(admin)
+    new_owner_id = transfer.new_owner_id.strip()
+    if not new_owner_id:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="New owner is required")
+    session = db.query(models.ChatSession).filter(
+        models.ChatSession.session_id == session_id,
+        models.ChatSession.owner_id == owner_id,
+        models.ChatSession.is_active == True,
+    ).first()
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    session.owner_id = new_owner_id
+    session.updated_at = datetime.now(timezone.utc)
+    _record_chat_audit(
+        db,
+        actor_id=owner_id,
+        action="transfer_session",
+        session_id=session_id,
+        result="success",
+    )
+    db.commit()
+    return {"session_id": session_id, "owner_id": new_owner_id}
+
+
+@router.post("/sessions/cleanup")
+def cleanup_chat_sessions(
+    older_than_days: int = Query(default=30, ge=1, le=3650),
+    db: Session = Depends(get_db),
+    admin: dict = Depends(require_admin),
+):
+    owner_id = _admin_owner_id(admin)
+    cutoff = datetime.now(timezone.utc).timestamp() - older_than_days * 86400
+    sessions = db.query(models.ChatSession).filter(
+        models.ChatSession.owner_id == owner_id,
+        models.ChatSession.is_active == True,
+    ).all()
+    cleaned = 0
+    for session in sessions:
+        updated = session.updated_at
+        if updated is not None and updated.timestamp() < cutoff:
+            session.is_active = False
+            session.deleted_at = datetime.now(timezone.utc)
+            session.deleted_by = owner_id
+            session.updated_at = datetime.now(timezone.utc)
+            _record_chat_audit(
+                db,
+                actor_id=owner_id,
+                action="cleanup_session",
+                session_id=session.session_id,
+                result="success",
+                deletion_mode="soft_delete",
+            )
+            cleaned += 1
+    db.commit()
+    return {"cleaned": cleaned, "older_than_days": older_than_days}
+
+
 @router.patch("/sessions/{session_id}/title")
 def update_session_title(
     session_id: str,

@@ -39,10 +39,16 @@ class RAGIngestionError(BaseModel):
 
 
 class RAGSearchErrorType(str, Enum):
-    validation = "validation"
-    transient = "transient"
-    backend = "backend"
+    query = "query"
+    embedding = "embedding"
+    search = "search"
+    ranking = "ranking"
     unknown = "unknown"
+
+
+class RAGSearchFallbackInfo(BaseModel):
+    used: bool
+    strategy: str | None = None
 
 
 class RAGErrorRateMetrics(BaseModel):
@@ -52,12 +58,162 @@ class RAGErrorRateMetrics(BaseModel):
     alert_triggered: bool
 
 
+class RAGMetricByType(BaseModel):
+    error_type: str
+    errors: int = Field(ge=0)
+    rate: float = Field(ge=0)
+
+
+class RAGTimeSeriesPoint(BaseModel):
+    timestamp: datetime
+    errors: int = Field(ge=0)
+
+
+class RAGAlertThresholdStatus(BaseModel):
+    threshold: int = Field(ge=1)
+    errors: int = Field(ge=0)
+    triggered: bool
+
+
+class RAGMetrics(BaseModel):
+    hours: int = Field(ge=1)
+    total_errors: int = Field(ge=0)
+    error_rate: float = Field(ge=0)
+    by_type: list[RAGMetricByType]
+    time_series: list[RAGTimeSeriesPoint]
+    alert: RAGAlertThresholdStatus
+
+
+class RAGAlertType(str, Enum):
+    error_threshold = "error_threshold"
+    error_rate = "error_rate"
+
+
+class RAGAlertSeverity(str, Enum):
+    info = "info"
+    warning = "warning"
+    critical = "critical"
+
+
+class RAGNotificationChannel(str, Enum):
+    in_app = "in_app"
+    log = "log"
+
+
+class RAGNotificationChannelConfig(BaseModel):
+    channel: RAGNotificationChannel
+    enabled: bool = True
+
+
+class RAGAlertConfig(BaseModel):
+    threshold: int = Field(ge=1, le=100000)
+    channels: list[RAGNotificationChannelConfig] = Field(default_factory=lambda: [
+        RAGNotificationChannelConfig(channel=RAGNotificationChannel.in_app)
+    ])
+
+
+class RAGAlert(BaseModel):
+    alert_id: UUID
+    alert_type: RAGAlertType
+    severity: RAGAlertSeverity
+    message: str
+    created_at: datetime
+    errors: int = Field(ge=0)
+    threshold: int = Field(ge=1)
+    channels: list[RAGNotificationChannelConfig]
+    dispatch: str
+
+
+class RAGChunkStatus(str, Enum):
+    pending = "pending"
+    processing = "processing"
+    completed = "completed"
+    failed = "failed"
+    recovered = "recovered"
+
+
+class RAGRecoveryMetadata(BaseModel):
+    retryable: bool
+    attempts: int = Field(ge=1)
+    max_attempts: int = Field(ge=1)
+    message: str | None = None
+
+
+class RAGBatchFileProgress(BaseModel):
+    file_name: str
+    status: RAGChunkStatus
+    chunks: int = Field(ge=0)
+    error: str | None = None
+    recovery: RAGRecoveryMetadata | None = None
+
+
+class RAGBatchIngestionProgress(BaseModel):
+    batch_id: UUID
+    total_files: int = Field(ge=0)
+    completed_files: int = Field(ge=0)
+    failed_files: int = Field(ge=0)
+    total_chunks: int = Field(ge=0)
+    files: list[RAGBatchFileProgress]
+
+
+class RAGSearchFilters(BaseModel):
+    source_type: str | None = Field(default=None, max_length=50)
+    min_score: float = Field(default=0, ge=0, le=1)
+
+
+class RAGSearchSort(str, Enum):
+    relevance = "relevance"
+    newest = "newest"
+    title = "title"
+
+
+class RAGSearchPagination(BaseModel):
+    page: int = Field(default=1, ge=1)
+    page_size: int = Field(default=6, ge=1, le=50)
+
+
+class RAGRelevanceScore(BaseModel):
+    score: float = Field(ge=0, le=1)
+    rank: int = Field(ge=1)
+
+
+class RAGSearchQuery(BaseModel):
+    query: str = Field(min_length=3, max_length=2000)
+    filters: RAGSearchFilters = Field(default_factory=RAGSearchFilters)
+    sort: RAGSearchSort = RAGSearchSort.relevance
+    pagination: RAGSearchPagination = Field(default_factory=RAGSearchPagination)
+
+
 class RAGSearchError(BaseModel):
     error_type: RAGSearchErrorType
     message: str
     retry: RAGRetryInfo
     correlation: RAGCorrelationId
+    fallback: RAGSearchFallbackInfo
 
+
+class RAGFeedback(BaseModel):
+    query_id: str = Field(min_length=1, max_length=200)
+    rating: int = Field(ge=1, le=5)
+    helpful: bool
+    comment: str | None = Field(default=None, max_length=1000)
+    variant: str = Field(default="control", min_length=1, max_length=50)
+
+
+class RAGABTestConfig(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    control: str = Field(min_length=1, max_length=50)
+    treatment: str = Field(min_length=1, max_length=50)
+    enabled: bool = False
+
+
+class RAGQualityMetrics(BaseModel):
+    feedback_count: int = Field(ge=0)
+    average_rating: float = Field(ge=0, le=5)
+    helpful_rate: float = Field(ge=0, le=1)
+    by_variant: dict[str, dict[str, float | int]]
+    ab_test: RAGABTestConfig
+    report: str
 
 class PostBase(BaseModel):
     title: str = Field(min_length=3, max_length=255)
@@ -475,6 +631,15 @@ class ChatQueryRequest(BaseModel):
     context: list[ChatMessageBase] = Field(default_factory=list)
     session_id: str | None = Field(default=None, max_length=64)
     agent_id: str | None = Field(default=None, max_length=100)
+
+
+class ChatOwnershipTransfer(BaseModel):
+    new_owner_id: str = Field(min_length=1, max_length=255)
+
+
+class ChatSessionRestoreOut(BaseModel):
+    session: ChatSessionOut
+    messages: list[ChatMessageOut]
 
 
 class ChatQueryResponse(BaseModel):

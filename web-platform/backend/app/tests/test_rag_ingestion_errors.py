@@ -15,7 +15,7 @@ def test_ingestion_error_is_structured_and_redacted(monkeypatch):
 
     assert exc_info.value.status_code == 422
     detail = exc_info.value.detail
-    assert detail["error_type"] == RAGSearchErrorType.validation.value
+    assert detail["error_type"] == RAGIngestionErrorType.validation.value
     assert "secret provider key" not in str(detail)
     assert detail["retry"]["retryable"] is False
     assert detail["correlation"]["correlation_id"]
@@ -49,7 +49,7 @@ def test_search_returns_structured_error_and_metrics(monkeypatch):
 
     assert exc_info.value.status_code == 422
     detail = exc_info.value.detail
-    assert detail["error_type"] == RAGIngestionErrorType.validation.value
+    assert detail["error_type"] == RAGSearchErrorType.query.value
     assert "provider secret" not in str(detail)
     assert detail["metrics"]["operation"] == "search"
     assert detail["metrics"]["errors"] >= 1
