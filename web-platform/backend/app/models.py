@@ -137,6 +137,46 @@ class AgentStep(Base):
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
 
+class Workflow(Base):
+    __tablename__ = "workflows"
+
+    id = Column(String(80), primary_key=True, index=True)
+    name = Column(String(120), nullable=False, index=True)
+    description = Column(Text, nullable=False, default="")
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+
+class WorkflowNodeRecord(Base):
+    __tablename__ = "workflow_nodes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    workflow_id = Column(String(80), ForeignKey("workflows.id"), nullable=False, index=True)
+    node_id = Column(String(80), nullable=False, index=True)
+    node_type = Column(String(40), nullable=False, default="task")
+    name = Column(String(120), nullable=False)
+    depends_on = Column(Text, nullable=False, default="[]")
+    retry_count = Column(Integer, nullable=False, default=0)
+    timeout_seconds = Column(Integer, nullable=False, default=30)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+
+class WorkflowRunRecord(Base):
+    __tablename__ = "workflow_runs"
+
+    id = Column(String(80), primary_key=True, index=True)
+    workflow_id = Column(String(80), ForeignKey("workflows.id"), nullable=False, index=True)
+    status = Column(String(40), nullable=False, default="queued", index=True)
+    current_node = Column(String(80), nullable=True)
+    completed_nodes = Column(Text, nullable=False, default="[]")
+    error = Column(Text, nullable=True)
+    execution_log = Column(Text, nullable=False, default="[]")
+    metrics_json = Column(Text, nullable=False, default="{}")
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+
 class AnalyticsEvent(Base):
     __tablename__ = "analytics_events"
 

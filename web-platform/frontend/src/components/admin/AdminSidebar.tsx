@@ -39,6 +39,7 @@ const navigationItems = [
   {
     category: "WORKFLOW ORCHESTRATION",
     items: [
+      { href: "/admin/workflow", label: "Workflow", icon: Workflow },
       { href: "/admin/workflows", label: "Workflows", icon: Workflow },
       { href: "/admin/import", label: "Bulk Import", icon: Upload },
       { href: "/admin/feeds", label: "Feeds", icon: Package },

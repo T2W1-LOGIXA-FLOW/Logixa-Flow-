@@ -740,3 +740,82 @@ class ContentSubmissionOut(ContentSubmissionBase):
     read_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
+
+
+WorkflowNodeType = Literal["task", "approval", "notification"]
+WorkflowRunStatus = Literal["queued", "running", "completed", "failed"]
+
+
+class WorkflowNode(BaseModel):
+    id: str = Field(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9_-]+$")
+    type: WorkflowNodeType = "task"
+    name: str = Field(min_length=1, max_length=120)
+    depends_on: list[str] = Field(default_factory=list)
+    retry_count: int = Field(default=0, ge=0, le=5)
+    timeout_seconds: int = Field(default=30, ge=1, le=3600)
+
+
+class WorkflowState(BaseModel):
+    status: WorkflowRunStatus
+    current_node: str | None = None
+    completed_nodes: list[str] = Field(default_factory=list)
+    error: str | None = None
+
+
+class WorkflowStorageCreate(BaseModel):
+    id: str = Field(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9_-]+$")
+    name: str = Field(min_length=1, max_length=120)
+    nodes: list[WorkflowNode] = Field(min_length=1, max_length=50)
+
+
+class WorkflowStorageOut(WorkflowStorageCreate):
+    created_at: datetime
+    updated_at: datetime
+
+
+class WorkflowRunRequest(BaseModel):
+    workflow_id: str = Field(min_length=1, max_length=80)
+
+
+class WorkflowRunOut(BaseModel):
+    run_id: str
+    workflow_id: str
+    state: WorkflowState
+
+
+class WorkflowTelemetryEvent(BaseModel):
+    event: Literal["workflow.status"]
+    run_id: str
+    workflow_id: str
+    state: WorkflowState
+
+
+class WorkflowNodeSchema(BaseModel):
+    id: str = Field(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9_-]+$")
+    type: WorkflowNodeType = "task"
+    name: str = Field(min_length=1, max_length=120)
+    depends_on: list[str] = Field(default_factory=list)
+    retry_count: int = Field(default=0, ge=0, le=5)
+    timeout_seconds: int = Field(default=30, ge=1, le=3600)
+
+
+class WorkflowSchema(BaseModel):
+    id: str = Field(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9_-]+$")
+    name: str = Field(min_length=1, max_length=120)
+    description: str | None = Field(default=None, max_length=500)
+    nodes: list[WorkflowNodeSchema] = Field(default_factory=list)
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class WorkflowRunSchema(BaseModel):
+    id: str = Field(min_length=1, max_length=80)
+    workflow_id: str = Field(min_length=1, max_length=80)
+    status: WorkflowRunStatus = "queued"
+    current_node: str | None = None
+    completed_nodes: list[str] = Field(default_factory=list)
+    error: str | None = None
+    execution_log: list[str] = Field(default_factory=list)
+    metrics: dict[str, float | int | str | bool] = Field(default_factory=dict)
+    created_at: datetime | None = None
+    updated_at: datetime | None = None

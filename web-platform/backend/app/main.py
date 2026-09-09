@@ -18,7 +18,7 @@ from .database import Base, SessionLocal, engine
 from .db_bootstrap import bootstrap_database, database_profile
 from .logging_config import setup_logging
 from .middleware import rate_limit_middleware, security_headers_middleware, stealth_mode_middleware
-from .routers import admin, agent, analytics, auth, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, integration_triggers, admin_env, workflows, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads
+from .routers import admin, agent, analytics, auth, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, integration_triggers, admin_env, workflow, workflows, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads
 from .scheduler import scheduler_status, start_scheduler
 
 logger = logging.getLogger(__name__)
@@ -324,6 +324,7 @@ app.include_router(controllers.router, prefix="/api/admin/controllers", tags=["c
 app.include_router(email_templates.router, prefix="/api/admin/email-templates", tags=["email_templates"])
 app.include_router(submissions.router, prefix="/api/admin/submissions", tags=["submissions"])
 app.include_router(diagnostics.router, prefix="/api", tags=["diagnostics"])
+app.include_router(workflow.router)
 
 
 @app.get("/")
