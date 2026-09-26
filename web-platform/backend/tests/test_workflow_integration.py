@@ -3,16 +3,27 @@ from __future__ import annotations
 import asyncio
 
 import pytest
+from fastapi import WebSocketDisconnect
 
 from app.routers import workflow
 from app.schemas import WorkflowRunRequest, WorkflowStorageCreate, WorkflowNode
 
 
 class FakeWebSocket:
-    def __init__(self) -> None:
-        self.headers = {"authorization": "Bearer test-token"}
+    def __init__(self, incoming: list[str] | None = None) -> None:
+        self.headers: dict[str, str] = {}
         self.sent: list[dict] = []
         self.closed_code: int | None = None
+        self.incoming = list(incoming or [])
+        self.accepted = False
+
+    async def accept(self) -> None:
+        self.accepted = True
+
+    async def receive_text(self) -> str:
+        if self.incoming:
+            return self.incoming.pop(0)
+        raise WebSocketDisconnect()
 
     async def send_json(self, message: dict) -> None:
         self.sent.append(message)
@@ -74,10 +85,22 @@ async def test_workflow_orchestration_completes_and_broadcasts() -> None:
 
 
 @pytest.mark.anyio
-async def test_workflow_websocket_rejects_unauthenticated_clients() -> None:
-    websocket = FakeWebSocket()
-    websocket.headers = {}
+async def test_workflow_websocket_authenticates_browser_clients_with_first_message() -> None:
+    token = workflow.create_access_token("admin")
+    websocket = FakeWebSocket([f'{{"type":"auth","token":"{token}"}}'])
 
     await workflow.workflow_telemetry(websocket)  # type: ignore[arg-type]
 
+    assert websocket.accepted is True
+    assert websocket.closed_code is None
+    assert websocket not in workflow._SUBSCRIBERS
+
+
+@pytest.mark.anyio
+async def test_workflow_websocket_rejects_unauthenticated_clients() -> None:
+    websocket = FakeWebSocket(['{"type":"auth","token":"invalid"}'])
+
+    await workflow.workflow_telemetry(websocket)  # type: ignore[arg-type]
+
+    assert websocket.accepted is True
     assert websocket.closed_code == 4401
