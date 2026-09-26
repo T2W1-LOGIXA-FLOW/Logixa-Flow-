@@ -545,7 +545,7 @@ async def workflow_telemetry(websocket: WebSocket) -> None:
         raw_message = await websocket.receive_text()
         message = json.loads(raw_message)
         token = message.get("token") if isinstance(message, dict) else None
-        if message.get("type") != "auth" or not isinstance(token, str) or not token:
+        if not isinstance(message, dict) or message.get("type") != "auth" or not isinstance(token, str) or not token:
             await websocket.close(code=4401)
             return
 
