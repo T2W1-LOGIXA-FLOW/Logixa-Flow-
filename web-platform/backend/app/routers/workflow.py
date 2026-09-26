@@ -537,20 +537,26 @@ async def cancel_workflow_run(run_id: str, _admin=Depends(require_admin)) -> dic
 
 @router.websocket("/ws")
 async def workflow_telemetry(websocket: WebSocket) -> None:
-    authorization = websocket.headers.get("authorization")
-    if not authorization or not authorization.startswith("Bearer "):
-        await websocket.close(code=4401)
-        return
+    # Browser WebSocket clients cannot set arbitrary Authorization headers.
+    # Authenticate with a short-lived JWT in the first WebSocket message instead
+    # of placing the token in the URL query string.
+    await websocket.accept()
     try:
-        payload = decode_token(authorization.removeprefix("Bearer ").strip())
+        raw_message = await websocket.receive_text()
+        message = json.loads(raw_message)
+        token = message.get("token") if isinstance(message, dict) else None
+        if not isinstance(message, dict) or message.get("type") != "auth" or not isinstance(token, str) or not token:
+            await websocket.close(code=4401)
+            return
+
+        payload = decode_token(token)
         if payload.get("role") != "admin":
             await websocket.close(code=4403)
             return
-    except HTTPException:
+    except (WebSocketDisconnect, json.JSONDecodeError, TypeError, HTTPException):
         await websocket.close(code=4401)
         return
 
-    await websocket.accept()
     _SUBSCRIBERS.add(websocket)
     try:
         while True:

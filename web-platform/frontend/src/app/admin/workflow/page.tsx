@@ -52,7 +52,7 @@ function nodeClass(status: ServiceNodeData["status"]) {
 }
 
 function resolveWorkflowSocketUrl() {
-  const configured = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const configured = process.env.NEXT_PUBLIC_API_URL;
   const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
   const base = configured || origin;
   const url = new URL("/api/admin/workflow/ws", base);
@@ -79,10 +79,11 @@ export default function AdminWorkflowPage() {
     }
 
     setConnectionState("connecting");
-    const socket = new WebSocket(`${resolveWorkflowSocketUrl()}?token=${encodeURIComponent(token)}`);
+    const socket = new WebSocket(resolveWorkflowSocketUrl());
     socketRef.current = socket;
 
     socket.onopen = () => {
+      socket.send(JSON.stringify({ type: "auth", token }));
       setConnectionState("connected");
       setLogs((previous) => [`[${new Date().toLocaleTimeString()}] SOCKET CONNECTED`, ...previous].slice(0, 6));
     };
