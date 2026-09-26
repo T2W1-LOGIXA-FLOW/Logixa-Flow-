@@ -6,6 +6,7 @@ import pytest
 from fastapi import WebSocketDisconnect
 
 from app.routers import workflow
+from app.security import create_access_token
 from app.schemas import WorkflowRunRequest, WorkflowStorageCreate, WorkflowNode
 
 
@@ -86,7 +87,7 @@ async def test_workflow_orchestration_completes_and_broadcasts() -> None:
 
 @pytest.mark.anyio
 async def test_workflow_websocket_authenticates_browser_clients_with_first_message() -> None:
-    token = workflow.create_access_token("admin")
+    token = create_access_token("admin")
     websocket = FakeWebSocket([f'{{"type":"auth","token":"{token}"}}'])
 
     await workflow.workflow_telemetry(websocket)  # type: ignore[arg-type]
