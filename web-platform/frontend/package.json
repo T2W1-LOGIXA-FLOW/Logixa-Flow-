@@ -59,7 +59,6 @@
     "nodemailer": "^9.0.1",
     "react": "19.0.0",
     "react-dom": "19.0.0",
-    "reactflow": "^11.11.4",
     "recharts": "^3.10.1",
     "sonner": "^1.4.0",
     "stripe": "^22.2.3",
