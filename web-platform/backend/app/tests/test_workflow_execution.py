@@ -17,6 +17,7 @@ def reset_workflow_execution_state() -> None:
     workflow._EXECUTION_QUEUE.clear()
     workflow._ERROR_NOTIFICATIONS.clear()
     workflow._EXECUTION_STATES.clear()
+    workflow._CONTROLLER_RUNS.clear()
     workflow._QUEUE_WORKER_RUNNING = False
     yield
     workflow._WORKFLOW_STORAGE.clear()
@@ -65,19 +66,14 @@ async def test_workflow_executor_tracks_state_machine() -> None:
 
 
 @pytest.mark.anyio
-async def test_workflow_executor_runs_nodes_async(monkeypatch: pytest.MonkeyPatch) -> None:
-    async def fake_simulate(node):
-        await asyncio.sleep(0.01)
-        return None
-
-    monkeypatch.setattr(workflow, "_simulate_node", fake_simulate)
+async def test_workflow_executor_runs_registered_actions() -> None:
     await workflow.store_workflow(
         WorkflowStorageCreate(
             id="async-flow",
             name="Async flow",
             nodes=[
-                WorkflowNode(id="first", name="First"),
-                WorkflowNode(id="second", name="Second"),
+                WorkflowNode(id="first", name="First", config={"action": "log", "message": "first"}),
+                WorkflowNode(id="second", name="Second", config={"action": "set_metadata", "key": "done", "value": True}),
             ],
         ),
         _admin={"role": "admin"},
@@ -94,6 +90,9 @@ async def test_workflow_executor_runs_nodes_async(monkeypatch: pytest.MonkeyPatc
 
     assert final_state.status == "completed"
     assert set(final_state.completed_nodes) == {"first", "second"}
+    assert workflow._EXECUTION_METRICS[run.run_id]["metadata"]["done"] is True
+
+
 
 
 @pytest.mark.anyio

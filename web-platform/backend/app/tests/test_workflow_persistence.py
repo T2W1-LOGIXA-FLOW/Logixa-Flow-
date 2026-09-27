@@ -23,6 +23,7 @@ def reset_persistence_state(monkeypatch: pytest.MonkeyPatch) -> None:
     workflow._EXECUTION_STATES.clear()
     workflow._EXECUTION_HISTORY.clear()
     workflow._EXECUTION_METRICS.clear()
+    workflow._CONTROLLER_RUNS.clear()
     workflow._QUEUE_WORKER_RUNNING = False
 
     engine = create_engine("sqlite:///:memory:")
@@ -51,6 +52,7 @@ async def test_database_schema_exists() -> None:
         assert "workflows" in tables
         assert "workflow_nodes" in tables
         assert "workflow_runs" in tables
+        assert "scheduled_workflow_jobs" in tables
     finally:
         db.close()
 
@@ -102,5 +104,74 @@ async def test_execution_history_tracks_run_logs() -> None:
         assert record is not None
         logs = json.loads(record.execution_log or "[]")
         assert "task executed" in logs
+    finally:
+        db.close()
+
+
+@pytest.mark.anyio
+async def test_pending_workflow_jobs_restore_after_restart() -> None:
+    await workflow.store_workflow(
+        WorkflowStorageCreate(
+            id="restart-flow",
+            name="Restart Flow",
+            nodes=[WorkflowNode(id="step", name="Step", config={"action": "log", "message": "recovered"})],
+        ),
+        _admin={"role": "admin"},
+    )
+    run = await workflow.run_workflow(
+        "restart-flow",
+        WorkflowRunRequest(workflow_id="restart-flow", delay_seconds=60),
+        _admin={"role": "admin"},
+    )
+
+    workflow._WORKFLOW_STORAGE.clear()
+    workflow._WORKFLOW_RUNS.clear()
+    workflow._EXECUTION_QUEUE.clear()
+    workflow._EXECUTION_STATES.clear()
+    workflow._QUEUE_WORKER_RUNNING = False
+
+    restored = workflow.restore_pending_workflow_runs()
+
+    assert restored == 1
+    assert run.run_id in workflow._WORKFLOW_RUNS
+    assert workflow._EXECUTION_QUEUE[0]["run_id"] == run.run_id
+
+
+@pytest.mark.anyio
+async def test_controller_result_tracks_workflow_terminal_state() -> None:
+    db = workflow.SessionLocal()
+    try:
+        db.add(models.Controller(
+            id="controller-test",
+            name="Controller Test",
+            trigger_type="manual",
+            enabled=True,
+            config='{"workflow_id":"controller-flow"}',
+            success_count=0,
+            failure_count=0,
+        ))
+        db.commit()
+    finally:
+        db.close()
+
+    await workflow.store_workflow(
+        WorkflowStorageCreate(
+            id="controller-flow",
+            name="Controller Flow",
+            nodes=[WorkflowNode(id="step", name="Step", config={"action": "log", "message": "ok"})],
+        ),
+        _admin={"role": "admin"},
+    )
+
+    workflow._QUEUE_WORKER_RUNNING = True
+    run = await workflow.enqueue_workflow_run("controller-flow", controller_id="controller-test")
+    await workflow._execute_workflow(run.run_id)
+
+    db = workflow.SessionLocal()
+    try:
+        controller = db.query(models.Controller).filter(models.Controller.id == "controller-test").first()
+        assert controller is not None
+        assert controller.success_count == 1
+        assert controller.failure_count == 0
     finally:
         db.close()

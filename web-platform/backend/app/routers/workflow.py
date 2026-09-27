@@ -7,6 +7,8 @@ from typing import Any
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
+from sqlalchemy import inspect
+from sqlalchemy.exc import SQLAlchemyError
 
 from app import models
 from app.database import SessionLocal
@@ -33,6 +35,7 @@ _EXECUTION_STATES: dict[str, dict[str, Any]] = {}
 _EXECUTION_HISTORY: dict[str, list[str]] = {}
 _EXECUTION_METRICS: dict[str, dict[str, Any]] = {}
 _QUEUE_WORKER_RUNNING = False
+_CONTROLLER_RUNS: dict[str, str] = {}
 
 
 def _serialize_json(value: Any) -> str:
@@ -61,6 +64,7 @@ def _persist_workflow_definition(workflow: WorkflowStorageOut) -> None:
                     depends_on=_serialize_json(node.depends_on),
                     retry_count=node.retry_count,
                     timeout_seconds=node.timeout_seconds,
+                    config=_serialize_json(node.config),
                 )
             )
         db.commit()
@@ -85,6 +89,7 @@ def _load_workflow_definition(workflow_id: str) -> WorkflowStorageOut | None:
                 depends_on=json.loads(row.depends_on or "[]"),
                 retry_count=row.retry_count,
                 timeout_seconds=row.timeout_seconds,
+                config=json.loads(getattr(row, "config", "{}") or "{}"),
             )
             for row in rows
         ]
@@ -221,7 +226,7 @@ class WorkflowExecutor:
             if self.cancel_requested:
                 raise asyncio.CancelledError
             try:
-                await asyncio.wait_for(_simulate_node(node), timeout=node.timeout_seconds)
+                await asyncio.wait_for(_execute_node_action(node, self.run_id), timeout=node.timeout_seconds)
                 self.completed_nodes.add(node.id)
                 self.state.completed_nodes = list(self._execution_order())
                 self.state.error = None
@@ -330,11 +335,40 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
 def _schedule_run(run_id: str, priority: int = 0, delay_seconds: int = 0) -> None:
     queued_at = _now()
     scheduled_at = queued_at + timedelta(seconds=max(delay_seconds, 0))
+    _EXECUTION_QUEUE[:] = [item for item in _EXECUTION_QUEUE if item["run_id"] != run_id]
     _EXECUTION_QUEUE.append({"run_id": run_id, "priority": priority, "queued_at": queued_at, "scheduled_for": scheduled_at})
     _EXECUTION_QUEUE.sort(key=lambda item: (-int(item["priority"]), item["scheduled_for"], item["queued_at"]))
+    db = SessionLocal()
+    try:
+        if not db.bind or not inspect(db.bind).has_table("scheduled_workflow_jobs"):
+            return
+        existing = db.query(models.ScheduledWorkflowJob).filter(models.ScheduledWorkflowJob.run_id == run_id).first()
+        if existing is None:
+            db.add(models.ScheduledWorkflowJob(
+                id=f"job-{uuid4().hex}",
+                run_id=run_id,
+                workflow_id=_WORKFLOW_RUNS[run_id].workflow_id,
+                priority=priority,
+                scheduled_for=scheduled_at,
+                status="queued",
+            ))
+        else:
+            existing.priority = priority
+            existing.scheduled_for = scheduled_at
+            existing.status = "queued"
+            existing.updated_at = queued_at
+        db.commit()
+    finally:
+        db.close()
 
 
 async def _broadcast(event: WorkflowTelemetryEvent) -> None:
@@ -374,10 +408,42 @@ def _node_order(workflow: WorkflowStorageOut) -> list[str]:
     return ordered
 
 
-async def _simulate_node(node: Any) -> None:
-    await asyncio.sleep(0.01)
-    if node.type == "approval" and node.name.lower().startswith("fail"):
-        raise RuntimeError(f"approval '{node.name}' requires human review")
+async def _execute_task_action(node: Any, run_id: str) -> None:
+    action = str(node.config.get("action", "log")).strip().lower()
+    if action == "log":
+        _record_execution_history(run_id, f"task:{node.id}: {str(node.config.get('message', node.name)).strip()}")
+        return
+    if action == "set_metadata":
+        key = str(node.config.get("key", "")).strip()
+        if not key:
+            raise ValueError("task set_metadata requires config.key")
+        _EXECUTION_METRICS.setdefault(run_id, {}).setdefault("metadata", {})[key] = node.config.get("value")
+        _record_execution_history(run_id, f"task:{node.id}: metadata '{key}' updated")
+        return
+    raise ValueError(f"unsupported task action '{action}'")
+
+async def _execute_approval_action(node: Any, run_id: str) -> None:
+    if not bool(node.config.get("approved", False)):
+        raise RuntimeError(f"approval '{node.name}' is awaiting approval")
+    _record_execution_history(run_id, f"approval:{node.id}: approved")
+
+async def _execute_notification_action(node: Any, run_id: str) -> None:
+    channel = str(node.config.get("channel", "log")).strip().lower()
+    if channel != "log":
+        raise ValueError(f"unsupported notification channel '{channel}'")
+    _record_execution_history(run_id, f"notification:{node.id}: {str(node.config.get('message', node.name)).strip()}")
+
+_NODE_ACTIONS = {
+    "task": _execute_task_action,
+    "approval": _execute_approval_action,
+    "notification": _execute_notification_action,
+}
+
+async def _execute_node_action(node: Any, run_id: str) -> None:
+    action = _NODE_ACTIONS.get(node.type)
+    if action is None:
+        raise ValueError(f"unsupported workflow node type '{node.type}'")
+    await action(node, run_id)
 
 
 async def _notify_error(run_id: str, workflow_id: str, message: str) -> None:
@@ -396,6 +462,44 @@ async def _notify_error(run_id: str, workflow_id: str, message: str) -> None:
     await _broadcast(notification)
 
 
+def _record_controller_result(run_id: str, status_value: str) -> None:
+    controller_id = _CONTROLLER_RUNS.pop(run_id, None)
+    if not controller_id:
+        return
+    db = SessionLocal()
+    try:
+        controller = db.query(models.Controller).filter(models.Controller.id == controller_id).first()
+        if controller is None:
+            return
+        controller.last_execution = _now()
+        if status_value == "completed":
+            controller.success_count += 1
+        else:
+            controller.failure_count += 1
+        controller.updated_at = _now()
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+    finally:
+        db.close()
+
+
+def _mark_job_terminal(run_id: str, status_value: str) -> None:
+    db = SessionLocal()
+    try:
+        if not db.bind or not inspect(db.bind).has_table("scheduled_workflow_jobs"):
+            return
+        job = db.query(models.ScheduledWorkflowJob).filter(models.ScheduledWorkflowJob.run_id == run_id).first()
+        if job is not None:
+            job.status = status_value
+            job.updated_at = _now()
+            db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()
+
+
 async def _execute_workflow(run_id: str) -> None:
     run = _WORKFLOW_RUNS.get(run_id)
     if run is None:
@@ -405,6 +509,8 @@ async def _execute_workflow(run_id: str) -> None:
         run.state.status = "failed"
         run.state.error = "workflow no longer exists"
         _EXECUTION_STATES[run_id] = {"run_id": run_id, "workflow_id": run.workflow_id, "status": "failed", "current_node": None, "completed_nodes": [], "error": run.state.error}
+        _mark_job_terminal(run_id, "failed")
+        _record_controller_result(run_id, "failed")
         await _broadcast(WorkflowTelemetryEvent(event="workflow.status", **run.model_dump()))
         return
 
@@ -416,38 +522,141 @@ async def _execute_workflow(run_id: str) -> None:
         final_state = await executor.execute()
         run.state = final_state
         _EXECUTION_STATES[run_id] = executor.snapshot()
+        _mark_job_terminal(run.run_id, final_state.status)
+        _record_controller_result(run.run_id, final_state.status)
         await _broadcast(WorkflowTelemetryEvent(event="workflow.status", run_id=run.run_id, workflow_id=run.workflow_id, state=final_state))
     except asyncio.CancelledError:
         run.state = executor.state
         _EXECUTION_STATES[run_id] = executor.snapshot()
+        _mark_job_terminal(run.run_id, executor.state.status)
+        _record_controller_result(run.run_id, executor.state.status)
         await _broadcast(WorkflowTelemetryEvent(event="workflow.status", run_id=run.run_id, workflow_id=run.workflow_id, state=executor.state))
+
+
+def restore_pending_workflow_runs() -> int:
+    restored = 0
+    db = SessionLocal()
+    try:
+        jobs = db.query(models.ScheduledWorkflowJob).filter(
+            models.ScheduledWorkflowJob.status.in_(["queued", "running"])
+        ).order_by(
+            models.ScheduledWorkflowJob.priority.desc(),
+            models.ScheduledWorkflowJob.scheduled_for.asc(),
+        ).all()
+        for job in jobs:
+            run = _load_run_state(job.run_id)
+            if run is None:
+                job.status = "failed"
+                job.updated_at = _now()
+                continue
+            if run.state.status == "running":
+                run.state.status = "queued"
+                run.state.current_node = None
+                _persist_run_state(run)
+            if run.state.status in {"completed", "failed"}:
+                job.status = run.state.status
+                job.updated_at = _now()
+                continue
+            _WORKFLOW_RUNS[run.run_id] = run
+            wf = _load_workflow_definition(run.workflow_id)
+            if wf is not None:
+                _WORKFLOW_STORAGE[wf.id] = wf
+            _EXECUTION_STATES[run.run_id] = {
+                "run_id": run.run_id,
+                "workflow_id": run.workflow_id,
+                "status": run.state.status,
+                "current_node": run.state.current_node,
+                "completed_nodes": run.state.completed_nodes,
+                "error": run.state.error,
+            }
+            if not any(item["run_id"] == run.run_id for item in _EXECUTION_QUEUE):
+                _EXECUTION_QUEUE.append({
+                    "run_id": run.run_id,
+                    "priority": job.priority,
+                    "queued_at": _as_utc(job.created_at),
+                    "scheduled_for": _as_utc(job.scheduled_for),
+                })
+                restored += 1
+        db.commit()
+    finally:
+        db.close()
+    _EXECUTION_QUEUE.sort(key=lambda item: (-int(item["priority"]), item["scheduled_for"], item["queued_at"]))
+    return restored
+
+
+def start_queue_worker() -> None:
+    global _QUEUE_WORKER_RUNNING
+    if _QUEUE_WORKER_RUNNING or not _EXECUTION_QUEUE:
+        return
+    _QUEUE_WORKER_RUNNING = True
+    asyncio.create_task(_queue_worker())
 
 
 async def _queue_worker() -> None:
     global _QUEUE_WORKER_RUNNING
-    while _EXECUTION_QUEUE:
-        item = _EXECUTION_QUEUE[0]
-        run = _WORKFLOW_RUNS.get(item["run_id"])
-        now = _now()
-        if run is None:
+    try:
+        while _EXECUTION_QUEUE:
+            item = _EXECUTION_QUEUE[0]
+            run = _WORKFLOW_RUNS.get(item["run_id"])
+            now = _now()
+            if run is None:
+                _EXECUTION_QUEUE.pop(0)
+                continue
+            if run.state.status in {"failed", "completed"}:
+                _EXECUTION_QUEUE.pop(0)
+                continue
+            if _as_utc(item["scheduled_for"]) > now:
+                await asyncio.sleep(max((_as_utc(item["scheduled_for"]) - now).total_seconds(), 0))
+                continue
             _EXECUTION_QUEUE.pop(0)
-            continue
-        if run.state.status == "failed" or run.state.status == "completed":
-            _EXECUTION_QUEUE.pop(0)
-            continue
-        if item["scheduled_for"] > now:
-            await asyncio.sleep(max((item["scheduled_for"] - now).total_seconds(), 0))
-            continue
-        _EXECUTION_QUEUE.pop(0)
-        if run.state.status == "queued":
-            task = asyncio.create_task(_execute_workflow(run.run_id))
-            _track_task(task)
-    _QUEUE_WORKER_RUNNING = False
+            if run.state.status == "queued":
+                db = SessionLocal()
+                try:
+                    job = db.query(models.ScheduledWorkflowJob).filter(models.ScheduledWorkflowJob.run_id == run.run_id).first()
+                    if job is not None:
+                        job.status = "running"
+                        job.updated_at = _now()
+                        db.commit()
+                finally:
+                    db.close()
+                task = asyncio.create_task(_execute_workflow(run.run_id))
+                _track_task(task)
+    finally:
+        _QUEUE_WORKER_RUNNING = False
 
 
 def _track_task(task: asyncio.Task[None]) -> None:
     _RUN_TASKS.add(task)
     task.add_done_callback(_RUN_TASKS.discard)
+
+
+async def enqueue_workflow_run(
+    workflow_id: str,
+    priority: int = 1,
+    delay_seconds: int = 0,
+    controller_id: str | None = None,
+) -> WorkflowRunOut:
+    workflow = _WORKFLOW_STORAGE.get(workflow_id) or _load_workflow_definition(workflow_id)
+    if workflow is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="workflow not found")
+    _WORKFLOW_STORAGE[workflow_id] = workflow
+    run = WorkflowRunOut(run_id=f"run-{uuid4().hex}", workflow_id=workflow_id, state=WorkflowState(status="queued"))
+    _WORKFLOW_RUNS[run.run_id] = run
+    _EXECUTION_STATES[run.run_id] = {
+        "run_id": run.run_id,
+        "workflow_id": workflow_id,
+        "status": "queued",
+        "current_node": None,
+        "completed_nodes": [],
+        "error": None,
+    }
+    _sync_execution_metrics(run.run_id, workflow, run.state)
+    _persist_run_state(run)
+    if controller_id:
+        _CONTROLLER_RUNS[run.run_id] = controller_id
+    _schedule_run(run.run_id, priority=priority, delay_seconds=delay_seconds)
+    start_queue_worker()
+    return run
 
 
 @router.get("/queue")
@@ -484,27 +693,7 @@ async def retrieve_workflow(workflow_id: str, _admin=Depends(require_admin)) -> 
 async def run_workflow(workflow_id: str, payload: WorkflowRunRequest, _admin=Depends(require_admin)) -> WorkflowRunOut:
     if payload.workflow_id != workflow_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="workflow_id does not match path")
-    workflow = _WORKFLOW_STORAGE.get(workflow_id)
-    if workflow is None:
-        workflow = _load_workflow_definition(workflow_id)
-    if workflow is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="workflow not found")
-
-    run = WorkflowRunOut(
-        run_id=f"run-{uuid4().hex}",
-        workflow_id=workflow_id,
-        state=WorkflowState(status="queued"),
-    )
-    _WORKFLOW_RUNS[run.run_id] = run
-    _EXECUTION_STATES[run.run_id] = {"run_id": run.run_id, "workflow_id": workflow_id, "status": "queued", "current_node": None, "completed_nodes": [], "error": None}
-    _sync_execution_metrics(run.run_id, workflow, run.state)
-    _persist_run_state(run)
-    _schedule_run(run.run_id, priority=1)
-    global _QUEUE_WORKER_RUNNING
-    if not _QUEUE_WORKER_RUNNING:
-        _QUEUE_WORKER_RUNNING = True
-        asyncio.create_task(_queue_worker())
-    return run
+    return await enqueue_workflow_run(workflow_id, priority=payload.priority, delay_seconds=payload.delay_seconds)
 
 
 @router.get("/runs/{run_id}/state")
@@ -520,18 +709,22 @@ async def workflow_run_state(run_id: str, _admin=Depends(require_admin)) -> dict
 
 @router.post("/runs/{run_id}/cancel")
 async def cancel_workflow_run(run_id: str, _admin=Depends(require_admin)) -> dict[str, str]:
-    run = _WORKFLOW_RUNS.get(run_id)
+    run = _WORKFLOW_RUNS.get(run_id) or _load_run_state(run_id)
     if run is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="run not found")
-    workflow = _WORKFLOW_STORAGE.get(run.workflow_id)
+    workflow = _WORKFLOW_STORAGE.get(run.workflow_id) or _load_workflow_definition(run.workflow_id)
     if workflow is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="workflow not found")
 
+    _WORKFLOW_RUNS[run_id] = run
+    _WORKFLOW_STORAGE[run.workflow_id] = workflow
     executor = WorkflowExecutor(run_id, run.workflow_id, workflow)
     executor.state = run.state
     executor.cancel("workflow execution cancelled")
     run.state = executor.state
     _EXECUTION_STATES[run_id] = executor.snapshot()
+    _mark_job_terminal(run_id, run.state.status)
+    _record_controller_result(run_id, run.state.status)
     return {"run_id": run_id, "status": run.state.status}
 
 

@@ -18,7 +18,7 @@ from .database import Base, SessionLocal, engine
 from .db_bootstrap import bootstrap_database, database_profile
 from .logging_config import setup_logging
 from .middleware import rate_limit_middleware, security_headers_middleware, stealth_mode_middleware
-from .routers import admin, agent, analytics, auth, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, integration_triggers, admin_env, workflow, workflows, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads
+from .routers import admin, agent, analytics, auth, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, integration_triggers, admin_env, workflow, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads
 from .scheduler import scheduler_status, start_scheduler
 
 logger = logging.getLogger(__name__)
@@ -51,6 +51,17 @@ def ensure_lightweight_migrations() -> None:
         if "trust_score" not in columns:
             with engine.begin() as connection:
                 connection.execute(text("ALTER TABLE intelligence_sources ADD COLUMN trust_score FLOAT DEFAULT 0.5 NOT NULL"))
+    if "workflow_nodes" in inspector.get_table_names():
+        columns = {column["name"] for column in inspector.get_columns("workflow_nodes")}
+        if "config" not in columns:
+            with engine.begin() as connection:
+                connection.execute(text("ALTER TABLE workflow_nodes ADD COLUMN config TEXT DEFAULT '{}' NOT NULL"))
+    if "scheduled_workflow_jobs" not in inspector.get_table_names():
+        with engine.begin() as connection:
+            connection.execute(text("CREATE TABLE IF NOT EXISTS scheduled_workflow_jobs (id VARCHAR(80) PRIMARY KEY, run_id VARCHAR(80) NOT NULL UNIQUE, workflow_id VARCHAR(80) NOT NULL, priority INTEGER NOT NULL DEFAULT 0, scheduled_for TIMESTAMP NOT NULL, status VARCHAR(40) NOT NULL DEFAULT 'queued', created_at TIMESTAMP NOT NULL, updated_at TIMESTAMP NOT NULL, FOREIGN KEY(run_id) REFERENCES workflow_runs(id), FOREIGN KEY(workflow_id) REFERENCES workflows(id))"))
+            connection.execute(text("CREATE INDEX IF NOT EXISTS ix_scheduled_workflow_jobs_status ON scheduled_workflow_jobs(status)"))
+            connection.execute(text("CREATE INDEX IF NOT EXISTS ix_scheduled_workflow_jobs_scheduled_for ON scheduled_workflow_jobs(scheduled_for)"))
+
     if "feed_sources" in inspector.get_table_names():
         columns = {column["name"] for column in inspector.get_columns("feed_sources")}
         if "is_active" not in columns:
@@ -132,6 +143,13 @@ def run_startup_tasks() -> None:
         seed_sample_posts()
     else:
         logger.info("Skipping seeding (SKIP_SEEDING=true)")
+
+    try:
+        restored = workflow.restore_pending_workflow_runs()
+        logger.info("Workflow recovery restored %s pending run(s)", restored)
+        workflow.start_queue_worker()
+    except Exception as exc:
+        logger.warning("Workflow recovery skipped: %s", exc)
 
     start_scheduler()
 

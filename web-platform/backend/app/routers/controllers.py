@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import json
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -119,40 +120,53 @@ def delete_controller(
 
 
 @router.post("/{controller_id}/execute")
-def execute_controller(
+async def execute_controller(
     controller_id: str,
     db: Session = Depends(get_db),
     _: dict = Depends(require_admin),
 ):
-    """
-    Execute a controller (trigger its action).
-    Beta fallback: production controller actions are not connected here yet.
-    """
     controller = db.query(models.Controller).filter(models.Controller.id == controller_id).first()
     if not controller:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Controller not found")
-    
     if not controller.enabled:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Controller is not enabled")
-    
-    success = True
-    
-    # Update execution stats
-    controller.last_execution = datetime.now(timezone.utc)
-    if success:
-        controller.success_count += 1
-    else:
-        controller.failure_count += 1
-    controller.updated_at = datetime.now(timezone.utc)
-    
-    db.commit()
-    db.refresh(controller)
-    
+
+    try:
+        config = json.loads(controller.config or "{}")
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Controller config must be valid JSON") from exc
+
+    workflow_id = config.get("workflow_id")
+    if not isinstance(workflow_id, str) or not workflow_id.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Controller config requires a workflow_id",
+        )
+
+    try:
+        priority = int(config.get("priority", 1))
+        delay_seconds = int(config.get("delay_seconds", 0))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Controller priority and delay_seconds must be integers") from exc
+    if not -100 <= priority <= 100:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Controller priority must be between -100 and 100")
+    if not 0 <= delay_seconds <= 31536000:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Controller delay_seconds must be between 0 and 31536000")
+
+    from . import workflow as workflow_router
+    run = await workflow_router.enqueue_workflow_run(
+        workflow_id=workflow_id,
+        priority=priority,
+        delay_seconds=delay_seconds,
+        controller_id=controller.id,
+    )
+
     return {
-        "success": success,
-        "beta_mode": True,
-        "message": f"Beta preview only. Controller '{controller.name}' was marked as executed, but no production action was triggered.",
-        "controller": schemas.ControllerOut.model_validate(controller)
+        "success": False,
+        "queued": True,
+        "message": f"Controller '{controller.name}' queued workflow '{workflow_id}'.",
+        "run": run,
+        "controller": schemas.ControllerOut.model_validate(controller),
     }
 
 
