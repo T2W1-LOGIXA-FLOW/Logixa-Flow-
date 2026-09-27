@@ -33,6 +33,7 @@ _EXECUTION_STATES: dict[str, dict[str, Any]] = {}
 _EXECUTION_HISTORY: dict[str, list[str]] = {}
 _EXECUTION_METRICS: dict[str, dict[str, Any]] = {}
 _QUEUE_WORKER_RUNNING = False
+_CONTROLLER_RUNS: dict[str, str] = {}
 
 
 def _serialize_json(value: Any) -> str:
@@ -61,6 +62,7 @@ def _persist_workflow_definition(workflow: WorkflowStorageOut) -> None:
                     depends_on=_serialize_json(node.depends_on),
                     retry_count=node.retry_count,
                     timeout_seconds=node.timeout_seconds,
+                    config=_serialize_json(node.config),
                 )
             )
         db.commit()
@@ -85,6 +87,7 @@ def _load_workflow_definition(workflow_id: str) -> WorkflowStorageOut | None:
                 depends_on=json.loads(row.depends_on or "[]"),
                 retry_count=row.retry_count,
                 timeout_seconds=row.timeout_seconds,
+                config=json.loads(getattr(row, "config", "{}") or "{}"),
             )
             for row in rows
         ]
@@ -221,7 +224,7 @@ class WorkflowExecutor:
             if self.cancel_requested:
                 raise asyncio.CancelledError
             try:
-                await asyncio.wait_for(_simulate_node(node), timeout=node.timeout_seconds)
+                await asyncio.wait_for(_execute_node_action(node, self.run_id), timeout=node.timeout_seconds)
                 self.completed_nodes.add(node.id)
                 self.state.completed_nodes = list(self._execution_order())
                 self.state.error = None
@@ -374,10 +377,42 @@ def _node_order(workflow: WorkflowStorageOut) -> list[str]:
     return ordered
 
 
-async def _simulate_node(node: Any) -> None:
-    await asyncio.sleep(0.01)
-    if node.type == "approval" and node.name.lower().startswith("fail"):
-        raise RuntimeError(f"approval '{node.name}' requires human review")
+async def _execute_task_action(node: Any, run_id: str) -> None:
+    action = str(node.config.get("action", "log")).strip().lower()
+    if action == "log":
+        _record_execution_history(run_id, f"task:{node.id}: {str(node.config.get("message", node.name)).strip()}")
+        return
+    if action == "set_metadata":
+        key = str(node.config.get("key", "")).strip()
+        if not key:
+            raise ValueError("task set_metadata requires config.key")
+        _EXECUTION_METRICS.setdefault(run_id, {}).setdefault("metadata", {})[key] = node.config.get("value")
+        _record_execution_history(run_id, f"task:{node.id}: metadata '{key}' updated")
+        return
+    raise ValueError(f"unsupported task action '{action}'")
+
+async def _execute_approval_action(node: Any, run_id: str) -> None:
+    if not bool(node.config.get("approved", False)):
+        raise RuntimeError(f"approval '{node.name}' is awaiting approval")
+    _record_execution_history(run_id, f"approval:{node.id}: approved")
+
+async def _execute_notification_action(node: Any, run_id: str) -> None:
+    channel = str(node.config.get("channel", "log")).strip().lower()
+    if channel != "log":
+        raise ValueError(f"unsupported notification channel '{channel}'")
+    _record_execution_history(run_id, f"notification:{node.id}: {str(node.config.get("message", node.name)).strip()}")
+
+_NODE_ACTIONS = {
+    "task": _execute_task_action,
+    "approval": _execute_approval_action,
+    "notification": _execute_notification_action,
+}
+
+async def _execute_node_action(node: Any, run_id: str) -> None:
+    action = _NODE_ACTIONS.get(node.type)
+    if action is None:
+        raise ValueError(f"unsupported workflow node type '{node.type}'")
+    await action(node, run_id)
 
 
 async def _notify_error(run_id: str, workflow_id: str, message: str) -> None:
