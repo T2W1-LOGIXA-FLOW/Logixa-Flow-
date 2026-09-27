@@ -7,6 +7,7 @@ from typing import Any
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
+from sqlalchemy.exc import SQLAlchemyError
 
 from app import models
 from app.database import SessionLocal
@@ -333,6 +334,12 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
 def _schedule_run(run_id: str, priority: int = 0, delay_seconds: int = 0) -> None:
     queued_at = _now()
     scheduled_at = queued_at + timedelta(seconds=max(delay_seconds, 0))
@@ -468,6 +475,8 @@ def _record_controller_result(run_id: str, status_value: str) -> None:
             controller.failure_count += 1
         controller.updated_at = _now()
         db.commit()
+    except SQLAlchemyError:
+        db.rollback()
     finally:
         db.close()
 
@@ -480,6 +489,8 @@ def _mark_job_terminal(run_id: str, status_value: str) -> None:
             job.status = status_value
             job.updated_at = _now()
             db.commit()
+    except SQLAlchemyError:
+        db.rollback()
     finally:
         db.close()
 
@@ -557,8 +568,8 @@ def restore_pending_workflow_runs() -> int:
                 _EXECUTION_QUEUE.append({
                     "run_id": run.run_id,
                     "priority": job.priority,
-                    "queued_at": job.created_at,
-                    "scheduled_for": job.scheduled_for,
+                    "queued_at": _as_utc(job.created_at),
+                    "scheduled_for": _as_utc(job.scheduled_for),
                 })
                 restored += 1
         db.commit()
@@ -589,8 +600,8 @@ async def _queue_worker() -> None:
             if run.state.status in {"failed", "completed"}:
                 _EXECUTION_QUEUE.pop(0)
                 continue
-            if item["scheduled_for"] > now:
-                await asyncio.sleep(max((item["scheduled_for"] - now).total_seconds(), 0))
+            if _as_utc(item["scheduled_for"]) > now:
+                await asyncio.sleep(max((_as_utc(item["scheduled_for"]) - now).total_seconds(), 0))
                 continue
             _EXECUTION_QUEUE.pop(0)
             if run.state.status == "queued":
