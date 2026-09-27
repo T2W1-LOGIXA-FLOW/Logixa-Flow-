@@ -23,6 +23,7 @@ def reset_persistence_state(monkeypatch: pytest.MonkeyPatch) -> None:
     workflow._EXECUTION_STATES.clear()
     workflow._EXECUTION_HISTORY.clear()
     workflow._EXECUTION_METRICS.clear()
+    workflow._CONTROLLER_RUNS.clear()
     workflow._QUEUE_WORKER_RUNNING = False
 
     engine = create_engine("sqlite:///:memory:")
@@ -51,6 +52,7 @@ async def test_database_schema_exists() -> None:
         assert "workflows" in tables
         assert "workflow_nodes" in tables
         assert "workflow_runs" in tables
+        assert "scheduled_workflow_jobs" in tables
     finally:
         db.close()
 
@@ -104,3 +106,32 @@ async def test_execution_history_tracks_run_logs() -> None:
         assert "task executed" in logs
     finally:
         db.close()
+
+
+@pytest.mark.anyio
+async def test_pending_workflow_jobs_restore_after_restart() -> None:
+    await workflow.store_workflow(
+        WorkflowStorageCreate(
+            id="restart-flow",
+            name="Restart Flow",
+            nodes=[WorkflowNode(id="step", name="Step", config={"action": "log", "message": "recovered"})],
+        ),
+        _admin={"role": "admin"},
+    )
+    run = await workflow.run_workflow(
+        "restart-flow",
+        WorkflowRunRequest(workflow_id="restart-flow", delay_seconds=60),
+        _admin={"role": "admin"},
+    )
+
+    workflow._WORKFLOW_STORAGE.clear()
+    workflow._WORKFLOW_RUNS.clear()
+    workflow._EXECUTION_QUEUE.clear()
+    workflow._EXECUTION_STATES.clear()
+    workflow._QUEUE_WORKER_RUNNING = False
+
+    restored = workflow.restore_pending_workflow_runs()
+
+    assert restored == 1
+    assert run.run_id in workflow._WORKFLOW_RUNS
+    assert workflow._EXECUTION_QUEUE[0]["run_id"] == run.run_id
