@@ -776,6 +776,8 @@ class WorkflowStorageOut(WorkflowStorageCreate):
 
 class WorkflowRunRequest(BaseModel):
     workflow_id: str = Field(min_length=1, max_length=80)
+    priority: int = Field(default=1, ge=-100, le=100)
+    delay_seconds: int = Field(default=0, ge=0, le=31536000)
 
 
 class WorkflowRunOut(BaseModel):
