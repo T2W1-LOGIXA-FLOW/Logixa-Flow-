@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl
@@ -753,6 +753,7 @@ class WorkflowNode(BaseModel):
     depends_on: list[str] = Field(default_factory=list)
     retry_count: int = Field(default=0, ge=0, le=5)
     timeout_seconds: int = Field(default=30, ge=1, le=3600)
+    config: dict[str, Any] = Field(default_factory=dict)
 
 
 class WorkflowState(BaseModel):
