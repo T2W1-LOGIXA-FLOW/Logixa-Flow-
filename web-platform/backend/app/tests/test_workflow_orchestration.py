@@ -17,6 +17,7 @@ def reset_workflow_state() -> None:
     workflow_router._EXECUTION_QUEUE.clear()
     workflow_router._ERROR_NOTIFICATIONS.clear()
     workflow_router._QUEUE_WORKER_RUNNING = False
+    workflow_router._CONTROLLER_RUNS.clear()
     yield
     workflow_router._WORKFLOW_STORAGE.clear()
     workflow_router._WORKFLOW_RUNS.clear()
@@ -40,25 +41,13 @@ async def test_execution_queue_prioritizes_jobs() -> None:
 
 
 @pytest.mark.anyio
-async def test_node_dependencies_and_retry_logic(monkeypatch: pytest.MonkeyPatch) -> None:
-    attempt_count = {"count": 0}
-
-    async def fake_simulate(node):
-        if node.id == "first":
-            return None
-        attempt_count["count"] += 1
-        if attempt_count["count"] == 1:
-            raise RuntimeError("temporary retry")
-        return None
-
-    monkeypatch.setattr(workflow_router, "_simulate_node", fake_simulate)
-
+async def test_node_dependencies_and_registered_actions() -> None:
     workflow = WorkflowStorageCreate(
-        id="retry-workflow",
-        name="retry workflow",
+        id="action-workflow",
+        name="action workflow",
         nodes=[
-            WorkflowNode(id="first", name="first node"),
-            WorkflowNode(id="second", name="second node", depends_on=["first"], retry_count=1),
+            WorkflowNode(id="first", name="first node", config={"action": "log", "message": "ok"}),
+            WorkflowNode(id="second", name="second node", depends_on=["first"], config={"action": "set_metadata", "key": "attempt", "value": 2}),
         ],
     )
     workflow_record = WorkflowStorageOut(
@@ -67,26 +56,25 @@ async def test_node_dependencies_and_retry_logic(monkeypatch: pytest.MonkeyPatch
         updated_at=workflow_router._now(),
     )
     workflow_router._WORKFLOW_STORAGE[workflow.id] = workflow_record
-    run = WorkflowRunOut(run_id="run-retry", workflow_id=workflow.id, state=WorkflowState(status="queued"))
+    run = WorkflowRunOut(run_id="run-action", workflow_id=workflow.id, state=WorkflowState(status="queued"))
     workflow_router._WORKFLOW_RUNS[run.run_id] = run
 
     await workflow_router._execute_workflow(run.run_id)
 
     assert run.state.status == "completed"
     assert run.state.completed_nodes == ["first", "second"]
-    assert attempt_count["count"] == 2
+    assert workflow_router._EXECUTION_METRICS[run.run_id]["metadata"]["attempt"] == 2
+
+
 
 
 @pytest.mark.anyio
 async def test_error_handling_rolls_back_failed_run() -> None:
-    async def fake_simulate(node):
-        raise RuntimeError(f"node {node.id} exploded")
-
     workflow = WorkflowStorageCreate(
         id="broken-workflow",
         name="broken workflow",
         nodes=[
-            WorkflowNode(id="first", name="first node"),
+            WorkflowNode(id="first", name="first node", config={"action": "unsupported"}),
             WorkflowNode(id="second", name="second node", depends_on=["first"]),
         ],
     )
@@ -100,12 +88,7 @@ async def test_error_handling_rolls_back_failed_run() -> None:
     run = WorkflowRunOut(run_id="run-failure", workflow_id=workflow.id, state=WorkflowState(status="queued"))
     workflow_router._WORKFLOW_RUNS[run.run_id] = run
 
-    original = workflow_router._simulate_node
-    workflow_router._simulate_node = fake_simulate
-    try:
-        await workflow_router._execute_workflow(run.run_id)
-    finally:
-        workflow_router._simulate_node = original
+    await workflow_router._execute_workflow(run.run_id)
 
     assert run.state.status == "failed"
     assert run.state.completed_nodes == []
