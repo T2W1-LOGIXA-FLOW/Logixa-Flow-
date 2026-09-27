@@ -135,3 +135,43 @@ async def test_pending_workflow_jobs_restore_after_restart() -> None:
     assert restored == 1
     assert run.run_id in workflow._WORKFLOW_RUNS
     assert workflow._EXECUTION_QUEUE[0]["run_id"] == run.run_id
+
+
+@pytest.mark.anyio
+async def test_controller_result_tracks_workflow_terminal_state() -> None:
+    db = workflow.SessionLocal()
+    try:
+        db.add(models.Controller(
+            id="controller-test",
+            name="Controller Test",
+            trigger_type="manual",
+            enabled=True,
+            config='{"workflow_id":"controller-flow"}',
+            success_count=0,
+            failure_count=0,
+        ))
+        db.commit()
+    finally:
+        db.close()
+
+    await workflow.store_workflow(
+        WorkflowStorageCreate(
+            id="controller-flow",
+            name="Controller Flow",
+            nodes=[WorkflowNode(id="step", name="Step", config={"action": "log", "message": "ok"})],
+        ),
+        _admin={"role": "admin"},
+    )
+
+    workflow._QUEUE_WORKER_RUNNING = True
+    run = await workflow.enqueue_workflow_run("controller-flow", controller_id="controller-test")
+    await workflow._execute_workflow(run.run_id)
+
+    db = workflow.SessionLocal()
+    try:
+        controller = db.query(models.Controller).filter(models.Controller.id == "controller-test").first()
+        assert controller is not None
+        assert controller.success_count == 1
+        assert controller.failure_count == 0
+    finally:
+        db.close()
