@@ -493,6 +493,8 @@ async def _execute_workflow(run_id: str) -> None:
         run.state.status = "failed"
         run.state.error = "workflow no longer exists"
         _EXECUTION_STATES[run_id] = {"run_id": run_id, "workflow_id": run.workflow_id, "status": "failed", "current_node": None, "completed_nodes": [], "error": run.state.error}
+        _mark_job_terminal(run_id, "failed")
+        _record_controller_result(run_id, "failed")
         await _broadcast(WorkflowTelemetryEvent(event="workflow.status", **run.model_dump()))
         return
 
@@ -576,33 +578,35 @@ def start_queue_worker() -> None:
 
 async def _queue_worker() -> None:
     global _QUEUE_WORKER_RUNNING
-    while _EXECUTION_QUEUE:
-        item = _EXECUTION_QUEUE[0]
-        run = _WORKFLOW_RUNS.get(item["run_id"])
-        now = _now()
-        if run is None:
+    try:
+        while _EXECUTION_QUEUE:
+            item = _EXECUTION_QUEUE[0]
+            run = _WORKFLOW_RUNS.get(item["run_id"])
+            now = _now()
+            if run is None:
+                _EXECUTION_QUEUE.pop(0)
+                continue
+            if run.state.status in {"failed", "completed"}:
+                _EXECUTION_QUEUE.pop(0)
+                continue
+            if item["scheduled_for"] > now:
+                await asyncio.sleep(max((item["scheduled_for"] - now).total_seconds(), 0))
+                continue
             _EXECUTION_QUEUE.pop(0)
-            continue
-        if run.state.status == "failed" or run.state.status == "completed":
-            _EXECUTION_QUEUE.pop(0)
-            continue
-        if item["scheduled_for"] > now:
-            await asyncio.sleep(max((item["scheduled_for"] - now).total_seconds(), 0))
-            continue
-        _EXECUTION_QUEUE.pop(0)
-        if run.state.status == "queued":
-            db = SessionLocal()
-            try:
-                job = db.query(models.ScheduledWorkflowJob).filter(models.ScheduledWorkflowJob.run_id == run.run_id).first()
-                if job is not None:
-                    job.status = "running"
-                    job.updated_at = _now()
-                    db.commit()
-            finally:
-                db.close()
-            task = asyncio.create_task(_execute_workflow(run.run_id))
-            _track_task(task)
-    _QUEUE_WORKER_RUNNING = False
+            if run.state.status == "queued":
+                db = SessionLocal()
+                try:
+                    job = db.query(models.ScheduledWorkflowJob).filter(models.ScheduledWorkflowJob.run_id == run.run_id).first()
+                    if job is not None:
+                        job.status = "running"
+                        job.updated_at = _now()
+                        db.commit()
+                finally:
+                    db.close()
+                task = asyncio.create_task(_execute_workflow(run.run_id))
+                _track_task(task)
+    finally:
+        _QUEUE_WORKER_RUNNING = False
 
 
 def _track_task(task: asyncio.Task[None]) -> None:
