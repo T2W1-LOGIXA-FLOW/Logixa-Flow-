@@ -693,13 +693,15 @@ async def workflow_run_state(run_id: str, _admin=Depends(require_admin)) -> dict
 
 @router.post("/runs/{run_id}/cancel")
 async def cancel_workflow_run(run_id: str, _admin=Depends(require_admin)) -> dict[str, str]:
-    run = _WORKFLOW_RUNS.get(run_id)
+    run = _WORKFLOW_RUNS.get(run_id) or _load_run_state(run_id)
     if run is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="run not found")
-    workflow = _WORKFLOW_STORAGE.get(run.workflow_id)
+    workflow = _WORKFLOW_STORAGE.get(run.workflow_id) or _load_workflow_definition(run.workflow_id)
     if workflow is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="workflow not found")
 
+    _WORKFLOW_RUNS[run_id] = run
+    _WORKFLOW_STORAGE[run.workflow_id] = workflow
     executor = WorkflowExecutor(run_id, run.workflow_id, workflow)
     executor.state = run.state
     executor.cancel("workflow execution cancelled")
