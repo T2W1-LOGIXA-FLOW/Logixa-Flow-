@@ -452,6 +452,38 @@ async def _notify_error(run_id: str, workflow_id: str, message: str) -> None:
     await _broadcast(notification)
 
 
+def _record_controller_result(run_id: str, status_value: str) -> None:
+    controller_id = _CONTROLLER_RUNS.pop(run_id, None)
+    if not controller_id:
+        return
+    db = SessionLocal()
+    try:
+        controller = db.query(models.Controller).filter(models.Controller.id == controller_id).first()
+        if controller is None:
+            return
+        controller.last_execution = _now()
+        if status_value == "completed":
+            controller.success_count += 1
+        else:
+            controller.failure_count += 1
+        controller.updated_at = _now()
+        db.commit()
+    finally:
+        db.close()
+
+
+def _mark_job_terminal(run_id: str, status_value: str) -> None:
+    db = SessionLocal()
+    try:
+        job = db.query(models.ScheduledWorkflowJob).filter(models.ScheduledWorkflowJob.run_id == run_id).first()
+        if job is not None:
+            job.status = status_value
+            job.updated_at = _now()
+            db.commit()
+    finally:
+        db.close()
+
+
 async def _execute_workflow(run_id: str) -> None:
     run = _WORKFLOW_RUNS.get(run_id)
     if run is None:
@@ -472,10 +504,14 @@ async def _execute_workflow(run_id: str) -> None:
         final_state = await executor.execute()
         run.state = final_state
         _EXECUTION_STATES[run_id] = executor.snapshot()
+        _mark_job_terminal(run.run_id, final_state.status)
+        _record_controller_result(run.run_id, final_state.status)
         await _broadcast(WorkflowTelemetryEvent(event="workflow.status", run_id=run.run_id, workflow_id=run.workflow_id, state=final_state))
     except asyncio.CancelledError:
         run.state = executor.state
         _EXECUTION_STATES[run_id] = executor.snapshot()
+        _mark_job_terminal(run.run_id, executor.state.status)
+        _record_controller_result(run.run_id, executor.state.status)
         await _broadcast(WorkflowTelemetryEvent(event="workflow.status", run_id=run.run_id, workflow_id=run.workflow_id, state=executor.state))
 
 
@@ -574,6 +610,35 @@ def _track_task(task: asyncio.Task[None]) -> None:
     task.add_done_callback(_RUN_TASKS.discard)
 
 
+async def enqueue_workflow_run(
+    workflow_id: str,
+    priority: int = 1,
+    delay_seconds: int = 0,
+    controller_id: str | None = None,
+) -> WorkflowRunOut:
+    workflow = _WORKFLOW_STORAGE.get(workflow_id) or _load_workflow_definition(workflow_id)
+    if workflow is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="workflow not found")
+    _WORKFLOW_STORAGE[workflow_id] = workflow
+    run = WorkflowRunOut(run_id=f"run-{uuid4().hex}", workflow_id=workflow_id, state=WorkflowState(status="queued"))
+    _WORKFLOW_RUNS[run.run_id] = run
+    _EXECUTION_STATES[run.run_id] = {
+        "run_id": run.run_id,
+        "workflow_id": workflow_id,
+        "status": "queued",
+        "current_node": None,
+        "completed_nodes": [],
+        "error": None,
+    }
+    _sync_execution_metrics(run.run_id, workflow, run.state)
+    _persist_run_state(run)
+    if controller_id:
+        _CONTROLLER_RUNS[run.run_id] = controller_id
+    _schedule_run(run.run_id, priority=priority, delay_seconds=delay_seconds)
+    start_queue_worker()
+    return run
+
+
 @router.get("/queue")
 async def workflow_queue(_admin=Depends(require_admin)) -> dict[str, Any]:
     return {"queued": [item["run_id"] for item in _EXECUTION_QUEUE], "notifications": _ERROR_NOTIFICATIONS[-10:]}
@@ -608,27 +673,7 @@ async def retrieve_workflow(workflow_id: str, _admin=Depends(require_admin)) -> 
 async def run_workflow(workflow_id: str, payload: WorkflowRunRequest, _admin=Depends(require_admin)) -> WorkflowRunOut:
     if payload.workflow_id != workflow_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="workflow_id does not match path")
-    workflow = _WORKFLOW_STORAGE.get(workflow_id)
-    if workflow is None:
-        workflow = _load_workflow_definition(workflow_id)
-    if workflow is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="workflow not found")
-
-    run = WorkflowRunOut(
-        run_id=f"run-{uuid4().hex}",
-        workflow_id=workflow_id,
-        state=WorkflowState(status="queued"),
-    )
-    _WORKFLOW_RUNS[run.run_id] = run
-    _EXECUTION_STATES[run.run_id] = {"run_id": run.run_id, "workflow_id": workflow_id, "status": "queued", "current_node": None, "completed_nodes": [], "error": None}
-    _sync_execution_metrics(run.run_id, workflow, run.state)
-    _persist_run_state(run)
-    _schedule_run(run.run_id, priority=1)
-    global _QUEUE_WORKER_RUNNING
-    if not _QUEUE_WORKER_RUNNING:
-        _QUEUE_WORKER_RUNNING = True
-        asyncio.create_task(_queue_worker())
-    return run
+    return await enqueue_workflow_run(workflow_id, priority=payload.priority, delay_seconds=payload.delay_seconds)
 
 
 @router.get("/runs/{run_id}/state")
@@ -656,6 +701,8 @@ async def cancel_workflow_run(run_id: str, _admin=Depends(require_admin)) -> dic
     executor.cancel("workflow execution cancelled")
     run.state = executor.state
     _EXECUTION_STATES[run_id] = executor.snapshot()
+    _mark_job_terminal(run_id, run.state.status)
+    _record_controller_result(run_id, run.state.status)
     return {"run_id": run_id, "status": run.state.status}
 
 
