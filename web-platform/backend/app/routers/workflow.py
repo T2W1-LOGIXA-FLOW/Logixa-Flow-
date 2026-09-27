@@ -401,7 +401,7 @@ def _node_order(workflow: WorkflowStorageOut) -> list[str]:
 async def _execute_task_action(node: Any, run_id: str) -> None:
     action = str(node.config.get("action", "log")).strip().lower()
     if action == "log":
-        _record_execution_history(run_id, f"task:{node.id}: {str(node.config.get("message", node.name)).strip()}")
+        _record_execution_history(run_id, f"task:{node.id}: {str(node.config.get('message', node.name)).strip()}")
         return
     if action == "set_metadata":
         key = str(node.config.get("key", "")).strip()
@@ -421,7 +421,7 @@ async def _execute_notification_action(node: Any, run_id: str) -> None:
     channel = str(node.config.get("channel", "log")).strip().lower()
     if channel != "log":
         raise ValueError(f"unsupported notification channel '{channel}'")
-    _record_execution_history(run_id, f"notification:{node.id}: {str(node.config.get("message", node.name)).strip()}")
+    _record_execution_history(run_id, f"notification:{node.id}: {str(node.config.get('message', node.name)).strip()}")
 
 _NODE_ACTIONS = {
     "task": _execute_task_action,
