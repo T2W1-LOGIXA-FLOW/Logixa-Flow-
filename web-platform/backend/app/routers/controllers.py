@@ -143,8 +143,15 @@ async def execute_controller(
             detail="Controller config requires a workflow_id",
         )
 
-    priority = int(config.get("priority", 1))
-    delay_seconds = int(config.get("delay_seconds", 0))
+    try:
+        priority = int(config.get("priority", 1))
+        delay_seconds = int(config.get("delay_seconds", 0))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Controller priority and delay_seconds must be integers") from exc
+    if not -100 <= priority <= 100:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Controller priority must be between -100 and 100")
+    if not 0 <= delay_seconds <= 31536000:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Controller delay_seconds must be between 0 and 31536000")
 
     from . import workflow as workflow_router
     run = await workflow_router.enqueue_workflow_run(
