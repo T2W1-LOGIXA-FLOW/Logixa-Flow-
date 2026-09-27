@@ -349,6 +349,8 @@ def _schedule_run(run_id: str, priority: int = 0, delay_seconds: int = 0) -> Non
     _EXECUTION_QUEUE.sort(key=lambda item: (-int(item["priority"]), item["scheduled_for"], item["queued_at"]))
     db = SessionLocal()
     try:
+        if not db.bind or not inspect(db.bind).has_table("scheduled_workflow_jobs"):
+            return
         existing = db.query(models.ScheduledWorkflowJob).filter(models.ScheduledWorkflowJob.run_id == run_id).first()
         if existing is None:
             db.add(models.ScheduledWorkflowJob(
