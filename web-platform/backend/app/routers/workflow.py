@@ -336,8 +336,29 @@ def _now() -> datetime:
 def _schedule_run(run_id: str, priority: int = 0, delay_seconds: int = 0) -> None:
     queued_at = _now()
     scheduled_at = queued_at + timedelta(seconds=max(delay_seconds, 0))
+    _EXECUTION_QUEUE[:] = [item for item in _EXECUTION_QUEUE if item["run_id"] != run_id]
     _EXECUTION_QUEUE.append({"run_id": run_id, "priority": priority, "queued_at": queued_at, "scheduled_for": scheduled_at})
     _EXECUTION_QUEUE.sort(key=lambda item: (-int(item["priority"]), item["scheduled_for"], item["queued_at"]))
+    db = SessionLocal()
+    try:
+        existing = db.query(models.ScheduledWorkflowJob).filter(models.ScheduledWorkflowJob.run_id == run_id).first()
+        if existing is None:
+            db.add(models.ScheduledWorkflowJob(
+                id=f"job-{uuid4().hex}",
+                run_id=run_id,
+                workflow_id=_WORKFLOW_RUNS[run_id].workflow_id,
+                priority=priority,
+                scheduled_for=scheduled_at,
+                status="queued",
+            ))
+        else:
+            existing.priority = priority
+            existing.scheduled_for = scheduled_at
+            existing.status = "queued"
+            existing.updated_at = queued_at
+        db.commit()
+    finally:
+        db.close()
 
 
 async def _broadcast(event: WorkflowTelemetryEvent) -> None:
@@ -458,6 +479,65 @@ async def _execute_workflow(run_id: str) -> None:
         await _broadcast(WorkflowTelemetryEvent(event="workflow.status", run_id=run.run_id, workflow_id=run.workflow_id, state=executor.state))
 
 
+def restore_pending_workflow_runs() -> int:
+    restored = 0
+    db = SessionLocal()
+    try:
+        jobs = db.query(models.ScheduledWorkflowJob).filter(
+            models.ScheduledWorkflowJob.status.in_(["queued", "running"])
+        ).order_by(
+            models.ScheduledWorkflowJob.priority.desc(),
+            models.ScheduledWorkflowJob.scheduled_for.asc(),
+        ).all()
+        for job in jobs:
+            run = _load_run_state(job.run_id)
+            if run is None:
+                job.status = "failed"
+                job.updated_at = _now()
+                continue
+            if run.state.status == "running":
+                run.state.status = "queued"
+                run.state.current_node = None
+                _persist_run_state(run)
+            if run.state.status in {"completed", "failed"}:
+                job.status = run.state.status
+                job.updated_at = _now()
+                continue
+            _WORKFLOW_RUNS[run.run_id] = run
+            wf = _load_workflow_definition(run.workflow_id)
+            if wf is not None:
+                _WORKFLOW_STORAGE[wf.id] = wf
+            _EXECUTION_STATES[run.run_id] = {
+                "run_id": run.run_id,
+                "workflow_id": run.workflow_id,
+                "status": run.state.status,
+                "current_node": run.state.current_node,
+                "completed_nodes": run.state.completed_nodes,
+                "error": run.state.error,
+            }
+            if not any(item["run_id"] == run.run_id for item in _EXECUTION_QUEUE):
+                _EXECUTION_QUEUE.append({
+                    "run_id": run.run_id,
+                    "priority": job.priority,
+                    "queued_at": job.created_at,
+                    "scheduled_for": job.scheduled_for,
+                })
+                restored += 1
+        db.commit()
+    finally:
+        db.close()
+    _EXECUTION_QUEUE.sort(key=lambda item: (-int(item["priority"]), item["scheduled_for"], item["queued_at"]))
+    return restored
+
+
+def start_queue_worker() -> None:
+    global _QUEUE_WORKER_RUNNING
+    if _QUEUE_WORKER_RUNNING or not _EXECUTION_QUEUE:
+        return
+    _QUEUE_WORKER_RUNNING = True
+    asyncio.create_task(_queue_worker())
+
+
 async def _queue_worker() -> None:
     global _QUEUE_WORKER_RUNNING
     while _EXECUTION_QUEUE:
@@ -475,6 +555,15 @@ async def _queue_worker() -> None:
             continue
         _EXECUTION_QUEUE.pop(0)
         if run.state.status == "queued":
+            db = SessionLocal()
+            try:
+                job = db.query(models.ScheduledWorkflowJob).filter(models.ScheduledWorkflowJob.run_id == run.run_id).first()
+                if job is not None:
+                    job.status = "running"
+                    job.updated_at = _now()
+                    db.commit()
+            finally:
+                db.close()
             task = asyncio.create_task(_execute_workflow(run.run_id))
             _track_task(task)
     _QUEUE_WORKER_RUNNING = False
