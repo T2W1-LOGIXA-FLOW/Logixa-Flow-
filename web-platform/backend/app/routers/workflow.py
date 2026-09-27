@@ -7,6 +7,7 @@ from typing import Any
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
+from sqlalchemy import inspect
 from sqlalchemy.exc import SQLAlchemyError
 
 from app import models
@@ -484,7 +485,7 @@ def _record_controller_result(run_id: str, status_value: str) -> None:
 def _mark_job_terminal(run_id: str, status_value: str) -> None:
     db = SessionLocal()
     try:
-        if not db.bind or not db.bind.dialect.has_table(db.bind.connect(), "scheduled_workflow_jobs"):
+        if not db.bind or not inspect(db.bind).has_table("scheduled_workflow_jobs"):
             return
         job = db.query(models.ScheduledWorkflowJob).filter(models.ScheduledWorkflowJob.run_id == run_id).first()
         if job is not None:
