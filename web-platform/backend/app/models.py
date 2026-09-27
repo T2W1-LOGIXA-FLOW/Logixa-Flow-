@@ -158,6 +158,7 @@ class WorkflowNodeRecord(Base):
     depends_on = Column(Text, nullable=False, default="[]")
     retry_count = Column(Integer, nullable=False, default=0)
     timeout_seconds = Column(Integer, nullable=False, default=30)
+    config = Column(Text, nullable=False, default="{}")
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
