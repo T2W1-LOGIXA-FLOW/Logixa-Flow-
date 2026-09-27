@@ -162,6 +162,19 @@ class WorkflowNodeRecord(Base):
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
 
+class ScheduledWorkflowJob(Base):
+    __tablename__ = "scheduled_workflow_jobs"
+
+    id = Column(String(80), primary_key=True, index=True)
+    run_id = Column(String(80), ForeignKey("workflow_runs.id"), nullable=False, unique=True, index=True)
+    workflow_id = Column(String(80), ForeignKey("workflows.id"), nullable=False, index=True)
+    priority = Column(Integer, nullable=False, default=0)
+    scheduled_for = Column(DateTime(timezone=True), nullable=False, index=True)
+    status = Column(String(40), nullable=False, default="queued", index=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+
 class WorkflowRunRecord(Base):
     __tablename__ = "workflow_runs"
 
