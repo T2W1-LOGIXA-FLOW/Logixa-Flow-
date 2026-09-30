@@ -787,14 +787,16 @@ async def approve_workflow_run(run_id: str, node_id: str | None = None, _admin=D
     run.state.approval_node = None
     run.state.error = None
     _persist_run_state(run)
+    priority = 1
     db = SessionLocal()
     try:
-        job = db.query(models.ScheduledWorkflowJob).filter(models.ScheduledWorkflowJob.run_id == run.run_id).first()
-        priority = int(job.priority) if job is not None else 1
-        if job is not None:
-            job.status = "queued"
-            job.updated_at = _now()
-            db.commit()
+        if db.bind and inspect(db.bind).has_table("scheduled_workflow_jobs"):
+            job = db.query(models.ScheduledWorkflowJob).filter(models.ScheduledWorkflowJob.run_id == run.run_id).first()
+            priority = int(job.priority) if job is not None else 1
+            if job is not None:
+                job.status = "queued"
+                job.updated_at = _now()
+                db.commit()
     finally:
         db.close()
     _schedule_run(run.run_id, priority=priority, delay_seconds=0)
