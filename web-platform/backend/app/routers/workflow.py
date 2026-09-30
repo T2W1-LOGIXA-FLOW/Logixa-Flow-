@@ -320,9 +320,6 @@ class WorkflowExecutor:
             self.mark_cancelled("workflow execution cancelled")
             raise
         except Exception as exc:
-            rollback_nodes = list(self.state.completed_nodes)
-            self.completed_nodes = set(rollback_nodes[:-1]) if rollback_nodes else set()
-            self.state.completed_nodes = list(self.completed_nodes)
             self.state.current_node = None
             self.state.status = "failed"
             self.state.error = str(exc)
