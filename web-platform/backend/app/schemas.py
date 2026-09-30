@@ -743,7 +743,7 @@ class ContentSubmissionOut(ContentSubmissionBase):
 
 
 WorkflowNodeType = Literal["task", "approval", "notification"]
-WorkflowRunStatus = Literal["queued", "running", "completed", "failed"]
+WorkflowRunStatus = Literal["queued", "running", "waiting_approval", "completed", "failed"]
 
 
 class WorkflowNode(BaseModel):
@@ -761,6 +761,7 @@ class WorkflowState(BaseModel):
     current_node: str | None = None
     completed_nodes: list[str] = Field(default_factory=list)
     error: str | None = None
+    approval_node: str | None = None
 
 
 class WorkflowStorageCreate(BaseModel):
