@@ -162,7 +162,7 @@ async def execute_controller(
     )
 
     return {
-        "success": False,
+        "success": True,
         "queued": True,
         "message": f"Controller '{controller.name}' queued workflow '{workflow_id}'.",
         "run": run,

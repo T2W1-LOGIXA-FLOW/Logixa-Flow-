@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from sqlalchemy import inspect, text
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from .embeddings import EMBEDDING_DIMENSIONS, embedding_to_json
@@ -19,11 +19,19 @@ def pgvector_column_exists(db: Session) -> bool:
     if not is_postgres(db):
         return False
     try:
-        inspector = inspect(db.get_bind())
-        if "document_embeddings" not in inspector.get_table_names():
-            return False
-        columns = {column["name"] for column in inspector.get_columns("document_embeddings")}
-        return "embedding" in columns
+        exists = db.execute(
+            text(
+                """
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = 'document_embeddings'
+                  AND column_name = 'embedding'
+                LIMIT 1
+                """
+            )
+        ).first()
+        return exists is not None
     except Exception:
         return False
 

@@ -84,13 +84,18 @@ export default function AdminWorkflowPage() {
 
     socket.onopen = () => {
       socket.send(JSON.stringify({ type: "auth", token }));
-      setConnectionState("connected");
-      setLogs((previous) => [`[${new Date().toLocaleTimeString()}] SOCKET CONNECTED`, ...previous].slice(0, 6));
+      setConnectionState("connecting");
+      setLogs((previous) => [`[${new Date().toLocaleTimeString()}] SOCKET AUTHENTICATING`, ...previous].slice(0, 6));
     };
 
     socket.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data) as WorkflowTelemetry;
+        const data = JSON.parse(event.data) as WorkflowTelemetry & { type?: string };
+        if (data.type === "auth.ok") {
+          setConnectionState("connected");
+          setLogs((previous) => [`[${new Date().toLocaleTimeString()}] SOCKET CONNECTED`, ...previous].slice(0, 6));
+          return;
+        }
         setTelemetry(data);
         setSelected(data.state.current_node ? `${data.state.current_node} active` : `${data.state.status.toUpperCase()} workflow`);
         setLogs((previous) => [

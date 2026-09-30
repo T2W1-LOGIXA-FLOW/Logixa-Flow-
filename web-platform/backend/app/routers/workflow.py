@@ -320,9 +320,6 @@ class WorkflowExecutor:
             self.mark_cancelled("workflow execution cancelled")
             raise
         except Exception as exc:
-            rollback_nodes = list(self.state.completed_nodes)
-            self.completed_nodes = set(rollback_nodes[:-1]) if rollback_nodes else set()
-            self.state.completed_nodes = list(self.completed_nodes)
             self.state.current_node = None
             self.state.status = "failed"
             self.state.error = str(exc)
@@ -746,6 +743,7 @@ async def workflow_telemetry(websocket: WebSocket) -> None:
         if payload.get("role") != "admin":
             await websocket.close(code=4403)
             return
+        await websocket.send_json({"type": "auth.ok"})
     except (WebSocketDisconnect, json.JSONDecodeError, TypeError, HTTPException):
         await websocket.close(code=4401)
         return
