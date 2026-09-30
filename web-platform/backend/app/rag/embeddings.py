@@ -23,14 +23,22 @@ def _hash_embedding(text: str, dimensions: int | None = None) -> list[float]:
 
 def embed_text(text: str) -> tuple[list[float], str]:
     api_key = os.getenv("GEMINI_API_KEY")
-    model_name = os.getenv("EMBEDDING_MODEL", "models/text-embedding-004")
+    model_name = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001").removeprefix("models/")
+    if model_name == "text-embedding-004":
+        model_name = "gemini-embedding-001"
     if api_key:
         try:
-            import google.generativeai as genai  # type: ignore
+            from google import genai
+            from google.genai import types
 
-            genai.configure(api_key=api_key)
-            response = genai.embed_content(model=model_name, content=text[:12000])
-            values = response.get("embedding") if isinstance(response, dict) else getattr(response, "embedding", None)
+            client = genai.Client(api_key=api_key)
+            response = client.models.embed_content(
+                model=model_name,
+                contents=text[:12000],
+                config=types.EmbedContentConfig(output_dimensionality=EMBEDDING_DIMENSIONS),
+            )
+            embeddings = getattr(response, "embeddings", None) or []
+            values = getattr(embeddings[0], "values", None) if embeddings else None
             if values:
                 # attempt to record a small estimated cost for embeddings
                 try:
