@@ -9,7 +9,7 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 export default function AdminImportPage() {
   const { token } = useAdminAuth();
   const [file, setFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);\n  const [preview, setPreview] = useState<{ items: number; records: Array<{ title: string; content: string; category: string }> } | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,7 +26,7 @@ export default function AdminImportPage() {
         body: form,
       });
       const data = await res.json();
-      toast.success(`Imported ${data.imported} items`);
+      toast.success(`Imported ${data.imported} items; ${data.duplicates?.length || 0} duplicates skipped`);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Import failed");
     } finally {
@@ -34,14 +34,14 @@ export default function AdminImportPage() {
     }
   }
 
-  return (
+  async function handlePreview() {\n    if (!file || !token) return;\n    const form = new FormData();\n    form.append("file", file, file.name);\n    try {\n      const res = await adminFetch("/api/admin/imports/preview", token, { method: "POST", body: form });\n      setPreview(await res.json());\n    } catch (err: unknown) {\n      toast.error(err instanceof Error ? err.message : "Preview failed");\n    }\n  }\n\n  return (
     <main className="page-shell">
       <AdminBreadcrumb currentPage="Bulk Import" />
       <section className="agent-header">
         <div>
           <p className="eyebrow">Imports</p>
           <h1>Bulk Import</h1>
-          <p className="muted">Upload CSV, XLSX, or PDF files to add items to AI Memory.</p>
+          <p className="muted">Upload JSON, CSV, Markdown, TXT, or HTML files into the Knowledge source registry. Preview and validation happen before records are stored.</p>
         </div>
       </section>
 
@@ -51,7 +51,7 @@ export default function AdminImportPage() {
             <label className="block mb-2 font-medium">File</label>
             <input
               type="file"
-              accept=".csv,.xlsx,.pdf"
+              accept=".json,.csv,.md,.markdown,.txt,.html,.htm"
               onChange={(e) => setFile(e.target.files?.[0] || null)}
               className="w-full"
             />
