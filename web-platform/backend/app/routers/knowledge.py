@@ -98,8 +98,13 @@ def _parse_file(filename: str, payload: bytes) -> list[dict]:
             raise ValueError(f"maximum {MAX_ITEMS} records per import")
         return [_normalize_record(item, i + 1) for i, item in enumerate(rows)]
     if suffix in {".md", ".markdown", ".txt", ".html", ".htm"}:
-        content = _clean_html(text) if suffix in {".html", ".htm"} else text.strip()
-        title = next((line.lstrip("# ").strip() for line in content.splitlines() if line.strip()), PurePosixPath(filename).stem)
+        if suffix in {".html", ".htm"}:
+            heading = re.search(r"<h1[^>]*>(.*?)</h1>", text, flags=re.I | re.S)
+            title = _clean_html(heading.group(1)) if heading else PurePosixPath(filename).stem
+            content = _clean_html(text)
+        else:
+            content = text.strip()
+            title = next((line.lstrip("# ").strip() for line in content.splitlines() if line.strip()), PurePosixPath(filename).stem)
         return [_normalize_record({"title": title[:255], "content": content}, 1)]
     raise ValueError("unsupported file type; use JSON, CSV, Markdown, TXT, or HTML")
 
