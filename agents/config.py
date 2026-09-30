@@ -41,9 +41,9 @@ GEMINI_MODEL_NAME: Final[str] = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash
 TEMPERATURE: Final[float] = float(os.getenv("TEMPERATURE", "0.55"))
 
 BACKEND_URL: Final[str] = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
-API_SECRET_TOKEN: Final[str] = os.getenv("API_SECRET_TOKEN", "change-me-in-production")
+API_SECRET_TOKEN: Final[str] = os.getenv("API_SECRET_TOKEN", "")
 ADMIN_USERNAME: Final[str] = os.getenv("ADMIN_USERNAME", "admin")
-ADMIN_PASSWORD: Final[str] = os.getenv("ADMIN_PASSWORD", "LogixaAdmin123!")
+ADMIN_PASSWORD: Final[str | None] = os.getenv("ADMIN_PASSWORD")
 
 PIPELINE_BATCH_LIMIT: Final[int] = int(os.getenv("PIPELINE_BATCH_LIMIT", "8"))
 MIN_SIMILARITY_TO_MERGE: Final[float] = float(os.getenv("MIN_SIMILARITY_TO_MERGE", "0.74"))
