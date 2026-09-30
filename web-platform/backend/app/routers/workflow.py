@@ -443,7 +443,8 @@ async def _execute_task_action(node: Any, run_id: str) -> None:
     raise ValueError(f"unsupported task action '{action}'")
 
 async def _execute_approval_action(node: Any, run_id: str) -> None:
-    if not bool(node.config.get("approved", False)):
+    approved_nodes = set(_EXECUTION_METRICS.setdefault(run_id, {}).get("approved_nodes", []))
+    if node.id not in approved_nodes:
         raise ApprovalRequired(f"approval '{node.name}' is awaiting approval")
     _record_execution_history(run_id, f"approval:{node.id}: approved")
 
@@ -776,9 +777,10 @@ async def approve_workflow_run(run_id: str, node_id: str | None = None, _admin=D
     node = next((item for item in workflow.nodes if item.id == approval_id and item.type == "approval"), None)
     if node is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="approval node not found")
-    node.config["approved"] = True
-    _WORKFLOW_STORAGE[workflow.id] = workflow
-    _persist_workflow_definition(workflow)
+    metrics = _EXECUTION_METRICS.setdefault(run.run_id, {})
+    approved_nodes = set(metrics.get("approved_nodes", []))
+    approved_nodes.add(node.id)
+    metrics["approved_nodes"] = sorted(approved_nodes)
     _WORKFLOW_RUNS[run.run_id] = run
     run.state.status = "queued"
     run.state.current_node = node.id
