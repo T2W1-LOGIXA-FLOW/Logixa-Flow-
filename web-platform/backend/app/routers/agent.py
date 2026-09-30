@@ -233,7 +233,19 @@ async def run_agent(
         )
     brief = await generate_agent_brief(payload.message, sources, db=db)
     confidence_score, hallucination_score = score_source_grounding(sources)
-    run = models.AgentRun(objective=payload.message, model=brief.get("model") or os.getenv("AI_AGENT_MODEL", "local-planner"), status="completed")
+    model_used = brief.get("model") or os.getenv("AI_AGENT_MODEL", "local-planner")
+    provider = model_used.split("/", 1)[0] if "/" in model_used else model_used
+    estimated_tokens = max(1, len(payload.message + brief.get("content", "")) // 4)
+    run = models.AgentRun(
+        objective=payload.message,
+        model=model_used,
+        provider=provider,
+        input_context=json.dumps({"message": payload.message, "source_ids": payload.source_ids}),
+        source_ids=json.dumps(payload.source_ids),
+        token_usage=estimated_tokens,
+        cost_estimate=round((estimated_tokens / 1000.0) * float(os.getenv("AI_COST_PER_1K", "0.002")), 8),
+        status="completed",
+    )
     db.add(run)
     db.commit()
     db.refresh(run)

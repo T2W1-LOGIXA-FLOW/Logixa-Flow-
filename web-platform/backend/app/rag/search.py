@@ -11,13 +11,40 @@ from .semantic_cache import get_cached_answer, set_cached_answer
 from .vector_math import cosine_similarity
 
 
+def _attach_citations(db: Session, matches: list[dict]) -> list[dict]:
+    source_ids = {
+        int(match["source_id"])
+        for match in matches
+        if match.get("source_type") == "intelligence_source" and str(match.get("source_id", "")).isdigit()
+    }
+    sources = (
+        db.query(models.IntelligenceSource).filter(models.IntelligenceSource.id.in_(source_ids)).all()
+        if source_ids else []
+    )
+    by_id = {str(source.id): source for source in sources}
+    for match in matches:
+        source = by_id.get(str(match.get("source_id")))
+        if source:
+            match["citation"] = {
+                "source_id": source.id,
+                "title": source.title,
+                "url": source.url,
+                "excerpt": (source.content_text or source.notes or match.get("content", ""))[:500],
+                "published_or_updated_at": source.updated_at,
+                "trust_score": source.trust_score,
+                "freshness_score": source.freshness_score,
+                "similarity_score": match.get("score", 0),
+            }
+    return matches
+
+
 def similarity_search(db: Session, query: str, top_k: int | None = None) -> list[dict]:
     limit = top_k or int(os.getenv("RAG_TOP_K", "6"))
     query_vector, model_name = embed_text(query)
 
     if pgvector_enabled(db):
         try:
-            return similarity_search_pgvector(db, query_vector, top_k=limit, model_name=model_name)
+            return _attach_citations(db, similarity_search_pgvector(db, query_vector, top_k=limit, model_name=model_name))
         except Exception:
             pass
 
