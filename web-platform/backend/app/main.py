@@ -18,7 +18,7 @@ from .database import Base, SessionLocal, engine
 from .db_bootstrap import bootstrap_database, database_profile
 from .logging_config import setup_logging
 from .middleware import rate_limit_middleware, security_headers_middleware, stealth_mode_middleware
-from .routers import admin, agent, analytics, auth, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, integration_triggers, admin_env, workflow, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads
+from .routers import admin, agent, analytics, auth, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, integration_triggers, admin_env, workflow, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads, knowledge
 from .scheduler import scheduler_status, start_scheduler
 
 logger = logging.getLogger(__name__)
@@ -48,9 +48,65 @@ def ensure_lightweight_migrations() -> None:
                 connection.execute(text("ALTER TABLE ai_memory_brain ADD COLUMN hallucination_score FLOAT DEFAULT 0 NOT NULL"))
     if "intelligence_sources" in inspector.get_table_names():
         columns = {column["name"] for column in inspector.get_columns("intelligence_sources")}
-        if "trust_score" not in columns:
-            with engine.begin() as connection:
-                connection.execute(text("ALTER TABLE intelligence_sources ADD COLUMN trust_score FLOAT DEFAULT 0.5 NOT NULL"))
+        migrations = {
+            "trust_score": "ALTER TABLE intelligence_sources ADD COLUMN trust_score FLOAT DEFAULT 0.5 NOT NULL",
+            "content_text": "ALTER TABLE intelligence_sources ADD COLUMN content_text TEXT DEFAULT '' NOT NULL",
+            "content_hash": "ALTER TABLE intelligence_sources ADD COLUMN content_hash VARCHAR(64)",
+            "knowledge_status": "ALTER TABLE intelligence_sources ADD COLUMN knowledge_status VARCHAR(40) DEFAULT 'new' NOT NULL",
+            "publication_status": "ALTER TABLE intelligence_sources ADD COLUMN publication_status VARCHAR(40) DEFAULT 'unpublished' NOT NULL",
+            "source_version": "ALTER TABLE intelligence_sources ADD COLUMN source_version INTEGER DEFAULT 1 NOT NULL",
+            "indexing_status": "ALTER TABLE intelligence_sources ADD COLUMN indexing_status VARCHAR(40) DEFAULT 'not_indexed' NOT NULL",
+            "indexed_at": "ALTER TABLE intelligence_sources ADD COLUMN indexed_at TIMESTAMP",
+            "indexing_error": "ALTER TABLE intelligence_sources ADD COLUMN indexing_error TEXT",
+            "freshness_score": "ALTER TABLE intelligence_sources ADD COLUMN freshness_score FLOAT DEFAULT 0.5 NOT NULL",
+        }
+        for column_name, ddl in migrations.items():
+            if column_name not in columns:
+                with engine.begin() as connection:
+                    connection.execute(text(ddl))
+    if "ai_memory_brain" in inspector.get_table_names():
+        columns = {column["name"] for column in inspector.get_columns("ai_memory_brain")}
+        migrations = {
+            "confidence_score": "ALTER TABLE ai_memory_brain ADD COLUMN confidence_score FLOAT DEFAULT 0 NOT NULL",
+            "hallucination_score": "ALTER TABLE ai_memory_brain ADD COLUMN hallucination_score FLOAT DEFAULT 0 NOT NULL",
+            "reviewer_id": "ALTER TABLE ai_memory_brain ADD COLUMN reviewer_id VARCHAR(255)",
+            "reviewed_at": "ALTER TABLE ai_memory_brain ADD COLUMN reviewed_at TIMESTAMP",
+            "review_reason": "ALTER TABLE ai_memory_brain ADD COLUMN review_reason TEXT",
+            "source_ids": "ALTER TABLE ai_memory_brain ADD COLUMN source_ids TEXT DEFAULT '[]' NOT NULL",
+            "provider": "ALTER TABLE ai_memory_brain ADD COLUMN provider VARCHAR(120)",
+            "token_usage": "ALTER TABLE ai_memory_brain ADD COLUMN token_usage INTEGER",
+            "cost_estimate": "ALTER TABLE ai_memory_brain ADD COLUMN cost_estimate FLOAT",
+            "output_version": "ALTER TABLE ai_memory_brain ADD COLUMN output_version INTEGER DEFAULT 1 NOT NULL",
+            "workflow_run_id": "ALTER TABLE ai_memory_brain ADD COLUMN workflow_run_id VARCHAR(80)",
+        }
+        for column_name, ddl in migrations.items():
+            if column_name not in columns:
+                with engine.begin() as connection:
+                    connection.execute(text(ddl))
+    if "agent_runs" in inspector.get_table_names():
+        columns = {column["name"] for column in inspector.get_columns("agent_runs")}
+        migrations = {
+            "provider": "ALTER TABLE agent_runs ADD COLUMN provider VARCHAR(120)",
+            "input_context": "ALTER TABLE agent_runs ADD COLUMN input_context TEXT DEFAULT '{}' NOT NULL",
+            "source_ids": "ALTER TABLE agent_runs ADD COLUMN source_ids TEXT DEFAULT '[]' NOT NULL",
+            "token_usage": "ALTER TABLE agent_runs ADD COLUMN token_usage INTEGER",
+            "cost_estimate": "ALTER TABLE agent_runs ADD COLUMN cost_estimate FLOAT",
+            "output_version": "ALTER TABLE agent_runs ADD COLUMN output_version INTEGER DEFAULT 1 NOT NULL",
+        }
+        for column_name, ddl in migrations.items():
+            if column_name not in columns:
+                with engine.begin() as connection:
+                    connection.execute(text(ddl))
+    if "document_embeddings" in inspector.get_table_names():
+        columns = {column["name"] for column in inspector.get_columns("document_embeddings")}
+        migrations = {
+            "source_version": "ALTER TABLE document_embeddings ADD COLUMN source_version INTEGER DEFAULT 1 NOT NULL",
+            "indexed_at": "ALTER TABLE document_embeddings ADD COLUMN indexed_at TIMESTAMP",
+        }
+        for column_name, ddl in migrations.items():
+            if column_name not in columns:
+                with engine.begin() as connection:
+                    connection.execute(text(ddl))
     if "workflow_nodes" in inspector.get_table_names():
         columns = {column["name"] for column in inspector.get_columns("workflow_nodes")}
         if "config" not in columns:
@@ -336,6 +392,7 @@ app.include_router(finance.router, prefix="/api", tags=["finance"])
 app.include_router(system.router, prefix="/api", tags=["system"])
 app.include_router(integration.router, prefix="/api", tags=["integration"])
 app.include_router(rag.router, prefix="/api", tags=["rag"])
+app.include_router(knowledge.router, prefix="/api", tags=["knowledge"])
 app.include_router(estimator.router, prefix="/api/estimator", tags=["estimator"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(controllers.router, prefix="/api/admin/controllers", tags=["controllers"])
