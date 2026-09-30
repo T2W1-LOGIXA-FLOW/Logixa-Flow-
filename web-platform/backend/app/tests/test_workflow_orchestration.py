@@ -93,3 +93,38 @@ async def test_error_handling_rolls_back_failed_run() -> None:
     assert run.state.status == "failed"
     assert run.state.completed_nodes == []
     assert workflow_router._ERROR_NOTIFICATIONS[-1]["message"]
+
+@pytest.mark.anyio
+async def test_approval_node_pauses_and_can_resume_after_admin_approval() -> None:
+    workflow = WorkflowStorageCreate(
+        id="approval-workflow",
+        name="approval workflow",
+        nodes=[
+            WorkflowNode(id="prepare", name="prepare"),
+            WorkflowNode(id="approve", type="approval", name="human approval", depends_on=["prepare"]),
+            WorkflowNode(id="publish", name="publish", depends_on=["approve"]),
+        ],
+    )
+    workflow_record = WorkflowStorageOut(
+        **workflow.model_dump(),
+        created_at=workflow_router._now(),
+        updated_at=workflow_router._now(),
+    )
+    workflow_router._WORKFLOW_STORAGE[workflow.id] = workflow_record
+    run = WorkflowRunOut(run_id="run-approval", workflow_id=workflow.id, state=WorkflowState(status="queued"))
+    workflow_router._WORKFLOW_RUNS[run.run_id] = run
+
+    await workflow_router._execute_workflow(run.run_id)
+
+    assert run.state.status == "waiting_approval"
+    assert run.state.completed_nodes == ["prepare"]
+    assert run.state.approval_node == "approve"
+
+    approved = await workflow_router.approve_workflow_run(run.run_id, _admin={"role": "admin"})
+    assert approved["status"] == "queued"
+
+    await asyncio.sleep(0)
+    await asyncio.gather(*workflow_router._RUN_TASKS)
+
+    assert run.state.status == "completed"
+    assert run.state.completed_nodes == ["prepare", "approve", "publish"]

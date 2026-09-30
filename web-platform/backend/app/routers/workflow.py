@@ -134,6 +134,7 @@ def _load_run_state(run_id: str) -> WorkflowRunOut | None:
         record = db.query(models.WorkflowRunRecord).filter(models.WorkflowRunRecord.id == run_id).first()
         if record is None:
             return None
+        metrics = json.loads(record.metrics_json or "{}")
         return WorkflowRunOut(
             run_id=record.id,
             workflow_id=record.workflow_id,
@@ -142,6 +143,7 @@ def _load_run_state(run_id: str) -> WorkflowRunOut | None:
                 current_node=record.current_node,
                 completed_nodes=json.loads(record.completed_nodes or "[]"),
                 error=record.error,
+                approval_node=metrics.get("approval_node"),
             ),
         )
     except Exception:
@@ -167,6 +169,10 @@ def _sync_execution_metrics(run_id: str, workflow: WorkflowStorageOut | None = N
     _EXECUTION_METRICS[run_id] = metrics
 
 
+class ApprovalRequired(RuntimeError):
+    """Raised when a workflow must pause for explicit human approval."""
+
+
 class WorkflowExecutor:
     def __init__(self, run_id: str, workflow_id: str, workflow: WorkflowStorageOut) -> None:
         self.run_id = run_id
@@ -186,11 +192,16 @@ class WorkflowExecutor:
             "current_node": self.state.current_node,
             "completed_nodes": list(self.state.completed_nodes),
             "error": self.state.error,
+            "approval_node": self.state.approval_node,
         }
 
     def persist(self) -> None:
         _EXECUTION_STATES[self.run_id] = self.snapshot()
         _sync_execution_metrics(self.run_id, self.workflow, self.state)
+        if self.state.approval_node:
+            _EXECUTION_METRICS[self.run_id]["approval_node"] = self.state.approval_node
+        else:
+            _EXECUTION_METRICS[self.run_id].pop("approval_node", None)
         run = _WORKFLOW_RUNS.get(self.run_id)
         if run is not None:
             run.state = self.state
@@ -199,6 +210,7 @@ class WorkflowExecutor:
     def mark_running(self) -> None:
         self.state.status = "running"
         self.state.error = None
+        self.state.approval_node = None
         self.persist()
 
     def cancel(self, message: str = "workflow execution cancelled") -> None:
@@ -208,6 +220,7 @@ class WorkflowExecutor:
         self.cancel_requested = True
         self.state.status = "failed"
         self.state.current_node = None
+        self.state.approval_node = None
         self.state.error = message
         for task in list(self._node_tasks.values()):
             if not task.done():
@@ -234,6 +247,13 @@ class WorkflowExecutor:
                 return
             except asyncio.CancelledError:
                 raise
+            except ApprovalRequired:
+                self.state.status = "waiting_approval"
+                self.state.approval_node = node.id
+                self.state.error = None
+                self.persist()
+                await _broadcast(WorkflowTelemetryEvent(event="workflow.status", run_id=self.run_id, workflow_id=self.workflow_id, state=self.state))
+                return
             except asyncio.TimeoutError as exc:
                 last_error = exc
                 attempts += 1
@@ -298,6 +318,9 @@ class WorkflowExecutor:
                         task_name = task.get_name() if hasattr(task, "get_name") else str(id(task))
                         self._node_tasks.pop(task_name, None)
                     self.active_nodes.clear()
+
+                if self.state.status == "waiting_approval":
+                    return self.state
 
             if self.cancel_requested:
                 self.state.status = "failed"
@@ -420,8 +443,9 @@ async def _execute_task_action(node: Any, run_id: str) -> None:
     raise ValueError(f"unsupported task action '{action}'")
 
 async def _execute_approval_action(node: Any, run_id: str) -> None:
-    if not bool(node.config.get("approved", False)):
-        raise RuntimeError(f"approval '{node.name}' is awaiting approval")
+    approved_nodes = set(_EXECUTION_METRICS.setdefault(run_id, {}).get("approved_nodes", []))
+    if node.id not in approved_nodes:
+        raise ApprovalRequired(f"approval '{node.name}' is awaiting approval")
     _record_execution_history(run_id, f"approval:{node.id}: approved")
 
 async def _execute_notification_action(node: Any, run_id: str) -> None:
@@ -481,6 +505,25 @@ def _record_controller_result(run_id: str, status_value: str) -> None:
         db.close()
 
 
+def _claim_job(run_id: str) -> bool:
+    """Atomically claim a queued DB job so multiple API instances cannot execute it twice."""
+    db = SessionLocal()
+    try:
+        if not db.bind or not inspect(db.bind).has_table("scheduled_workflow_jobs"):
+            return True
+        updated = db.query(models.ScheduledWorkflowJob).filter(
+            models.ScheduledWorkflowJob.run_id == run_id,
+            models.ScheduledWorkflowJob.status == "queued",
+        ).update({"status": "running", "updated_at": _now()}, synchronize_session=False)
+        db.commit()
+        return updated == 1
+    except Exception:
+        db.rollback()
+        return False
+    finally:
+        db.close()
+
+
 def _mark_job_terminal(run_id: str, status_value: str) -> None:
     db = SessionLocal()
     try:
@@ -520,7 +563,8 @@ async def _execute_workflow(run_id: str) -> None:
         run.state = final_state
         _EXECUTION_STATES[run_id] = executor.snapshot()
         _mark_job_terminal(run.run_id, final_state.status)
-        _record_controller_result(run.run_id, final_state.status)
+        if final_state.status != "waiting_approval":
+            _record_controller_result(run.run_id, final_state.status)
         await _broadcast(WorkflowTelemetryEvent(event="workflow.status", run_id=run.run_id, workflow_id=run.workflow_id, state=final_state))
     except asyncio.CancelledError:
         run.state = executor.state
@@ -565,6 +609,7 @@ def restore_pending_workflow_runs() -> int:
                 "current_node": run.state.current_node,
                 "completed_nodes": run.state.completed_nodes,
                 "error": run.state.error,
+                "approval_node": run.state.approval_node,
             }
             if not any(item["run_id"] == run.run_id for item in _EXECUTION_QUEUE):
                 _EXECUTION_QUEUE.append({
@@ -599,7 +644,7 @@ async def _queue_worker() -> None:
             if run is None:
                 _EXECUTION_QUEUE.pop(0)
                 continue
-            if run.state.status in {"failed", "completed"}:
+            if run.state.status in {"failed", "completed", "waiting_approval"}:
                 _EXECUTION_QUEUE.pop(0)
                 continue
             if _as_utc(item["scheduled_for"]) > now:
@@ -607,15 +652,8 @@ async def _queue_worker() -> None:
                 continue
             _EXECUTION_QUEUE.pop(0)
             if run.state.status == "queued":
-                db = SessionLocal()
-                try:
-                    job = db.query(models.ScheduledWorkflowJob).filter(models.ScheduledWorkflowJob.run_id == run.run_id).first()
-                    if job is not None:
-                        job.status = "running"
-                        job.updated_at = _now()
-                        db.commit()
-                finally:
-                    db.close()
+                if not _claim_job(run.run_id):
+                    continue
                 task = asyncio.create_task(_execute_workflow(run.run_id))
                 _track_task(task)
     finally:
@@ -697,7 +735,7 @@ async def run_workflow(workflow_id: str, payload: WorkflowRunRequest, _admin=Dep
 async def workflow_run_state(run_id: str, _admin=Depends(require_admin)) -> dict[str, Any]:
     run = _WORKFLOW_RUNS.get(run_id)
     if run is not None:
-        return {"run_id": run.run_id, "workflow_id": run.workflow_id, "status": run.state.status, "current_node": run.state.current_node, "completed_nodes": run.state.completed_nodes, "error": run.state.error}
+        return {"run_id": run.run_id, "workflow_id": run.workflow_id, "status": run.state.status, "current_node": run.state.current_node, "completed_nodes": run.state.completed_nodes, "error": run.state.error, "approval_node": run.state.approval_node}
     state = _EXECUTION_STATES.get(run_id)
     if state is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="run not found")
@@ -723,6 +761,47 @@ async def cancel_workflow_run(run_id: str, _admin=Depends(require_admin)) -> dic
     _mark_job_terminal(run_id, run.state.status)
     _record_controller_result(run_id, run.state.status)
     return {"run_id": run_id, "status": run.state.status}
+
+
+@router.post("/runs/{run_id}/approve")
+async def approve_workflow_run(run_id: str, node_id: str | None = None, _admin=Depends(require_admin)) -> dict[str, Any]:
+    run = _WORKFLOW_RUNS.get(run_id) or _load_run_state(run_id)
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="workflow run not found")
+    if run.state.status != "waiting_approval":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="workflow run is not waiting for approval")
+    workflow = _WORKFLOW_STORAGE.get(run.workflow_id) or _load_workflow_definition(run.workflow_id)
+    if workflow is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="workflow not found")
+    approval_id = node_id or run.state.approval_node
+    node = next((item for item in workflow.nodes if item.id == approval_id and item.type == "approval"), None)
+    if node is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="approval node not found")
+    metrics = _EXECUTION_METRICS.setdefault(run.run_id, {})
+    approved_nodes = set(metrics.get("approved_nodes", []))
+    approved_nodes.add(node.id)
+    metrics["approved_nodes"] = sorted(approved_nodes)
+    _WORKFLOW_RUNS[run.run_id] = run
+    run.state.status = "queued"
+    run.state.current_node = node.id
+    run.state.approval_node = None
+    run.state.error = None
+    _persist_run_state(run)
+    priority = 1
+    db = SessionLocal()
+    try:
+        if db.bind and inspect(db.bind).has_table("scheduled_workflow_jobs"):
+            job = db.query(models.ScheduledWorkflowJob).filter(models.ScheduledWorkflowJob.run_id == run.run_id).first()
+            priority = int(job.priority) if job is not None else 1
+            if job is not None:
+                job.status = "queued"
+                job.updated_at = _now()
+                db.commit()
+    finally:
+        db.close()
+    _schedule_run(run.run_id, priority=priority, delay_seconds=0)
+    start_queue_worker()
+    return {"run_id": run.run_id, "status": "queued", "approved_node": node.id}
 
 
 @router.websocket("/ws")
