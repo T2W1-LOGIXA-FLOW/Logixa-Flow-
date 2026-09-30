@@ -743,6 +743,7 @@ async def workflow_telemetry(websocket: WebSocket) -> None:
         if payload.get("role") != "admin":
             await websocket.close(code=4403)
             return
+        await websocket.send_json({"type": "auth.ok"})
     except (WebSocketDisconnect, json.JSONDecodeError, TypeError, HTTPException):
         await websocket.close(code=4401)
         return
