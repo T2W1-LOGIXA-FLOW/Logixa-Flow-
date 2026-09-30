@@ -46,7 +46,7 @@ def _replace_chunks(
 
 
 def ingest_intelligence_source(db: Session, source: models.IntelligenceSource) -> int:
-    body = "\n\n".join(part for part in [source.title, source.notes, source.url or ""] if part)
+    body = "\n\n".join(part for part in [source.title, source.content_text, source.notes, source.url or ""] if part)
     chunks = chunk_text(body)
     if not chunks:
         return 0
