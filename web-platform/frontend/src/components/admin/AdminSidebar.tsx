@@ -28,6 +28,85 @@ import styles from "@/app/admin/admin-theme.module.css";
 const navigationItems = [
   { category: "COMMAND CENTER", items: [{ href: "/admin", label: "Overview", icon: LayoutDashboard }] },
   {
+    category: "KNOWLEDGE",
+    items: [
+      { href: "/admin/brain", label: "Brain Review", icon: Brain },
+      { href: "/admin/rag", label: "RAG Index", icon: Database },
+      { href: "/admin/import", label: "Import", icon: Upload },
+      { href: "/admin/feeds", label: "Feeds", icon: Package },
+    ],
+  },
+  {
+    category: "AI OPERATIONS",
+    items: [
+      { href: "/admin/agents", label: "Agent Runs", icon: Bot },
+      { href: "/admin/agent-chat", label: "Agent Chat", icon: MessageSquare },
+    ],
+  },
+  {
+    category: "CONTENT",
+    items: [
+      { href: "/admin/articles", label: "Articles", icon: FileText },
+      { href: "/admin/drafts", label: "Drafts", icon: FileText },
+      { href: "/admin/content", label: "Content", icon: FileText },
+      { href: "/admin/submissions", label: "Submissions", icon: MessageSquare },
+      { href: "/admin/email-templates", label: "Email", icon: Mail },
+    ],
+  },
+  {
+    category: "AUTOMATION",
+    items: [
+      { href: "/admin/workflow", label: "Workflows", icon: Workflow },
+      { href: "/admin/controllers", label: "Controllers", icon: Activity },
+    ],
+  },
+  {
+    category: "OPERATIONS",
+    items: [
+      { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+      { href: "/admin/usage", label: "Usage", icon: BarChart3 },
+      { href: "/admin/costs", label: "AI Costs", icon: DollarSign },
+      { href: "/admin/system", label: "System Health", icon: Server },
+    ],
+  },
+  {
+    category: "TOOLS",
+    items: [
+      { href: "/admin/estimator", label: "Estimator", icon: Calculator },
+      { href: "/admin/finance", label: "Finance", icon: DollarSign },
+      { href: "/admin/settings", label: "Settings", icon: Settings },
+    ],
+  },
+];se client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Activity,
+  BarChart3,
+  Brain,
+  Calculator,
+  Database,
+  DollarSign,
+  FileText,
+  Gauge,
+  LayoutDashboard,
+  Mail,
+  MessageSquare,
+  Package,
+  Settings,
+  Shield,
+  Upload,
+  Workflow,
+  X,
+  Bot,
+  Server,
+} from "lucide-react";
+import styles from "@/app/admin/admin-theme.module.css";
+
+const navigationItems = [
+  { category: "COMMAND CENTER", items: [{ href: "/admin", label: "Overview", icon: LayoutDashboard }] },
+  {
     category: "AGENT OPERATIONS",
     items: [
       { href: "/admin/agents", label: "Agents", icon: Bot },
