@@ -198,6 +198,10 @@ class WorkflowExecutor:
     def persist(self) -> None:
         _EXECUTION_STATES[self.run_id] = self.snapshot()
         _sync_execution_metrics(self.run_id, self.workflow, self.state)
+        if self.state.approval_node:
+            _EXECUTION_METRICS[self.run_id]["approval_node"] = self.state.approval_node
+        else:
+            _EXECUTION_METRICS[self.run_id].pop("approval_node", None)
         run = _WORKFLOW_RUNS.get(self.run_id)
         if run is not None:
             run.state = self.state
