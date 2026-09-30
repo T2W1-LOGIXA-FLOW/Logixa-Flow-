@@ -134,6 +134,7 @@ def _load_run_state(run_id: str) -> WorkflowRunOut | None:
         record = db.query(models.WorkflowRunRecord).filter(models.WorkflowRunRecord.id == run_id).first()
         if record is None:
             return None
+        metrics = json.loads(record.metrics_json or "{}")
         return WorkflowRunOut(
             run_id=record.id,
             workflow_id=record.workflow_id,
@@ -142,6 +143,7 @@ def _load_run_state(run_id: str) -> WorkflowRunOut | None:
                 current_node=record.current_node,
                 completed_nodes=json.loads(record.completed_nodes or "[]"),
                 error=record.error,
+                approval_node=metrics.get("approval_node"),
             ),
         )
     except Exception:
@@ -728,7 +730,7 @@ async def run_workflow(workflow_id: str, payload: WorkflowRunRequest, _admin=Dep
 async def workflow_run_state(run_id: str, _admin=Depends(require_admin)) -> dict[str, Any]:
     run = _WORKFLOW_RUNS.get(run_id)
     if run is not None:
-        return {"run_id": run.run_id, "workflow_id": run.workflow_id, "status": run.state.status, "current_node": run.state.current_node, "completed_nodes": run.state.completed_nodes, "error": run.state.error}
+        return {"run_id": run.run_id, "workflow_id": run.workflow_id, "status": run.state.status, "current_node": run.state.current_node, "completed_nodes": run.state.completed_nodes, "error": run.state.error, "approval_node": run.state.approval_node}
     state = _EXECUTION_STATES.get(run_id)
     if state is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="run not found")
