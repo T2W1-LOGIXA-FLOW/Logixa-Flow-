@@ -23,7 +23,9 @@ def _hash_embedding(text: str, dimensions: int | None = None) -> list[float]:
 
 def embed_text(text: str) -> tuple[list[float], str]:
     api_key = os.getenv("GEMINI_API_KEY")
-    model_name = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
+    model_name = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001").removeprefix("models/")
+    if model_name == "text-embedding-004":
+        model_name = "gemini-embedding-001"
     if api_key:
         try:
             from google import genai
