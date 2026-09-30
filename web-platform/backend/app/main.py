@@ -97,16 +97,6 @@ def ensure_lightweight_migrations() -> None:
             if column_name not in columns:
                 with engine.begin() as connection:
                     connection.execute(text(ddl))
-    if "document_embeddings" in inspector.get_table_names():
-        columns = {column["name"] for column in inspector.get_columns("document_embeddings")}
-        migrations = {
-            "source_version": "ALTER TABLE document_embeddings ADD COLUMN source_version INTEGER DEFAULT 1 NOT NULL",
-            "indexed_at": "ALTER TABLE document_embeddings ADD COLUMN indexed_at TIMESTAMP",
-        }
-        for column_name, ddl in migrations.items():
-            if column_name not in columns:
-                with engine.begin() as connection:
-                    connection.execute(text(ddl))
     if "workflow_nodes" in inspector.get_table_names():
         columns = {column["name"] for column in inspector.get_columns("workflow_nodes")}
         if "config" not in columns:
