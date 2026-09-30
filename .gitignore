@@ -93,3 +93,10 @@ coverage/
 .qa-*.log
 .qa-screens/
 .qa-screens-admin/
+
+# Local editor / IDE metadata
+.cursor/
+.cursorrules
+.vscode/
+.idea/
+.devcontainer/
