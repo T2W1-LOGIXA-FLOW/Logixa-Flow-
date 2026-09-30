@@ -84,6 +84,11 @@ S3_BUCKET=...
 S3_PUBLIC_BASE_URL=https://your-public-r2-domain
 ```
 
+## Documentation
+
+- `docs/AI_AGENTS_SETUP.md`: AI provider and worker setup
+- `docs/DEPLOY_CHECKLIST.md`: deployment and repository hygiene checklist
+
 ## Checks
 
 Frontend:
