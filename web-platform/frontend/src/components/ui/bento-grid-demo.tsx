@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-// @ts-expect-error - bento-grid component not yet implemented
 import { BentoGrid, type BentoItem } from "@/components/ui/bento-grid";
 import {
   CheckCircle,
