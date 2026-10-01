@@ -18,7 +18,7 @@ from .database import Base, SessionLocal, engine
 from .db_bootstrap import bootstrap_database, database_profile
 from .logging_config import setup_logging
 from .middleware import rate_limit_middleware, security_headers_middleware, stealth_mode_middleware
-from .routers import admin, agent, analytics, auth, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, integration_triggers, admin_env, workflow, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads, knowledge
+from .routers import admin, agent, analytics, auth, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, admin_env, workflow, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads, knowledge
 from .scheduler import scheduler_status, start_scheduler
 
 logger = logging.getLogger(__name__)
