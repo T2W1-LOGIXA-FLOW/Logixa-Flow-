@@ -98,7 +98,18 @@ def ensure_lightweight_migrations() -> None:
                 with engine.begin() as connection:
                     connection.execute(text(ddl))
     if "document_embeddings" in inspector.get_table_names():
-        columns = {column["name"] for column in inspector.get_columns("document_embeddings")}
+        # SQLAlchemy may not know the pgvector type during reflection and emits a warning.
+        # Use information_schema for this lightweight migration check instead.
+        with engine.connect() as connection:
+            columns = {
+                row[0]
+                for row in connection.execute(
+                    text(
+                        "SELECT column_name FROM information_schema.columns "
+                        "WHERE table_schema = 'public' AND table_name = 'document_embeddings'"
+                    )
+                )
+            }
         migrations = {
             "source_version": "ALTER TABLE document_embeddings ADD COLUMN source_version INTEGER DEFAULT 1 NOT NULL",
             "indexed_at": "ALTER TABLE document_embeddings ADD COLUMN indexed_at TIMESTAMP",
