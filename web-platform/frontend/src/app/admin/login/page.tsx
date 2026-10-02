@@ -9,7 +9,7 @@ import { login, validateAdminToken } from '@/components/api';
 import { clearAdminSession, getAdminSessionToken, setAdminSession } from '@/lib/adminSession';
 
 export default function AdminLoginPage() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -18,24 +18,29 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     let cancelled = false;
-    const savedUsername = localStorage.getItem('adminUsername');
-    if (savedUsername) {
-      setUsername(savedUsername);
+
+    const savedEmail = localStorage.getItem('adminEmail');
+    if (savedEmail) {
+      setEmail(savedEmail);
       setRememberMe(true);
     }
 
     async function checkExistingSession() {
-      const bypassAuth = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_ADMIN_AUTH_BYPASS === 'true';
+      const bypassAuth =
+        typeof process !== 'undefined' &&
+        process.env.NEXT_PUBLIC_ADMIN_AUTH_BYPASS === 'true';
+
       if (bypassAuth) {
         router.push('/admin');
         return;
       }
+
       const token = getAdminSessionToken();
-      if (!token) {
-        return;
-      }
+      if (!token) return;
+
       const valid = await validateAdminToken(token);
       if (cancelled) return;
+
       if (valid) {
         router.push('/admin');
       } else {
@@ -56,17 +61,18 @@ export default function AdminLoginPage() {
     setError('');
 
     try {
-      const data = await login(username, password);
+      const data = await login(email.trim(), password);
 
-      setAdminSession(data.access_token);
+      setAdminSession(data.access_token, data.refresh_token);
       if (rememberMe) {
-        localStorage.setItem('adminUsername', username);
+        localStorage.setItem('adminEmail', email.trim());
+      } else {
+        localStorage.removeItem('adminEmail');
       }
 
-      // Redirect to admin dashboard
       router.push('/admin');
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError('Invalid email or password.');
       console.error('Login error:', err);
     } finally {
       setLoading(false);
@@ -76,38 +82,34 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
       <div className="bg-slate-900/60 backdrop-blur border border-cyan-500/20 rounded-lg shadow-2xl shadow-cyan-500/5 w-full max-w-md">
-        {/* Header */}
         <div className="bg-gradient-to-r from-cyan-600/20 to-blue-600/20 backdrop-blur px-8 py-8 rounded-t-lg border-b border-cyan-500/20">
           <h1 className="text-white text-2xl font-bold">Admin Login</h1>
           <p className="text-cyan-300 text-sm mt-2">Logixa Flow Management System</p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="px-8 py-8 space-y-6">
-          {/* Error Message */}
           {error && (
             <div className="bg-red-950/40 border border-red-500/30 rounded-lg p-4 backdrop-blur">
               <p className="text-red-300 text-sm font-medium">{error}</p>
             </div>
           )}
 
-          {/* Email Field */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
-              Username
+              Email
             </label>
             <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="admin"
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              autoComplete="email"
               required
               className="w-full px-4 py-2 border border-slate-600/40 rounded-lg bg-slate-900/40 text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition"
             />
           </div>
 
-          {/* Password Field */}
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
               Password
@@ -117,13 +119,13 @@ export default function AdminLoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter admin password"
+              placeholder="Enter your password"
+              autoComplete="current-password"
               required
               className="w-full px-4 py-2 border border-slate-600/40 rounded-lg bg-slate-900/40 text-white placeholder-slate-500 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition"
             />
           </div>
 
-          {/* Remember Me */}
           <div className="flex items-center">
             <input
               id="rememberMe"
@@ -133,22 +135,19 @@ export default function AdminLoginPage() {
               className="w-4 h-4 text-cyan-600 rounded focus:ring-2 focus:ring-cyan-500"
             />
             <label htmlFor="rememberMe" className="ml-2 text-sm text-slate-300">
-              Remember username for next time
+              Remember email for next time
             </label>
           </div>
 
-          {/* Login Button */}
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-medium py-2 rounded-lg hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Logging in...' : 'Login to Dashboard'}
+            {loading ? 'Signing in...' : 'Login to Dashboard'}
           </button>
-
         </form>
 
-        {/* Footer */}
         <div className="bg-slate-900/30 backdrop-blur px-8 py-4 rounded-b-lg border-t border-slate-700/50">
           <p className="text-sm text-slate-400 text-center">
             Not an admin?{' '}
