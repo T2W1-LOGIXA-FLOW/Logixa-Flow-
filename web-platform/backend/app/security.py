@@ -71,10 +71,17 @@ def decode_token(token: str) -> dict[str, Any]:
 
 
 def authenticate_admin(username: str, password: str) -> bool:
-    """Legacy credential check retained temporarily for compatibility."""
+    """Check the legacy admin credential used by the compatibility login path."""
     if not ADMIN_PASSWORD:
         return False
-    return hmac.compare_digest(username, ADMIN_USERNAME) and hmac.compare_digest(password, ADMIN_PASSWORD)
+    allowed_usernames = {ADMIN_USERNAME}
+    admin_email = os.getenv("ADMIN_EMAIL")
+    if admin_email:
+        allowed_usernames.add(admin_email)
+    return any(
+        hmac.compare_digest(username, candidate)
+        for candidate in allowed_usernames
+    ) and hmac.compare_digest(password, ADMIN_PASSWORD)
 
 
 def _verify_supabase_token(token: str) -> dict[str, Any]:
@@ -119,7 +126,8 @@ def _verify_supabase_token(token: str) -> dict[str, Any]:
 
 
 def require_admin(authorization: str | None = Header(default=None)) -> dict[str, Any]:
-    """Verify a Supabase Auth bearer token and require the admin app_metadata role."""
+    """Verify Supabase Auth first, with a temporary signed legacy-admin fallback."""
+
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
 
@@ -127,7 +135,21 @@ def require_admin(authorization: str | None = Header(default=None)) -> dict[str,
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
 
-    return _verify_supabase_token(token)
+    try:
+        return _verify_supabase_token(token)
+    except HTTPException as supabase_error:
+        # During the Supabase password migration, accept only a locally signed
+        # legacy admin token when the old admin credential is still configured.
+        # This never accepts unsigned or arbitrary tokens.
+        if supabase_error.status_code in {401, 403} and ADMIN_PASSWORD:
+            payload = decode_token(token)
+            if payload.get("role") == "admin":
+                return {
+                    "sub": payload.get("sub"),
+                    "email": payload.get("sub"),
+                    "role": "admin",
+                }
+        raise
 
 
 class CurrentUser:
