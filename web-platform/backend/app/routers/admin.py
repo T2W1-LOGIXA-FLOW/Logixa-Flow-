@@ -12,6 +12,9 @@ from ..llm.router import LLMRouter
 
 router = APIRouter()
 
+MAX_IMPORT_FILE_BYTES = 10 * 1024 * 1024
+MAX_IMPORT_ROWS = 5000
+
 @router.post("/admin/newsletter/send", response_model=schemas.NewsletterSendResponse, status_code=status.HTTP_202_ACCEPTED)
 def send_newsletter(
     request: schemas.NewsletterSendRequest,
@@ -71,9 +74,9 @@ def admin_bulk_import(file: UploadFile = File(...), db: Session = Depends(get_db
 
     # Try optional dependencies
     try:
-        import PyPDF2
+        import pypdf
     except Exception:
-        PyPDF2 = None
+        pypdf = None
     try:
         import openpyxl
     except Exception:
@@ -92,11 +95,13 @@ def admin_bulk_import(file: UploadFile = File(...), db: Session = Depends(get_db
     content_items: list[dict] = []
 
     # Read file content
-    data = file.file.read()
+    data = file.file.read(MAX_IMPORT_FILE_BYTES + 1)
+    if len(data) > MAX_IMPORT_FILE_BYTES:
+        raise HTTPException(status_code=413, detail=f"Import file exceeds the {MAX_IMPORT_FILE_BYTES // (1024 * 1024)} MB limit")
     if filename.endswith(".pdf") or file.content_type == "application/pdf":
-        if PyPDF2 is None:
+        if pypdf is None:
             raise HTTPException(status_code=500, detail="PDF support is not installed on the backend")
-        reader = PyPDF2.PdfReader(io.BytesIO(data))
+        reader = pypdf.PdfReader(io.BytesIO(data))
         pages = []
         for p in reader.pages:
             try:
@@ -110,6 +115,8 @@ def admin_bulk_import(file: UploadFile = File(...), db: Session = Depends(get_db
         stream = io.StringIO(data.decode("utf-8", errors="replace"))
         reader = csv.DictReader(stream)
         for row in reader:
+            if len(content_items) >= MAX_IMPORT_ROWS:
+                raise HTTPException(status_code=413, detail=f"Import exceeds the {MAX_IMPORT_ROWS} row limit")
             content_items.append({
                 "title": row.get("title") or row.get("source_title") or filename,
                 "content": row.get("content") or row.get("summary") or ", ".join((row.values() or [])),
@@ -122,6 +129,8 @@ def admin_bulk_import(file: UploadFile = File(...), db: Session = Depends(get_db
         ws = wb.active
         headers = [str(cell.value).strip().lower() if cell.value else "" for cell in next(ws.rows)]
         for row in ws.iter_rows(min_row=2, values_only=True):
+            if len(content_items) >= MAX_IMPORT_ROWS:
+                raise HTTPException(status_code=413, detail=f"Import exceeds the {MAX_IMPORT_ROWS} row limit")
             row_map = {headers[i]: (row[i] or "") for i in range(min(len(headers), len(row)))}
             content_items.append({
                 "title": row_map.get("title") or filename,
