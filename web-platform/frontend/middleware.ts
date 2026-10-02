@@ -33,7 +33,7 @@ function applyCspHeaders(response: NextResponse, request: NextRequest) {
   response.headers.set("Content-Security-Policy-Report-Only", CSP_DIRECTIVES);
   response.headers.set(
     "Reporting-Endpoints",
-    `csp-endpoint="${new URL("/api/csp-report", request.url).toString()}"`
+    `csp-endpoint="${new URL("/api/csp-report", request.url).toString()}"`,
   );
   return response;
 }
@@ -41,7 +41,11 @@ function applyCspHeaders(response: NextResponse, request: NextRequest) {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname === "/admin/login" || pathname === "/admin/forgot-password") {
+  if (
+    pathname === "/admin/login" ||
+    pathname === "/admin/forgot-password" ||
+    pathname === "/admin/reset-password"
+  ) {
     return applyCspHeaders(NextResponse.next(), request);
   }
 
