@@ -1,19 +1,19 @@
 "use client";
 
-import { ChangeEvent, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { adminFetch } from "./api";
 
 export default function ImportCalendar({
-  token: string;
+  token,
 }: {
   token: string;
 }) {
   const [fileName, setFileName] = useState("");
 
-  async function handleFile(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+  async function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
     if (!file) {
       return;
     }
@@ -22,14 +22,14 @@ export default function ImportCalendar({
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.set("file", file);
 
       const response = await adminFetch("/api/admin/imports", token, {
         method: "POST",
         body: formData,
       });
-      const result = await response.json();
-      toast.success(`${result.imported} draft records imported.`);
+      const result = (await response.json()) as { imported?: number };
+      toast.success(`${result.imported ?? 0} draft records imported.`);
     } catch {
       toast.error("Import failed. Please check the file format and try again.");
     }
