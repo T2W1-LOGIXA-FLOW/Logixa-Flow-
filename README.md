@@ -1,15 +1,165 @@
 # Logixa Flow
 
-Logixa Flow is a supply-chain intelligence platform for Myanmar-ready SCM insights, AI-assisted drafting, admin review, and public publishing.
+**AI-Powered Supply Chain Intelligence and Workflow Automation Platform**
 
-## Project Structure
+Logixa Flow is a full-stack platform for supply-chain intelligence, AI-assisted research and drafting, knowledge retrieval, content review/publishing, and durable workflow automation. It combines a public knowledge website, a private admin control plane, an AI/RAG layer, workflow orchestration, scheduled/background processing, file/object storage, analytics, and operational tooling.
 
-- `web-platform/frontend`: Next.js public site and admin UI
-- `web-platform/backend`: FastAPI API, auth, CMS, uploads, AI endpoints
-- `agents`: optional background AI/content workflows
-- `render.yaml`: Render backend blueprint
+## What the platform is for
 
-## Local Preview
+Logixa Flow is designed to turn supply-chain information and operational inputs into reviewable intelligence and repeatable automated workflows:
+
+`Source / File / User Input → Ingestion → RAG / AI → Review / Decision → Workflow → Action → Analytics`
+
+It is not only a blog, chatbot, RSS scraper, CMS, or workflow editor. Those are subsystems of the larger platform.
+
+## Core capabilities
+
+### AI and knowledge
+- Public and admin AI chat experiences.
+- AI agent runs for research/generation with persisted run and step records.
+- AI Memory / Brain for reviewable generated intelligence.
+- Confidence, hallucination, and feedback quality signals.
+- Multi-provider LLM routing with fallback.
+- Google Gemini embeddings and generation.
+- OpenRouter, Groq, Cerebras, Mistral, Cohere, NVIDIA NIM, and local fallback providers are represented in the backend router; provider availability depends on configured production credentials.
+- RAG ingestion, chunking, embeddings, PostgreSQL/pgvector storage, similarity search, source-grounded context, feedback, metrics, retry/error handling, and alerting.
+
+### Workflow automation
+- Visual workflow administration using the frontend workflow UI.
+- Canonical backend workflow implementation: `web-platform/backend/app/routers/workflow.py`.
+- Dependency-aware node execution.
+- Registered actions such as logging and metadata operations.
+- Human approval nodes with pause/resume lifecycle.
+- Retry and timeout handling.
+- Durable workflow definitions and run state in PostgreSQL.
+- Scheduled workflow jobs, queue prioritization, controller-triggered execution, execution history, telemetry, and restart recovery.
+- Workflow/controller behavior is covered by backend tests.
+
+### Source intelligence and content
+- Intelligence source registry with source type/category/trust information.
+- RSS/feed collection and duplicate detection.
+- Automatic RAG ingestion after configured feed synchronization.
+- CMS for articles, drafts, categories, and publishing.
+- Human review before publication-sensitive AI output is exposed publicly.
+- Optional `agents/` background pipeline for collection → writing → management → publishing; it is separate from the main FastAPI web service.
+
+### Business and operations
+- Logistics estimator using vehicle dimensions/capacity, carton dimensions, quantity, volume, and weight.
+- Finance and operational tracking.
+- AI/API usage and cost logging.
+- Analytics and event tracking.
+- Subscriber/newsletter and email-template management.
+- User submissions and threaded/moderation-oriented engagement features.
+
+### Import and file handling
+- Admin bulk import endpoint: `POST /api/admin/imports`.
+- CSV, XLSX, and PDF import support.
+- File-size and row-count limits.
+- Imported knowledge is stored in AI Memory and can create draft posts for review.
+- Admin image uploads support local storage or S3-compatible storage such as Backblaze B2.
+- RAG also supports batch file ingestion with per-file status/recovery reporting.
+
+## Architecture
+
+```
+User
+  ↓
+Next.js / React frontend
+  ↓ HTTPS / API
+FastAPI backend
+  ├── Authentication / admin authorization
+  ├── AI chat + agent layer
+  ├── LLM router + provider fallback
+  ├── RAG ingestion/search
+  ├── Workflow engine
+  ├── Scheduler / controllers
+  ├── CMS / source intelligence
+  ├── Uploads / integrations
+  └── Analytics / usage / operations
+        ↓
+Supabase PostgreSQL
+  ├── Application data
+  ├── Workflow definitions/runs
+  ├── AI memory
+  └── pgvector embeddings
+        ↓
+Object storage / external providers
+  ├── Backblaze B2 / S3-compatible storage
+  ├── Gemini and other LLM providers
+  └── RSS / external sources
+```
+
+## Technology stack
+
+### Frontend
+- Next.js 15.5.27
+- React 19
+- TypeScript
+- `@xyflow/react` for workflow UI
+- Vercel production deployment
+
+### Backend
+- Python
+- FastAPI
+- Uvicorn
+- SQLAlchemy
+- SlowAPI rate limiting
+- JWT/admin security layer
+- Background scheduler/worker components
+
+### Data
+- PostgreSQL through Supabase
+- Row Level Security (RLS)
+- pgvector 0.8.2
+- Durable workflow tables and execution history
+
+### AI
+- Google Gemini
+- Multi-provider LLM router
+- Embeddings
+- RAG
+- AI Memory / Brain
+- Agent runs
+- Usage/cost telemetry
+
+### Storage and integrations
+- Backblaze B2 / S3-compatible object storage
+- Upstash Redis helper for cache/queue-related infrastructure
+- RSS feeds
+- Email integration
+
+### DevOps
+- GitHub
+- CI/CD
+- Dependabot
+- Vercel for frontend
+- Render for backend
+- Supabase for PostgreSQL
+
+## Security and reliability
+
+- RLS is enabled on the public application tables.
+- Public `anon`/`authenticated` table grants were audited and are not broadly exposed.
+- API rate limiting is enabled.
+- AI/provider secrets remain backend-side; the frontend uses public configuration only.
+- Admin endpoints use the backend authorization dependency.
+- Uploads validate allowed image types and require admin authorization; B2/S3 uploads validate required storage configuration.
+- Admin bulk imports enforce a 10 MB file limit and a 5,000-row limit.
+- Remote image access was hardened by removing an unrestricted Next.js image wildcard.
+- Dependency updates and CI verification are part of the release workflow.
+- pgvector was moved from the public schema to the dedicated `extensions` schema.
+- Workflow execution persists state to PostgreSQL and includes restart recovery.
+- LLM provider errors are sanitized before logging to reduce secret leakage risk.
+
+## Deployment
+
+- **Frontend:** Vercel — https://logixa-flow.vercel.app
+- **Backend:** Render — https://logixa-flow.onrender.com
+- **Database:** Supabase PostgreSQL + pgvector
+- **Object storage:** Backblaze B2 / S3-compatible configuration
+- **Source control:** GitHub
+
+## Local development
 
 Backend:
 
@@ -27,94 +177,43 @@ npm install
 npm run dev -- -p 3000
 ```
 
-Open:
-
-- Site: `http://localhost:3000`
-- API docs: `http://127.0.0.1:8000/docs`
-- Health: `http://127.0.0.1:8000/health`
-
-## Deployment Shape
-
-- Frontend: Vercel, root directory `web-platform/frontend`
-- Backend API: Render web service, root directory `web-platform/backend`
-- Database: Supabase PostgreSQL
-- Upload storage: Backblaze B2 (S3-compatible)
-- Cache/queue helper: Upstash Redis
-- Optional uptime ping: cron-job.org calling `/health`
-
-Vercel only needs public frontend variables:
-
-```text
-NEXT_PUBLIC_API_URL=https://your-render-backend.onrender.com
-NEXT_PUBLIC_SITE_URL=https://your-vercel-domain.vercel.app
-```
-
-Separate AI keys by role when both user and admin experiences use AI:
-
-```text
-USER_GEMINI_API_KEY=...
-ADMIN_GEMINI_API_KEY=...
-USER_OPENROUTER_API_KEY=...
-ADMIN_OPENROUTER_API_KEY=...
-```
-
-Do not put `DATABASE_URL`, AI provider keys, admin passwords, or JWT secrets in Vercel unless a specific frontend server route requires them.
-
-Render backend variables normally include:
-
-```text
-DATABASE_PROFILE=supabase
-DATABASE_URL=postgresql://...
-ADMIN_USERNAME=...
-ADMIN_PASSWORD=...
-JWT_SECRET=...
-API_SECRET_TOKEN=...
-ENVIRONMENT=production
-CORS_ORIGINS=https://your-vercel-domain.vercel.app
-GEMINI_API_KEY=...
-OPENROUTER_API_KEY=...
-GROQ_API_KEY=...
-HUGGINGFACE_API_KEY=...
-REDIS_URL=rediss://...
-UPLOAD_STORAGE_BACKEND=b2
-S3_ENDPOINT_URL=https://s3.<B2-region>.backblazeb2.com
-S3_ACCESS_KEY_ID=...
-S3_SECRET_ACCESS_KEY=...
-S3_BUCKET=...
-S3_PUBLIC_BASE_URL=https://your-public-b2-domain
-```
-
-## Documentation
-
-- `docs/AI_AGENTS_SETUP.md`: AI provider and worker setup
-- `docs/DEPLOY_CHECKLIST.md`: deployment and repository hygiene checklist
-
-## Checks
-
-Frontend:
+Checks:
 
 ```powershell
 cd web-platform\frontend
 npm run build
-```
 
-Backend:
-
-```powershell
-cd web-platform\backend
+cd ..\backend
 python -m pytest -q
-```
 
-Repo hygiene:
-
-```powershell
 git diff --check
 git status --short
 ```
 
-## Security Notes
+## Documentation map
 
-- Never commit real `.env` files, API keys, database URLs, JWT secrets, or admin passwords.
-- Keep only `.env.example` files in the repo.
-- `node_modules`, `.next`, `.venv`, SQLite databases, uploads, caches, and logs are local/generated files.
-- CORS origins must be exact frontend origins. Do not use `https://*.vercel.app`; the backend framework expects exact origins.
+- `PROJECT_OVERVIEW.md` — product, architecture, capabilities, status, and operational boundaries.
+- `docs/AI_AGENTS_SETUP.md` — AI provider, worker, security, and onboarding guidance.
+- `docs/DEPLOY_CHECKLIST.md` — deployment/repository hygiene checklist.
+- `web-platform/docs/RAG_ERROR_REPORTING.md` — RAG error/retry/monitoring behavior.
+
+## Current production status
+
+The current main branch is deployed to production. Frontend and backend are synchronized to the latest verified main commit, CI/build checks have passed, Supabase security hardening has been applied, and the production services are live.
+
+This does not mean every third-party provider is permanently available: provider availability depends on external service health and configured credentials. The LLM router is designed to fall back when a configured provider fails.
+
+## Engineering principles
+
+1. Keep `backend/app/routers/workflow.py` as the canonical workflow implementation.
+2. Do not create a second workflow engine when extending orchestration behavior.
+3. Persist workflow definitions and run state; do not rely on process memory as the source of truth.
+4. Keep AI/provider secrets out of the frontend.
+5. Preserve explicit human approval for publication-sensitive AI output.
+6. Ground intelligence generation in source data/RAG where applicable.
+7. Keep public-user AI and admin AI roles/configuration separable.
+8. Treat AI output as reviewable intelligence, not automatically trusted truth.
+9. When changing workflow behavior, update persistence/recovery and tests together.
+10. When changing RAG behavior, consider ingestion, embedding, retrieval, quality, telemetry, and failure handling together.
+11. Prefer existing Workflow/Controller architecture for new automation.
+12. For content automation, prefer Source → RAG → Agent → Brain → Approval → Publish.
