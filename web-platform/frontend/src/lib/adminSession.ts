@@ -1,14 +1,13 @@
 // src/lib/adminSession.ts
 //
-// The admin token is kept in localStorage for client-side page logic, but the
-// Next.js edge middleware (middleware.ts) that guards /admin/* routes runs on
-// the server and cannot read localStorage — it only sees cookies. These
-// helpers mirror the token into a cookie so the middleware check actually
-// works, instead of redirecting every request back to /admin/login.
+// Supabase Auth access/refresh tokens are kept in localStorage for the
+// client-side admin API. The access token is mirrored into a cookie because
+// Next.js middleware can only see cookies when guarding /admin/* routes.
 
 const ADMIN_TOKEN_COOKIE = "adminToken";
-const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 12; // matches the backend's 12h token expiry
+const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 const ADMIN_TOKEN_STORAGE_KEYS = ["adminToken", "logixa_token"];
+const REFRESH_TOKEN_STORAGE_KEY = "adminRefreshToken";
 
 export function getAdminSessionToken() {
   if (typeof window === "undefined") return "";
@@ -19,11 +18,20 @@ export function getAdminSessionToken() {
   return "";
 }
 
-export function setAdminSession(token: string) {
+export function getAdminRefreshToken() {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) || "";
+}
+
+export function setAdminSession(token: string, refreshToken?: string) {
   if (typeof document === "undefined") return;
   localStorage.setItem("adminToken", token);
   localStorage.setItem("logixa_token", token);
-  const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  if (refreshToken) {
+    localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
+  }
+  const secure =
+    typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
   document.cookie = `${ADMIN_TOKEN_COOKIE}=${encodeURIComponent(token)}; path=/; max-age=${COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secure}`;
 }
 
@@ -32,5 +40,6 @@ export function clearAdminSession() {
   for (const key of ADMIN_TOKEN_STORAGE_KEYS) {
     localStorage.removeItem(key);
   }
+  localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
   document.cookie = `${ADMIN_TOKEN_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
 }
