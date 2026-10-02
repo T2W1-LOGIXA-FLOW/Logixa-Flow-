@@ -82,10 +82,17 @@
     "eslint": "9.16.0",
     "eslint-config-next": "^15.5.19",
     "jsdom": "^30.0.1",
-    "postcss": "8.4.49",
+    "postcss": "8.5.28",
     "tailwindcss": "3.4.16",
     "typescript": "5.7.2",
     "vite": "^6.0.0",
     "vitest": "^3.0.0"
+  },
+  "overrides": {
+    "browserslist": "^4.28.9",
+    "sharp": "^0.35.5",
+    "dompurify": "^3.4.16",
+    "undici": "^8.11.2",
+    "serialize-javascript": "^7.1.2"
   }
 }
