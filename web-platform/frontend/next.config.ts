@@ -26,7 +26,6 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "res.cloudinary.com", port: "", pathname: "/**" },
       { protocol: "https", hostname: "cdn.jsdelivr.net", port: "", pathname: "/**" },
       { protocol: "https", hostname: "api.qrserver.com", port: "", pathname: "/**" },
-      { protocol: "https", hostname: "*.amazonaws.com", port: "", pathname: "/**" },
     ],
   },
 };
