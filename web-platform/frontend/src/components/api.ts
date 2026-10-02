@@ -162,7 +162,7 @@ export interface AdminChatMessage {
   updated_at?: string;
 }
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://logixa-flow.onrender.com";
 const API_TIMEOUT_MS = 30000;
 
 // These are intentionally publishable client-side values. Supabase Auth uses
