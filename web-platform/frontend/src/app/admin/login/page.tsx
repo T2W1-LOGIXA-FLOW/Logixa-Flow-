@@ -62,18 +62,21 @@ export default function AdminLoginPage() {
 
     try {
       const data = await login(email.trim(), password);
-
       setAdminSession(data.access_token, data.refresh_token);
       if (rememberMe) {
         localStorage.setItem('adminEmail', email.trim());
       } else {
         localStorage.removeItem('adminEmail');
       }
-
       router.push('/admin');
     } catch (err) {
-      setError('Invalid email or password.');
+      const message = err instanceof Error ? err.message : '';
       console.error('Login error:', err);
+      setError(
+        message === 'Invalid login credentials'
+          ? 'Invalid email or password.'
+          : message || 'Unable to sign in. Please try again.',
+      );
     } finally {
       setLoading(false);
     }
@@ -146,6 +149,12 @@ export default function AdminLoginPage() {
           >
             {loading ? 'Signing in...' : 'Login to Dashboard'}
           </button>
+
+          <div className="text-center">
+            <Link href="/admin/forgot-password" className="text-sm text-cyan-400 hover:text-cyan-300">
+              Forgot password?
+            </Link>
+          </div>
         </form>
 
         <div className="bg-slate-900/30 backdrop-blur px-8 py-4 rounded-b-lg border-t border-slate-700/50">
