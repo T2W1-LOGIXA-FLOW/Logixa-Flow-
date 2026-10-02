@@ -103,12 +103,12 @@ Storage and cache:
 
 ```text
 REDIS_URL=rediss://...
-UPLOAD_STORAGE_BACKEND=r2
-S3_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com
+UPLOAD_STORAGE_BACKEND=b2
+S3_ENDPOINT_URL=https://s3.<B2-region>.backblazeb2.com
 S3_ACCESS_KEY_ID=...
 S3_SECRET_ACCESS_KEY=...
 S3_BUCKET=...
-S3_PUBLIC_BASE_URL=https://your-public-r2-domain
+S3_PUBLIC_BASE_URL=https://your-public-b2-domain
 ```
 
 ## Deployment Validation
@@ -117,5 +117,5 @@ S3_PUBLIC_BASE_URL=https://your-public-r2-domain
 - Vercel public pages load: `/`, `/about`, `/contact`, `/blog`, `/agent`.
 - Admin login works at `/admin/login`.
 - AI chat returns a backend response, not "provider unavailable".
-- Image upload returns a public R2 URL.
+- Image upload returns a public B2 URL.
 - No `.env`, `node_modules`, `.next`, `.venv`, local databases, or uploaded files appear in GitHub.
