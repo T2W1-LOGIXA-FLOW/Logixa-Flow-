@@ -9,27 +9,31 @@ import time
 from pathlib import Path
 from typing import Any
 
+import requests
 from fastapi import Header, HTTPException, status
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
+
 def _get_jwt_secret() -> str:
-    """Get JWT secret from environment, with production safety check."""
+    """Get the legacy custom JWT secret used only by compatibility helpers."""
     secret = os.getenv("JWT_SECRET", os.getenv("API_SECRET_TOKEN", "change-me-in-production"))
     is_production = os.getenv("ENVIRONMENT", "development").lower() in {"production", "prod"}
-    
+
     if is_production and secret in {"change-me-in-production", "", None}:
         raise ValueError(
-            "CRITICAL: JWT_SECRET or API_SECRET_TOKEN must be set in production. "
-            "Using default secrets is not allowed in production environments."
+            "CRITICAL: JWT_SECRET or API_SECRET_TOKEN must be set in production environments."
         )
-    
+
     return secret
+
 
 JWT_SECRET = _get_jwt_secret()
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+SUPABASE_PUBLISHABLE_KEY = os.getenv("SUPABASE_PUBLISHABLE_KEY", "")
 
 
 def _b64encode(payload: bytes) -> str:
@@ -42,6 +46,7 @@ def _b64decode(payload: str) -> bytes:
 
 
 def create_access_token(username: str, role: str = "admin", expires_in: int = 60 * 60 * 12) -> str:
+    """Legacy token helper retained for compatibility/tests; admin API auth uses Supabase tokens."""
     header = {"alg": "HS256", "typ": "JWT"}
     body = {"sub": username, "role": role, "exp": int(time.time()) + expires_in}
     signing_input = f"{_b64encode(json.dumps(header).encode())}.{_b64encode(json.dumps(body).encode())}"
@@ -50,6 +55,7 @@ def create_access_token(username: str, role: str = "admin", expires_in: int = 60
 
 
 def decode_token(token: str) -> dict[str, Any]:
+    """Legacy custom JWT decoder retained for non-admin compatibility code/tests."""
     try:
         header_part, body_part, signature_part = token.split(".")
         signing_input = f"{header_part}.{body_part}"
@@ -65,26 +71,71 @@ def decode_token(token: str) -> dict[str, Any]:
 
 
 def authenticate_admin(username: str, password: str) -> bool:
+    """Legacy credential check retained temporarily for compatibility."""
     if not ADMIN_PASSWORD:
         return False
     return hmac.compare_digest(username, ADMIN_USERNAME) and hmac.compare_digest(password, ADMIN_PASSWORD)
 
 
+def _verify_supabase_token(token: str) -> dict[str, Any]:
+    if not SUPABASE_URL or not SUPABASE_PUBLISHABLE_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication service is not configured",
+        )
+
+    try:
+        response = requests.get(
+            f"{SUPABASE_URL}/auth/v1/user",
+            headers={
+                "apikey": SUPABASE_PUBLISHABLE_KEY,
+                "Authorization": f"Bearer {token}",
+            },
+            timeout=5,
+        )
+    except requests.RequestException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication service unavailable",
+        ) from exc
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired session")
+
+    try:
+        user = response.json()
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication response") from exc
+
+    app_metadata = user.get("app_metadata") or {}
+    if app_metadata.get("role") != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin role required")
+
+    return {
+        "sub": user.get("id"),
+        "email": user.get("email"),
+        "role": "admin",
+    }
+
+
 def require_admin(authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    """Verify a Supabase Auth bearer token and require the admin app_metadata role."""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
-    payload = decode_token(authorization.removeprefix("Bearer ").strip())
-    if payload.get("role") != "admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin role required")
-    return payload
+
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
+
+    return _verify_supabase_token(token)
 
 
 class CurrentUser:
-    """User object from JWT token with id extracted from 'sub' claim."""
+    """User object from the legacy custom JWT token."""
+
     def __init__(self, token_payload: dict[str, Any]):
         self.username = token_payload.get("sub", "anonymous")
         self.role = token_payload.get("role", "user")
-        # Extract user ID from username (format: "user_{id}" or just numeric)
         try:
             if self.username.startswith("user_"):
                 self.id = int(self.username.split("_")[1])
@@ -96,7 +147,7 @@ class CurrentUser:
 
 
 def get_current_user(authorization: str | None = Header(default=None)) -> CurrentUser:
-    """Extract authenticated user from JWT token. Requires valid token but not admin role."""
+    """Legacy custom JWT dependency retained for compatibility with existing non-admin flows."""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
     payload = decode_token(authorization.removeprefix("Bearer ").strip())
