@@ -263,7 +263,30 @@ export async function getMetrics(): Promise<DashboardMetric[]> {
 }
 
 export async function login(email: string, password: string) {
-  return supabaseAuthRequest("password", { email, password });
+  try {
+    return await supabaseAuthRequest("password", { email, password });
+  } catch (supabaseError) {
+    // Keep existing admin access working while the Supabase password credential
+    // is being migrated. The backend validates the same password server-side.
+    const response = await fetchWithTimeout(`${API_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: email, password }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw supabaseError instanceof Error
+        ? supabaseError
+        : new Error("Authentication failed");
+    }
+    return {
+      access_token: data.access_token as string,
+      refresh_token: "",
+      token_type: data.token_type ?? "bearer",
+      expires_in: 60 * 60 * 12,
+      user: { id: email, email },
+    };
+  }
 }
 
 export async function refreshAdminSession() {
