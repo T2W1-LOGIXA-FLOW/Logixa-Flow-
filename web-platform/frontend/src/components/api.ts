@@ -85,7 +85,6 @@ export interface SystemStatus {
   missing_env: string[];
   scheduler_enabled: boolean;
   ai_key_configured: boolean;
-  // Optional fields provided by /admin/system/status for diagnostics
   user_active_provider?: string;
   user_active_model?: string;
   admin_active_provider?: string;
@@ -160,10 +159,21 @@ export interface AdminChatMessage {
   tokens_used?: number | null;
   cost_estimate?: number | null;
   created_at: string;
+  updated_at?: string;
 }
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const API_TIMEOUT_MS = 30000;
+
+// These are intentionally publishable client-side values. Supabase Auth uses
+// a publishable/anon key in the browser; service-role/secret keys are never
+// included here.
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://ephrnmigiwjhdjksreos.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+  "sb_publishable_5d66_MvgxdoU06X3l_d5Pw_upXMW2Ml";
+
 type NextFetchInit = RequestInit & { next?: { revalidate?: number | false } };
 
 async function fetchWithTimeout(input: RequestInfo | URL, init: NextFetchInit = {}) {
@@ -176,6 +186,34 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: NextFetchInit = 
   }
 }
 
+async function supabaseAuthRequest(
+  grantType: "password" | "refresh_token",
+  body: Record<string, string>,
+) {
+  const response = await fetchWithTimeout(
+    `${SUPABASE_URL}/auth/v1/token?grant_type=${grantType}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+      },
+      body: JSON.stringify(body),
+    },
+  );
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(typeof data?.msg === "string" ? data.msg : "Authentication failed");
+  }
+  return data as {
+    access_token: string;
+    refresh_token: string;
+    token_type: string;
+    expires_in: number;
+    user?: { id: string; email?: string };
+  };
+}
+
 export function assetUrl(path?: string | null) {
   if (!path) return null;
   if (path.startsWith("http")) return path;
@@ -186,7 +224,9 @@ export async function getPosts(limit = 20, category?: string): Promise<Post[]> {
   try {
     const params = new URLSearchParams({ limit: String(limit) });
     if (category) params.set("category", category);
-    const response = await fetchWithTimeout(`${API_URL}/api/posts?${params.toString()}`, { next: { revalidate: 60 } });
+    const response = await fetchWithTimeout(`${API_URL}/api/posts?${params.toString()}`, {
+      next: { revalidate: 60 },
+    });
     return response.ok ? response.json() : [];
   } catch {
     return [];
@@ -207,7 +247,9 @@ export async function searchPosts(query: string, category?: string): Promise<Pos
 
 export async function getMetrics(): Promise<DashboardMetric[]> {
   try {
-    const response = await fetchWithTimeout(`${API_URL}/api/metrics`, { next: { revalidate: 30 } });
+    const response = await fetchWithTimeout(`${API_URL}/api/metrics`, {
+      next: { revalidate: 30 },
+    });
     if (!response.ok) throw new Error("Metrics unavailable");
     return response.json();
   } catch {
@@ -220,26 +262,34 @@ export async function getMetrics(): Promise<DashboardMetric[]> {
   }
 }
 
-export async function login(username: string, password: string) {
-  const response = await fetchWithTimeout(`${API_URL}/api/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
-  });
-  if (!response.ok) throw new Error("Login failed");
-  return response.json() as Promise<{ access_token: string; role: string; token_type: string }>;
+export async function login(email: string, password: string) {
+  return supabaseAuthRequest("password", { email, password });
+}
+
+export async function refreshAdminSession() {
+  const { getAdminRefreshToken, setAdminSession } = await import("@/lib/adminSession");
+  const refreshToken = getAdminRefreshToken();
+  if (!refreshToken) return false;
+  try {
+    const data = await supabaseAuthRequest("refresh_token", { refresh_token: refreshToken });
+    setAdminSession(data.access_token, data.refresh_token);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function validateAdminToken(token: string) {
   if (!token) return false;
   try {
     const response = await fetchWithTimeout(`${API_URL}/api/auth/me`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: { Authorization: `Bearer ${token}` },
     });
-    return response.ok;
+    if (response.ok) return true;
   } catch {
-    return false;
+    // Attempt refresh below.
   }
+  return refreshAdminSession();
 }
 
 export async function adminFetch(path: string, token: string, options: RequestInit = {}) {
@@ -248,7 +298,20 @@ export async function adminFetch(path: string, token: string, options: RequestIn
   if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  const response = await fetchWithTimeout(`${API_URL}${path}`, { ...options, headers });
+  let response = await fetchWithTimeout(`${API_URL}${path}`, { ...options, headers });
+
+  if (response.status === 401) {
+    const refreshed = await refreshAdminSession();
+    if (refreshed) {
+      const { getAdminSessionToken } = await import("@/lib/adminSession");
+      const refreshedToken = getAdminSessionToken();
+      if (refreshedToken) {
+        headers.set("Authorization", `Bearer ${refreshedToken}`);
+        response = await fetchWithTimeout(`${API_URL}${path}`, { ...options, headers });
+      }
+    }
+  }
+
   if (!response.ok) throw new Error(await response.text());
   return response;
 }
@@ -299,7 +362,9 @@ export async function publicChatQuery(payload: {
 
 export async function getPost(slug: string): Promise<Post | null> {
   try {
-    const response = await fetchWithTimeout(`${API_URL}/api/posts/${slug}`, { next: { revalidate: 60 } });
+    const response = await fetchWithTimeout(`${API_URL}/api/posts/${slug}`, {
+      next: { revalidate: 60 },
+    });
     return response.ok ? response.json() : null;
   } catch {
     return null;
