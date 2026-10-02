@@ -38,7 +38,7 @@ Open:
 - Frontend: Vercel, root directory `web-platform/frontend`
 - Backend API: Render web service, root directory `web-platform/backend`
 - Database: Supabase PostgreSQL
-- Upload storage: Cloudflare R2 or another S3-compatible bucket
+- Upload storage: Backblaze B2 (S3-compatible)
 - Cache/queue helper: Upstash Redis
 - Optional uptime ping: cron-job.org calling `/health`
 
@@ -76,12 +76,12 @@ OPENROUTER_API_KEY=...
 GROQ_API_KEY=...
 HUGGINGFACE_API_KEY=...
 REDIS_URL=rediss://...
-UPLOAD_STORAGE_BACKEND=r2
-S3_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com
+UPLOAD_STORAGE_BACKEND=b2
+S3_ENDPOINT_URL=https://s3.<B2-region>.backblazeb2.com
 S3_ACCESS_KEY_ID=...
 S3_SECRET_ACCESS_KEY=...
 S3_BUCKET=...
-S3_PUBLIC_BASE_URL=https://your-public-r2-domain
+S3_PUBLIC_BASE_URL=https://your-public-b2-domain
 ```
 
 ## Documentation
