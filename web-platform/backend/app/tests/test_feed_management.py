@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from ..main import app
 from ..database import SessionLocal, Base, engine
 from .. import models
-from ..security import create_access_token
+from ..security import require_admin
 
 
 @pytest.fixture
@@ -20,15 +20,16 @@ def db():
 
 @pytest.fixture
 def client():
-    """Create a test client."""
-    return TestClient(app)
+    """Create a test client with the production auth dependency overridden."""
+    app.dependency_overrides[require_admin] = lambda: {"sub": "test-admin", "role": "admin"}
+    client = TestClient(app)
+    yield client
+    app.dependency_overrides.pop(require_admin, None)
 
 
 @pytest.fixture
 def auth_headers():
-    """Create authentication headers for admin requests."""
-    token = create_access_token("test_admin", role="admin")
-    return {"Authorization": f"Bearer {token}"}
+    return {"Authorization": "Bearer test-token"}
 
 
 def test_list_feeds_empty(client, db, auth_headers):
