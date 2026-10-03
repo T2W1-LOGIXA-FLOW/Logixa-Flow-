@@ -144,45 +144,51 @@ def admin_bulk_import(file: UploadFile = File(...), db: Session = Depends(get_db
         return {"imported": 0, "created_posts": []}
 
     try:
-        for item in content_items:
-            title = (item.get("title") or filename)[:255]
-            content = item.get("content") or ""
-            category = item.get("category") or "Supply Chain"
+        with db.begin():
+            for item in content_items:
+                title = (item.get("title") or filename)[:255]
+                content = item.get("content") or ""
+                category = item.get("category") or "Supply Chain"
 
-            memory = models.AiMemoryBrain(
-                category=category,
-                source_title=title,
-                source_url=None,
-                prompt="",
-                content=content,
-                summary=(content[:200] + "...") if len(content) > 200 else content,
-                status="pending",
-            )
-            db.add(memory)
-            db.flush()  # get memory.id
+                memory = models.AiMemoryBrain(
+                    category=category,
+                    source_title=title,
+                    source_url=None,
+                    prompt="",
+                    content=content,
+                    summary=(content[:200] + "...") if len(content) > 200 else content,
+                    status="pending",
+                )
+                db.add(memory)
+                db.flush()
 
-            # Optionally create a draft post
-            slug = slugify(title)[:255]
-            post = models.Post(
-                title=title,
-                slug=slug,
-                type="news",
-                category=category,
-                excerpt=(content[:200] + "...") if len(content) > 200 else content,
-                content_html=f"<p>{content}</p>",
-                is_published=False,
-                status="draft",
-            )
-            db.add(post)
-            db.flush()
+                base_slug = slugify(title)[:240]
+                slug = base_slug
+                suffix = 1
+                while db.query(models.Post).filter(models.Post.slug == slug).first():
+                    slug = f"{base_slug}-{suffix}"
+                    suffix += 1
+                    if suffix > 1000:
+                        raise HTTPException(status_code=409, detail="Unable to allocate a unique post slug")
 
-            # link memory to post
-            memory.post_slug = post.slug
-            db.commit()
-            imported += 1
-            created_post_ids.append(post.id)
+                post = models.Post(
+                    title=title,
+                    slug=slug,
+                    type="news",
+                    category=category,
+                    excerpt=(content[:200] + "...") if len(content) > 200 else content,
+                    content_html=f"<p>{content}</p>",
+                    is_published=False,
+                    status="draft",
+                )
+                db.add(post)
+                db.flush()
+
+                memory.post_slug = post.slug
+                imported += 1
+                created_post_ids.append(post.id)
     except SQLAlchemyError as exc:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Database error during import: {exc}")
+        raise HTTPException(status_code=500, detail="A database error occurred during import") from exc
 
     return {"imported": imported, "created_posts": created_post_ids}
