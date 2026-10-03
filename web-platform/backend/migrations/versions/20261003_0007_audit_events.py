@@ -28,6 +28,8 @@ def upgrade() -> None:
     op.create_index("ix_audit_events_action", "audit_events", ["action"], unique=False)
     op.create_index("ix_audit_events_subject_hash", "audit_events", ["subject_hash"], unique=False)
     op.create_index("ix_audit_events_created_at", "audit_events", ["created_at"], unique=False)
+    op.execute("ALTER TABLE audit_events ENABLE ROW LEVEL SECURITY")
+    op.execute("REVOKE ALL ON TABLE audit_events FROM anon, authenticated")
 
 
 def downgrade() -> None:
