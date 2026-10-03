@@ -15,13 +15,6 @@ export function useAdminAuth() {
     let cancelled = false;
 
     async function checkSession() {
-      const bypassAuth = typeof process !== "undefined" && process.env.NEXT_PUBLIC_ADMIN_AUTH_BYPASS === "true";
-      if (bypassAuth) {
-        if (cancelled) return;
-        setIsAuthenticated(true);
-        setIsCheckingAuth(false);
-        return;
-      }
       const saved = getAdminSessionToken();
       if (!saved) {
         if (cancelled) return;
