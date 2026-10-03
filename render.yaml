@@ -18,12 +18,12 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
-      - key: JWT_ADMIN_SECRET
-        generateValue: true
-      - key: ADMIN_USERNAME
-        value: admin
-      - key: ADMIN_PASSWORD
-        generateValue: true
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: AGENT_SERVICE_TOKEN
+        sync: false
       - key: API_SECRET_TOKEN
         generateValue: true
       - key: REQUIRE_AI_KEY
@@ -84,6 +84,18 @@ services:
         value: us-west-004
       - key: S3_PUBLIC_BASE_URL
         sync: false
+      - key: ENABLE_PII_REDACTION
+        value: true
+      - key: PROMPT_SANITIZER_LEVEL
+        value: moderate
+      - key: PUBLIC_AI_RATE_LIMIT_REQUESTS
+        value: "10"
+      - key: RAG_INGEST_RATE_LIMIT_REQUESTS
+        value: "10"
+      - key: IMPORT_RATE_LIMIT_REQUESTS
+        value: "10"
+      - key: WORKFLOW_EXECUTION_MODE
+        value: worker
   - type: worker
     name: logixa-flow-worker
     runtime: docker
@@ -95,9 +107,7 @@ services:
         value: production
       - key: BACKEND_URL
         sync: false
-      - key: ADMIN_USERNAME
-        value: admin
-      - key: ADMIN_PASSWORD
+      - key: AGENT_SERVICE_TOKEN
         sync: false
       - key: LLM_PROVIDER
         value: gemini
