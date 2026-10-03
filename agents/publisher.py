@@ -6,7 +6,7 @@ from pathlib import Path
 
 import requests
 
-from config import ADMIN_PASSWORD, ADMIN_USERNAME, BACKEND_URL
+from config import AGENT_SERVICE_TOKEN, BACKEND_URL
 from manager import archive_draft
 
 
@@ -46,18 +46,14 @@ def build_payload(draft: dict, publish: bool = True) -> dict:
     }
 
 
-def get_admin_token() -> str:
-    response = requests.post(
-        f"{BACKEND_URL}/api/auth/login",
-        json={"username": ADMIN_USERNAME, "password": ADMIN_PASSWORD},
-        timeout=30,
-    )
-    response.raise_for_status()
-    return response.json()["access_token"]
+def get_service_token() -> str:
+    if not AGENT_SERVICE_TOKEN:
+        raise RuntimeError("AGENT_SERVICE_TOKEN is not configured")
+    return AGENT_SERVICE_TOKEN
 
 
 def publish_post(post_data: dict) -> dict:
-    token = get_admin_token()
+    token = get_service_token()
     base_slug = post_data["slug"]
     for suffix in range(1, 51):
         payload = post_data.copy()
