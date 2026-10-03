@@ -16,8 +16,12 @@ services:
         value: production
       - key: JWT_SECRET
         generateValue: true
-      - key: ADMIN_PASSWORD
-        generateValue: true
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: AGENT_SERVICE_TOKEN
+        sync: false
       - key: API_SECRET_TOKEN
         generateValue: true
       - key: CORS_ORIGINS
@@ -64,6 +68,10 @@ services:
         value: true
       - key: SCHEDULER_INTERVAL_HOURS
         value: "24"
+      - key: ENABLE_PII_REDACTION
+        value: true
+      - key: PROMPT_SANITIZER_LEVEL
+        value: moderate
 
 databases:
   - name: logixa-flow-db
