@@ -390,7 +390,7 @@ class ChatMessage(Base):
     agent_id = Column(String(100), nullable=True)  # Which agent generated this message
     model_used = Column(String(100), nullable=True)  # Which AI model was used
     tokens_used = Column(Integer, nullable=True)  # Token usage tracking
-    cost_estimate = Column(Float, nullable=True)  # Estimated cost in USD
+    cost_estimate = Column(Numeric(18, 8), nullable=True)  # Estimated cost in USD
     json_metadata = Column(Text, nullable=True)  # JSON metadata
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
 
