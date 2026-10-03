@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
@@ -22,6 +23,8 @@ from app.schemas import (
     WorkflowTelemetryEvent,
 )
 from app.security import decode_token, require_admin
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/admin/workflow", tags=["admin", "workflow"])
 
@@ -68,8 +71,13 @@ def _persist_workflow_definition(workflow: WorkflowStorageOut) -> None:
                 )
             )
         db.commit()
-    except Exception:
-        return
+    except Exception as exc:
+        try:
+            db.rollback()
+        except Exception:
+            logger.exception("Workflow definition rollback failed for %s", workflow.id)
+        logger.exception("Failed to persist workflow definition %s: %s", workflow.id, exc)
+        raise
     finally:
         db.close()
 
@@ -100,7 +108,8 @@ def _load_workflow_definition(workflow_id: str) -> WorkflowStorageOut | None:
             created_at=record.created_at,
             updated_at=record.updated_at,
         )
-    except Exception:
+    except Exception as exc:
+        logger.exception("Failed to load workflow definition %s: %s", workflow_id, exc)
         return None
     finally:
         db.close()
@@ -122,8 +131,13 @@ def _persist_run_state(run: WorkflowRunOut) -> None:
         record.metrics_json = _serialize_json(_EXECUTION_METRICS.get(run.run_id, {}))
         record.updated_at = _now()
         db.commit()
-    except Exception:
-        return
+    except Exception as exc:
+        try:
+            db.rollback()
+        except Exception:
+            logger.exception("Workflow run rollback failed for %s", run.run_id)
+        logger.exception("Failed to persist workflow run state %s: %s", run.run_id, exc)
+        raise
     finally:
         db.close()
 
@@ -146,7 +160,8 @@ def _load_run_state(run_id: str) -> WorkflowRunOut | None:
                 approval_node=metrics.get("approval_node"),
             ),
         )
-    except Exception:
+    except Exception as exc:
+        logger.exception("Failed to load workflow run state %s: %s", run_id, exc)
         return None
     finally:
         db.close()
@@ -499,8 +514,10 @@ def _record_controller_result(run_id: str, status_value: str) -> None:
             controller.failure_count += 1
         controller.updated_at = _now()
         db.commit()
-    except SQLAlchemyError:
+    except SQLAlchemyError as exc:
         db.rollback()
+        logger.exception("Failed to record controller result for run %s: %s", run_id, exc)
+        raise
     finally:
         db.close()
 
