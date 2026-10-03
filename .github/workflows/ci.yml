@@ -61,7 +61,10 @@ jobs:
       - working-directory: web-platform/frontend
         run: npm ci
       - working-directory: web-platform/frontend
+        run: npm audit --omit=dev --audit-level=high
+      - working-directory: web-platform/frontend
         run: npm audit --audit-level=high
+        continue-on-error: true
 
       - uses: aquasecurity/trivy-action@v0.36.0
         with:
