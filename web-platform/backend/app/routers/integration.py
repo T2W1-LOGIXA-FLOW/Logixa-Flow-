@@ -60,7 +60,7 @@ async def integration_pipeline_preview(
     feed_limit: int = Query(default=5, ge=1, le=20),
     draft_limit: int = Query(default=5, ge=0, le=50),
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    _: dict = Depends(require_admin_or_service),
 ) -> dict:
     """
     One-shot preview pipeline (never publishes):
