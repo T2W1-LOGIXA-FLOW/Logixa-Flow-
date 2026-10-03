@@ -717,6 +717,26 @@ async def enqueue_workflow_run(
 
 @router.get("/queue")
 async def workflow_queue(_admin=Depends(require_admin)) -> dict[str, Any]:
+    if os.getenv("WORKFLOW_EXECUTION_MODE", "local").strip().lower() == "worker":
+        db = SessionLocal()
+        try:
+            jobs = (
+                db.query(models.ScheduledWorkflowJob)
+                .filter(models.ScheduledWorkflowJob.status.in_(["queued", "running"]))
+                .order_by(
+                    models.ScheduledWorkflowJob.priority.desc(),
+                    models.ScheduledWorkflowJob.scheduled_for.asc(),
+                )
+                .limit(100)
+                .all()
+            )
+            return {
+                "queued": [job.run_id for job in jobs if job.status == "queued"],
+                "running": [job.run_id for job in jobs if job.status == "running"],
+                "notifications": _ERROR_NOTIFICATIONS[-10:],
+            }
+        finally:
+            db.close()
     return {"queued": [item["run_id"] for item in _EXECUTION_QUEUE], "notifications": _ERROR_NOTIFICATIONS[-10:]}
 
 
