@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
@@ -645,6 +646,9 @@ def restore_pending_workflow_runs() -> int:
 
 def start_queue_worker() -> None:
     global _QUEUE_WORKER_RUNNING
+    execution_mode = os.getenv("WORKFLOW_EXECUTION_MODE", "local").strip().lower()
+    if execution_mode == "worker":
+        return
     if _QUEUE_WORKER_RUNNING or not _EXECUTION_QUEUE:
         return
     _QUEUE_WORKER_RUNNING = True
