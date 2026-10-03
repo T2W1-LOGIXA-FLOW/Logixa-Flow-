@@ -122,7 +122,7 @@ def verify_service_token(token: str) -> dict[str, Any]:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid service token",
         )
-    return {"sub": "agent-service", "role": "service", "scopes": ["ingest", "sync"]}
+    return {"sub": "agent-service", "role": "service", "scopes": ["ingest", "sync", "publish"]}
 
 
 def require_admin_or_service(authorization: str | None = Header(default=None)) -> dict[str, Any]:
