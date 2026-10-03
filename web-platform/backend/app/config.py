@@ -9,6 +9,9 @@ AI_PROVIDER_ENV_KEYS = (
 )
 S3_ENV_KEYS = ("S3_ENDPOINT_URL", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_BUCKET", "S3_PUBLIC_BASE_URL")
 
+PII_REDACTION_ENABLED = os.getenv("ENABLE_PII_REDACTION", "true").strip().lower() == "true"
+PROMPT_SANITIZER_LEVEL = os.getenv("PROMPT_SANITIZER_LEVEL", "moderate").strip().lower()
+
 
 def resolve_ai_key_for_role(role: str, provider_env_key: str) -> str:
     """Resolve a role-aware provider key with a clear user/admin split.
