@@ -109,6 +109,38 @@ def _verify_supabase_token(token: str) -> dict[str, Any]:
     }
 
 
+def verify_service_token(token: str) -> dict[str, Any]:
+    """Verify the dedicated agent service token using constant-time comparison."""
+    expected = os.getenv("AGENT_SERVICE_TOKEN", "").strip()
+    if not expected:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Service authentication is not configured",
+        )
+    if not hmac.compare_digest(expected, token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid service token",
+        )
+    return {"sub": "agent-service", "role": "service", "scopes": ["ingest", "sync"]}
+
+
+def require_admin_or_service(authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    """Allow Supabase admins or the narrowly scoped background-agent token."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
+
+    try:
+        return _verify_supabase_token(token)
+    except HTTPException as supabase_error:
+        if supabase_error.status_code not in {401, 403}:
+            raise
+        return verify_service_token(token)
+
+
 def require_admin(authorization: str | None = Header(default=None)) -> dict[str, Any]:
     """Verify an admin session issued by Supabase Auth."""
 
