@@ -6,7 +6,7 @@ from pathlib import Path
 
 import requests
 
-from config import ADMIN_PASSWORD, ADMIN_USERNAME, BACKEND_URL
+from config import BACKEND_URL, agent_service_headers
 from manager import archive_draft
 
 
@@ -46,18 +46,7 @@ def build_payload(draft: dict, publish: bool = True) -> dict:
     }
 
 
-def get_admin_token() -> str:
-    response = requests.post(
-        f"{BACKEND_URL}/api/auth/login",
-        json={"username": ADMIN_USERNAME, "password": ADMIN_PASSWORD},
-        timeout=30,
-    )
-    response.raise_for_status()
-    return response.json()["access_token"]
-
-
 def publish_post(post_data: dict) -> dict:
-    token = get_admin_token()
     base_slug = post_data["slug"]
     for suffix in range(1, 51):
         payload = post_data.copy()
@@ -65,7 +54,7 @@ def publish_post(post_data: dict) -> dict:
         response = requests.post(
             f"{BACKEND_URL}/api/posts",
             json=payload,
-            headers={"Authorization": f"Bearer {token}"},
+            headers=agent_service_headers(),
             timeout=30,
         )
         if response.status_code != 409:

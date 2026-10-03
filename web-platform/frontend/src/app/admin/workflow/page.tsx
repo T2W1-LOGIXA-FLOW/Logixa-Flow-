@@ -72,53 +72,60 @@ export default function AdminWorkflowPage() {
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node<ServiceNodeData>) => setSelected(`${node.data.label} selected`), []);
 
   useEffect(() => {
-    const token = getAdminSessionToken();
-    if (!token) {
-      setConnectionState("disconnected");
-      return;
-    }
-
-    setConnectionState("connecting");
-    const socket = new WebSocket(resolveWorkflowSocketUrl());
-    socketRef.current = socket;
-
-    socket.onopen = () => {
-      socket.send(JSON.stringify({ type: "auth", token }));
-      setConnectionState("connecting");
-      setLogs((previous) => [`[${new Date().toLocaleTimeString()}] SOCKET AUTHENTICATING`, ...previous].slice(0, 6));
-    };
-
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data) as WorkflowTelemetry & { type?: string };
-        if (data.type === "auth.ok") {
-          setConnectionState("connected");
-          setLogs((previous) => [`[${new Date().toLocaleTimeString()}] SOCKET CONNECTED`, ...previous].slice(0, 6));
-          return;
-        }
-        setTelemetry(data);
-        setSelected(data.state.current_node ? `${data.state.current_node} active` : `${data.state.status.toUpperCase()} workflow`);
-        setLogs((previous) => [
-          `[${new Date().toLocaleTimeString()}] ${data.state.status.toUpperCase()} ${data.state.current_node ?? "IDLE"}`,
-          ...previous,
-        ].slice(0, 6));
-      } catch {
-        setLogs((previous) => [`[${new Date().toLocaleTimeString()}] INVALID TELEMETRY`, ...previous].slice(0, 6));
+    let cancelled = false;
+    let socket: WebSocket | undefined;
+    async function connect() {
+      const token = await getAdminSessionToken();
+      if (cancelled) return;
+      if (!token) {
+        setConnectionState("disconnected");
+        return;
       }
-    };
 
-    socket.onerror = () => {
-      setConnectionState("disconnected");
-      setLogs((previous) => [`[${new Date().toLocaleTimeString()}] SOCKET ERROR`, ...previous].slice(0, 6));
-    };
+      setConnectionState("connecting");
+      socket = new WebSocket(resolveWorkflowSocketUrl());
+      socketRef.current = socket;
 
-    socket.onclose = () => {
-      setConnectionState("disconnected");
-      setLogs((previous) => [`[${new Date().toLocaleTimeString()}] SOCKET CLOSED`, ...previous].slice(0, 6));
-    };
+      socket.onopen = () => {
+        socket?.send(JSON.stringify({ type: "auth", token }));
+        setConnectionState("connecting");
+        setLogs((previous) => [`[${new Date().toLocaleTimeString()}] SOCKET AUTHENTICATING`, ...previous].slice(0, 6));
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data) as WorkflowTelemetry & { type?: string };
+          if (data.type === "auth.ok") {
+            setConnectionState("connected");
+            setLogs((previous) => [`[${new Date().toLocaleTimeString()}] SOCKET CONNECTED`, ...previous].slice(0, 6));
+            return;
+          }
+          setTelemetry(data);
+          setSelected(data.state.current_node ? `${data.state.current_node} active` : `${data.state.status.toUpperCase()} workflow`);
+          setLogs((previous) => [
+            `[${new Date().toLocaleTimeString()}] ${data.state.status.toUpperCase()} ${data.state.current_node ?? "IDLE"}`,
+            ...previous,
+          ].slice(0, 6));
+        } catch {
+          setLogs((previous) => [`[${new Date().toLocaleTimeString()}] INVALID TELEMETRY`, ...previous].slice(0, 6));
+        }
+      };
+
+      socket.onerror = () => {
+        setConnectionState("disconnected");
+        setLogs((previous) => [`[${new Date().toLocaleTimeString()}] SOCKET ERROR`, ...previous].slice(0, 6));
+      };
+
+      socket.onclose = () => {
+        setConnectionState("disconnected");
+        setLogs((previous) => [`[${new Date().toLocaleTimeString()}] SOCKET CLOSED`, ...previous].slice(0, 6));
+      };
+    }
+    void connect();
 
     return () => {
-      socket.close();
+      cancelled = true;
+      socket?.close();
       socketRef.current = null;
     };
   }, []);

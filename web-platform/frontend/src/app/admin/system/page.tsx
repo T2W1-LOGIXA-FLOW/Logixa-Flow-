@@ -21,13 +21,21 @@ export default function AdminSystemPage() {
 
   }
   useEffect(() => {
-    const saved = getAdminSessionToken();
-    if (!saved) {
-      router.push("/admin/login");
-      return;
+    let cancelled = false;
+    async function load() {
+      const saved = await getAdminSessionToken();
+      if (cancelled) return;
+      if (!saved) {
+        router.push("/admin/login");
+        return;
+      }
+      setToken(saved);
+      loadStatus(saved).catch(() => setMessage("System status could not be loaded."));
     }
-    setToken(saved);
-    loadStatus(saved).catch(() => setMessage("System status could not be loaded."));
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   async function runDailyPreview() {

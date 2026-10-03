@@ -11,9 +11,14 @@ import { getAdminSessionToken } from "@/lib/adminSession";
 export default function IntegrationTriggers({ token }: { token?: string }) {
   const [t, setT] = useState<string | null>(token || null);
   useEffect(() => {
-    if (!t && typeof window !== "undefined") {
-      setT(getAdminSessionToken());
-    }
+    if (t) return;
+    let cancelled = false;
+    getAdminSessionToken().then((sessionToken) => {
+      if (!cancelled) setT(sessionToken);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [t]);
 
   const [emailTo, setEmailTo] = useState("");

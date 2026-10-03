@@ -11,20 +11,30 @@ export default function UsagePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = getAdminSessionToken();
-    if (!token) return;
-    setLoading(true);
-    adminFetch("/api/admin/usage", token)
-      .then((r) => r.json())
-      .then((json) => {
+    let cancelled = false;
+    async function loadUsage() {
+      const token = await getAdminSessionToken();
+      if (!token || cancelled) {
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      try {
+        const response = await adminFetch("/api/admin/usage", token);
+        const json = await response.json();
         const items = (json.usage_by_key as Record<string, unknown>[]) || [];
         setRows(items);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Usage load error:", err);
         setError("Could not load usage data");
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    void loadUsage();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const chartData = rows.map((r) => ({

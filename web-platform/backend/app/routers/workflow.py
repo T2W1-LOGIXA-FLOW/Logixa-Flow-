@@ -7,6 +7,7 @@ from typing import Any
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy import inspect
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -21,7 +22,7 @@ from app.schemas import (
     WorkflowStorageOut,
     WorkflowTelemetryEvent,
 )
-from app.security import decode_token, require_admin
+from app.security import _verify_supabase_token, require_admin
 
 router = APIRouter(prefix="/api/admin/workflow", tags=["admin", "workflow"])
 
@@ -36,6 +37,8 @@ _EXECUTION_HISTORY: dict[str, list[str]] = {}
 _EXECUTION_METRICS: dict[str, dict[str, Any]] = {}
 _QUEUE_WORKER_RUNNING = False
 _CONTROLLER_RUNS: dict[str, str] = {}
+_WEBSOCKET_AUTH_TIMEOUT_SECONDS = 10
+_WEBSOCKET_AUTH_RECHECK_SECONDS = 60
 
 
 def _serialize_json(value: Any) -> str:
@@ -806,30 +809,52 @@ async def approve_workflow_run(run_id: str, node_id: str | None = None, _admin=D
 
 @router.websocket("/ws")
 async def workflow_telemetry(websocket: WebSocket) -> None:
-    # Browser WebSocket clients cannot set arbitrary Authorization headers.
-    # Authenticate with a short-lived JWT in the first WebSocket message instead
-    # of placing the token in the URL query string.
+    # Browser WebSocket clients send the Supabase access token in the first message.
     await websocket.accept()
     try:
-        raw_message = await websocket.receive_text()
+        raw_message = await asyncio.wait_for(
+            websocket.receive_text(),
+            timeout=_WEBSOCKET_AUTH_TIMEOUT_SECONDS,
+        )
         message = json.loads(raw_message)
         token = message.get("token") if isinstance(message, dict) else None
         if not isinstance(message, dict) or message.get("type") != "auth" or not isinstance(token, str) or not token:
             await websocket.close(code=4401)
             return
 
-        payload = decode_token(token)
-        if payload.get("role") != "admin":
-            await websocket.close(code=4403)
-            return
+        await run_in_threadpool(_verify_supabase_token, token)
         await websocket.send_json({"type": "auth.ok"})
-    except (WebSocketDisconnect, json.JSONDecodeError, TypeError, HTTPException):
+    except (asyncio.TimeoutError, WebSocketDisconnect, json.JSONDecodeError, TypeError):
         await websocket.close(code=4401)
+        return
+    except HTTPException as exc:
+        await websocket.close(code=_websocket_auth_close_code(exc))
         return
 
     _SUBSCRIBERS.add(websocket)
-    try:
-        while True:
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        _SUBSCRIBERS.discard(websocket)
+    loop = asyncio.get_running_loop()
+    recheck_at = loop.time() + _WEBSOCKET_AUTH_RECHECK_SECONDS
+    while True:
+        try:
+            await asyncio.wait_for(
+                websocket.receive_text(),
+                timeout=max(0, recheck_at - loop.time()),
+            )
+        except asyncio.TimeoutError:
+            try:
+                await run_in_threadpool(_verify_supabase_token, token)
+            except HTTPException as exc:
+                await websocket.close(code=_websocket_auth_close_code(exc))
+                break
+            recheck_at = loop.time() + _WEBSOCKET_AUTH_RECHECK_SECONDS
+        except WebSocketDisconnect:
+            break
+    _SUBSCRIBERS.discard(websocket)
+
+
+def _websocket_auth_close_code(exc: HTTPException) -> int:
+    if exc.status_code == status.HTTP_403_FORBIDDEN:
+        return 4403
+    if exc.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
+        return 1013
+    return 4401

@@ -1,3 +1,5 @@
+import { getSupabaseClient } from "@/lib/supabase";
+
 export interface Post {
   id: number;
   title: string;
@@ -165,15 +167,6 @@ export interface AdminChatMessage {
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://logixa-flow.onrender.com";
 const API_TIMEOUT_MS = 30000;
 
-// These are intentionally publishable client-side values. Supabase Auth uses
-// a publishable/anon key in the browser; service-role/secret keys are never
-// included here.
-const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://ephrnmigiwjhdjksreos.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  "sb_publishable_5d66_MvgxdoU06X3l_d5Pw_upXMW2Ml";
-
 type NextFetchInit = RequestInit & { next?: { revalidate?: number | false } };
 
 async function fetchWithTimeout(input: RequestInfo | URL, init: NextFetchInit = {}) {
@@ -184,34 +177,6 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: NextFetchInit = 
   } finally {
     clearTimeout(timeout);
   }
-}
-
-async function supabaseAuthRequest(
-  grantType: "password" | "refresh_token",
-  body: Record<string, string>,
-) {
-  const response = await fetchWithTimeout(
-    `${SUPABASE_URL}/auth/v1/token?grant_type=${grantType}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: SUPABASE_PUBLISHABLE_KEY,
-      },
-      body: JSON.stringify(body),
-    },
-  );
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(typeof data?.msg === "string" ? data.msg : "Authentication failed");
-  }
-  return data as {
-    access_token: string;
-    refresh_token: string;
-    token_type: string;
-    expires_in: number;
-    user?: { id: string; email?: string };
-  };
 }
 
 export function assetUrl(path?: string | null) {
@@ -263,38 +228,47 @@ export async function getMetrics(): Promise<DashboardMetric[]> {
 }
 
 export async function login(email: string, password: string) {
-  return supabaseAuthRequest("password", { email, password });
+  const { data, error } = await getSupabaseClient().auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  if (!data.session) throw new Error("Authentication did not return an active session");
+  return data.session;
 }
 
 export async function refreshAdminSession() {
-  const { getAdminRefreshToken, setAdminSession } = await import("@/lib/adminSession");
-  const refreshToken = getAdminRefreshToken();
-  if (!refreshToken) return false;
-  try {
-    const data = await supabaseAuthRequest("refresh_token", { refresh_token: refreshToken });
-    setAdminSession(data.access_token, data.refresh_token);
-    return true;
-  } catch {
-    return false;
-  }
+  const { data, error } = await getSupabaseClient().auth.refreshSession();
+  return !error && Boolean(data.session?.access_token);
 }
 
 export async function validateAdminToken(token: string) {
   if (!token) return false;
   try {
     const response = await fetchWithTimeout(`${API_URL}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: "Bearer " + token },
     });
     if (response.ok) return true;
+    if (response.status !== 401) return false;
   } catch {
-    // Attempt refresh below.
+    return false;
   }
-  return refreshAdminSession();
+
+  if (!(await refreshAdminSession())) return false;
+  const { getAdminSessionToken } = await import("@/lib/adminSession");
+  const refreshedToken = await getAdminSessionToken();
+  if (!refreshedToken) return false;
+  try {
+    const response = await fetchWithTimeout(`${API_URL}/api/auth/me`, {
+      headers: { Authorization: "Bearer " + refreshedToken },
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 export async function adminFetch(path: string, token: string, options: RequestInit = {}) {
   const headers = new Headers(options.headers);
-  headers.set("Authorization", `Bearer ${token}`);
+  if (!token) throw new Error("Admin session is required");
+  headers.set("Authorization", "Bearer " + token);
   if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
@@ -304,9 +278,9 @@ export async function adminFetch(path: string, token: string, options: RequestIn
     const refreshed = await refreshAdminSession();
     if (refreshed) {
       const { getAdminSessionToken } = await import("@/lib/adminSession");
-      const refreshedToken = getAdminSessionToken();
+      const refreshedToken = await getAdminSessionToken();
       if (refreshedToken) {
-        headers.set("Authorization", `Bearer ${refreshedToken}`);
+        headers.set("Authorization", "Bearer " + refreshedToken);
         response = await fetchWithTimeout(`${API_URL}${path}`, { ...options, headers });
       }
     }

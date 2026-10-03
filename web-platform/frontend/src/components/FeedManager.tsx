@@ -46,7 +46,7 @@ export default function FeedManager() {
     setLoading(true);
     setError(null);
     try {
-      const token = getAdminSessionToken();
+      const token = await getAdminSessionToken();
       if (!token) throw new Error("Admin login required");
       const response = await adminFetch("/api/admin/integration/feeds", token);
       if (!response.ok) throw new Error("Failed to fetch feeds");
@@ -69,7 +69,7 @@ export default function FeedManager() {
     }
 
     try {
-      const token = getAdminSessionToken();
+      const token = await getAdminSessionToken();
       if (!token) throw new Error("Admin login required");
       const response = await adminFetch("/api/admin/integration/feeds", token, {
         method: "POST",
@@ -95,7 +95,7 @@ export default function FeedManager() {
 
     setError(null);
     try {
-      const token = getAdminSessionToken();
+      const token = await getAdminSessionToken();
       if (!token) throw new Error("Admin login required");
       const response = await adminFetch(`/api/admin/integration/feeds/${feedId}`, token, {
         method: "DELETE",
@@ -116,7 +116,7 @@ export default function FeedManager() {
     toast.info("Scrape started...");
 
     try {
-      const token = getAdminSessionToken();
+      const token = await getAdminSessionToken();
       if (!token) throw new Error("Admin login required");
       const response = await adminFetch(`/api/admin/integration/feeds/${feedId}/scrape`, token, {
         method: "POST",

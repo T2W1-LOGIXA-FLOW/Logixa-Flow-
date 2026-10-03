@@ -276,13 +276,21 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    const savedToken = getAdminSessionToken();
-    if (!savedToken) {
-      router.push("/admin/login");
-      return;
+    let cancelled = false;
+    async function load() {
+      const savedToken = await getAdminSessionToken();
+      if (cancelled) return;
+      if (!savedToken) {
+        router.push("/admin/login");
+        return;
+      }
+      setToken(savedToken);
+      await loadDashboard(savedToken);
     }
-    setToken(savedToken);
-    loadDashboard(savedToken);
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   const readinessCards = useMemo(() => {

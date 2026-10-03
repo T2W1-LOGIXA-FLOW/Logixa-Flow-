@@ -2,9 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ephrnmigiwjhdjksreos.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_5d66_MvgxdoU06X3l_d5Pw_upXMW2Ml';
+import { getSupabaseClient } from '@/lib/supabase';
 
 export default function AdminForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -18,15 +16,10 @@ export default function AdminForgotPasswordPage() {
     setError('');
     setMessage('');
     try {
-      const response = await fetch(SUPABASE_URL + '/auth/v1/recover', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_PUBLISHABLE_KEY },
-        body: JSON.stringify({ email: email.trim(), redirect_to: window.location.origin + '/admin/reset-password' }),
+      const { error } = await getSupabaseClient().auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: window.location.origin + '/admin/reset-password',
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(typeof data?.msg === 'string' ? data.msg : 'Password reset request failed');
-      }
+      if (error) throw error;
       setMessage('If this email belongs to an admin account, a password reset email has been sent.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Password reset request failed');

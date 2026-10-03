@@ -76,16 +76,24 @@ export default function PremiumLogisticsEstimator() {
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
-    const saved = getAdminSessionToken();
-    if (!saved) {
-      router.push("/admin/login");
-      return;
-    }
+    let cancelled = false;
+    async function load() {
+      const saved = await getAdminSessionToken();
+      if (cancelled) return;
+      if (!saved) {
+        router.push("/admin/login");
+        return;
+      }
 
-    setToken(saved);
-    setAuthorized(true);
-    loadVehicleTypes(saved);
-    loadEstimateHistory(saved);
+      setToken(saved);
+      setAuthorized(true);
+      loadVehicleTypes(saved);
+      loadEstimateHistory(saved);
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   const loadVehicleTypes = async (authToken: string) => {

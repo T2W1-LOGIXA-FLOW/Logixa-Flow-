@@ -214,8 +214,7 @@ Typical worker variables:
 
 ```text
 BACKEND_URL=https://your-render-backend.onrender.com
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=<secret>
+AGENT_SERVICE_TOKEN=<same secret configured on the Render backend and worker>
 LLM_PROVIDER=gemini
 GEMINI_API_KEY=<secret>
 OPENROUTER_API_KEY=<secret>
@@ -227,6 +226,8 @@ WORKER_INTERVAL_SECONDS=3600
 WORKER_RUN_ON_START=true
 WORKER_ONCE=false
 ```
+
+Set `AGENT_SERVICE_TOKEN` manually as a high-entropy secret in both Render services; the repository intentionally contains no token value. Existing worker `ADMIN_USERNAME` and `ADMIN_PASSWORD` settings in Render are retained only for rollback until this service-token deployment is verified. The agent code no longer reads or sends those credentials.
 
 `AUTO_APPROVE_PUBLISH=false` is intentional: AI-generated content should remain reviewable before publication.
 

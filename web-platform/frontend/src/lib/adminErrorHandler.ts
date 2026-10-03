@@ -25,12 +25,12 @@ export function handleApiError(
   toast.error(errorMessage);
 }
 
-export function handleAuthError(error: unknown) {
-  console.error("[Auth] Error:", error);
+export function handleAuthError() {
   toast.error("Authentication failed. Please log in again.");
   
-  // Clear token and redirect to login
-  clearAdminSession();
+  void clearAdminSession().catch(() => {
+    console.error("Local Supabase session cleanup failed");
+  });
   window.location.href = "/admin/login";
 }
 

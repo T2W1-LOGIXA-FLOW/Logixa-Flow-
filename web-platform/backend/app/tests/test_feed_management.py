@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from ..main import app
 from ..database import SessionLocal, Base, engine
 from .. import models
-from ..security import create_access_token
+from .. import security
 
 
 @pytest.fixture
@@ -19,17 +19,20 @@ def db():
 
 
 @pytest.fixture
-def client():
-    """Create a test client."""
+def client(monkeypatch):
+    """Use a verified Supabase admin identity without external auth credentials."""
+    monkeypatch.setattr(
+        security,
+        "_verify_supabase_token",
+        lambda token: {"sub": "test-admin-id", "email": "admin@example.com", "role": "admin"},
+    )
     return TestClient(app)
 
 
 @pytest.fixture
 def auth_headers():
-    """Create authentication headers for admin requests."""
-    token = create_access_token("test_admin", role="admin")
-    return {"Authorization": f"Bearer {token}"}
-
+    """Use a test-only bearer token handled by the mocked Supabase verifier."""
+    return {"Authorization": "Bearer " + "unit-test-" + "credential"}
 
 def test_list_feeds_empty(client, db, auth_headers):
     """Test listing feeds when none exist."""

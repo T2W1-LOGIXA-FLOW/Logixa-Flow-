@@ -42,8 +42,13 @@ TEMPERATURE: Final[float] = float(os.getenv("TEMPERATURE", "0.55"))
 
 BACKEND_URL: Final[str] = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
 API_SECRET_TOKEN: Final[str] = os.getenv("API_SECRET_TOKEN", "")
-ADMIN_USERNAME: Final[str] = os.getenv("ADMIN_USERNAME", "admin")
-ADMIN_PASSWORD: Final[str | None] = os.getenv("ADMIN_PASSWORD")
+AGENT_SERVICE_TOKEN: Final[str | None] = os.getenv("AGENT_SERVICE_TOKEN", "").strip() or None
+
+
+def agent_service_headers() -> dict[str, str]:
+    if not AGENT_SERVICE_TOKEN:
+        raise RuntimeError("AGENT_SERVICE_TOKEN is required for agent-to-backend requests")
+    return {"X-Agent-Service-Token": AGENT_SERVICE_TOKEN}
 
 PIPELINE_BATCH_LIMIT: Final[int] = int(os.getenv("PIPELINE_BATCH_LIMIT", "8"))
 MIN_SIMILARITY_TO_MERGE: Final[float] = float(os.getenv("MIN_SIMILARITY_TO_MERGE", "0.74"))

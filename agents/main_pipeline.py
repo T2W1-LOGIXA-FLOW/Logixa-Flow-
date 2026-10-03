@@ -36,7 +36,6 @@ def run_pipeline(
         from bridge import LogixaWebBridge
 
         bridge = LogixaWebBridge()
-        bridge.login()
         if web_pipeline:
             print("\n=== Web integration: full preview pipeline ===")
             result = bridge.run_pipeline_preview()

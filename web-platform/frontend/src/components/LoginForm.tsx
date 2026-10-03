@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 
 import { login } from "./api";
 import { useLocale } from "@/lib/LanguageContext";
-import { setAdminSession } from "@/lib/adminSession";
 import Skeleton from "./shadcn/Skeleton";
 import LivingLogo from "./LivingLogo";
 
@@ -21,8 +20,8 @@ export default function LoginForm() {
     setLoading(true);
     const form = new FormData(event.currentTarget);
     try {
-      const result = await login(String(form.get("username")), String(form.get("password")));
-      setAdminSession(result.access_token);
+      const result = await login(String(form.get("email")), String(form.get("password")));
+      if (!result.access_token) throw new Error("Authentication did not return an active session");
       router.push("/admin");
     } catch {
       const translation = t("loginError");
@@ -52,10 +51,10 @@ export default function LoginForm() {
       ) : (
         <>
           <div className="form-group">
-            <label className="form-label">Username</label>
+            <label className="form-label">Email</label>
             <input 
-              name="username" 
-              defaultValue="admin" 
+              name="email"
+              type="email"
               required 
               className="form-input"
               placeholder="Enter username"

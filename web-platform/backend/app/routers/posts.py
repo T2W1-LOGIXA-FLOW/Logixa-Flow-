@@ -13,7 +13,7 @@ from .. import models, schemas
 from ..cache import cache_client
 from ..database import get_db
 from ..models import utc_now
-from ..security import require_admin
+from ..security import require_admin, require_admin_or_agent_service
 
 router = APIRouter()
 
@@ -52,7 +52,7 @@ def verify_token(authorization: str | None = Header(default=None)) -> str:
 def create_post(
     post: schemas.PostCreate,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    _: dict = Depends(require_admin_or_agent_service),
 ) -> models.Post:
     payload = post.model_dump()
     if payload["source_url"] is not None:

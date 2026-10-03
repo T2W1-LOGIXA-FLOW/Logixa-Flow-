@@ -28,7 +28,7 @@ export default function AdminFinancePage() {
   const loadData = async () => {
     setLoading(true);
     setError(null);
-    const token = getAdminSessionToken();
+    const token = await getAdminSessionToken();
     try {
       if (!token) throw new Error("no token");
       const sresp = await adminFetch("/api/admin/finance/summary", token).catch(() => null);
@@ -49,7 +49,7 @@ export default function AdminFinancePage() {
 
   const addProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = getAdminSessionToken();
+    const token = await getAdminSessionToken();
     if (!token) return setError("Admin session missing");
     try {
       await adminFetch("/api/admin/finance/projects", token, {

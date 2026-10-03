@@ -15,7 +15,7 @@ export function useAdminAuth() {
     let cancelled = false;
 
     async function checkSession() {
-      const saved = getAdminSessionToken();
+      const saved = await getAdminSessionToken();
       if (!saved) {
         if (cancelled) return;
         setIsCheckingAuth(false);
@@ -25,19 +25,32 @@ export function useAdminAuth() {
       const valid = await validateAdminToken(saved);
       if (cancelled) return;
       if (!valid) {
-        clearAdminSession();
+        await clearAdminSession();
         setToken("");
         setIsAuthenticated(false);
         setIsCheckingAuth(false);
         router.push("/admin/login");
         return;
       }
-      setToken(saved);
+      const currentToken = await getAdminSessionToken();
+      if (!currentToken) {
+        await clearAdminSession();
+        setIsCheckingAuth(false);
+        router.push("/admin/login");
+        return;
+      }
+      setToken(currentToken);
       setIsAuthenticated(true);
       setIsCheckingAuth(false);
     }
 
-    checkSession();
+    void checkSession().catch(() => {
+      if (cancelled) return;
+      setToken("");
+      setIsAuthenticated(false);
+      setIsCheckingAuth(false);
+      router.push("/admin/login");
+    });
 
     return () => {
       cancelled = true;

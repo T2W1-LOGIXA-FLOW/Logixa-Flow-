@@ -13,7 +13,7 @@ from ..integration_service import (
     configured_rss_feeds,
     import_rss_feed,
 )
-from ..security import require_admin
+from ..security import require_admin, require_admin_or_agent_service
 import json
 
 router = APIRouter()
@@ -23,7 +23,7 @@ router = APIRouter()
 def integration_sync_feeds(
     limit_per_feed: int = Query(default=5, ge=1, le=20),
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    _: dict = Depends(require_admin_or_agent_service),
 ) -> dict:
     """Import RSS items from INTEGRATION_RSS_FEEDS (or defaults) into intelligence_sources."""
     return sync_default_feeds(db, limit_per_feed=limit_per_feed)
@@ -33,7 +33,7 @@ def integration_sync_feeds(
 def integration_import_drafts(
     limit: int = Query(default=10, ge=1, le=50),
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    _: dict = Depends(require_admin_or_agent_service),
 ) -> dict:
     """Import recent JSON drafts from agents/data/drafts into brain queue (pending)."""
     return import_drafts_from_folder(db, limit=limit)
@@ -43,7 +43,7 @@ def integration_import_drafts(
 def integration_import_one_draft(
     payload: schemas.CliDraftImport,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    _: dict = Depends(require_admin_or_agent_service),
 ) -> schemas.AiMemoryOut:
     memory = import_draft_dict(db, payload.model_dump())
     if not memory:
@@ -60,7 +60,7 @@ async def integration_pipeline_preview(
     feed_limit: int = Query(default=5, ge=1, le=20),
     draft_limit: int = Query(default=5, ge=0, le=50),
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    _: dict = Depends(require_admin_or_agent_service),
 ) -> dict:
     """
     One-shot preview pipeline (never publishes):

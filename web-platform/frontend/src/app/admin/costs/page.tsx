@@ -11,12 +11,18 @@ export default function AdminCostsPage() {
   const [token, setToken] = useState("");
 
   useEffect(() => {
-    const savedToken = getAdminSessionToken();
-    if (!savedToken) {
-      router.push("/admin/login");
-      return;
-    }
-    setToken(savedToken);
+    let cancelled = false;
+    getAdminSessionToken().then((savedToken) => {
+      if (cancelled) return;
+      if (!savedToken) {
+        router.push("/admin/login");
+        return;
+      }
+      setToken(savedToken);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   if (!token) {

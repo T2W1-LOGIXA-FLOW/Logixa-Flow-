@@ -50,7 +50,7 @@ from ..schemas import (
     RAGQualityMetrics,
     RAGABTestConfig,
 )
-from ..security import require_admin
+from ..security import require_admin, require_admin_or_agent_service
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -459,7 +459,7 @@ def rag_context(
 def rag_ingest_sources(
     limit: int = Query(default=200, ge=1, le=500),
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    _: dict = Depends(require_admin_or_agent_service),
 ) -> dict:
     return _run_ingestion(
         lambda: ingest_all_sources(db, limit=limit),

@@ -49,14 +49,6 @@ export function middleware(request: NextRequest) {
     return applyCspHeaders(NextResponse.next(), request);
   }
 
-  if (pathname.startsWith("/admin")) {
-    const token = request.cookies.get("adminToken")?.value;
-
-    if (!token) {
-      return NextResponse.redirect(new URL("/admin/login", request.url));
-    }
-  }
-
   if (pathname.startsWith("/_next") || pathname.startsWith("/api/csp-report")) {
     return NextResponse.next();
   }

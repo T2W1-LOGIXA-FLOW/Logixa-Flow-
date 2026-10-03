@@ -4,15 +4,24 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import AdminShell from "@/components/admin/AdminShell";
 import { validateAdminToken } from "@/components/api";
-import { clearAdminSession, getAdminSessionToken } from "@/lib/adminSession";
+import { clearAdminSession, getAdminSessionToken, logoutAdminSession } from "@/lib/adminSession";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [authChecked, setAuthChecked] = useState(false);
   const isLoginRoute = pathname === "/admin/login";
 
-  const handleLogout = () => {
-    clearAdminSession();
+  const handleLogout = async () => {
+    try {
+      await logoutAdminSession();
+    } catch (error) {
+      console.error("Supabase sign-out failed");
+      window.alert(
+        error instanceof Error && error.message.startsWith("This device was signed out")
+          ? error.message
+          : "Supabase sign-out failed. The current session may still be active.",
+      );
+    }
     window.location.href = "/admin/login";
   };
 
@@ -24,17 +33,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setAuthChecked(true);
         return;
       }
-      const token = getAdminSessionToken();
+      const token = await getAdminSessionToken();
       if (!token || !(await validateAdminToken(token))) {
         if (cancelled) return;
-        clearAdminSession();
+        await clearAdminSession();
         window.location.href = "/admin/login";
         return;
       }
       if (!cancelled) setAuthChecked(true);
     }
 
-    checkSession();
+    void checkSession().catch(() => {
+      if (cancelled) return;
+      console.error("Admin session validation failed");
+      window.location.href = "/admin/login";
+    });
     return () => {
       cancelled = true;
     };

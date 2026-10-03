@@ -12,7 +12,7 @@ export default function Comments({ postId }: { postId: number }) {
     if (!text.trim()) return;
     setSubmitting(true);
     try {
-      const token = getAdminSessionToken();
+      const token = await getAdminSessionToken();
       if (!token) throw new Error("Login required");
       await adminFetch("/api/comments", token, {
         method: "POST",

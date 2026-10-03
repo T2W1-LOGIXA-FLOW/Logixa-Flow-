@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import AdminWorkflowPage from "./page";
@@ -10,7 +10,7 @@ vi.mock("@/lib/adminSession", () => ({
 }));
 
 describe("workflow websocket integration", () => {
-  const sockets: Array<{ onopen?: () => void; onmessage?: (event: { data: string }) => void; onclose?: () => void; close: () => void; readyState: number }> = [];
+  const sockets: Array<{ onopen?: () => void; onmessage?: (event: { data: string }) => void; onclose?: () => void; close: () => void; send: (data: string) => void; readyState: number }> = [];
 
   beforeEach(() => {
     sockets.length = 0;
@@ -24,21 +24,20 @@ describe("workflow websocket integration", () => {
       } as typeof ResizeObserver;
     }
 
-    vi.stubGlobal(
-      "WebSocket",
-      vi.fn().mockImplementation(() => {
-        const socket = {
+    const MockWebSocket = vi.fn(function (this: WebSocket) {
+      const socket = {
           readyState: 1,
           close: vi.fn(),
+          send: vi.fn(),
           onopen: undefined,
           onmessage: undefined,
           onclose: undefined,
           onerror: undefined,
         } as any;
-        sockets.push(socket);
-        return socket;
-      }),
-    );
+      sockets.push(socket);
+      return socket;
+    });
+    vi.stubGlobal("WebSocket", MockWebSocket);
   });
 
   it("subscribes to workflow telemetry on page load", async () => {
@@ -48,27 +47,33 @@ describe("workflow websocket integration", () => {
     expect(globalThis.WebSocket).toHaveBeenCalledTimes(1);
 
     const socket = sockets[0];
-    socket.onopen?.();
+    act(() => socket.onopen?.());
 
-    await waitFor(() => expect(screen.getByText(/SYSTEM LIVE|SYNCING|OFFLINE/i)).toBeInTheDocument());
+    expect(screen.getAllByText(/SYSTEM LIVE|SYNCING|OFFLINE/i).length).toBeGreaterThan(0);
+    expect(socket.send).toHaveBeenCalledWith(
+      JSON.stringify({ type: "auth", token: "admin-token" }),
+    );
   });
 
   it("renders live telemetry updates from the workflow stream", async () => {
     render(<AdminWorkflowPage />);
 
+    await waitFor(() => expect(sockets).toHaveLength(1));
     const socket = sockets[0];
-    socket.onmessage?.({
-      data: JSON.stringify({
-        event: "workflow.status",
-        run_id: "run-1",
-        workflow_id: "workflow-1",
-        state: {
-          status: "running",
-          current_node: "research",
-          completed_nodes: ["orchestrator"],
-          error: null,
-        },
-      }),
+    act(() => {
+      socket.onmessage?.({
+        data: JSON.stringify({
+          event: "workflow.status",
+          run_id: "run-1",
+          workflow_id: "workflow-1",
+          state: {
+            status: "running",
+            current_node: "research",
+            completed_nodes: ["orchestrator"],
+            error: null,
+          },
+        }),
+      });
     });
 
     await waitFor(() => expect(screen.getByText(/RESEARCH active|running workflow/i)).toBeInTheDocument());

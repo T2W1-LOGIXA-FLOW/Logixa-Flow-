@@ -3,13 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ephrnmigiwjhdjksreos.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_5d66_MvgxdoU06X3l_d5Pw_upXMW2Ml';
+import { getSupabaseClient } from '@/lib/supabase';
+import { clearAdminSession } from '@/lib/adminSession';
 
 export default function AdminResetPasswordPage() {
   const router = useRouter();
-  const [accessToken, setAccessToken] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,30 +16,36 @@ export default function AdminResetPasswordPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
-    const params = new URLSearchParams(hash);
-    const token = params.get('access_token') || '';
-    setAccessToken(token);
-    setReady(Boolean(token));
-    if (token) window.history.replaceState({}, document.title, window.location.pathname);
+    let cancelled = false;
+    async function initializeRecoverySession() {
+      const hash = window.location.hash;
+      const params = new URLSearchParams(hash.slice(1));
+      const isRecovery = params.get('type') === 'recovery' && Boolean(params.get('access_token'));
+      const { data } = await getSupabaseClient().auth.getSession();
+      if (cancelled) return;
+      setReady(isRecovery && Boolean(data.session));
+      if (isRecovery) window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    void initializeRecoverySession();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError('');
     setMessage('');
-    if (!accessToken) return setError('The reset link is missing or expired.');
+    if (!ready) return setError('The reset link is missing or expired.');
     if (password.length < 8) return setError('Password must be at least 8 characters.');
     if (password !== confirmPassword) return setError('Passwords do not match.');
     setLoading(true);
     try {
-      const response = await fetch(SUPABASE_URL + '/auth/v1/user', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + accessToken },
-        body: JSON.stringify({ password }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(typeof data?.msg === 'string' ? data.msg : 'Password update failed');
+      const { data } = await getSupabaseClient().auth.getSession();
+      if (!data.session) throw new Error('The reset link is missing or expired.');
+      const { error: updateError } = await getSupabaseClient().auth.updateUser({ password });
+      if (updateError) throw updateError;
+      await clearAdminSession();
       setMessage('Password updated. Redirecting to admin login...');
       setTimeout(() => router.push('/admin/login'), 900);
     } catch (err) {

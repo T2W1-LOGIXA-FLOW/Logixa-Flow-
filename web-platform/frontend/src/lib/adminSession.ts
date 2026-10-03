@@ -1,45 +1,54 @@
 // src/lib/adminSession.ts
 //
-// Supabase Auth access/refresh tokens are kept in localStorage for the
-// client-side admin API. The access token is mirrored into a cookie because
-// Next.js middleware can only see cookies when guarding /admin/* routes.
+import { getSupabaseClient } from "@/lib/supabase";
 
-const ADMIN_TOKEN_COOKIE = "adminToken";
-const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
-const ADMIN_TOKEN_STORAGE_KEYS = ["adminToken", "logixa_token"];
-const REFRESH_TOKEN_STORAGE_KEY = "adminRefreshToken";
+const LEGACY_SESSION_KEYS = ["adminToken", "logixa_token", "adminRefreshToken"];
+let legacyArtifactsCleared = false;
 
-export function getAdminSessionToken() {
+function clearLegacySessionArtifacts() {
+  if (typeof window === "undefined") return;
+  legacyArtifactsCleared = true;
+  for (const key of LEGACY_SESSION_KEYS) {
+    window.localStorage.removeItem(key);
+  }
+  document.cookie = "adminToken=; path=/; max-age=0; SameSite=Lax";
+}
+
+export async function getAdminSessionToken(): Promise<string> {
   if (typeof window === "undefined") return "";
-  for (const key of ADMIN_TOKEN_STORAGE_KEYS) {
-    const token = localStorage.getItem(key);
-    if (token) return token;
+  if (!legacyArtifactsCleared) clearLegacySessionArtifacts();
+  const { data, error } = await getSupabaseClient().auth.getSession();
+  if (error) {
+    console.error("Could not read the Supabase session");
+    return "";
   }
-  return "";
+  return data.session?.access_token || "";
 }
 
-export function getAdminRefreshToken() {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) || "";
+export async function clearAdminSession(): Promise<void> {
+  clearLegacySessionArtifacts();
+  const { error } = await getSupabaseClient().auth.signOut({ scope: "local" });
+  if (error) throw new Error("Could not clear the local Supabase session");
 }
 
-export function setAdminSession(token: string, refreshToken?: string) {
-  if (typeof document === "undefined") return;
-  localStorage.setItem("adminToken", token);
-  localStorage.setItem("logixa_token", token);
-  if (refreshToken) {
-    localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
+export async function logoutAdminSession(): Promise<void> {
+  let globalSignOutFailed = false;
+  try {
+    const { error } = await getSupabaseClient().auth.signOut({ scope: "global" });
+    globalSignOutFailed = Boolean(error);
+  } catch {
+    globalSignOutFailed = true;
   }
-  const secure =
-    typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${ADMIN_TOKEN_COOKIE}=${encodeURIComponent(token)}; path=/; max-age=${COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secure}`;
-}
-
-export function clearAdminSession() {
-  if (typeof document === "undefined") return;
-  for (const key of ADMIN_TOKEN_STORAGE_KEYS) {
-    localStorage.removeItem(key);
+  clearLegacySessionArtifacts();
+  if (globalSignOutFailed) {
+    let localSignOutFailed = false;
+    try {
+      const localResult = await getSupabaseClient().auth.signOut({ scope: "local" });
+      localSignOutFailed = Boolean(localResult.error);
+    } catch {
+      localSignOutFailed = true;
+    }
+    if (localSignOutFailed) throw new Error("Supabase sign-out failed");
+    throw new Error("This device was signed out, but other sessions could not be revoked");
   }
-  localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
-  document.cookie = `${ADMIN_TOKEN_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
 }

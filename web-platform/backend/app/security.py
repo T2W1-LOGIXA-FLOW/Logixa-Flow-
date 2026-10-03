@@ -80,7 +80,7 @@ def _verify_supabase_token(token: str) -> dict[str, Any]:
             f"{SUPABASE_URL}/auth/v1/user",
             headers={
                 "apikey": SUPABASE_PUBLISHABLE_KEY,
-                "Authorization": f"Bearer {token}",
+                "Authorization": "Bearer " + token,
             },
             timeout=5,
         )
@@ -120,6 +120,31 @@ def require_admin(authorization: str | None = Header(default=None)) -> dict[str,
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
 
     return _verify_supabase_token(token)
+
+
+def require_agent_service_token(
+    x_agent_service_token: str | None = Header(default=None),
+) -> dict[str, str]:
+    """Authenticate the narrowly scoped agent service credential."""
+    expected = os.getenv("AGENT_SERVICE_TOKEN", "").strip()
+    if not expected:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Agent service authentication is not configured",
+        )
+    if not x_agent_service_token or not hmac.compare_digest(x_agent_service_token, expected):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid agent service credentials")
+    return {"sub": "agent-service", "role": "agent_service", "scope": "agent:content_pipeline"}
+
+
+def require_admin_or_agent_service(
+    authorization: str | None = Header(default=None),
+    x_agent_service_token: str | None = Header(default=None),
+) -> dict[str, Any]:
+    """Allow human admins or the scoped agent service on explicitly opted-in routes."""
+    if x_agent_service_token is not None:
+        return require_agent_service_token(x_agent_service_token)
+    return require_admin(authorization)
 
 
 class CurrentUser:

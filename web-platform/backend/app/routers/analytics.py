@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, Query, Request, HTTPException
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..database import get_db
 from ..models import utc_now
-from ..security import require_admin, decode_token
+from ..security import require_admin
 
 router = APIRouter()
 
@@ -53,21 +53,10 @@ def get_admin_analytics(
 async def stream_admin_analytics(
     request: Request,
     days: int = Query(default=7, ge=1, le=30),
-    token: str | None = Query(default=None),
     db: Session = Depends(get_db),
+    _: dict = Depends(require_admin),
 ):
-    """Simple Server-Sent Events (SSE) endpoint that streams the latest analytics records every 2 seconds.
-    Accepts a 'token' query parameter for admin JWT when Authorization header is not available (EventSource in browsers).
-    """
-
-    # validate admin token (accept token query param because EventSource cannot set custom headers)
-    if token:
-        try:
-            payload = decode_token(token)
-            if payload.get("role") != "admin":
-                raise HTTPException(status_code=403, detail="Admin role required")
-        except Exception:
-            raise HTTPException(status_code=401, detail="Invalid token")
+    """Stream analytics records to an authenticated admin client."""
 
     from fastapi.responses import StreamingResponse
     import asyncio

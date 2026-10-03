@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   token: "admin-token",
   validateAdminToken: vi.fn(),
   clearAdminSession: vi.fn(),
+  logoutAdminSession: vi.fn(),
   getAdminSessionToken: vi.fn(),
 }));
 
@@ -29,6 +30,7 @@ vi.mock("@/components/api", () => ({
 
 vi.mock("@/lib/adminSession", () => ({
   clearAdminSession: mocks.clearAdminSession,
+  logoutAdminSession: mocks.logoutAdminSession,
   getAdminSessionToken: mocks.getAdminSessionToken,
 }));
 
@@ -41,7 +43,7 @@ describe("workflow navigation integration", () => {
     mocks.pathname = "/admin/workflow";
     mocks.token = "admin-token";
     mocks.validateAdminToken.mockReset().mockResolvedValue(true);
-    mocks.getAdminSessionToken.mockReset().mockReturnValue(mocks.token);
+    mocks.getAdminSessionToken.mockReset().mockResolvedValue(mocks.token);
     mocks.clearAdminSession.mockReset();
   });
 
@@ -82,7 +84,7 @@ describe("workflow navigation integration", () => {
 
   it("does not let the legacy bypass environment variable skip session validation", async () => {
     vi.stubEnv("NEXT_PUBLIC_ADMIN_AUTH_BYPASS", "true");
-    mocks.getAdminSessionToken.mockReturnValue("");
+    mocks.getAdminSessionToken.mockResolvedValue("");
 
     render(
       <AdminLayout>

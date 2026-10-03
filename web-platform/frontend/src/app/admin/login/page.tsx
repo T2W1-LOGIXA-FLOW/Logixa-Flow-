@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { login, validateAdminToken } from '@/components/api';
-import { clearAdminSession, getAdminSessionToken, setAdminSession } from '@/lib/adminSession';
+import { clearAdminSession, getAdminSessionToken } from '@/lib/adminSession';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -26,7 +26,7 @@ export default function AdminLoginPage() {
     }
 
     async function checkExistingSession() {
-      const token = getAdminSessionToken();
+      const token = await getAdminSessionToken();
       if (!token) return;
 
       const valid = await validateAdminToken(token);
@@ -35,7 +35,7 @@ export default function AdminLoginPage() {
       if (valid) {
         router.push('/admin');
       } else {
-        clearAdminSession();
+        await clearAdminSession();
       }
     }
 
@@ -53,7 +53,7 @@ export default function AdminLoginPage() {
 
     try {
       const data = await login(email.trim(), password);
-      setAdminSession(data.access_token, data.refresh_token);
+      if (!data.access_token) throw new Error('Authentication did not return an active session');
       if (rememberMe) {
         localStorage.setItem('adminEmail', email.trim());
       } else {

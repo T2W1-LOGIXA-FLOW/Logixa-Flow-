@@ -3,10 +3,9 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-from fastapi import WebSocketDisconnect
+from fastapi import HTTPException, WebSocketDisconnect
 
 from app.routers import workflow
-from app.security import create_access_token
 from app.schemas import WorkflowRunRequest, WorkflowStorageCreate, WorkflowNode
 
 
@@ -31,6 +30,14 @@ class FakeWebSocket:
 
     async def close(self, code: int) -> None:
         self.closed_code = code
+
+
+class IdleWebSocket(FakeWebSocket):
+    async def receive_text(self) -> str:
+        if self.incoming:
+            return self.incoming.pop(0)
+        await asyncio.Future()
+        raise AssertionError("idle websocket receive unexpectedly completed")
 
 
 @pytest.fixture(autouse=True)
@@ -86,22 +93,65 @@ async def test_workflow_orchestration_completes_and_broadcasts() -> None:
 
 
 @pytest.mark.anyio
-async def test_workflow_websocket_authenticates_browser_clients_with_first_message() -> None:
-    token = create_access_token("admin")
-    websocket = FakeWebSocket([f'{{"type":"auth","token":"{token}"}}'])
+async def test_workflow_websocket_authenticates_supabase_admin_with_first_message(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(workflow, "_verify_supabase_token", lambda token: {"sub": "admin-id", "role": "admin"})
+    websocket = FakeWebSocket(['{"type":"auth","token":"supabase-access-token"}'])
 
     await workflow.workflow_telemetry(websocket)  # type: ignore[arg-type]
 
     assert websocket.accepted is True
     assert websocket.closed_code is None
+    assert websocket.sent == [{"type": "auth.ok"}]
     assert websocket not in workflow._SUBSCRIBERS
 
 
 @pytest.mark.anyio
-async def test_workflow_websocket_rejects_unauthenticated_clients() -> None:
-    websocket = FakeWebSocket(['{"type":"auth","token":"invalid"}'])
+async def test_workflow_websocket_rejects_missing_authentication(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(workflow, "_WEBSOCKET_AUTH_TIMEOUT_SECONDS", 0.001)
+    websocket = IdleWebSocket()
 
     await workflow.workflow_telemetry(websocket)  # type: ignore[arg-type]
 
     assert websocket.accepted is True
     assert websocket.closed_code == 4401
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("status_code", [401, 403])
+async def test_workflow_websocket_rejects_invalid_or_expired_supabase_auth(
+    monkeypatch: pytest.MonkeyPatch,
+    status_code: int,
+) -> None:
+    def reject_token(_: str) -> None:
+        raise HTTPException(status_code=status_code, detail="Invalid or expired session")
+
+    monkeypatch.setattr(workflow, "_verify_supabase_token", reject_token)
+    websocket = FakeWebSocket(['{"type":"auth","token":"invalid-or-expired"}'])
+
+    await workflow.workflow_telemetry(websocket)  # type: ignore[arg-type]
+
+    assert websocket.closed_code == (4403 if status_code == 403 else 4401)
+    assert websocket.sent == []
+
+
+@pytest.mark.anyio
+async def test_workflow_websocket_closes_after_supabase_session_is_revoked(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    verification_count = 0
+
+    def verify_session(_: str) -> None:
+        nonlocal verification_count
+        verification_count += 1
+        if verification_count > 1:
+            raise HTTPException(status_code=401, detail="Invalid or expired session")
+
+    monkeypatch.setattr(workflow, "_WEBSOCKET_AUTH_RECHECK_SECONDS", 0.001)
+    monkeypatch.setattr(workflow, "_verify_supabase_token", verify_session)
+    websocket = IdleWebSocket(['{"type":"auth","token":"supabase-session"}'])
+
+    await workflow.workflow_telemetry(websocket)  # type: ignore[arg-type]
+
+    assert verification_count == 2
+    assert websocket.closed_code == 4401
+    assert websocket not in workflow._SUBSCRIBERS
