@@ -196,6 +196,9 @@ class ScheduledWorkflowJob(Base):
     priority = Column(Integer, nullable=False, default=0)
     scheduled_for = Column(DateTime(timezone=True), nullable=False, index=True)
     status = Column(String(40), nullable=False, default="queued", index=True)
+    attempt_count = Column(Integer, nullable=False, default=0)
+    last_claimed_by = Column(String(120), nullable=True, index=True)
+    claimed_at = Column(DateTime(timezone=True), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
