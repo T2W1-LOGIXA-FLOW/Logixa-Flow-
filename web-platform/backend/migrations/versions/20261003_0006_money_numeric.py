@@ -17,6 +17,7 @@ depends_on = None
 MONEY_COLUMNS = (
     ("ai_memory_brain", "cost_estimate", sa.Numeric(18, 8)),
     ("agent_runs", "cost_estimate", sa.Numeric(18, 8)),
+    ("chat_messages", "cost_estimate", sa.Numeric(18, 8)),
     ("api_usage_logs", "cost", sa.Numeric(18, 8)),
     ("project_revenues", "estimated_revenue", sa.Numeric(18, 6)),
     ("project_revenues", "estimated_cost", sa.Numeric(18, 6)),
