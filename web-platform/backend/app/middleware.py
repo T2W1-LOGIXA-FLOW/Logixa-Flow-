@@ -21,13 +21,23 @@ async def security_headers_middleware(request: Request, call_next):
 
 
 async def rate_limit_middleware(request: Request, call_next):
-    if os.getenv("USE_SLOWAPI", "true").lower() == "true":
-        return await call_next(request)
     if os.getenv("ENABLE_RATE_LIMIT", "true").lower() != "true":
         return await call_next(request)
+
     client_host = request.client.host if request.client else "unknown"
-    key = f"{client_host}:{request.url.path}"
-    if not rate_limiter.allow(key):
+    path = request.url.path
+    key = f"{client_host}:{path}"
+    limit = None
+
+    # Public AI is intentionally much tighter than ordinary API traffic.
+    if path in {"/api/chat/public-query", "/api/chat/public"}:
+        limit = int(os.getenv("PUBLIC_AI_RATE_LIMIT_REQUESTS", "10"))
+    elif path.startswith("/api/admin/rag/ingest"):
+        limit = int(os.getenv("RAG_INGEST_RATE_LIMIT_REQUESTS", "10"))
+    elif path == "/api/admin/imports":
+        limit = int(os.getenv("IMPORT_RATE_LIMIT_REQUESTS", "10"))
+
+    if not rate_limiter.allow(key, limit=limit):
         return JSONResponse({"detail": "Rate limit exceeded"}, status_code=429)
     return await call_next(request)
 
