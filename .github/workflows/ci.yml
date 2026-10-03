@@ -75,7 +75,7 @@ jobs:
           for (const [name, advisory] of Object.entries(report.vulnerabilities || {})) {
             if (!["high", "critical"].includes(advisory.severity)) continue;
             const via = Array.isArray(advisory.via) ? advisory.via : [];
-            const hasAllowedOnly = via.length > 0 && via.every(item => typeof item === "object" && item.url && allowed.has(item.url.split("/").pop().toUpperCase()));
+            const hasAllowedOnly = via.length > 0 && via.every(item => (typeof item === "object" && item.url && allowed.has(item.url.split("/").pop().toUpperCase())) || (typeof item === "string" && allowed.has(item.toUpperCase())));
             if (!hasAllowedOnly) failures.push({name, severity: advisory.severity, via: via.map(item => item.url || item.title || item)});
           }
           if (failures.length) {
