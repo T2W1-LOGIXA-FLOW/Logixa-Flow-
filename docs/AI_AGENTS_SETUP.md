@@ -116,7 +116,7 @@ Conceptual pipeline:
 
 `Collector → Writer → Manager → Publisher → Backend review/publish flow`
 
-The worker can run independently and is not the canonical workflow engine.
+The worker can run independently and is not the canonical workflow engine. Workflow execution uses the DB-backed scheduled_workflow_jobs queue when WORKFLOW_EXECUTION_MODE=worker.
 
 ### 7. Business and operations
 - Logistics estimator.
@@ -202,7 +202,7 @@ Only configured/available providers participate in routing.
 The optional worker is designed to run separately from FastAPI:
 
 ```text
-Service Type: Background Worker
+Service Type: Render Background Worker
 Runtime: Docker
 Branch: main
 Docker Build Context Directory: .
@@ -214,8 +214,7 @@ Typical worker variables:
 
 ```text
 BACKEND_URL=https://your-render-backend.onrender.com
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=<secret>
+AGENT_SERVICE_TOKEN=<secret>
 LLM_PROVIDER=gemini
 GEMINI_API_KEY=<secret>
 OPENROUTER_API_KEY=<secret>
