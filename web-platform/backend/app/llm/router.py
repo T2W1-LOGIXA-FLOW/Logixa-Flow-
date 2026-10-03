@@ -1,5 +1,6 @@
 import logging
 import re
+from decimal import Decimal
 
 from sqlalchemy.orm import Session
 from .providers import (
@@ -133,10 +134,10 @@ class LLMRouter:
                 tokens_estimated = max(1, total_chars // 4)
 
                 try:
-                    cost_per_1k = float(clean_env_value("AI_COST_PER_1K") or 0.0)
+                    cost_per_1k = Decimal(str(clean_env_value("AI_COST_PER_1K") or "0"))
                 except Exception:
-                    cost_per_1k = 0.0
-                cost_estimate = (tokens_estimated / 1000.0) * cost_per_1k
+                    cost_per_1k = Decimal("0")
+                cost_estimate = (Decimal(tokens_estimated) / Decimal("1000")) * cost_per_1k
 
                 api_key_name = f"{self.role.capitalize()} {name.replace('-', ' ').title()} Key"
 
