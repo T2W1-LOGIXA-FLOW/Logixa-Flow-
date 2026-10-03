@@ -22,6 +22,10 @@ def _subject_hash(subject: str) -> str:
     return hashlib.sha256(subject.strip().lower().encode("utf-8")).hexdigest()
 
 
+def _row_dict(row: object) -> dict:
+    return {key: value for key, value in getattr(row, "__dict__", {}).items() if key != "_sa_instance_state"}
+
+
 @router.get("/admin/data-export")
 def export_user_data(
     user_id: str = Query(..., min_length=1, max_length=255),
@@ -59,12 +63,12 @@ def export_user_data(
     return {
         "subject": {"identifier": subject, "identifier_hash": _subject_hash(subject)},
         "exported_at": models.utc_now().isoformat(),
-        "chat_sessions": [row.__dict__ | {"_sa_instance_state": None} for row in sessions],
-        "chat_messages": [row.__dict__ | {"_sa_instance_state": None} for row in messages],
-        "contacts": [row.__dict__ | {"_sa_instance_state": None} for row in contacts],
-        "subscribers": [row.__dict__ | {"_sa_instance_state": None} for row in subscribers],
-        "content_submissions": [row.__dict__ | {"_sa_instance_state": None} for row in submissions],
-        "estimation_history": [row.__dict__ | {"_sa_instance_state": None} for row in estimation_history],
+        "chat_sessions": [_row_dict(row) for row in sessions],
+        "chat_messages": [_row_dict(row) for row in messages],
+        "contacts": [_row_dict(row) for row in contacts],
+        "subscribers": [_row_dict(row) for row in subscribers],
+        "content_submissions": [_row_dict(row) for row in submissions],
+        "estimation_history": [_row_dict(row) for row in estimation_history],
     }
 
 
