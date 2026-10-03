@@ -30,8 +30,6 @@ def _get_jwt_secret() -> str:
 
 
 JWT_SECRET = _get_jwt_secret()
-ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
 SUPABASE_PUBLISHABLE_KEY = os.getenv("SUPABASE_PUBLISHABLE_KEY", "")
 
@@ -68,20 +66,6 @@ def decode_token(token: str) -> dict[str, Any]:
         return body
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
-
-
-def authenticate_admin(username: str, password: str) -> bool:
-    """Check the legacy admin credential used by the compatibility login path."""
-    if not ADMIN_PASSWORD:
-        return False
-    allowed_usernames = {ADMIN_USERNAME}
-    admin_email = os.getenv("ADMIN_EMAIL")
-    if admin_email:
-        allowed_usernames.add(admin_email)
-    return any(
-        hmac.compare_digest(username, candidate)
-        for candidate in allowed_usernames
-    ) and hmac.compare_digest(password, ADMIN_PASSWORD)
 
 
 def _verify_supabase_token(token: str) -> dict[str, Any]:
@@ -126,7 +110,7 @@ def _verify_supabase_token(token: str) -> dict[str, Any]:
 
 
 def require_admin(authorization: str | None = Header(default=None)) -> dict[str, Any]:
-    """Verify Supabase Auth first, with a temporary signed legacy-admin fallback."""
+    """Verify an admin session issued by Supabase Auth."""
 
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
@@ -135,21 +119,7 @@ def require_admin(authorization: str | None = Header(default=None)) -> dict[str,
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
 
-    try:
-        return _verify_supabase_token(token)
-    except HTTPException as supabase_error:
-        # During the Supabase password migration, accept only a locally signed
-        # legacy admin token when the old admin credential is still configured.
-        # This never accepts unsigned or arbitrary tokens.
-        if supabase_error.status_code in {401, 403} and ADMIN_PASSWORD:
-            payload = decode_token(token)
-            if payload.get("role") == "admin":
-                return {
-                    "sub": payload.get("sub"),
-                    "email": payload.get("sub"),
-                    "role": "admin",
-                }
-        raise
+    return _verify_supabase_token(token)
 
 
 class CurrentUser:
