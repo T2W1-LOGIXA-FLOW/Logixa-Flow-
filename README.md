@@ -138,8 +138,7 @@ Object storage / external providers
 
 ## Security and reliability
 
-- RLS is enabled on the public application tables.
-- Public `anon`/`authenticated` table grants were audited and are not broadly exposed.
+- Alembic migration `20261003_0005` enables RLS, revokes direct `PUBLIC`, `anon`, and `authenticated` table/sequence privileges, and preserves server-only `service_role` access for application tables. This repository change does not verify whether the migration has been applied to a live Supabase project.
 - API rate limiting is enabled.
 - AI/provider secrets remain backend-side; the frontend uses public configuration only.
 - Admin endpoints use the backend authorization dependency.

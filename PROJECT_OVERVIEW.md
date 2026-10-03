@@ -217,9 +217,8 @@ These taxonomies should not be conflated with the narrower Post model status/cat
 
 ## 7. Security posture
 
-The production hardening work includes:
-- RLS enabled on public application tables.
-- Audit of public `anon`/`authenticated` grants.
+The repository contains a Supabase RLS/grant baseline in Alembic migration `20261003_0005`. The migration enables RLS, revokes direct `PUBLIC`, `anon`, and `authenticated` table/sequence privileges, and preserves server-only `service_role` access on application tables. Its application to production and the resulting live Supabase privileges have not been verified by this repository change.
+- The backend API remains the intended route for public reads; the frontend does not query application tables directly.
 - Backend-only provider secrets.
 - Admin authorization dependencies on protected routes.
 - SlowAPI rate limiting.
@@ -263,8 +262,7 @@ Verified during the release hardening sequence:
 - Render backend deployment is live.
 - Render startup completed successfully.
 - Supabase project is active/healthy.
-- Public application tables have RLS enabled.
-- Public table grants were audited.
+- Alembic migration `20261003_0005` defines the RLS and grant baseline; live Supabase application and privilege inspection are still required.
 - pgvector is installed at 0.8.2 and has been moved to `extensions`.
 - Workflow persistence/recovery is covered by backend tests.
 - RAG ingestion/search code has explicit failure handling and telemetry.
