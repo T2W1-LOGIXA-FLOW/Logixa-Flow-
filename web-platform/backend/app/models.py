@@ -1,9 +1,10 @@
-from decimal import Decimal
 from __future__ import annotations
+
+from decimal import Decimal
 
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text, ForeignKey
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, Numeric, String, Text
 
 from .database import Base
 
