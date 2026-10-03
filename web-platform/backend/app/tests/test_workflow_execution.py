@@ -9,7 +9,22 @@ from app.schemas import WorkflowNode, WorkflowRunRequest, WorkflowState, Workflo
 
 
 @pytest.fixture(autouse=True)
-def reset_workflow_execution_state() -> None:
+def reset_workflow_execution_state(monkeypatch) -> None:
+
+    monkeypatch.setattr(workflow, "_persist_workflow_definition", lambda workflow: None)
+    monkeypatch.setattr(workflow, "_persist_run_state", lambda run: None)
+    monkeypatch.setattr(workflow, "_mark_job_terminal", lambda run_id, status_value: None)
+    monkeypatch.setattr(workflow, "_record_controller_result", lambda run_id, status_value: None)
+    monkeypatch.setattr(
+        workflow,
+        "_schedule_run",
+        lambda run_id, priority=0, delay_seconds=0: workflow._EXECUTION_QUEUE.append({
+            "run_id": run_id,
+            "priority": priority,
+            "queued_at": workflow._now(),
+            "scheduled_for": workflow._now(),
+        }),
+    )
     workflow._WORKFLOW_STORAGE.clear()
     workflow._WORKFLOW_RUNS.clear()
     workflow._SUBSCRIBERS.clear()
