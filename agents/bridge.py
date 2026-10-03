@@ -6,7 +6,7 @@ from typing import Any
 
 import requests
 
-from config import ADMIN_PASSWORD, ADMIN_USERNAME, BACKEND_URL, DRAFTS_DIR
+from config import AGENT_SERVICE_TOKEN, BACKEND_URL, DRAFTS_DIR
 
 
 class LogixaWebBridge:
@@ -16,20 +16,10 @@ class LogixaWebBridge:
         self.base_url = (base_url or BACKEND_URL).rstrip("/")
         self.token: str | None = None
 
-    def login(self) -> str:
-        response = requests.post(
-            f"{self.base_url}/api/auth/login",
-            json={"username": ADMIN_USERNAME, "password": ADMIN_PASSWORD},
-            timeout=30,
-        )
-        response.raise_for_status()
-        self.token = response.json()["access_token"]
-        return self.token
-
     def _headers(self) -> dict[str, str]:
-        if not self.token:
-            self.login()
-        return {"Authorization": f"Bearer {self.token}"}
+        if not AGENT_SERVICE_TOKEN:
+            raise RuntimeError("AGENT_SERVICE_TOKEN is not configured")
+        return {"Authorization": f"Bearer {AGENT_SERVICE_TOKEN}"}
 
     def sync_feeds(self, limit_per_feed: int = 5) -> dict[str, Any]:
         response = requests.post(
