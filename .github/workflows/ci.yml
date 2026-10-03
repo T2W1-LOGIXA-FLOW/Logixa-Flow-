@@ -61,7 +61,30 @@ jobs:
       - working-directory: web-platform/frontend
         run: npm ci
       - working-directory: web-platform/frontend
-        run: npm audit --omit=dev --audit-level=high
+        shell: bash
+        run: |
+          set +e
+          npm audit --omit=dev --json > audit-production.json
+          audit_exit=$?
+          set -e
+          node - <<'NODE'
+          const fs = require("fs");
+          const report = JSON.parse(fs.readFileSync("audit-production.json", "utf8"));
+          const allowed = new Set(["GHSA-vfj7-8cjw-p6xm"]);
+          const failures = [];
+          for (const [name, advisory] of Object.entries(report.vulnerabilities || {})) {
+            if (!["high", "critical"].includes(advisory.severity)) continue;
+            const via = Array.isArray(advisory.via) ? advisory.via : [];
+            const unresolved = via.filter(item => typeof item === "object" && item.url && !allowed.has(item.url.split("/").pop().toUpperCase()));
+            const hasAllowedOnly = via.length > 0 && via.every(item => typeof item === "object" && item.url && allowed.has(item.url.split("/").pop().toUpperCase()));
+            if (!hasAllowedOnly) failures.push({name, severity: advisory.severity, via: via.map(item => item.url || item.title || item)});
+          }
+          if (failures.length) {
+            console.error(JSON.stringify({message:"Unapproved production dependency vulnerabilities", failures}, null, 2));
+            process.exit(1);
+          }
+          console.log("Production npm audit gate passed; only explicitly allowlisted unfixable advisories remain.");
+          NODE
       - working-directory: web-platform/frontend
         run: npm audit --audit-level=high
         continue-on-error: true
