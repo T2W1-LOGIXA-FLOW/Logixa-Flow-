@@ -322,7 +322,7 @@ def check_security_functions():
     try:
         from app.security import (
             get_current_user, CurrentUser, require_admin,
-            create_access_token, decode_token, authenticate_admin
+            create_access_token, decode_token, verify_service_token
         )
         
         print(f"✅ get_current_user function exists")
@@ -330,7 +330,7 @@ def check_security_functions():
         print(f"✅ require_admin function exists")
         print(f"✅ create_access_token function exists")
         print(f"✅ decode_token function exists")
-        print(f"✅ authenticate_admin function exists")
+        print(f"✅ verify_service_token function exists")
         
         # Test token creation/decoding
         token = create_access_token("test_user", role="admin")
