@@ -20,8 +20,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     let cancelled = false;
 
     async function checkSession() {
-      const bypassAuth = typeof process !== "undefined" && process.env.NEXT_PUBLIC_ADMIN_AUTH_BYPASS === "true";
-      if (bypassAuth || isLoginRoute) {
+      if (isLoginRoute) {
         setAuthChecked(true);
         return;
       }

@@ -26,15 +26,6 @@ export default function AdminLoginPage() {
     }
 
     async function checkExistingSession() {
-      const bypassAuth =
-        typeof process !== 'undefined' &&
-        process.env.NEXT_PUBLIC_ADMIN_AUTH_BYPASS === 'true';
-
-      if (bypassAuth) {
-        router.push('/admin');
-        return;
-      }
-
       const token = getAdminSessionToken();
       if (!token) return;
 

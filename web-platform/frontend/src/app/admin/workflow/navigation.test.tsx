@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import AdminLayout from "../layout";
 import AdminSidebar from "@/components/admin/AdminSidebar";
@@ -45,6 +45,10 @@ describe("workflow navigation integration", () => {
     mocks.clearAdminSession.mockReset();
   });
 
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("exposes the admin workflow route and marks it active", () => {
     render(<AdminSidebar open onClose={vi.fn()} onLogout={vi.fn()} />);
 
@@ -74,5 +78,21 @@ describe("workflow navigation integration", () => {
 
     await waitFor(() => expect(screen.queryByTestId("admin-shell")).not.toBeInTheDocument());
     expect(mocks.clearAdminSession).toHaveBeenCalled();
+  });
+
+  it("does not let the legacy bypass environment variable skip session validation", async () => {
+    vi.stubEnv("NEXT_PUBLIC_ADMIN_AUTH_BYPASS", "true");
+    mocks.getAdminSessionToken.mockReturnValue("");
+
+    render(
+      <AdminLayout>
+        <div>Protected workflow content</div>
+      </AdminLayout>,
+    );
+
+    await waitFor(() => expect(mocks.getAdminSessionToken).toHaveBeenCalled());
+    expect(screen.queryByTestId("admin-shell")).not.toBeInTheDocument();
+    expect(screen.queryByText("Protected workflow content")).not.toBeInTheDocument();
+    expect(mocks.validateAdminToken).not.toHaveBeenCalled();
   });
 });
