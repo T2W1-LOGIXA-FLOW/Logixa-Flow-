@@ -263,29 +263,36 @@ export async function getMetrics(): Promise<DashboardMetric[]> {
 }
 
 export async function login(email: string, password: string) {
-  try {
-    return await supabaseAuthRequest("password", { email, password });
-  } catch (supabaseError) {
-    // Keep existing admin access working while the Supabase password credential
-    // is being migrated. The backend validates the same password server-side.
-    const response = await fetchWithTimeout(`${API_URL}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: email, password }),
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw supabaseError instanceof Error
-        ? supabaseError
-        : new Error("Authentication failed");
-    }
+  // Use the production backend compatibility path first. This keeps the
+  // existing admin credential usable while the Supabase password migration
+  // is completed, and avoids hiding a backend CORS/network failure behind
+  // Supabase's generic 401 message.
+  const response = await fetchWithTimeout(`${API_URL}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: email, password }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (response.ok && typeof data?.access_token === "string") {
     return {
-      access_token: data.access_token as string,
+      access_token: data.access_token,
       refresh_token: "",
       token_type: data.token_type ?? "bearer",
       expires_in: 60 * 60 * 12,
       user: { id: email, email },
     };
+  }
+
+  // Fall back to Supabase Auth when the backend compatibility credential is
+  // unavailable. Preserve the backend error when it is an actual auth failure
+  // so the UI does not misleadingly report only Supabase's 401.
+  try {
+    return await supabaseAuthRequest("password", { email, password });
+  } catch (supabaseError) {
+    const detail =
+      typeof data?.detail === "string" ? data.detail : undefined;
+    if (detail) throw new Error(detail);
+    throw supabaseError;
   }
 }
 
