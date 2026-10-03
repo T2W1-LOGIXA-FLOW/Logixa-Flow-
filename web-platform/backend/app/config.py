@@ -57,7 +57,7 @@ def upload_storage_configured() -> bool:
 
 def validate_env() -> list[str]:
     """Validate required environment variables."""
-    required = ["JWT_SECRET", "ADMIN_PASSWORD"]
+    required = ["JWT_SECRET"]
     
     missing = [key for key in required if not env_configured(key)]
     if os.getenv("REQUIRE_AI_KEY", "false").lower() == "true" and not ai_provider_configured("user") and not ai_provider_configured("admin"):
@@ -125,10 +125,10 @@ def provider_env_status() -> list[dict[str, str | bool]]:
             "required": True,
         },
         {
-            "key": "admin_password",
-            "label": "Admin Password",
-            "env": "ADMIN_PASSWORD",
-            "required": True,
+            "key": "agent_service_token",
+            "label": "Agent Service Token",
+            "env": "AGENT_SERVICE_TOKEN",
+            "required": False,
         },
         {
             "key": "scheduler",
