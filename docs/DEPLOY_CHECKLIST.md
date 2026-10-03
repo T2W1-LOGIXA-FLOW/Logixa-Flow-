@@ -80,8 +80,9 @@ Required variables:
 ```text
 DATABASE_PROFILE=supabase
 DATABASE_URL=postgresql://...
-ADMIN_USERNAME=...
-ADMIN_PASSWORD=...
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_PUBLISHABLE_KEY=...
+AGENT_SERVICE_TOKEN=...
 JWT_SECRET=...
 API_SECRET_TOKEN=...
 ENVIRONMENT=production
@@ -115,7 +116,10 @@ S3_PUBLIC_BASE_URL=https://your-public-b2-domain
 
 - Backend `/health` opens and returns healthy status.
 - Vercel public pages load: `/`, `/about`, `/contact`, `/blog`, `/agent`.
-- Admin login works at `/admin/login`.
+- Admin login works at `/admin/login` using Supabase Auth email/password.
+- No `ADMIN_USERNAME`, `ADMIN_PASSWORD`, or client-side JWT signing is used.
+- Background agents authenticate with `AGENT_SERVICE_TOKEN`.
+- Workflow jobs are persisted in `scheduled_workflow_jobs`; the dedicated workflow worker claims queued jobs.
 - AI chat returns a backend response, not "provider unavailable".
 - Image upload returns a public B2 URL.
 - No `.env`, `node_modules`, `.next`, `.venv`, local databases, or uploaded files appear in GitHub.
