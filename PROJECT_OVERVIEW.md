@@ -217,7 +217,9 @@ These taxonomies should not be conflated with the narrower Post model status/cat
 
 ## 7. Security posture
 
-The repository contains a Supabase RLS/grant baseline in Alembic migration `20261003_0005`. The migration enables RLS, revokes direct `PUBLIC`, `anon`, and `authenticated` table/sequence privileges, and preserves server-only `service_role` access on application tables. Its application to production and the resulting live Supabase privileges have not been verified by this repository change.
+The repository contains a Supabase RLS/grant baseline in Alembic migration `20261003_0005`. Migration `20261003_0006` reconciles all current backend model tables/columns/indexes and applies the RLS/grant baseline to those tables. Production migration application and live Supabase privileges have not been verified.
+- Apply backend schema changes with `python -m alembic upgrade head` from `web-platform/backend` before starting the API. Startup verifies the recorded Alembic head and fails if the database is behind; it does not create or repair schema.
+- Migration `20261003_0006` is forward-only to avoid removing application data. For an unversioned legacy database, first verify that its schema includes the effects of `20260902_0004`, then explicitly stamp that revision and run `python -m alembic upgrade head`; never stamp `20261003_0005` unless the RLS/grant migration has actually run. The frontend `src/lib/migrations.sql` is unreferenced legacy material and is not an active schema source.
 - The backend API remains the intended route for public reads; the frontend does not query application tables directly.
 - Backend-only provider secrets.
 - Admin authorization dependencies on protected routes.
@@ -262,7 +264,7 @@ Verified during the release hardening sequence:
 - Render backend deployment is live.
 - Render startup completed successfully.
 - Supabase project is active/healthy.
-- Alembic migration `20261003_0005` defines the RLS and grant baseline; live Supabase application and privilege inspection are still required.
+- Alembic migrations through `20261003_0006` define the backend schema and RLS/grant baseline; live PostgreSQL/Supabase migration execution and privilege inspection are still required.
 - pgvector is installed at 0.8.2 and has been moved to `extensions`.
 - Workflow persistence/recovery is covered by backend tests.
 - RAG ingestion/search code has explicit failure handling and telemetry.

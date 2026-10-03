@@ -138,7 +138,9 @@ Object storage / external providers
 
 ## Security and reliability
 
-- Alembic migration `20261003_0005` enables RLS, revokes direct `PUBLIC`, `anon`, and `authenticated` table/sequence privileges, and preserves server-only `service_role` access for application tables. This repository change does not verify whether the migration has been applied to a live Supabase project.
+- Alembic migration `20261003_0005` defines the RLS/grant baseline; `20261003_0006` reconciles the current backend model schema and applies that baseline to the resulting application tables. Production migration application and live Supabase privileges have not been verified.
+- Apply backend schema changes with `python -m alembic upgrade head` from `web-platform/backend` before starting the API. Startup checks that the database is at Alembic head and fails otherwise; it does not create or repair schema.
+- Migration `20261003_0006` is intentionally forward-only; use a corrective forward migration rather than downgrading application data. For an unversioned legacy database, inventory and verify that its schema includes the effects of revision `20260902_0004` before explicitly stamping that revision, then run `python -m alembic upgrade head`. Never stamp `20261003_0005` unless its RLS/grant migration has actually run. `web-platform/frontend/src/lib/migrations.sql` is an unreferenced legacy artifact, not an active schema source.
 - API rate limiting is enabled.
 - AI/provider secrets remain backend-side; the frontend uses public configuration only.
 - Admin endpoints use the backend authorization dependency.

@@ -41,7 +41,6 @@ def admin_diagnostics(
             "cache_backend": cache_client.backend,
             "rate_limit_backend": rate_limiter.backend,
             "use_slowapi": os.getenv("USE_SLOWAPI", "true").lower() == "true",
-            "use_alembic_bootstrap": os.getenv("USE_ALEMBIC_BOOTSTRAP", "true").lower() == "true",
         },
         "database": {
             "status": "ok" if db_ok else "error",

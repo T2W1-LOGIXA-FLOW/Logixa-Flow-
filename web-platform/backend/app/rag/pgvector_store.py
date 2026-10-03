@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-import logging
-
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from .embeddings import EMBEDDING_DIMENSIONS, embedding_to_json
-
-logger = logging.getLogger(__name__)
+from .embeddings import embedding_to_json
 
 
 def is_postgres(db: Session) -> bool:
@@ -95,52 +91,3 @@ def similarity_search_pgvector(
             }
         )
     return output
-
-
-def ensure_pgvector_schema(db: Session) -> dict[str, str | bool]:
-    """Best-effort pgvector readiness check for Postgres hosts (Neon/Supabase)."""
-    if not is_postgres(db):
-        return {"enabled": False, "reason": "not_postgresql"}
-
-    try:
-        db.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-        db.commit()
-    except Exception as exc:
-        db.rollback()
-        logger.warning("Could not enable pgvector extension: %s", exc)
-        return {"enabled": False, "reason": f"extension_error:{exc.__class__.__name__}"}
-
-    if not pgvector_column_exists(db):
-        try:
-            db.execute(
-                text(
-                    f"ALTER TABLE document_embeddings ADD COLUMN IF NOT EXISTS "
-                    f"embedding vector({EMBEDDING_DIMENSIONS})"
-                )
-            )
-            db.execute(
-                text(
-                    """
-                    UPDATE document_embeddings
-                    SET embedding = CAST(embedding_json AS vector)
-                    WHERE embedding IS NULL
-                      AND embedding_json IS NOT NULL
-                      AND embedding_json != ''
-                    """
-                )
-            )
-            db.execute(
-                text(
-                    """
-                    CREATE INDEX IF NOT EXISTS ix_document_embeddings_embedding_hnsw
-                    ON document_embeddings USING hnsw (embedding vector_cosine_ops)
-                    """
-                )
-            )
-            db.commit()
-        except Exception as exc:
-            db.rollback()
-            logger.warning("Could not add pgvector embedding column: %s", exc)
-            return {"enabled": False, "reason": f"column_error:{exc.__class__.__name__}"}
-
-    return {"enabled": pgvector_enabled(db), "reason": "ok" if pgvector_enabled(db) else "extension_missing"}

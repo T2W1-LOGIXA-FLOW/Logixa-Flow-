@@ -56,8 +56,8 @@ def upgrade() -> None:
     if op.get_bind().dialect.name != "postgresql":
         return
 
-    # Runtime bootstrap currently creates tables before optionally running Alembic.
-    # Missing optional/legacy tables are therefore skipped without blocking startup.
+    # Reconcile tables that already exist; the following schema migration applies
+    # the same baseline to application tables created after this revision.
     op.execute(
         """
         DO $rls$

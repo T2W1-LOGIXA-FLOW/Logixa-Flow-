@@ -1,5 +1,7 @@
 import pytest
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app import models
 from app.rag.ingest import ingest_intelligence_source
@@ -9,13 +11,21 @@ from app.rag.search import similarity_search, build_rag_context
 
 @pytest.fixture
 def db():
-    from app.database import SessionLocal, Base, engine
+    from app.database import Base
 
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     Base.metadata.create_all(bind=engine)
-    session = SessionLocal()
-    yield session
-    session.close()
-    Base.metadata.drop_all(bind=engine)
+    session = sessionmaker(bind=engine, autocommit=False, autoflush=False)()
+    try:
+        yield session
+    finally:
+        session.close()
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
 
 
 def test_pgvector_disabled_on_sqlite(db: Session):

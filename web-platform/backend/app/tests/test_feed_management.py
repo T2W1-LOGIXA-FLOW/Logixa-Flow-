@@ -1,32 +1,61 @@
 import pytest
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 
 from ..main import app
-from ..database import SessionLocal, Base, engine
+from ..database import Base, get_db
 from .. import models
 from .. import security
 
 
 @pytest.fixture
-def db():
-    """Create a fresh database for each test."""
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
-    yield db
-    db.close()
-    Base.metadata.drop_all(bind=engine)
+def test_sessions():
+    test_engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=test_engine)
+    test_session = sessionmaker(bind=test_engine, autocommit=False, autoflush=False)
+    try:
+        yield test_session
+    finally:
+        Base.metadata.drop_all(bind=test_engine)
+        test_engine.dispose()
 
 
 @pytest.fixture
-def client(monkeypatch):
+def db(test_sessions):
+    session = test_sessions()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+@pytest.fixture
+def client(test_sessions, monkeypatch):
     """Use a verified Supabase admin identity without external auth credentials."""
     monkeypatch.setattr(
         security,
         "_verify_supabase_token",
         lambda token: {"sub": "test-admin-id", "email": "admin@example.com", "role": "admin"},
     )
-    return TestClient(app)
+
+    def override_get_db():
+        session = test_sessions()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        yield TestClient(app)
+    finally:
+        app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.fixture

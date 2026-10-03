@@ -18,6 +18,9 @@ depends_on = None
 def upgrade() -> None:
     bind = op.get_bind()
     inspector = sa.inspect(bind)
+    if not inspector.has_table("chat_sessions"):
+        return
+
     columns = {column["name"] for column in inspector.get_columns("chat_sessions")}
     if "owner_id" not in columns:
         op.add_column("chat_sessions", sa.Column("owner_id", sa.String(length=255), nullable=True))

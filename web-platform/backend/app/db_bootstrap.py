@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-import logging
 import os
 from pathlib import Path
 
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy import inspect, text
+from sqlalchemy.exc import SQLAlchemyError
 
-from .database import Base, engine
-
-logger = logging.getLogger(__name__)
+from . import models
+from .database import engine
 
 
 def database_profile() -> str:
@@ -25,68 +26,56 @@ def database_profile() -> str:
     return "sqlite"
 
 
-def run_alembic_upgrade() -> None:
-    from alembic import command
-    from alembic.config import Config
-
+def verify_database_migrations() -> None:
+    """Fail startup unless the database has been upgraded by Alembic."""
     backend_dir = Path(__file__).resolve().parents[1]
-    cfg = Config(str(backend_dir / "alembic.ini"))
-    cfg.set_main_option("script_location", str(backend_dir / "migrations"))
-    database_url = os.getenv("DATABASE_URL")
-    if database_url:
-        cfg.set_main_option("sqlalchemy.url", database_url)
-    command.upgrade(cfg, "head")
-    logger.info("Alembic upgrade applied")
+    config = Config(str(backend_dir / "alembic.ini"))
+    config.set_main_option("script_location", str(backend_dir / "migrations"))
+    expected_heads = set(ScriptDirectory.from_config(config).get_heads())
+
+    try:
+        with engine.connect() as connection:
+            applied_revisions = set(
+                connection.execute(text("SELECT version_num FROM alembic_version")).scalars()
+            )
+            schema = inspect(connection)
+            schema_name = "public" if connection.dialect.name == "postgresql" else None
+            existing_tables = set(schema.get_table_names(schema=schema_name))
+            missing_tables = set(models.Base.metadata.tables) - existing_tables
+            missing_columns = {
+                f"{table.name}.{column.name}"
+                for table in models.Base.metadata.sorted_tables
+                if table.name in existing_tables
+                for column in table.columns
+                if column.name
+                not in {
+                    existing["name"]
+                    for existing in schema.get_columns(table.name, schema=schema_name)
+                }
+            }
+    except SQLAlchemyError as exc:
+        raise RuntimeError(
+            "Database Alembic revision is unavailable; run `python -m alembic upgrade head` "
+            "before starting the application."
+        ) from exc
+
+    if applied_revisions != expected_heads:
+        applied = ", ".join(sorted(applied_revisions)) or "none"
+        expected = ", ".join(sorted(expected_heads))
+        raise RuntimeError(
+            f"Database schema is not at Alembic head (applied: {applied}; expected: {expected}). "
+            "Run `python -m alembic upgrade head` before starting the application."
+        )
+
+    if missing_tables or missing_columns:
+        missing = sorted(missing_tables | {name.split(".", 1)[0] for name in missing_columns})
+        details = ", ".join(missing)
+        raise RuntimeError(
+            f"Database schema is missing application tables or columns ({details}); "
+            "run `python -m alembic upgrade head` and verify the migration result."
+        )
 
 
 def bootstrap_database() -> None:
-    # Always create tables from SQLAlchemy models first
-    Base.metadata.create_all(bind=engine)
-    
-    # Then try Alembic migrations if enabled and models exist
-    if os.getenv("USE_ALEMBIC_BOOTSTRAP", "false").lower() == "true":
-        try:
-            run_alembic_upgrade()
-            logger.info("Alembic migrations applied")
-            return
-        except ImportError as exc:
-            logger.warning("Alembic not installed: %s", exc)
-        except Exception as exc:
-            logger.warning("Alembic bootstrap failed: %s", exc)
-    
-    logger.info("Database bootstrapped with SQLAlchemy models")
-    inspector = inspect(engine)
-    if "document_embeddings" not in inspector.get_table_names():
-        with engine.begin() as connection:
-            connection.execute(
-                text(
-                    """
-                    CREATE TABLE IF NOT EXISTS document_embeddings (
-                        id INTEGER PRIMARY KEY,
-                        source_type VARCHAR(40) NOT NULL,
-                        source_id VARCHAR(64) NOT NULL,
-                        chunk_index INTEGER NOT NULL DEFAULT 0,
-                        title VARCHAR(255) NOT NULL DEFAULT '',
-                        content TEXT NOT NULL,
-                        embedding_json TEXT NOT NULL,
-                        embedding_model VARCHAR(120) NOT NULL DEFAULT 'hash:fallback',
-                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-                    )
-                    """
-                )
-            )
-    if "agent_feedback_events" not in inspector.get_table_names():
-        with engine.begin() as connection:
-            connection.execute(
-                text(
-                    """
-                    CREATE TABLE IF NOT EXISTS agent_feedback_events (
-                        id INTEGER PRIMARY KEY,
-                        run_id INTEGER NOT NULL,
-                        rating VARCHAR(20) NOT NULL,
-                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-                    )
-                    """
-                )
-            )
-            connection.execute(text("CREATE INDEX IF NOT EXISTS ix_agent_feedback_events_run_id ON agent_feedback_events (run_id)"))
+    """Compatibility entry point that verifies, but never mutates, database schema."""
+    verify_database_migrations()

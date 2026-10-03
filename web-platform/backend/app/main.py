@@ -9,12 +9,12 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import inspect, text
+from sqlalchemy import text
 
 from . import models
 from .cache import cache_client, rate_limiter
 from .config import ai_provider_configured, upload_storage_configured, validate_env
-from .database import Base, SessionLocal, engine
+from .database import SessionLocal
 from .db_bootstrap import bootstrap_database, database_profile
 from .logging_config import setup_logging
 from .middleware import rate_limit_middleware, security_headers_middleware, stealth_mode_middleware
@@ -25,185 +25,26 @@ logger = logging.getLogger(__name__)
 setup_logging()
 
 
-def ensure_lightweight_migrations() -> None:
-    inspector = inspect(engine)
-    if "posts" in inspector.get_table_names():
-        columns = {column["name"] for column in inspector.get_columns("posts")}
-        if "image_url" not in columns:
-            with engine.begin() as connection:
-                connection.execute(text("ALTER TABLE posts ADD COLUMN image_url VARCHAR(1000)"))
-        if "category" not in columns:
-            with engine.begin() as connection:
-                connection.execute(text("ALTER TABLE posts ADD COLUMN category VARCHAR(80) DEFAULT 'Supply Chain' NOT NULL"))
-        if "status" not in columns:
-            with engine.begin() as connection:
-                connection.execute(text("ALTER TABLE posts ADD COLUMN status VARCHAR(40) DEFAULT 'published' NOT NULL"))
-    if "ai_memory_brain" in inspector.get_table_names():
-        columns = {column["name"] for column in inspector.get_columns("ai_memory_brain")}
-        if "confidence_score" not in columns:
-            with engine.begin() as connection:
-                connection.execute(text("ALTER TABLE ai_memory_brain ADD COLUMN confidence_score FLOAT DEFAULT 0 NOT NULL"))
-        if "hallucination_score" not in columns:
-            with engine.begin() as connection:
-                connection.execute(text("ALTER TABLE ai_memory_brain ADD COLUMN hallucination_score FLOAT DEFAULT 0 NOT NULL"))
-    if "intelligence_sources" in inspector.get_table_names():
-        columns = {column["name"] for column in inspector.get_columns("intelligence_sources")}
-        migrations = {
-            "trust_score": "ALTER TABLE intelligence_sources ADD COLUMN trust_score FLOAT DEFAULT 0.5 NOT NULL",
-            "content_text": "ALTER TABLE intelligence_sources ADD COLUMN content_text TEXT DEFAULT '' NOT NULL",
-            "content_hash": "ALTER TABLE intelligence_sources ADD COLUMN content_hash VARCHAR(64)",
-            "knowledge_status": "ALTER TABLE intelligence_sources ADD COLUMN knowledge_status VARCHAR(40) DEFAULT 'new' NOT NULL",
-            "publication_status": "ALTER TABLE intelligence_sources ADD COLUMN publication_status VARCHAR(40) DEFAULT 'unpublished' NOT NULL",
-            "source_version": "ALTER TABLE intelligence_sources ADD COLUMN source_version INTEGER DEFAULT 1 NOT NULL",
-            "indexing_status": "ALTER TABLE intelligence_sources ADD COLUMN indexing_status VARCHAR(40) DEFAULT 'not_indexed' NOT NULL",
-            "indexed_at": "ALTER TABLE intelligence_sources ADD COLUMN indexed_at TIMESTAMP",
-            "indexing_error": "ALTER TABLE intelligence_sources ADD COLUMN indexing_error TEXT",
-            "freshness_score": "ALTER TABLE intelligence_sources ADD COLUMN freshness_score FLOAT DEFAULT 0.5 NOT NULL",
-        }
-        for column_name, ddl in migrations.items():
-            if column_name not in columns:
-                with engine.begin() as connection:
-                    connection.execute(text(ddl))
-    if "ai_memory_brain" in inspector.get_table_names():
-        columns = {column["name"] for column in inspector.get_columns("ai_memory_brain")}
-        migrations = {
-            "confidence_score": "ALTER TABLE ai_memory_brain ADD COLUMN confidence_score FLOAT DEFAULT 0 NOT NULL",
-            "hallucination_score": "ALTER TABLE ai_memory_brain ADD COLUMN hallucination_score FLOAT DEFAULT 0 NOT NULL",
-            "reviewer_id": "ALTER TABLE ai_memory_brain ADD COLUMN reviewer_id VARCHAR(255)",
-            "reviewed_at": "ALTER TABLE ai_memory_brain ADD COLUMN reviewed_at TIMESTAMP",
-            "review_reason": "ALTER TABLE ai_memory_brain ADD COLUMN review_reason TEXT",
-            "source_ids": "ALTER TABLE ai_memory_brain ADD COLUMN source_ids TEXT DEFAULT '[]' NOT NULL",
-            "provider": "ALTER TABLE ai_memory_brain ADD COLUMN provider VARCHAR(120)",
-            "token_usage": "ALTER TABLE ai_memory_brain ADD COLUMN token_usage INTEGER",
-            "cost_estimate": "ALTER TABLE ai_memory_brain ADD COLUMN cost_estimate FLOAT",
-            "output_version": "ALTER TABLE ai_memory_brain ADD COLUMN output_version INTEGER DEFAULT 1 NOT NULL",
-            "workflow_run_id": "ALTER TABLE ai_memory_brain ADD COLUMN workflow_run_id VARCHAR(80)",
-        }
-        for column_name, ddl in migrations.items():
-            if column_name not in columns:
-                with engine.begin() as connection:
-                    connection.execute(text(ddl))
-    if "agent_runs" in inspector.get_table_names():
-        columns = {column["name"] for column in inspector.get_columns("agent_runs")}
-        migrations = {
-            "provider": "ALTER TABLE agent_runs ADD COLUMN provider VARCHAR(120)",
-            "input_context": "ALTER TABLE agent_runs ADD COLUMN input_context TEXT DEFAULT '{}' NOT NULL",
-            "source_ids": "ALTER TABLE agent_runs ADD COLUMN source_ids TEXT DEFAULT '[]' NOT NULL",
-            "token_usage": "ALTER TABLE agent_runs ADD COLUMN token_usage INTEGER",
-            "cost_estimate": "ALTER TABLE agent_runs ADD COLUMN cost_estimate FLOAT",
-            "output_version": "ALTER TABLE agent_runs ADD COLUMN output_version INTEGER DEFAULT 1 NOT NULL",
-        }
-        for column_name, ddl in migrations.items():
-            if column_name not in columns:
-                with engine.begin() as connection:
-                    connection.execute(text(ddl))
-    if "document_embeddings" in inspector.get_table_names():
-        # SQLAlchemy may not know the pgvector type during reflection and emits a warning.
-        # Use information_schema for this lightweight migration check instead.
-        with engine.connect() as connection:
-            columns = {
-                row[0]
-                for row in connection.execute(
-                    text(
-                        "SELECT column_name FROM information_schema.columns "
-                        "WHERE table_schema = 'public' AND table_name = 'document_embeddings'"
-                    )
-                )
-            }
-        migrations = {
-            "source_version": "ALTER TABLE document_embeddings ADD COLUMN source_version INTEGER DEFAULT 1 NOT NULL",
-            "indexed_at": "ALTER TABLE document_embeddings ADD COLUMN indexed_at TIMESTAMP",
-        }
-        for column_name, ddl in migrations.items():
-            if column_name not in columns:
-                with engine.begin() as connection:
-                    connection.execute(text(ddl))
-    if "workflow_nodes" in inspector.get_table_names():
-        columns = {column["name"] for column in inspector.get_columns("workflow_nodes")}
-        if "config" not in columns:
-            with engine.begin() as connection:
-                connection.execute(text("ALTER TABLE workflow_nodes ADD COLUMN config TEXT DEFAULT '{}' NOT NULL"))
-    if "scheduled_workflow_jobs" not in inspector.get_table_names():
-        with engine.begin() as connection:
-            connection.execute(text("CREATE TABLE IF NOT EXISTS scheduled_workflow_jobs (id VARCHAR(80) PRIMARY KEY, run_id VARCHAR(80) NOT NULL UNIQUE, workflow_id VARCHAR(80) NOT NULL, priority INTEGER NOT NULL DEFAULT 0, scheduled_for TIMESTAMP NOT NULL, status VARCHAR(40) NOT NULL DEFAULT 'queued', created_at TIMESTAMP NOT NULL, updated_at TIMESTAMP NOT NULL, FOREIGN KEY(run_id) REFERENCES workflow_runs(id), FOREIGN KEY(workflow_id) REFERENCES workflows(id))"))
-            connection.execute(text("CREATE INDEX IF NOT EXISTS ix_scheduled_workflow_jobs_status ON scheduled_workflow_jobs(status)"))
-            connection.execute(text("CREATE INDEX IF NOT EXISTS ix_scheduled_workflow_jobs_scheduled_for ON scheduled_workflow_jobs(scheduled_for)"))
-
-    if "feed_sources" in inspector.get_table_names():
-        columns = {column["name"] for column in inspector.get_columns("feed_sources")}
-        if "is_active" not in columns:
-            with engine.begin() as connection:
-                connection.execute(text("ALTER TABLE feed_sources ADD COLUMN is_active BOOLEAN DEFAULT 1 NOT NULL"))
-        if "last_scrape_at" not in columns:
-            with engine.begin() as connection:
-                connection.execute(text("ALTER TABLE feed_sources ADD COLUMN last_scrape_at DATETIME"))
-        if "last_scrape_status" not in columns:
-            with engine.begin() as connection:
-                connection.execute(text("ALTER TABLE feed_sources ADD COLUMN last_scrape_status VARCHAR(40) DEFAULT 'idle' NOT NULL"))
-        if "scrape_count" not in columns:
-            with engine.begin() as connection:
-                connection.execute(text("ALTER TABLE feed_sources ADD COLUMN scrape_count INTEGER DEFAULT 0 NOT NULL"))
-    
-    # Ensure comments table exists
-    if "comments" not in inspector.get_table_names():
-        with engine.begin() as connection:
-            connection.execute(text("""
-                CREATE TABLE IF NOT EXISTS comments (
-                    id INTEGER PRIMARY KEY,
-                    text TEXT NOT NULL,
-                    post_id INTEGER NOT NULL,
-                    parent_id INTEGER,
-                    user_id INTEGER NOT NULL,
-                    toxicity_score FLOAT DEFAULT 0.0,
-                    status VARCHAR(20) DEFAULT 'pending',
-                    likes INTEGER DEFAULT 0,
-                    dislikes INTEGER DEFAULT 0,
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(post_id) REFERENCES posts(id),
-                    FOREIGN KEY(parent_id) REFERENCES comments(id)
-                )
-            """))
-            connection.execute(text("CREATE INDEX IF NOT EXISTS ix_comments_post_id ON comments (post_id)"))
-            connection.execute(text("CREATE INDEX IF NOT EXISTS ix_comments_status ON comments (status)"))
-            connection.execute(text("CREATE INDEX IF NOT EXISTS ix_comments_parent_id ON comments (parent_id)"))
-
-
 def run_startup_tasks() -> None:
-    """Run database bootstrap, seeding, and scheduler after the app process is up."""
-    max_attempts = int(os.getenv("DB_CONNECT_RETRIES", "5"))
+    """Verify the externally migrated schema before starting application tasks."""
+    max_attempts = max(1, int(os.getenv("DB_CONNECT_RETRIES", "5")))
     retry_delay = int(os.getenv("DB_CONNECT_RETRY_DELAY", "3"))
 
-    if os.getenv("SKIP_DATABASE_BOOTSTRAP", "false").lower() != "true":
-        for attempt in range(1, max_attempts + 1):
-            try:
-                bootstrap_database()
-                ensure_lightweight_migrations()
-                break
-            except Exception as exc:
-                if attempt >= max_attempts:
-                    logger.error("Database bootstrap failed after %s attempts: %s", max_attempts, exc)
-                    return
-                logger.warning(
-                    "Database bootstrap attempt %s/%s failed: %s",
-                    attempt,
-                    max_attempts,
-                    exc,
-                )
-                time.sleep(retry_delay)
-    else:
-        logger.info("Skipping database bootstrap (SKIP_DATABASE_BOOTSTRAP=true)")
-
-    try:
-        with SessionLocal() as db:
-            from .rag.pgvector_store import ensure_pgvector_schema
-
-            pgvector_status = ensure_pgvector_schema(db)
-            if pgvector_status.get("enabled"):
-                logger.info("pgvector ready for RAG similarity search")
-            elif database_profile() in {"neon", "supabase", "postgres"}:
-                logger.warning("pgvector not fully enabled: %s", pgvector_status.get("reason"))
-    except Exception as exc:
-        logger.warning("pgvector startup check skipped: %s", exc)
+    for attempt in range(1, max_attempts + 1):
+        try:
+            bootstrap_database()
+            break
+        except Exception as exc:
+            if attempt >= max_attempts:
+                logger.error("Database migration verification failed after %s attempts: %s", max_attempts, exc)
+                raise
+            logger.warning(
+                "Database migration verification attempt %s/%s failed: %s",
+                attempt,
+                max_attempts,
+                exc,
+            )
+            time.sleep(retry_delay)
 
     if os.getenv("SKIP_SEEDING", "false").lower() != "true":
         seed_app_settings()
