@@ -34,18 +34,18 @@ export const PRICING_PLANS = {
 };
 
 export async function createCheckoutSession(
-  userId: string,
   priceId: string,
   successUrl: string,
   cancelUrl: string
 ) {
+  const checkoutEnabled = process.env.STRIPE_CHECKOUT_ENABLED === "true";
+  if (!checkoutEnabled) {
+    throw new Error("Stripe checkout is disabled");
+  }
+
   const stripe = getStripeClient();
   if (!stripe) {
-    return {
-      id: "beta-checkout",
-      url: successUrl,
-      beta_mode: true,
-    };
+    throw new Error("Stripe checkout is not configured");
   }
 
   const session = await stripe.checkout.sessions.create({
@@ -59,10 +59,6 @@ export async function createCheckoutSession(
     mode: "subscription",
     success_url: successUrl,
     cancel_url: cancelUrl,
-    client_reference_id: userId,
-    metadata: {
-      userId,
-    },
   });
 
   return session;

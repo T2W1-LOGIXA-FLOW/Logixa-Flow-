@@ -38,6 +38,12 @@ def env_configured(key: str) -> bool:
     return bool(clean_env_value(key))
 
 
+def _is_placeholder_secret(value: str | None) -> bool:
+    if not value:
+        return True
+    return value.strip().lower().startswith("change-")
+
+
 def ai_provider_configured(role: str | None = None) -> bool:
     """Return true when a provider key is configured for the given role or globally."""
     if role:
@@ -66,15 +72,13 @@ def validate_env() -> list[str]:
     # Production-specific checks
     is_production = os.getenv("ENVIRONMENT", "development").lower() in {"production", "prod"}
     if is_production:
-        # Check for default secrets in production
-        jwt_secret = clean_env_value("JWT_SECRET")
-        api_secret = clean_env_value("API_SECRET_TOKEN")
-        
-        if jwt_secret in {"change-me-in-production", ""}:
-            missing.append("JWT_SECRET (cannot use default in production)")
-        if api_secret in {"change-me-in-production", ""}:
-            missing.append("API_SECRET_TOKEN (cannot use default in production)")
-    
+        for key in ("JWT_SECRET", "API_SECRET_TOKEN"):
+            secret = clean_env_value(key)
+            if _is_placeholder_secret(secret):
+                missing.append(f"{key} (must be configured safely in production)")
+            elif len(secret) < 32:
+                missing.append(f"{key} (must be at least 32 characters in production)")
+
     return missing
 
 

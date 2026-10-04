@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
+import sys
 
 import pytest
+from fastapi import HTTPException
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 
 from app import models
-from app.routers import workflow
-from app.schemas import WorkflowNode, WorkflowRunRequest, WorkflowStorageCreate
+from app.routers import admin, workflow
+from app.schemas import WorkflowNode, WorkflowRunRequest, WorkflowStorageCreate, WorkflowStorageOut, WorkflowRunOut, WorkflowState
 
 
 @pytest.fixture(autouse=True)
@@ -40,6 +43,7 @@ def reset_persistence_state(monkeypatch: pytest.MonkeyPatch) -> None:
     workflow._EXECUTION_STATES.clear()
     workflow._EXECUTION_HISTORY.clear()
     workflow._EXECUTION_METRICS.clear()
+    workflow._CONTROLLER_RUNS.clear()
     workflow._QUEUE_WORKER_RUNNING = False
 
 
@@ -175,3 +179,121 @@ async def test_controller_result_tracks_workflow_terminal_state() -> None:
         assert controller.failure_count == 0
     finally:
         db.close()
+
+
+@pytest.mark.anyio
+async def test_workflow_persistence_surfaces_database_failures() -> None:
+    workflow_payload = WorkflowStorageOut(
+        id="db-fail-flow",
+        name="DB Fail Flow",
+        nodes=[WorkflowNode(id="step", name="Step")],
+        created_at=workflow._now(),
+        updated_at=workflow._now(),
+    )
+    db = workflow.SessionLocal()
+    try:
+        db.query(models.Workflow).delete()
+        db.query(models.WorkflowNodeRecord).delete()
+        db.commit()
+    finally:
+        db.close()
+
+    original_session_local = workflow.SessionLocal
+    class FailingSessionLocal:
+        def __call__(self):
+            raise RuntimeError("database boom")
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(workflow, "SessionLocal", FailingSessionLocal())
+    try:
+        with pytest.raises(RuntimeError, match="database boom"):
+            workflow._persist_workflow_definition(workflow_payload)
+        with pytest.raises(RuntimeError, match="database boom"):
+            workflow._load_workflow_definition("db-fail-flow")
+
+        run = WorkflowRunOut(
+            run_id="db-fail-run",
+            workflow_id="db-fail-flow",
+            state=WorkflowState(status="queued", current_node=None, completed_nodes=[], error=None),
+        )
+        with pytest.raises(RuntimeError, match="database boom"):
+            workflow._persist_run_state(run)
+        with pytest.raises(RuntimeError, match="database boom"):
+            workflow._load_run_state("db-fail-run")
+    finally:
+        monkeypatch.undo()
+        workflow.SessionLocal = original_session_local
+
+
+def test_admin_bulk_import_uses_single_transaction_and_safe_error_response(monkeypatch: pytest.MonkeyPatch) -> None:
+    file_like = type("FakeUpload", (), {"read": lambda self, n: b"title,content\nAlpha,Body\nBeta,Body2\n"})()
+    file = type("FakeFile", (), {"filename": "import.csv", "content_type": "text/csv", "file": file_like})()
+
+    captured = {}
+
+    class DummySession:
+        def __init__(self):
+            self.commits = 0
+            self.rollbacks = 0
+            self.added = []
+            self.flushed = 0
+
+        def add(self, obj):
+            self.added.append(obj)
+
+        def flush(self):
+            self.flushed += 1
+
+        def commit(self):
+            self.commits += 1
+            raise RuntimeError("db boom")
+
+        def rollback(self):
+            self.rollbacks += 1
+
+    session = DummySession()
+    monkeypatch.setattr(admin, "logger", type("L", (), {"exception": lambda *a, **k: captured.setdefault("logged", True)})())
+
+    class DummyMemory:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+    class DummyPost:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+            self.id = 42
+
+    monkeypatch.setattr(admin.models, "AiMemoryBrain", DummyMemory, raising=False)
+    monkeypatch.setattr(admin.models, "Post", DummyPost, raising=False)
+
+    with pytest.raises(HTTPException) as exc_info:
+        admin.admin_bulk_import(file, session, _=object())
+    assert exc_info.value.status_code == 500
+    assert exc_info.value.detail == "Database error during import"
+    assert session.rollbacks == 1
+    assert captured.get("logged") is True
+
+
+def test_json_formatter_includes_exception_traceback() -> None:
+    from app.logging_config import JsonLogFormatter
+
+    try:
+        raise RuntimeError("boom")
+    except RuntimeError:
+        record = logging.LogRecord(
+            name="test.logger",
+            level=logging.ERROR,
+            pathname=__file__,
+            lineno=1,
+            msg="failed",
+            args=(),
+            exc_info=sys.exc_info(),
+        )
+        record.operation = "workflow_persistence"
+        record.error_type = "database_failure"
+
+    payload = json.loads(JsonLogFormatter().format(record))
+    assert payload["message"] == "failed"
+    assert payload["exception"]
+    assert "RuntimeError: boom" in payload["exception"]
+    assert payload["operation"] == "workflow_persistence"
+    assert payload["error_type"] == "database_failure"

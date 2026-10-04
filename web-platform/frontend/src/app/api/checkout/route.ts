@@ -3,14 +3,20 @@ import { createCheckoutSession } from "@/lib/stripe";
 
 export async function POST(request: NextRequest) {
   try {
+    const checkoutEnabled = process.env.STRIPE_CHECKOUT_ENABLED === "true";
+
+    if (!checkoutEnabled) {
+      return NextResponse.json(
+        { error: "Checkout is temporarily unavailable" },
+        { status: 503 }
+      );
+    }
+
     const { planId } = await request.json();
 
     if (!planId) {
       return NextResponse.json({ error: "Plan ID required" }, { status: 400 });
     }
-
-    // Get user from session/auth (this is a simplified example)
-    const userId = "user-123"; // Replace with actual user ID from auth
 
     // Map plan ID to Stripe price ID
     const stripePriceMap: Record<string, string> = {
@@ -34,7 +40,6 @@ export async function POST(request: NextRequest) {
 
     const baseUrl = request.nextUrl.origin;
     const session = await createCheckoutSession(
-      userId,
       priceId,
       `${baseUrl}/checkout/success`,
       `${baseUrl}/checkout/cancel`

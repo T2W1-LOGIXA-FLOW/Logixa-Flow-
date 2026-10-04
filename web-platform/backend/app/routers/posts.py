@@ -52,7 +52,7 @@ def verify_token(authorization: str | None = Header(default=None)) -> str:
 def create_post(
     post: schemas.PostCreate,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin_or_agent_service),
+    auth: dict = Depends(require_admin_or_agent_service),
 ) -> models.Post:
     payload = post.model_dump()
     if payload["source_url"] is not None:
@@ -61,6 +61,14 @@ def create_post(
         payload["is_published"] = True
     if payload.get("is_published"):
         payload["status"] = "published"
+    is_agent_service = (
+        isinstance(auth, dict)
+        and auth.get("role") in {"agent_service", "service"}
+    )
+    if is_agent_service:
+        payload["status"] = "draft"
+        payload["is_published"] = False
+
     db_post = models.Post(**payload)
     if db_post.is_published:
         db_post.published_at = utc_now()

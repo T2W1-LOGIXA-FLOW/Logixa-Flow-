@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
@@ -40,6 +41,8 @@ _CONTROLLER_RUNS: dict[str, str] = {}
 _WEBSOCKET_AUTH_TIMEOUT_SECONDS = 10
 _WEBSOCKET_AUTH_RECHECK_SECONDS = 60
 
+logger = logging.getLogger(__name__)
+
 
 def _serialize_json(value: Any) -> str:
     return json.dumps(value, separators=(",", ":"))
@@ -72,7 +75,16 @@ def _persist_workflow_definition(workflow: WorkflowStorageOut) -> None:
             )
         db.commit()
     except Exception:
-        return
+        db.rollback()
+        logger.exception(
+            "Failed to persist workflow definition",
+            extra={
+                "workflow_id": workflow.id,
+                "operation": "persist_workflow_definition",
+                "error_type": "database_failure",
+            },
+        )
+        raise
     finally:
         db.close()
 
@@ -104,7 +116,15 @@ def _load_workflow_definition(workflow_id: str) -> WorkflowStorageOut | None:
             updated_at=record.updated_at,
         )
     except Exception:
-        return None
+        logger.exception(
+            "Failed to load workflow definition",
+            extra={
+                "workflow_id": workflow_id,
+                "operation": "load_workflow_definition",
+                "error_type": "database_failure",
+            },
+        )
+        raise
     finally:
         db.close()
 
@@ -126,7 +146,17 @@ def _persist_run_state(run: WorkflowRunOut) -> None:
         record.updated_at = _now()
         db.commit()
     except Exception:
-        return
+        db.rollback()
+        logger.exception(
+            "Failed to persist workflow run state",
+            extra={
+                "run_id": run.run_id,
+                "workflow_id": run.workflow_id,
+                "operation": "persist_run_state",
+                "error_type": "database_failure",
+            },
+        )
+        raise
     finally:
         db.close()
 
@@ -150,7 +180,15 @@ def _load_run_state(run_id: str) -> WorkflowRunOut | None:
             ),
         )
     except Exception:
-        return None
+        logger.exception(
+            "Failed to load workflow run state",
+            extra={
+                "run_id": run_id,
+                "operation": "load_run_state",
+                "error_type": "database_failure",
+            },
+        )
+        raise
     finally:
         db.close()
 
@@ -390,6 +428,19 @@ def _schedule_run(run_id: str, priority: int = 0, delay_seconds: int = 0) -> Non
             existing.status = "queued"
             existing.updated_at = queued_at
         db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception(
+            "Failed to schedule workflow run",
+            extra={
+                "run_id": run_id,
+                "priority": priority,
+                "delay_seconds": delay_seconds,
+                "operation": "schedule_run",
+                "error_type": "database_failure",
+            },
+        )
+        raise
     finally:
         db.close()
 
@@ -504,6 +555,17 @@ def _record_controller_result(run_id: str, status_value: str) -> None:
         db.commit()
     except SQLAlchemyError:
         db.rollback()
+        logger.exception(
+            "Failed to record controller result",
+            extra={
+                "run_id": run_id,
+                "controller_id": controller_id,
+                "status_value": status_value,
+                "operation": "record_controller_result",
+                "error_type": "database_failure",
+            },
+        )
+        raise
     finally:
         db.close()
 
@@ -522,7 +584,15 @@ def _claim_job(run_id: str) -> bool:
         return updated == 1
     except Exception:
         db.rollback()
-        return False
+        logger.exception(
+            "Failed to claim workflow job",
+            extra={
+                "run_id": run_id,
+                "operation": "claim_job",
+                "error_type": "database_failure",
+            },
+        )
+        raise
     finally:
         db.close()
 
@@ -539,6 +609,16 @@ def _mark_job_terminal(run_id: str, status_value: str) -> None:
             db.commit()
     except Exception:
         db.rollback()
+        logger.exception(
+            "Failed to mark workflow job terminal",
+            extra={
+                "run_id": run_id,
+                "status_value": status_value,
+                "operation": "mark_job_terminal",
+                "error_type": "database_failure",
+            },
+        )
+        raise
     finally:
         db.close()
 
@@ -623,6 +703,16 @@ def restore_pending_workflow_runs() -> int:
                 })
                 restored += 1
         db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception(
+            "Failed to restore pending workflow runs",
+            extra={
+                "operation": "restore_pending_workflow_runs",
+                "error_type": "database_failure",
+            },
+        )
+        raise
     finally:
         db.close()
     _EXECUTION_QUEUE.sort(key=lambda item: (-int(item["priority"]), item["scheduled_for"], item["queued_at"]))

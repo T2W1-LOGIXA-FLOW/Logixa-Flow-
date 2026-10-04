@@ -1,8 +1,9 @@
-# backend/app/routers/system.py (သို့ admin.py ထဲထည့်)
+import logging
 import os
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
@@ -11,6 +12,7 @@ from ..security import require_admin
 from ..llm.router import LLMRouter
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 MAX_IMPORT_FILE_BYTES = 10 * 1024 * 1024
 MAX_IMPORT_ROWS = 5000
@@ -88,7 +90,6 @@ def admin_bulk_import(file: UploadFile = File(...), db: Session = Depends(get_db
         # ensure uniqueness is handled by DB unique constraint on posts.slug if present
         return slug or f"import-{uuid4().hex[:8]}"
 
-    imported = 0
     created_post_ids: list[int] = []
 
     filename = (file.filename or "uploaded").lower()
@@ -159,9 +160,8 @@ def admin_bulk_import(file: UploadFile = File(...), db: Session = Depends(get_db
                 status="pending",
             )
             db.add(memory)
-            db.flush()  # get memory.id
+            db.flush()
 
-            # Optionally create a draft post
             slug = slugify(title)[:255]
             post = models.Post(
                 title=title,
@@ -176,13 +176,31 @@ def admin_bulk_import(file: UploadFile = File(...), db: Session = Depends(get_db
             db.add(post)
             db.flush()
 
-            # link memory to post
             memory.post_slug = post.slug
-            db.commit()
-            imported += 1
             created_post_ids.append(post.id)
-    except SQLAlchemyError as exc:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Database error during import: {exc}")
 
-    return {"imported": imported, "created_posts": created_post_ids}
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        logger.exception(
+            "Failed to import admin bulk records",
+            extra={
+                "operation": "admin_bulk_import",
+                "row_count": len(content_items),
+                "error_type": "database_failure",
+            },
+        )
+        raise HTTPException(status_code=500, detail="Database error during import")
+    except Exception:
+        db.rollback()
+        logger.exception(
+            "Failed to import admin bulk records",
+            extra={
+                "operation": "admin_bulk_import",
+                "row_count": len(content_items),
+                "error_type": "import_failure",
+            },
+        )
+        raise HTTPException(status_code=500, detail="Database error during import")
+
+    return {"imported": len(created_post_ids), "created_posts": created_post_ids}

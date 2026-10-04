@@ -4,6 +4,16 @@ import Stripe from "stripe";
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 
 export async function POST(request: NextRequest) {
+  const stripeEnabled =
+    process.env.STRIPE_CHECKOUT_ENABLED === "true";
+
+  if (!stripeEnabled) {
+    return NextResponse.json(
+      { error: "Stripe integration is temporarily disabled" },
+      { status: 503 }
+    );
+  }
+
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeSecretKey || !webhookSecret) {
     return NextResponse.json(
