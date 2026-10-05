@@ -255,39 +255,16 @@ def admin_data_delete(
     return {"deleted": counts, "subject": {"email": normalized_email}}
 
 
-@router.post("/admin/newsletter/send", response_model=schemas.NewsletterSendResponse, status_code=status.HTTP_202_ACCEPTED)
+@router.post("/admin/newsletter/send", status_code=status.HTTP_501_NOT_IMPLEMENTED)
 def send_newsletter(
     request: schemas.NewsletterSendRequest,
     db: Session = Depends(get_db),
     _=Depends(require_admin),
-) -> schemas.NewsletterSendResponse:
-    """Send newsletter to active subscribers (async task support removed with Celery cleanup)"""
-    from_address = os.getenv("DEFAULT_FROM_EMAIL")
-    if not from_address:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="DEFAULT_FROM_EMAIL is not configured")
-    if not os.getenv("RESEND_API_KEY"):
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="RESEND_API_KEY is not configured")
-
-    if request.test_mode:
-        subscriber = (
-            db.query(models.Subscriber)
-            .filter(models.Subscriber.is_active == True)
-            .order_by(models.Subscriber.id)
-            .first()
-        )
-        recipients = [subscriber.email] if subscriber else [from_address]
-    else:
-        recipients = [subscriber.email for subscriber in db.query(models.Subscriber).filter(models.Subscriber.is_active == True).all()]
-        if not recipients:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active newsletter subscribers found")
-
-    # Celery task support removed - return queued status with recipient count
-    # In production, implement with APScheduler or direct email service integration
-    return schemas.NewsletterSendResponse(
-        status="queued",
-        recipients=len(recipients),
-        task_ids=[],  # No async tasks available after Celery cleanup
-        test_mode=request.test_mode,
+) -> dict:
+    """Reject newsletter sends until a real transactional email provider is connected."""
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="Newsletter delivery is not configured; no messages were queued or sent.",
     )
 
 
