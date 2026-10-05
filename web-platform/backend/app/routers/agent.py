@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import re
 import json
+from decimal import Decimal, InvalidOperation
 from html import escape
 from typing import Any
 
@@ -151,9 +152,16 @@ async def generate_agent_brief(
         try:
             char_count = len(text)
             tokens = max(1, int(char_count / 4))
-            cost_per_1k = float(os.getenv("AI_COST_PER_1K", "0.002"))
-            amount = round((tokens / 1000.0) * cost_per_1k, 8)
-            log_analytics_event(db, "api_cost", {"service": "llm_generate", "amount": amount, "tokens": tokens, "model": model_used})
+            try:
+                cost_per_1k = Decimal(os.getenv("AI_COST_PER_1K", "0.002"))
+            except (InvalidOperation, ValueError):
+                cost_per_1k = Decimal("0")
+            amount = (Decimal(tokens) / Decimal("1000")) * cost_per_1k
+            log_analytics_event(
+                db,
+                "api_cost",
+                {"service": "llm_generate", "amount": str(amount), "tokens": tokens, "model": model_used},
+            )
         except Exception:
             pass
         return brief
@@ -245,7 +253,10 @@ async def run_agent(
         input_context=json.dumps({"message": payload.message, "source_ids": payload.source_ids}),
         source_ids=json.dumps(payload.source_ids),
         token_usage=estimated_tokens,
-        cost_estimate=round((estimated_tokens / 1000.0) * float(os.getenv("AI_COST_PER_1K", "0.002")), 8),
+        cost_estimate=(
+            (Decimal(estimated_tokens) / Decimal("1000"))
+            * Decimal(os.getenv("AI_COST_PER_1K", "0.002"))
+        ),
         status="completed",
     )
     db.add(run)
