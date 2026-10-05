@@ -246,6 +246,11 @@ async def run_agent(
     model_used = brief.get("model") or os.getenv("AI_AGENT_MODEL", "local-planner")
     provider = model_used.split("/", 1)[0] if "/" in model_used else model_used
     estimated_tokens = max(1, len(payload.message + brief.get("content", "")) // 4)
+    try:
+        agent_cost_per_1k = Decimal(os.getenv("AI_COST_PER_1K", "0.002"))
+    except (InvalidOperation, ValueError):
+        agent_cost_per_1k = Decimal("0")
+    agent_cost_estimate = (Decimal(estimated_tokens) / Decimal("1000")) * agent_cost_per_1k
     run = models.AgentRun(
         objective=payload.message,
         model=model_used,
@@ -253,10 +258,7 @@ async def run_agent(
         input_context=json.dumps({"message": payload.message, "source_ids": payload.source_ids}),
         source_ids=json.dumps(payload.source_ids),
         token_usage=estimated_tokens,
-        cost_estimate=(
-            (Decimal(estimated_tokens) / Decimal("1000"))
-            * Decimal(os.getenv("AI_COST_PER_1K", "0.002"))
-        ),
+        cost_estimate=agent_cost_estimate,
         status="completed",
     )
     db.add(run)
