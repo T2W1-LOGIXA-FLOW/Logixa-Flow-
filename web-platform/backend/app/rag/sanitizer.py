@@ -45,8 +45,8 @@ def sanitize_text(text: str, *, redact_pii: bool | None = None, sanitize_instruc
         for pattern, replacement in (
             (_EMAIL_RE, "[PII_EMAIL_REDACTED]"),
             (_SSN_RE, "[PII_SSN_REDACTED]"),
-            (_PHONE_RE, "[PII_PHONE_REDACTED]"),
             (_CARD_RE, "[PII_CARD_REDACTED]"),
+            (_PHONE_RE, "[PII_PHONE_REDACTED]"),
         ):
             value, count = pattern.subn(replacement, value)
             pii_count += count
