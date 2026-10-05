@@ -29,7 +29,7 @@ def upgrade() -> None:
         sa.Column("storage_backend", sa.String(length=40), nullable=False),
         sa.Column("storage_class", sa.String(length=40), nullable=False),
         sa.Column("content_type", sa.String(length=160), nullable=False),
-        sa.Column("size_bytes", sa.Integer(), nullable=False),
+        sa.Column("size_bytes", sa.BigInteger(), nullable=False),
         sa.Column("object_key", sa.String(length=1000), nullable=False),
         sa.Column("url", sa.String(length=2000), nullable=True),
         sa.Column("owner_id", sa.String(length=255), nullable=True),
