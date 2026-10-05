@@ -110,8 +110,7 @@ def test_public_query_does_not_create_admin_sessions(db, monkeypatch):
             "cost_estimate": 0.0,
         },
     )
-    monkeypatch.setattr(chat.cache_client, "get", lambda key: None)
-    monkeypatch.setattr(chat.cache_client, "set", lambda *args, **kwargs: None)
+    monkeypatch.setattr(chat.rate_limiter, "allow", lambda *args, **kwargs: True)
 
     result = chat.public_chat_query(
         schemas.ChatQueryRequest(query="Public question"),
@@ -120,3 +119,34 @@ def test_public_query_does_not_create_admin_sessions(db, monkeypatch):
     assert result["response"] == "public response"
     assert db.query(models.ChatSession).count() == 0
     assert db.query(models.ChatMessage).count() == 0
+
+
+def test_public_query_has_dedicated_rate_limit(monkeypatch):
+    calls = {"count": 0}
+
+    monkeypatch.setattr(
+        chat,
+        "generate_ai_response",
+        lambda *args, **kwargs: {
+            "content": "public response",
+            "agent_id": "public",
+            "model_used": "local-planner",
+            "tokens_used": 0,
+            "cost_estimate": 0,
+        },
+    )
+
+    def allow(*args, **kwargs):
+        calls["count"] += 1
+        return calls["count"] <= 5
+
+    monkeypatch.setattr(chat.rate_limiter, "allow", allow)
+
+    request = schemas.ChatQueryRequest(query="Public question")
+    for _ in range(5):
+        assert chat.public_chat_query(request, db=MagicMock())["response"] == "public response"
+
+    with pytest.raises(HTTPException) as exc_info:
+        chat.public_chat_query(request, db=MagicMock())
+
+    assert exc_info.value.status_code == 429
