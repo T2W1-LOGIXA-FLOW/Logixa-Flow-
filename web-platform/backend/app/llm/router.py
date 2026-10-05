@@ -15,6 +15,7 @@ from .providers import (
     clean_env_value,
 )
 from .. import models
+from ..rag.sanitizer import sanitize_for_llm
 
 
 logger = logging.getLogger(__name__)
@@ -122,10 +123,12 @@ class LLMRouter:
         return FallbackLocalProvider()
 
     def generate_with_provider(self, prompt: str, **kwargs) -> tuple[str, str]:
+        safe_prompt = sanitize_for_llm(prompt)
         provider_errors: list[str] = []
         for name, provider in self._provider_order():
             try:
-                response = provider.generate(prompt, **kwargs)
+                response = provider.generate(safe_prompt, **kwargs)
+                response = sanitize_for_llm(response)
                 model_name = getattr(provider, "model", name)
 
                 # Rough token estimate: average 4 characters per token
