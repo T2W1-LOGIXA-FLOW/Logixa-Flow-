@@ -15,6 +15,7 @@ from ..database import get_db
 from ..integration_service import import_rss_feed
 from ..llm.router import LLMRouter
 from ..models import utc_now
+from ..rag.sanitizer import sanitize_for_llm
 from ..security import require_admin
 
 router = APIRouter()
@@ -39,7 +40,7 @@ def unique_slug(db: Session, title: str) -> str:
 def build_steps(message: str, sources: list[models.IntelligenceSource]) -> list[tuple[str, str]]:
     source_count = len(sources)
     return [
-        ("planner", f"Objective parsed: {message[:180]}"),
+        ("planner", f"Objective parsed: {safe_message[:180]}"),
         ("researcher", f"{source_count} source record(s) selected for grounded context."),
         ("analyst", "Signals grouped by risk, operations impact, and Myanmar business relevance."),
         ("writer", "Private insight draft prepared for admin review."),
@@ -48,6 +49,7 @@ def build_steps(message: str, sources: list[models.IntelligenceSource]) -> list[
 
 
 def generate_local_brief(message: str, sources: list[models.IntelligenceSource]) -> dict[str, str]:
+    safe_message = sanitize_for_llm(message)
     category = sources[0].category if sources else "Supply Chain"
     source_titles = ", ".join(source.title for source in sources[:4]) or "manual operator prompt"
     source_notes = " ".join(source.notes for source in sources if source.notes).strip()
