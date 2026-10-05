@@ -22,7 +22,7 @@ SCHEMA_MIGRATION = (
 MONEY_MIGRATION = (
     MIGRATIONS_DIR / "versions" / "20261005_0007_convert_money_to_numeric.py"
 )
-CURRENT_HEAD = "20261005_0008"
+CURRENT_HEAD = "20261005_0009"
 
 
 def alembic_config(database_url: str) -> Config:
@@ -112,6 +112,13 @@ def test_schema_reconciliation_follows_rls_and_secures_every_model_table() -> No
     assert "down_revision = \"20261005_0007\"" in queue_source
     assert "claimed_by" in queue_source
     assert "claimed_at" in queue_source
+
+    audit_source = (
+        MIGRATIONS_DIR / "versions" / "20261005_0009_audit_events.py"
+    ).read_text(encoding="utf-8")
+    assert "revision = \"20261005_0009\"" in audit_source
+    assert "down_revision = \"20261005_0008\"" in audit_source
+    assert 'op.create_table("audit_events"' in audit_source
 
     rls_source = RLS_MIGRATION.read_text(encoding="utf-8")
     assert 'revision = "20261003_0005"' in rls_source
