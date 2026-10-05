@@ -54,7 +54,7 @@ describe("workflow navigation integration", () => {
   it("exposes the admin workflow route and marks it active", () => {
     render(<AdminSidebar open onClose={vi.fn()} onLogout={vi.fn()} />);
 
-    const workflowLink = screen.getByRole("link", { name: "Workflow" });
+    const workflowLink = screen.getByRole("link", { name: "Workflows" });
     expect(workflowLink).toHaveAttribute("href", "/admin/workflow");
     expect(workflowLink).toHaveAttribute("aria-current", "page");
   });
