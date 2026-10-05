@@ -17,15 +17,23 @@ def test_qstash_requires_token_and_destination(monkeypatch: pytest.MonkeyPatch) 
     assert qstash.qstash_configured() is True
 
 
-def test_storage_fallback_chain_uses_next_backend(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("UPLOAD_STORAGE_BACKEND", "cloudinary")
-    monkeypatch.setenv("STORAGE_FALLBACK_BACKENDS", "supabase,b2")
-    monkeypatch.setenv("CLOUDINARY_CLOUD_NAME", "cloud")
-    monkeypatch.setenv("CLOUDINARY_API_KEY", "key")
-    monkeypatch.setenv("CLOUDINARY_API_SECRET", "secret")
-    monkeypatch.setenv("SUPABASE_URL", "https://example.supabase.co")
-    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "service")
-    monkeypatch.setenv("SUPABASE_STORAGE_BUCKET", "uploads")
+def test_storage_policy_routes_by_type_and_size() -> None:
+    assert storage.classify_storage("photo.jpg", "image/jpeg", 9 * 1024 * 1024) == "cloudinary"
+    assert storage.classify_storage("invoice.pdf", "application/pdf", 49 * 1024 * 1024) == "supabase"
+    assert storage.classify_storage("dataset.zip", "application/zip", 51 * 1024 * 1024) == "b2"
+    assert storage.classify_storage("large-photo.jpg", "image/jpeg", 11 * 1024 * 1024) == "b2"
+
+
+def test_storage_routing_falls_back_from_cloudinary_to_supabase(monkeypatch: pytest.MonkeyPatch) -> None:
+    for key, value in {
+        "CLOUDINARY_CLOUD_NAME": "cloud",
+        "CLOUDINARY_API_KEY": "key",
+        "CLOUDINARY_API_SECRET": "secret",
+        "SUPABASE_URL": "https://example.supabase.co",
+        "SUPABASE_SERVICE_ROLE_KEY": "service",
+        "SUPABASE_STORAGE_BUCKET": "uploads",
+    }.items():
+        monkeypatch.setenv(key, value)
 
     calls: list[str] = []
 
@@ -40,9 +48,10 @@ def test_storage_fallback_chain_uses_next_backend(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr(storage, "_upload_cloudinary", fail_cloudinary)
     monkeypatch.setattr(storage, "_upload_supabase", succeed_supabase)
 
-    result = storage.upload_image(BytesIO(b"image"), "file.jpg", "image/jpeg")
-
-    assert result.endswith("/file.jpg")
+    backend, storage_class, url = storage.upload_routed(BytesIO(b"image"), "file.jpg", "image/jpeg", 1024)
+    assert backend == "supabase"
+    assert storage_class == "cloudinary"
+    assert url.endswith("/file.jpg")
     assert calls == ["cloudinary", "supabase"]
 
 
