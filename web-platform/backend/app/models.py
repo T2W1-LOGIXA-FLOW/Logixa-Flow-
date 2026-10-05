@@ -134,7 +134,7 @@ class AgentRun(Base):
     input_context = Column(Text, nullable=False, default="{}")
     source_ids = Column(Text, nullable=False, default="[]")
     token_usage = Column(Integer, nullable=True)
-    cost_estimate = Column(Float, nullable=True)
+    cost_estimate = Column(Numeric(18, 6, asdecimal=True), nullable=True)
     output_version = Column(Integer, nullable=False, default=1)
     status = Column(String(40), default="completed", nullable=False, index=True)
     final_memory_id = Column(Integer, nullable=True, index=True)
