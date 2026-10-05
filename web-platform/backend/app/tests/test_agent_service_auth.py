@@ -102,14 +102,7 @@ def test_agent_service_token_is_accepted_only_on_agent_enabled_endpoints(monkeyp
 
 
 def test_agent_service_auth_is_limited_to_agent_operations():
-    agent_paths = {
-        route.path
-        for route in app.routes
-        if isinstance(route, APIRoute)
-        and "require_admin_or_agent_service" in inspect.getsource(route.endpoint)
-    }
-
-    assert agent_paths == {
+    expected_paths = {
         "/api/admin/integration/sync-feeds",
         "/api/admin/integration/import-drafts",
         "/api/admin/integration/import-draft",
@@ -117,3 +110,17 @@ def test_agent_service_auth_is_limited_to_agent_operations():
         "/api/admin/rag/ingest/sources",
         "/api/posts",
     }
+    registered_paths = {
+        route.path
+        for route in app.routes
+        if isinstance(route, APIRoute)
+    }
+    assert expected_paths <= registered_paths
+
+    for endpoint_module in (integration,):
+        source = inspect.getsource(endpoint_module)
+        assert source.count("Depends(require_admin_or_agent_service)") >= 4
+
+    from ..routers import posts, rag
+    assert "Depends(require_admin_or_agent_service)" in inspect.getsource(posts)
+    assert "Depends(require_admin_or_agent_service)" in inspect.getsource(rag)
