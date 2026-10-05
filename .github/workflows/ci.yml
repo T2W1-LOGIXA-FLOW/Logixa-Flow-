@@ -14,7 +14,6 @@ jobs:
         working-directory: web-platform/backend
     env:
       JWT_SECRET: ci-test-secret
-      ADMIN_PASSWORD: ci-test-password
       ENVIRONMENT: test
       DATABASE_URL: sqlite:///./ci.db
       SKIP_SEEDING: "true"
@@ -42,4 +41,5 @@ jobs:
           cache: npm
           cache-dependency-path: web-platform/frontend/package-lock.json
       - run: npm ci
+      - run: npm test
       - run: npm run build
