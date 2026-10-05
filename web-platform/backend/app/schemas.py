@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
 from typing import Any, Literal
 from uuid import UUID
@@ -603,7 +604,7 @@ class ChatMessageOut(BaseModel):
     agent_id: str | None = None
     model_used: str | None = None
     tokens_used: int | None = None
-    cost_estimate: float | None = None
+    cost_estimate: Decimal | None = None
     created_at: datetime
 
 
