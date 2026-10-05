@@ -116,7 +116,7 @@ services:
   - type: worker
     name: logixa-flow-worker
     runtime: docker
-    plan: free
+    plan: 0.5c-512mb
     dockerfilePath: ./web-platform/backend/Dockerfile
     dockerContext: ./web-platform/backend
     dockerCommand: celery -A app.workers.celery_app.celery_app worker --loglevel=INFO --concurrency=1 -Q logixa-workflows
