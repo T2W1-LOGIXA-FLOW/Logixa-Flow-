@@ -88,6 +88,33 @@ def validate_env() -> list[str]:
             elif len(secret) < 32:
                 missing.append(f"{key} (must be at least 32 characters in production)")
 
+        celery_enabled = os.getenv("CELERY_ENABLED", "false").lower() == "true"
+        if celery_enabled and not env_configured("REDIS_URL"):
+            missing.append("REDIS_URL (required when CELERY_ENABLED=true)")
+
+        qstash_enabled = env_configured("QSTASH_TOKEN") or env_configured("QSTASH_DESTINATION_URL")
+        if qstash_enabled:
+            for key in ("QSTASH_TOKEN", "QSTASH_DESTINATION_URL", "QSTASH_CURRENT_SIGNING_KEY", "QSTASH_NEXT_SIGNING_KEY"):
+                if not env_configured(key):
+                    missing.append(f"{key} (required when QStash is enabled)")
+
+        storage_backend = os.getenv("UPLOAD_STORAGE_BACKEND", "local").strip().lower()
+        fallback_backends = [item.strip().lower() for item in os.getenv("STORAGE_FALLBACK_BACKENDS", "").split(",") if item.strip()]
+        storage_backends = [storage_backend, *[item for item in fallback_backends if item != storage_backend]]
+        for backend in storage_backends:
+            if backend == "cloudinary":
+                for key in ("CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"):
+                    if not env_configured(key):
+                        missing.append(f"{key} (required for Cloudinary storage)")
+            elif backend == "supabase":
+                for key in ("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_STORAGE_BUCKET"):
+                    if not env_configured(key):
+                        missing.append(f"{key} (required for Supabase Storage)")
+            elif backend in {"b2", "r2", "s3"}:
+                for key in S3_ENV_KEYS:
+                    if not env_configured(key):
+                        missing.append(f"{key} (required for S3-compatible storage fallback)")
+
     return missing
 
 
