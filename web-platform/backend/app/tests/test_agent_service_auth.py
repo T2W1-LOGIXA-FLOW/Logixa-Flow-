@@ -108,10 +108,10 @@ def test_agent_service_auth_is_limited_to_agent_operations():
         if isinstance(route, APIRoute)
     }
     assert {
-        "/integration/sync-feeds",
-        "/integration/import-drafts",
-        "/integration/import-draft",
-        "/integration/pipeline-preview",
+        "/admin/integration/sync-feeds",
+        "/admin/integration/import-drafts",
+        "/admin/integration/import-draft",
+        "/admin/integration/pipeline-preview",
     } <= integration_paths
 
     from ..routers import posts, rag
@@ -119,7 +119,7 @@ def test_agent_service_auth_is_limited_to_agent_operations():
     post_paths = {route.path for route in posts.router.routes if isinstance(route, APIRoute)}
     rag_paths = {route.path for route in rag.router.routes if isinstance(route, APIRoute)}
     assert "/posts" in post_paths
-    assert "/rag/ingest/sources" in rag_paths
+    assert "/admin/rag/ingest/sources" in rag_paths
 
     assert inspect.getsource(integration).count("Depends(require_admin_or_agent_service)") >= 4
     assert "Depends(require_admin_or_agent_service)" in inspect.getsource(posts)
