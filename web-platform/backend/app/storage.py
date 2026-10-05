@@ -1,14 +1,48 @@
 from __future__ import annotations
 
 import io
+import json
+import mimetypes
 import os
 from typing import BinaryIO
 
 import requests
 
+IMAGE_MAX_BYTES = 10 * 1024 * 1024
+DOCUMENT_MAX_BYTES = 50 * 1024 * 1024
+B2_MAX_BYTES = 5 * 1024 * 1024 * 1024
+
+IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+DOCUMENT_TYPES = {
+    "application/pdf",
+    "text/plain",
+    "text/csv",
+    "application/csv",
+    "application/json",
+    "application/xml",
+    "text/xml",
+    "application/zip",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+}
+
 
 def _configured(name: str) -> bool:
     return bool(os.getenv(name, "").strip())
+
+
+def classify_storage(filename: str, content_type: str, size_bytes: int) -> str:
+    content_type = (content_type or "").split(";", 1)[0].strip().lower()
+    if size_bytes > B2_MAX_BYTES:
+        raise ValueError("File exceeds the 5 GB Backblaze B2 application limit")
+    if content_type in IMAGE_TYPES:
+        if size_bytes > IMAGE_MAX_BYTES:
+            return "b2"
+        return "cloudinary"
+    if size_bytes <= DOCUMENT_MAX_BYTES:
+        return "supabase"
+    return "b2"
 
 
 def _upload_cloudinary(file_obj: BinaryIO, filename: str, content_type: str) -> str:
@@ -46,7 +80,7 @@ def _upload_supabase(file_obj: BinaryIO, filename: str, content_type: str) -> st
             "x-upsert": "false",
         },
         data=file_obj,
-        timeout=30,
+        timeout=120,
     )
     response.raise_for_status()
     public_base = os.getenv("SUPABASE_STORAGE_PUBLIC_BASE_URL", "").strip().rstrip("/")
@@ -88,42 +122,74 @@ def _upload_s3(file_obj: BinaryIO, filename: str, content_type: str) -> str:
 
     public_base = os.getenv("S3_PUBLIC_BASE_URL", "").strip().rstrip("/")
     if not public_base:
-        raise RuntimeError("S3_PUBLIC_BASE_URL is required for B2 fallback")
+        raise RuntimeError("S3_PUBLIC_BASE_URL is required for B2 storage")
     return f"{public_base}/{filename}"
 
 
-def upload_image(file_obj: BinaryIO, filename: str, content_type: str) -> str:
-    """Primary Cloudinary -> Supabase Storage -> B2 fallback chain.
+def upload_routed(file_obj: BinaryIO, filename: str, content_type: str, size_bytes: int) -> tuple[str, str, str]:
+    """Route by file class: images->Cloudinary, documents->Supabase, large->B2.
 
-    The fallback chain is explicit and only activates when a preceding backend
-    is configured and its upload fails. Local disk remains the development default.
+    The selected backend can fall back to the configured secondary backends, but
+    a fallback never changes the persisted storage_class classification.
     """
-    primary = os.getenv("UPLOAD_STORAGE_BACKEND", "local").strip().lower()
-    fallbacks = [
-        item.strip().lower()
-        for item in os.getenv("STORAGE_FALLBACK_BACKENDS", "supabase,b2").split(",")
-        if item.strip()
-    ]
-    backends = [primary] + [item for item in fallbacks if item != primary]
+    storage_class = classify_storage(filename, content_type, size_bytes)
+    configured = {
+        "cloudinary": ("CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"),
+        "supabase": ("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_STORAGE_BUCKET"),
+        "b2": ("S3_ENDPOINT_URL", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_BUCKET", "S3_PUBLIC_BASE_URL"),
+    }
+    preferred = {
+        "cloudinary": ["cloudinary", "supabase", "b2"],
+        "supabase": ["supabase", "b2"],
+        "b2": ["b2"],
+    }[storage_class]
 
     errors: list[str] = []
-    for backend in backends:
+    for backend in preferred:
         try:
+            if not all(_configured(key) for key in configured[backend]):
+                raise RuntimeError(f"{backend} is not configured")
             if backend == "cloudinary":
-                required = ("CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET")
-                if not all(_configured(key) for key in required):
-                    raise RuntimeError("Cloudinary is not configured")
-                return _upload_cloudinary(file_obj, filename, content_type)
-            if backend == "supabase":
-                required = ("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY")
-                if not all(_configured(key) for key in required):
-                    raise RuntimeError("Supabase Storage is not configured")
-                return _upload_supabase(file_obj, filename, content_type)
-            if backend in {"b2", "r2", "s3"}:
-                return _upload_s3(file_obj, filename, content_type)
-            if backend == "local":
-                return ""
-            raise RuntimeError(f"unsupported storage backend: {backend}")
+                url = _upload_cloudinary(file_obj, filename, content_type)
+            elif backend == "supabase":
+                url = _upload_supabase(file_obj, filename, content_type)
+            else:
+                url = _upload_s3(file_obj, filename, content_type)
+            return backend, storage_class, url
         except Exception as exc:
             errors.append(f"{backend}: {exc.__class__.__name__}")
-    raise RuntimeError("all configured upload storage backends failed: " + ", ".join(errors))
+    raise RuntimeError("storage routing failed: " + ", ".join(errors))
+
+
+def _google_drive_credentials():
+    from google.oauth2.credentials import Credentials
+
+    raw = os.getenv("GOOGLE_DRIVE_CREDENTIALS_JSON", "").strip()
+    if not raw:
+        raise RuntimeError("GOOGLE_DRIVE_CREDENTIALS_JSON is required for Google Drive exports")
+    data = json.loads(raw)
+    return Credentials.from_authorized_user_info(
+        data,
+        scopes=["https://www.googleapis.com/auth/drive.file"],
+    )
+
+
+def export_to_google_drive(file_obj: BinaryIO, filename: str, content_type: str) -> str:
+    """Upload an export using the configured user's Google Drive OAuth credentials."""
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaIoBaseUpload
+
+    credentials = _google_drive_credentials()
+    service = build("drive", "v3", credentials=credentials, cache_discovery=False)
+    folder_id = os.getenv("GOOGLE_DRIVE_EXPORT_FOLDER_ID", "").strip()
+    metadata = {"name": filename}
+    if folder_id:
+        metadata["parents"] = [folder_id]
+    file_obj.seek(0)
+    media = MediaIoBaseUpload(
+        file_obj,
+        mimetype=content_type or mimetypes.guess_type(filename)[0] or "application/octet-stream",
+        resumable=True,
+    )
+    created = service.files().create(body=metadata, media_body=media, fields="id,webViewLink").execute()
+    return str(created.get("webViewLink") or f"https://drive.google.com/open?id={created['id']}")
