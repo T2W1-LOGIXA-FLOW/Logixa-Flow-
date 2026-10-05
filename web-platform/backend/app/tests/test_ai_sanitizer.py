@@ -40,5 +40,8 @@ def test_sanitization_logging_contains_counts_but_not_raw_pii(caplog):
         sanitize_for_llm("alice@example.com", log_redactions=True)
 
     assert "AI content sanitized" in caplog.text
-    assert "pii_redactions" in caplog.text
+    records = [record for record in caplog.records if record.message == "AI content sanitized"]
+    assert records
+    assert records[-1].pii_redactions == 1
+    assert records[-1].prompt_injection_redactions == 0
     assert "alice@example.com" not in caplog.text
