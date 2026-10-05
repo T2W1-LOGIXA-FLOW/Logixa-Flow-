@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import inspect
 import logging
 
 import pytest
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
 from fastapi.testclient import TestClient
 from fastapi.routing import APIRoute
 
@@ -106,8 +107,9 @@ def test_agent_service_auth_is_limited_to_agent_operations():
         for route in app.routes
         if isinstance(route, APIRoute)
         and any(
-            getattr(dependency.call, "__name__", None) == "require_admin_or_agent_service"
-            for dependency in route.dependant.dependencies
+            isinstance(parameter.default, Depends)
+            and getattr(parameter.default.dependency, "__name__", None) == "require_admin_or_agent_service"
+            for parameter in inspect.signature(route.endpoint).parameters.values()
         )
     }
 
