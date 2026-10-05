@@ -405,14 +405,26 @@ def _as_utc(value: datetime) -> datetime:
 def _schedule_run(run_id: str, priority: int = 0, delay_seconds: int = 0) -> None:
     queued_at = _now()
     scheduled_at = queued_at + timedelta(seconds=max(delay_seconds, 0))
-    _EXECUTION_QUEUE[:] = [item for item in _EXECUTION_QUEUE if item["run_id"] != run_id]
-    _EXECUTION_QUEUE.append({"run_id": run_id, "priority": priority, "queued_at": queued_at, "scheduled_for": scheduled_at})
-    _EXECUTION_QUEUE.sort(key=lambda item: (-int(item["priority"]), item["scheduled_for"], item["queued_at"]))
+    queue_item = {
+        "run_id": run_id,
+        "priority": priority,
+        "queued_at": queued_at,
+        "scheduled_for": scheduled_at,
+    }
+
     db = SessionLocal()
     try:
         if not db.bind or not inspect(db.bind).has_table("scheduled_workflow_jobs"):
+            _EXECUTION_QUEUE[:] = [item for item in _EXECUTION_QUEUE if item["run_id"] != run_id]
+            _EXECUTION_QUEUE.append(queue_item)
+            _EXECUTION_QUEUE.sort(
+                key=lambda item: (-int(item["priority"]), item["scheduled_for"], item["queued_at"])
+            )
             return
-        existing = db.query(models.ScheduledWorkflowJob).filter(models.ScheduledWorkflowJob.run_id == run_id).first()
+
+        existing = db.query(models.ScheduledWorkflowJob).filter(
+            models.ScheduledWorkflowJob.run_id == run_id
+        ).first()
         if existing is None:
             db.add(models.ScheduledWorkflowJob(
                 id=f"job-{uuid4().hex}",
@@ -428,6 +440,12 @@ def _schedule_run(run_id: str, priority: int = 0, delay_seconds: int = 0) -> Non
             existing.status = "queued"
             existing.updated_at = queued_at
         db.commit()
+
+        _EXECUTION_QUEUE[:] = [item for item in _EXECUTION_QUEUE if item["run_id"] != run_id]
+        _EXECUTION_QUEUE.append(queue_item)
+        _EXECUTION_QUEUE.sort(
+            key=lambda item: (-int(item["priority"]), item["scheduled_for"], item["queued_at"])
+        )
     except Exception:
         db.rollback()
         logger.exception(
@@ -743,12 +761,28 @@ async def _queue_worker() -> None:
             if _as_utc(item["scheduled_for"]) > now:
                 await asyncio.sleep(max((_as_utc(item["scheduled_for"]) - now).total_seconds(), 0))
                 continue
-            _EXECUTION_QUEUE.pop(0)
+
             if run.state.status == "queued":
-                if not _claim_job(run.run_id):
+                try:
+                    claimed = _claim_job(run.run_id)
+                except Exception:
+                    logger.exception(
+                        "Workflow queue worker failed to claim job",
+                        extra={
+                            "run_id": run.run_id,
+                            "operation": "queue_worker_claim",
+                            "error_type": "database_failure",
+                        },
+                    )
+                    return
+
+                _EXECUTION_QUEUE.pop(0)
+                if not claimed:
                     continue
                 task = asyncio.create_task(_execute_workflow(run.run_id))
                 _track_task(task)
+            else:
+                _EXECUTION_QUEUE.pop(0)
     finally:
         _QUEUE_WORKER_RUNNING = False
 
