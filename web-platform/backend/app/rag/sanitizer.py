@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass
 
@@ -12,6 +13,8 @@ _PHONE_RE = re.compile(
     r"(?<!\d)(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{2,4}\)?[\s.-]?)\d{3,4}[\s.-]\d{3,4}(?!\d)"
 )
 _CARD_RE = re.compile(r"(?<!\d)(?:\d[ -]?){13,19}(?!\d)")
+logger = logging.getLogger(__name__)
+
 _PROMPT_INJECTION_RE = re.compile(
     r"(?is)\b(?:ignore|disregard|override|forget)\s+(?:all\s+|any\s+|the\s+)?"
     r"(?:previous|prior|above|earlier)\s+(?:instructions?|rules?|messages?|prompts?)\b"
@@ -61,5 +64,20 @@ def sanitize_text(text: str, *, redact_pii: bool | None = None, sanitize_instruc
     )
 
 
-def sanitize_for_llm(text: str) -> str:
-    return sanitize_text(text).text
+def sanitize_for_llm(
+    text: str,
+    *,
+    log_redactions: bool = False,
+    operation: str = "llm_sanitization",
+) -> str:
+    result = sanitize_text(text)
+    if log_redactions and (result.pii_redactions or result.prompt_injection_redactions):
+        logger.info(
+            "AI content sanitized",
+            extra={
+                "operation": operation,
+                "pii_redactions": result.pii_redactions,
+                "prompt_injection_redactions": result.prompt_injection_redactions,
+            },
+        )
+    return result.text
