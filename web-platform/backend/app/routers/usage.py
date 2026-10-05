@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from datetime import timezone
 from typing import Optional
 
@@ -25,15 +26,15 @@ def admin_usage(
     agg: dict = {}
     for r in rows:
         key = (r.provider or "unknown", r.api_key_name or "unknown")
-        entry = agg.get(key, {"provider": key[0], "api_key_name": key[1], "tokens": 0, "cost": 0.0, "calls": 0})
+        entry = agg.get(key, {"provider": key[0], "api_key_name": key[1], "tokens": 0, "cost": Decimal("0"), "calls": 0})
         entry["tokens"] += int(r.tokens_used or 0)
-        entry["cost"] += float(r.cost or 0.0)
+        entry["cost"] += r.cost or Decimal("0")
         entry["calls"] += 1
         agg[key] = entry
 
     result = list(agg.values())
     # sort by cost desc
-    result.sort(key=lambda x: x.get("cost", 0.0), reverse=True)
+    result.sort(key=lambda x: x.get("cost", Decimal("0")), reverse=True)
     return {"usage_by_key": result}
 
 
@@ -53,7 +54,7 @@ def admin_usage_trend(
         if not r.created_at:
             continue
         day = r.created_at.astimezone(timezone.utc).date().isoformat()
-        entry = daily.get(day, {"date": day, "tokens": 0, "cost": 0.0, "calls": 0})
+        entry = daily.get(day, {"date": day, "tokens": 0, "cost": Decimal("0"), "calls": 0})
         entry["tokens"] += int(r.tokens_used or 0)
         entry["cost"] += float(r.cost or 0.0)
         entry["calls"] += 1
