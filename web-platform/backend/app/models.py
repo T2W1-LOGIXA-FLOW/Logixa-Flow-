@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from decimal import Decimal
 
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text, ForeignKey
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, Numeric, String, Text, ForeignKey
 
 from .database import Base
 
@@ -116,7 +117,7 @@ class AiMemoryBrain(Base):
     source_ids = Column(Text, nullable=False, default="[]")
     provider = Column(String(120), nullable=True)
     token_usage = Column(Integer, nullable=True)
-    cost_estimate = Column(Float, nullable=True)
+    cost_estimate = Column(Numeric(18, 6, asdecimal=True), nullable=True)
     output_version = Column(Integer, nullable=False, default=1)
     workflow_run_id = Column(String(80), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
@@ -385,7 +386,7 @@ class ChatMessage(Base):
     agent_id = Column(String(100), nullable=True)  # Which agent generated this message
     model_used = Column(String(100), nullable=True)  # Which AI model was used
     tokens_used = Column(Integer, nullable=True)  # Token usage tracking
-    cost_estimate = Column(Float, nullable=True)  # Estimated cost in USD
+    cost_estimate = Column(Numeric(18, 6, asdecimal=True), nullable=True)  # Estimated cost in USD
     json_metadata = Column(Text, nullable=True)  # JSON metadata
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
 
@@ -399,7 +400,7 @@ class ApiUsageLog(Base):
     role = Column(String(50), nullable=False, index=True)
     model = Column(String(255), nullable=True, index=True)
     tokens_used = Column(Integer, nullable=True)
-    cost = Column(Float, nullable=True)
+    cost = Column(Numeric(18, 6, asdecimal=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
 
 
@@ -408,10 +409,10 @@ class ProjectRevenue(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False, index=True)
-    estimated_revenue = Column(Float, default=0.0, nullable=False)
-    estimated_cost = Column(Float, default=0.0, nullable=False)
-    actual_revenue = Column(Float, default=0.0, nullable=False)
-    actual_cost = Column(Float, default=0.0, nullable=False)
+    estimated_revenue = Column(Numeric(18, 6, asdecimal=True), default=Decimal("0"), nullable=False)
+    estimated_cost = Column(Numeric(18, 6, asdecimal=True), default=Decimal("0"), nullable=False)
+    actual_revenue = Column(Numeric(18, 6, asdecimal=True), default=Decimal("0"), nullable=False)
+    actual_cost = Column(Numeric(18, 6, asdecimal=True), default=Decimal("0"), nullable=False)
     status = Column(String(40), default="planned", nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
 
@@ -421,14 +422,14 @@ class ExpenseCategory(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False, unique=True, index=True)
-    budget = Column(Float, default=0.0, nullable=False)
+    budget = Column(Numeric(18, 6, asdecimal=True), default=Decimal("0"), nullable=False)
 
 
 class CompanyBudget(Base):
     __tablename__ = "company_budgets"
 
     id = Column(Integer, primary_key=True, index=True)
-    total_budget = Column(Float, default=0.0, nullable=False)
-    spent_amount = Column(Float, default=0.0, nullable=False)
+    total_budget = Column(Numeric(18, 6, asdecimal=True), default=Decimal("0"), nullable=False)
+    spent_amount = Column(Numeric(18, 6, asdecimal=True), default=Decimal("0"), nullable=False)
     currency = Column(String(10), default="USD", nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
