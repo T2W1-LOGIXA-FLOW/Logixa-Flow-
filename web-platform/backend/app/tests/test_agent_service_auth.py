@@ -106,7 +106,7 @@ def test_agent_service_auth_is_limited_to_agent_operations():
         for route in app.routes
         if isinstance(route, APIRoute)
         and any(
-            dependency.call is security.require_admin_or_agent_service
+            getattr(dependency.call, "__name__", None) == "require_admin_or_agent_service"
             for dependency in route.dependant.dependencies
         )
     }
