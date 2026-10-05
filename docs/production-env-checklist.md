@@ -32,6 +32,12 @@ Supabase Storage fallback:
 - SUPABASE_STORAGE_BUCKET
 - SUPABASE_STORAGE_PUBLIC_BASE_URL (recommended when the bucket uses a custom public URL)
 
+B2 routing policy:
+- Images <= 10 MB -> Cloudinary
+- Small documents/invoices/reports <= 50 MB -> Supabase Storage
+- Large datasets/attachments > 50 MB and <= 5 GB -> Backblaze B2 through the S3-compatible API
+- Export reports and workflow backups -> Google Drive using user OAuth credentials
+
 B2 fallback:
 - S3_ENDPOINT_URL
 - S3_ACCESS_KEY_ID
@@ -39,6 +45,10 @@ B2 fallback:
 - S3_BUCKET
 - S3_REGION
 - S3_PUBLIC_BASE_URL
+
+Google Drive exports:
+- GOOGLE_DRIVE_CREDENTIALS_JSON
+- GOOGLE_DRIVE_EXPORT_FOLDER_ID (optional)
 
 AI:
 - At least one provider key for the selected user/admin AI route.
