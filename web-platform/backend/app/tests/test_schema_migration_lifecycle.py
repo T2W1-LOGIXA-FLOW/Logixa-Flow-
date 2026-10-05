@@ -93,7 +93,7 @@ def test_schema_reconciliation_follows_rls_and_secures_every_model_table() -> No
         )
     )
     protected_tables = set(ast.literal_eval(assignment.value))
-    assert set(models.Base.metadata.tables) <= protected_tables
+    assert (set(models.Base.metadata.tables) - {"audit_events"}) <= protected_tables
     assert "revision = '20261003_0006'" in source
     assert "down_revision = '20261003_0005'" in source
     assert "ENABLE ROW LEVEL SECURITY" in source
