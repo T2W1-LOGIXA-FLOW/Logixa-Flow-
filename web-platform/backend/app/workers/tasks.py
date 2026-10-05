@@ -11,10 +11,6 @@ logger = logging.getLogger(__name__)
 @celery_app.task(
     bind=True,
     name="logixa_flow.execute_workflow",
-    autoretry_for=(RuntimeError,),
-    retry_backoff=True,
-    retry_backoff_max=300,
-    max_retries=3,
 )
 def execute_workflow_task(self, run_id: str) -> str:
     """Execute one durable workflow run outside the web process."""
