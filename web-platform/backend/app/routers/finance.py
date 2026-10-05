@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from datetime import datetime
 from typing import List, Optional
 
@@ -16,8 +17,8 @@ router = APIRouter()
 
 class ProjectCreate(BaseModel):
     name: str
-    estimated_revenue: Optional[float] = 0.0
-    estimated_cost: Optional[float] = 0.0
+    estimated_revenue: Optional[Decimal] = Decimal("0")
+    estimated_cost: Optional[Decimal] = Decimal("0")
 
 
 @router.get("/admin/finance/summary")
@@ -27,13 +28,13 @@ def finance_summary(
 ) -> dict:
     """Basic finance summary: revenue, expenses, profit."""
     projects: List[models.ProjectRevenue] = db.query(models.ProjectRevenue).all()
-    total_estimated_revenue = sum([p.estimated_revenue or 0.0 for p in projects])
-    total_estimated_cost = sum([p.estimated_cost or 0.0 for p in projects])
-    total_actual_revenue = sum([p.actual_revenue or 0.0 for p in projects])
-    total_actual_cost = sum([p.actual_cost or 0.0 for p in projects])
+    total_estimated_revenue = sum((p.estimated_revenue or Decimal("0") for p in projects), Decimal("0"))
+    total_estimated_cost = sum((p.estimated_cost or Decimal("0") for p in projects), Decimal("0"))
+    total_actual_revenue = sum((p.actual_revenue or Decimal("0") for p in projects), Decimal("0"))
+    total_actual_cost = sum((p.actual_cost or Decimal("0") for p in projects), Decimal("0"))
 
     expense_categories = db.query(models.ExpenseCategory).all()
-    total_expense_budgets = sum([e.budget or 0.0 for e in expense_categories])
+    total_expense_budgets = sum((e.budget or Decimal("0") for e in expense_categories), Decimal("0"))
 
     company_budget = db.query(models.CompanyBudget).order_by(models.CompanyBudget.updated_at.desc()).first()
 
@@ -83,10 +84,10 @@ def create_project(payload: ProjectCreate, db: Session = Depends(get_db), _: dic
     # create new project revenue entry with provided estimates
     p = models.ProjectRevenue(
         name=payload.name,
-        estimated_revenue=payload.estimated_revenue or 0.0,
-        estimated_cost=payload.estimated_cost or 0.0,
-        actual_revenue=0.0,
-        actual_cost=0.0,
+        estimated_revenue=payload.estimated_revenue or Decimal("0"),
+        estimated_cost=payload.estimated_cost or Decimal("0"),
+        actual_revenue=Decimal("0"),
+        actual_cost=Decimal("0"),
         status="planned",
         created_at=models.utc_now(),
     )
