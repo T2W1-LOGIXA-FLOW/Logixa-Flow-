@@ -297,3 +297,99 @@ def test_json_formatter_includes_exception_traceback() -> None:
     assert "RuntimeError: boom" in payload["exception"]
     assert payload["operation"] == "workflow_persistence"
     assert payload["error_type"] == "database_failure"
+
+
+def test_schedule_run_does_not_publish_in_memory_queue_when_db_persistence_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    run = WorkflowRunOut(
+        run_id="schedule-db-fail",
+        workflow_id="schedule-flow",
+        state=WorkflowState(status="queued", current_node=None, completed_nodes=[], error=None),
+    )
+    workflow._WORKFLOW_RUNS[run.run_id] = run
+
+    class FailingSessionLocal:
+        def __call__(self):
+            raise RuntimeError("database boom")
+
+    monkeypatch.setattr(workflow, "SessionLocal", FailingSessionLocal())
+    with pytest.raises(RuntimeError, match="database boom"):
+        workflow._schedule_run(run.run_id)
+
+    assert workflow._EXECUTION_QUEUE == []
+
+
+def test_claim_job_propagates_database_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FailingSessionLocal:
+        def __call__(self):
+            raise RuntimeError("database boom")
+
+    monkeypatch.setattr(workflow, "SessionLocal", FailingSessionLocal())
+    with pytest.raises(RuntimeError, match="database boom"):
+        workflow._claim_job("claim-db-fail")
+
+
+def test_mark_job_terminal_propagates_database_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FailingSessionLocal:
+        def __call__(self):
+            raise RuntimeError("database boom")
+
+    monkeypatch.setattr(workflow, "SessionLocal", FailingSessionLocal())
+    with pytest.raises(RuntimeError, match="database boom"):
+        workflow._mark_job_terminal("terminal-db-fail", "failed")
+
+
+def test_record_controller_result_propagates_database_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    workflow._CONTROLLER_RUNS["controller-db-fail-run"] = "controller-db-fail"
+
+    class FailingSessionLocal:
+        def __call__(self):
+            raise RuntimeError("database boom")
+
+    monkeypatch.setattr(workflow, "SessionLocal", FailingSessionLocal())
+    with pytest.raises(RuntimeError, match="database boom"):
+        workflow._record_controller_result("controller-db-fail-run", "failed")
+
+
+def test_restore_pending_workflow_runs_propagates_database_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FailingSessionLocal:
+        def __call__(self):
+            raise RuntimeError("database boom")
+
+    monkeypatch.setattr(workflow, "SessionLocal", FailingSessionLocal())
+    with pytest.raises(RuntimeError, match="database boom"):
+        workflow.restore_pending_workflow_runs()
+
+
+@pytest.mark.anyio
+async def test_queue_worker_keeps_job_queued_when_claim_database_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    run = WorkflowRunOut(
+        run_id="worker-db-fail",
+        workflow_id="worker-flow",
+        state=WorkflowState(status="queued", current_node=None, completed_nodes=[], error=None),
+    )
+    workflow._WORKFLOW_RUNS[run.run_id] = run
+    item = {
+        "run_id": run.run_id,
+        "priority": 1,
+        "queued_at": workflow._now(),
+        "scheduled_for": workflow._now(),
+    }
+    workflow._EXECUTION_QUEUE.append(item)
+
+    logged = {}
+    monkeypatch.setattr(
+        workflow,
+        "logger",
+        type("Logger", (), {"exception": lambda self, *args, **kwargs: logged.setdefault("called", True)})(),
+    )
+
+    def failing_claim(run_id: str) -> bool:
+        raise RuntimeError("database boom")
+
+    monkeypatch.setattr(workflow, "_claim_job", failing_claim)
+
+    await workflow._queue_worker()
+
+    assert workflow._EXECUTION_QUEUE == [item]
+    assert workflow._QUEUE_WORKER_RUNNING is False
+    assert logged.get("called") is True
