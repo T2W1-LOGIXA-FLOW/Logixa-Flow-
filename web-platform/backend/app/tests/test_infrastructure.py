@@ -1,0 +1,77 @@
+from __future__ import annotations
+
+from io import BytesIO
+
+import pytest
+
+from app import config, qstash, storage
+
+
+def test_qstash_requires_token_and_destination(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("QSTASH_TOKEN", raising=False)
+    monkeypatch.delenv("QSTASH_DESTINATION_URL", raising=False)
+    assert qstash.qstash_configured() is False
+
+    monkeypatch.setenv("QSTASH_TOKEN", "token")
+    monkeypatch.setenv("QSTASH_DESTINATION_URL", "https://api.example.com")
+    assert qstash.qstash_configured() is True
+
+
+def test_storage_fallback_chain_uses_next_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("UPLOAD_STORAGE_BACKEND", "cloudinary")
+    monkeypatch.setenv("STORAGE_FALLBACK_BACKENDS", "supabase,b2")
+    monkeypatch.setenv("CLOUDINARY_CLOUD_NAME", "cloud")
+    monkeypatch.setenv("CLOUDINARY_API_KEY", "key")
+    monkeypatch.setenv("CLOUDINARY_API_SECRET", "secret")
+    monkeypatch.setenv("SUPABASE_URL", "https://example.supabase.co")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "service")
+    monkeypatch.setenv("SUPABASE_STORAGE_BUCKET", "uploads")
+
+    calls: list[str] = []
+
+    def fail_cloudinary(*args, **kwargs):
+        calls.append("cloudinary")
+        raise RuntimeError("primary unavailable")
+
+    def succeed_supabase(*args, **kwargs):
+        calls.append("supabase")
+        return "https://example.supabase.co/storage/v1/object/public/uploads/file.jpg"
+
+    monkeypatch.setattr(storage, "_upload_cloudinary", fail_cloudinary)
+    monkeypatch.setattr(storage, "_upload_supabase", succeed_supabase)
+
+    result = storage.upload_image(BytesIO(b"image"), "file.jpg", "image/jpeg")
+
+    assert result.endswith("/file.jpg")
+    assert calls == ["cloudinary", "supabase"]
+
+
+def test_production_env_requires_celery_redis_and_storage(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("JWT_SECRET", "j" * 32)
+    monkeypatch.setenv("API_SECRET_TOKEN", "a" * 32)
+    monkeypatch.setenv("CELERY_ENABLED", "true")
+    monkeypatch.delenv("REDIS_URL", raising=False)
+    monkeypatch.setenv("UPLOAD_STORAGE_BACKEND", "cloudinary")
+    monkeypatch.setenv("STORAGE_FALLBACK_BACKENDS", "supabase,b2")
+    for key in (
+        "CLOUDINARY_CLOUD_NAME",
+        "CLOUDINARY_API_KEY",
+        "CLOUDINARY_API_SECRET",
+        "SUPABASE_URL",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "SUPABASE_STORAGE_BUCKET",
+        "S3_ENDPOINT_URL",
+        "S3_ACCESS_KEY_ID",
+        "S3_SECRET_ACCESS_KEY",
+        "S3_BUCKET",
+        "S3_PUBLIC_BASE_URL",
+    ):
+        monkeypatch.delenv(key, raising=False)
+
+    missing = config.validate_env()
+
+    assert any(item.startswith("REDIS_URL") for item in missing)
+    assert any(item.startswith("CLOUDINARY_CLOUD_NAME") for item in missing)
+    assert any(item.startswith("SUPABASE_URL") for item in missing)
+    assert any(item.startswith("S3_ENDPOINT_URL") for item in missing)
