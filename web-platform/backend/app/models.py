@@ -227,6 +227,17 @@ class AnalyticsEvent(Base):
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
 
 
+class AuditEvent(Base):
+    __tablename__ = "audit_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    actor_id = Column(String(255), nullable=False, index=True)
+    action = Column(String(80), nullable=False, index=True)
+    subject_hash = Column(String(64), nullable=False, index=True)
+    details = Column(Text, nullable=False, default="")
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
+
+
 class FeedSource(Base):
     __tablename__ = "feed_sources"
 
