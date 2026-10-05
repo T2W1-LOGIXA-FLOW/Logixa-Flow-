@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import shutil
 from pathlib import Path
 from uuid import uuid4
 
@@ -10,10 +9,9 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from .. import models, schemas
 from ..database import SessionLocal
 from ..security import require_admin
-from ..storage import B2_MAX_BYTES, IMAGE_MAX_BYTES, IMAGE_TYPES, classify_storage, upload_routed
+from ..storage import B2_MAX_BYTES, IMAGE_TYPES, classify_storage, upload_routed
 
 router = APIRouter()
-UPLOAD_DIR = Path(__file__).resolve().parents[2] / "uploads"
 ALLOWED_IMAGE_TYPES = IMAGE_TYPES
 ALLOWED_DOCUMENT_TYPES = {
     "application/pdf",
@@ -28,7 +26,15 @@ ALLOWED_DOCUMENT_TYPES = {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 }
-MAX_UPLOAD_BYTES = min(max(int(os.getenv("MAX_UPLOAD_BYTES", str(B2_MAX_BYTES)), 1), 1), B2_MAX_BYTES)
+
+
+def _max_upload_bytes() -> int:
+    raw = os.getenv("MAX_UPLOAD_BYTES", str(B2_MAX_BYTES)).strip()
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return B2_MAX_BYTES
+    return min(max(value, 1), B2_MAX_BYTES)
 
 
 def _validate_image_upload(file: UploadFile, content: bytes) -> None:
@@ -57,40 +63,30 @@ def _owner_id(admin: object) -> str | None:
 def upload_file(file: UploadFile = File(...), _admin=Depends(require_admin)):
     content_type = (file.content_type or "").split(";", 1)[0].strip().lower()
     if content_type not in ALLOWED_IMAGE_TYPES | ALLOWED_DOCUMENT_TYPES:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Unsupported file type",
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported file type")
 
     file.file.seek(0, 2)
     size_bytes = file.file.tell()
     file.file.seek(0)
-    if size_bytes > MAX_UPLOAD_BYTES:
+    if size_bytes > _max_upload_bytes():
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail="File exceeds the configured upload size limit",
         )
 
     if content_type in ALLOWED_IMAGE_TYPES:
-        if size_bytes > B2_MAX_BYTES:
-            raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Image exceeds maximum supported size")
         signature = file.file.read(32)
         file.file.seek(0)
         _validate_image_upload(file, signature)
 
     try:
-        storage_class = classify_storage(file.filename or "upload", content_type, size_bytes)
+        classify_storage(file.filename or "upload", content_type, size_bytes)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)) from exc
 
     filename = f"{uuid4().hex}-{Path(file.filename or 'upload').name}"
     try:
-        backend, storage_class, url = upload_routed(
-            file.file,
-            filename,
-            content_type,
-            size_bytes,
-        )
+        backend, storage_class, url = upload_routed(file.file, filename, content_type, size_bytes)
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
@@ -129,18 +125,20 @@ def export_file_to_drive(file: UploadFile = File(...), _admin=Depends(require_ad
     size_bytes = file.file.tell()
     file.file.seek(0)
     if size_bytes > B2_MAX_BYTES:
-        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Export exceeds the supported 5 GB limit")
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Export exceeds the supported 5 GB limit",
+        )
 
     from ..storage import export_to_google_drive
 
     try:
-        url = export_to_google_drive(
-            file.file,
-            Path(file.filename or "export").name,
-            content_type,
-        )
+        url = export_to_google_drive(file.file, Path(file.filename or "export").name, content_type)
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Google Drive export is not configured or failed") from exc
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Google Drive export is not configured or failed",
+        ) from exc
 
     record = models.StoredFile(
         id=uuid4().hex,
