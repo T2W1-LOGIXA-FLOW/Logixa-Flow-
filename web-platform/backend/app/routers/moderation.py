@@ -5,7 +5,7 @@ import os
 from sqlalchemy.orm import Session
 from ..database import get_db
 from .. import models, schemas
-from ..security import get_current_user, CurrentUser
+from ..security import get_current_user, require_admin, CurrentUser
 
 router = APIRouter()
 
@@ -36,7 +36,7 @@ def add_comment(
     """Create a new comment with toxicity moderation check."""
     # 1. Moderation check (Hugging Face) - optional if API key not set
     toxicity_score = 0.0
-    status_result = "approved"
+    status_result = "pending"
     
     if HF_API_KEY:
         try:
@@ -51,8 +51,8 @@ def add_comment(
             if isinstance(result, list) and len(result) > 0:
                 toxicity_score = result[0][0].get("score", 0.0)
         except Exception:
-            # Moderation service unavailable - continue with approved
-            pass
+            # Moderation is fail-closed: unavailable provider means human review.
+            status_result = "pending"
     
     # 2. Decision
     if toxicity_score > 0.7:
@@ -101,8 +101,9 @@ def list_comments(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
+    _: CurrentUser = Depends(require_admin),
 ) -> dict:
-    """List comments with optional filtering by post and status."""
+    """Admin-only comment moderation listing."""
     query = db.query(models.Comment)
     
     if post_id:
@@ -142,8 +143,9 @@ def list_comments(
 def get_comment(
     comment_id: int,
     db: Session = Depends(get_db),
+    _: CurrentUser = Depends(require_admin),
 ) -> dict:
-    """Get a specific comment by ID."""
+    """Admin-only comment inspection."""
     comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
     if not comment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
@@ -243,7 +245,7 @@ def get_post_comments(
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
     
-    query = db.query(models.Comment).filter(models.Comment.post_id == post_id)
+    query = db.query(models.Comment).filter(models.Comment.post_id == post_id, models.Comment.status == "approved")
     total = query.count()
     comments = query.order_by(models.Comment.created_at.desc()).offset(offset).limit(limit).all()
     
@@ -256,7 +258,6 @@ def get_post_comments(
             {
                 "id": c.id,
                 "text": c.text,
-                "user_id": c.user_id,
                 "status": c.status,
                 "likes": c.likes,
                 "dislikes": c.dislikes,
