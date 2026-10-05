@@ -18,8 +18,6 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
-      - key: JWT_ADMIN_SECRET
-        generateValue: true
       - key: API_SECRET_TOKEN
         generateValue: true
       - key: AGENT_SERVICE_TOKEN
@@ -68,8 +66,40 @@ services:
         value: true
       - key: SCHEDULER_INTERVAL_HOURS
         value: "24"
+      - key: CELERY_ENABLED
+        value: true
+      - key: CELERY_QUEUE
+        value: logixa-workflows
+      - key: QSTASH_URL
+        value: https://qstash.upstash.io
+      - key: QSTASH_TOKEN
+        sync: false
+      - key: QSTASH_CURRENT_SIGNING_KEY
+        sync: false
+      - key: QSTASH_NEXT_SIGNING_KEY
+        sync: false
+      - key: QSTASH_DESTINATION_URL
+        sync: false
+      - key: QSTASH_TIMEOUT
+        value: 10s
+      - key: QSTASH_RETRIES
+        value: "3"
       - key: UPLOAD_STORAGE_BACKEND
-        value: b2
+        value: cloudinary
+      - key: STORAGE_FALLBACK_BACKENDS
+        value: supabase,b2
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: uploads
+      - key: SUPABASE_STORAGE_PUBLIC_BASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
       - key: S3_ENDPOINT_URL
         sync: false
       - key: S3_ACCESS_KEY_ID
@@ -82,3 +112,30 @@ services:
         value: us-west-004
       - key: S3_PUBLIC_BASE_URL
         sync: false
+
+  - type: worker
+    name: logixa-flow-worker
+    runtime: docker
+    plan: free
+    dockerfilePath: ./web-platform/backend/Dockerfile
+    dockerContext: ./web-platform/backend
+    dockerCommand: celery -A app.workers.celery_app.celery_app worker --loglevel=INFO --concurrency=1 -Q logixa-workflows
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_PROFILE
+        value: supabase
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: API_SECRET_TOKEN
+        sync: false
+      - key: AGENT_SERVICE_TOKEN
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: CELERY_ENABLED
+        value: true
+      - key: CELERY_QUEUE
+        value: logixa-workflows
