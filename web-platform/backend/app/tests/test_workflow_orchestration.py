@@ -123,8 +123,7 @@ async def test_approval_node_pauses_and_can_resume_after_admin_approval() -> Non
     approved = await workflow_router.approve_workflow_run(run.run_id, _admin={"role": "admin"})
     assert approved["status"] == "queued"
 
-    await asyncio.sleep(0)
-    await asyncio.gather(*workflow_router._RUN_TASKS)
+    await workflow_router._execute_workflow(run.run_id)
 
     assert run.state.status == "completed"
     assert run.state.completed_nodes == ["prepare", "approve", "publish"]
