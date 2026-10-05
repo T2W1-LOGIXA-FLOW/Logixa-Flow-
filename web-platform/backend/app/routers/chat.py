@@ -12,7 +12,7 @@ from .. import models, schemas
 from ..database import get_db
 from ..llm.router import LLMRouter
 from ..security import require_admin
-from ..cache import cache_client
+from ..cache import cache_client, rate_limiter
 
 router = APIRouter()
 
@@ -150,28 +150,15 @@ def public_chat_query(
 
     Rate limit: 5 requests per minute per client IP.
     """
-    # Determine client IP (respect X-Forwarded-For if present)
-    ip = None
-    xff = None
-    if http_request is not None:
-        xff = http_request.headers.get("x-forwarded-for")
-    if xff:
-        ip = xff.split(",")[0].strip()
-    elif http_request and http_request.client:
-        ip = http_request.client.host
-    else:
-        ip = "unknown"
-
-    # Simple per-IP counter stored in cache_client (supports Redis or in-memory)
-    key = f"public_chat:{ip}"
-    count_raw = cache_client.get(key)
-    try:
-        count = int(count_raw) if count_raw is not None else 0
-    except Exception:
-        count = 0
-    if count >= 5:
-        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many requests")
-    cache_client.set(key, str(count + 1), ttl_seconds=60)
+    # Use the ASGI client address rather than trusting a spoofable X-Forwarded-For
+    # header. If a trusted proxy middleware is added later, its normalized client
+    # address will already be reflected in request.client.
+    ip = http_request.client.host if http_request and http_request.client else "unknown"
+    if not rate_limiter.allow(f"public_chat:{ip}", limit=5, window_seconds=60):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many requests",
+        )
 
     ai_response = generate_ai_response(request.query, request.context, request.agent_id or "public", db, role="user")
     return {
