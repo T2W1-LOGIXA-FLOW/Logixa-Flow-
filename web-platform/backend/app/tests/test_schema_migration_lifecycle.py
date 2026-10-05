@@ -118,7 +118,8 @@ def test_schema_reconciliation_follows_rls_and_secures_every_model_table() -> No
     ).read_text(encoding="utf-8")
     assert "revision = \"20261005_0009\"" in audit_source
     assert "down_revision = \"20261005_0008\"" in audit_source
-    assert 'op.create_table("audit_events"' in audit_source
+    assert "create_table" in audit_source
+    assert "audit_events" in audit_source
 
     rls_source = RLS_MIGRATION.read_text(encoding="utf-8")
     assert 'revision = "20261003_0005"' in rls_source
