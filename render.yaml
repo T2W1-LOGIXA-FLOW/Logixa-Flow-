@@ -20,10 +20,6 @@ services:
         generateValue: true
       - key: JWT_ADMIN_SECRET
         generateValue: true
-      - key: ADMIN_USERNAME
-        value: admin
-      - key: ADMIN_PASSWORD
-        generateValue: true
       - key: API_SECRET_TOKEN
         generateValue: true
       - key: AGENT_SERVICE_TOKEN
@@ -86,42 +82,3 @@ services:
         value: us-west-004
       - key: S3_PUBLIC_BASE_URL
         sync: false
-  - type: worker
-    name: logixa-flow-worker
-    runtime: docker
-    plan: free
-    dockerfilePath: ./agents/Dockerfile
-    dockerContext: .
-    envVars:
-      - key: ENVIRONMENT
-        value: production
-      - key: BACKEND_URL
-        sync: false
-      - key: AGENT_SERVICE_TOKEN
-        sync: false
-      - key: ADMIN_USERNAME
-        value: admin
-      - key: ADMIN_PASSWORD
-        sync: false
-      - key: LLM_PROVIDER
-        value: gemini
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: OPENROUTER_API_KEY
-        sync: false
-      - key: GROQ_API_KEY
-        sync: false
-      - key: HUGGINGFACE_API_KEY
-        sync: false
-      - key: PIPELINE_BATCH_LIMIT
-        value: 3
-      - key: AUTO_APPROVE_PUBLISH
-        value: false
-      - key: WORKER_MODE
-        value: web-pipeline
-      - key: WORKER_INTERVAL_SECONDS
-        value: 3600
-      - key: WORKER_RUN_ON_START
-        value: true
-      - key: WORKER_ONCE
-        value: false
