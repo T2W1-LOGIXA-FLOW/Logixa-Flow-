@@ -1,13 +1,4 @@
-import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
-
-const { window } = new JSDOM("<!doctype html><html><body></body></html>");
-Object.assign(globalThis, {
-  window,
-  document: window.document,
-  DOMParser: window.DOMParser,
-  Node: window.Node,
-});
 
 const { sanitizeHtml } = await import("./sanitize-html.ts");
 
