@@ -29,3 +29,16 @@ def test_sanitizer_redacts_credit_card_like_numbers():
 
     assert "[PII_CARD_REDACTED]" in result.text
     assert result.pii_redactions == 1
+
+
+def test_sanitization_logging_contains_counts_but_not_raw_pii(caplog):
+    import logging
+
+    with caplog.at_level(logging.INFO, logger="app.rag.sanitizer"):
+        sanitize_text("alice@example.com")
+        from app.rag.sanitizer import sanitize_for_llm
+        sanitize_for_llm("alice@example.com", log_redactions=True)
+
+    assert "AI content sanitized" in caplog.text
+    assert "pii_redactions" in caplog.text
+    assert "alice@example.com" not in caplog.text
