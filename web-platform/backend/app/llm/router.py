@@ -131,12 +131,12 @@ class LLMRouter:
         return FallbackLocalProvider()
 
     def generate_with_provider(self, prompt: str, **kwargs) -> tuple[str, str]:
-        safe_prompt = f"{_PROMPT_SAFETY_GUARD}\n\n{sanitize_for_llm(prompt)}"
+        safe_prompt = f"{_PROMPT_SAFETY_GUARD}\n\n{sanitize_for_llm(prompt, log_redactions=True, operation="llm_prompt")}"
         provider_errors: list[str] = []
         for name, provider in self._provider_order():
             try:
                 response = provider.generate(safe_prompt, **kwargs)
-                response = sanitize_for_llm(response)
+                response = sanitize_for_llm(response, log_redactions=True, operation="llm_response")
                 model_name = getattr(provider, "model", name)
 
                 # Rough token estimate: average 4 characters per token
@@ -184,7 +184,7 @@ class LLMRouter:
         else:
             logger.info("No configured LLM provider is available; using local fallback.")
         provider = FallbackLocalProvider()
-        return sanitize_for_llm(provider.generate(safe_prompt, **kwargs)), "local"
+        return sanitize_for_llm(provider.generate(safe_prompt, **kwargs), log_redactions=True, operation="llm_response"), "local"
     
     def generate(self, prompt: str, **kwargs) -> str:
         response, _ = self.generate_with_provider(prompt, **kwargs)
