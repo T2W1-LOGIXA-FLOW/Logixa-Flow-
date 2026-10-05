@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
@@ -37,6 +38,7 @@ _EXECUTION_STATES: dict[str, dict[str, Any]] = {}
 _EXECUTION_HISTORY: dict[str, list[str]] = {}
 _EXECUTION_METRICS: dict[str, dict[str, Any]] = {}
 _QUEUE_WORKER_RUNNING = False
+_WORKER_ID = os.getenv("WORKFLOW_WORKER_ID", "").strip() or f"worker-{uuid4().hex[:12]}"
 _CONTROLLER_RUNS: dict[str, str] = {}
 _WEBSOCKET_AUTH_TIMEOUT_SECONDS = 10
 _WEBSOCKET_AUTH_RECHECK_SECONDS = 60
@@ -433,11 +435,15 @@ def _schedule_run(run_id: str, priority: int = 0, delay_seconds: int = 0) -> Non
                 priority=priority,
                 scheduled_for=scheduled_at,
                 status="queued",
+                claimed_by=None,
+                claimed_at=None,
             ))
         else:
             existing.priority = priority
             existing.scheduled_for = scheduled_at
             existing.status = "queued"
+            existing.claimed_by = None
+            existing.claimed_at = None
             existing.updated_at = queued_at
         db.commit()
 
@@ -589,15 +595,25 @@ def _record_controller_result(run_id: str, status_value: str) -> None:
 
 
 def _claim_job(run_id: str) -> bool:
-    """Atomically claim a queued DB job so multiple API instances cannot execute it twice."""
+    """Atomically claim a due queued DB job for this worker instance."""
     db = SessionLocal()
     try:
         if not db.bind or not inspect(db.bind).has_table("scheduled_workflow_jobs"):
             return True
+        now = _now()
         updated = db.query(models.ScheduledWorkflowJob).filter(
             models.ScheduledWorkflowJob.run_id == run_id,
             models.ScheduledWorkflowJob.status == "queued",
-        ).update({"status": "running", "updated_at": _now()}, synchronize_session=False)
+            models.ScheduledWorkflowJob.scheduled_for <= now,
+        ).update(
+            {
+                "status": "running",
+                "claimed_by": _WORKER_ID,
+                "claimed_at": now,
+                "updated_at": now,
+            },
+            synchronize_session=False,
+        )
         db.commit()
         return updated == 1
     except Exception:
@@ -694,6 +710,9 @@ def restore_pending_workflow_runs() -> int:
             if run.state.status == "running":
                 run.state.status = "queued"
                 run.state.current_node = None
+                job.status = "queued"
+                job.claimed_by = None
+                job.claimed_at = None
                 _persist_run_state(run)
             if run.state.status in {"completed", "failed"}:
                 job.status = run.state.status
