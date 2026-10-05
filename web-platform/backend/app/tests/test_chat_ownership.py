@@ -121,7 +121,7 @@ def test_public_query_does_not_create_admin_sessions(db, monkeypatch):
     assert db.query(models.ChatMessage).count() == 0
 
 
-def test_public_query_has_dedicated_rate_limit(monkeypatch):
+def test_public_query_has_dedicated_rate_limit(monkeypatch, db):
     calls = {"count": 0}
 
     monkeypatch.setattr(
@@ -144,9 +144,9 @@ def test_public_query_has_dedicated_rate_limit(monkeypatch):
 
     request = schemas.ChatQueryRequest(query="Public question")
     for _ in range(5):
-        assert chat.public_chat_query(request, db=MagicMock())["response"] == "public response"
+        assert chat.public_chat_query(request, db=db)["response"] == "public response"
 
     with pytest.raises(HTTPException) as exc_info:
-        chat.public_chat_query(request, db=MagicMock())
+        chat.public_chat_query(request, db=db)
 
     assert exc_info.value.status_code == 429
