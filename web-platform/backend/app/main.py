@@ -55,7 +55,8 @@ def run_startup_tasks() -> None:
     try:
         restored = workflow.restore_pending_workflow_runs()
         logger.info("Workflow recovery restored %s pending run(s)", restored)
-        workflow.start_queue_worker()
+        if os.getenv("CELERY_ENABLED", "false").lower() != "true":
+            workflow.start_queue_worker()
     except Exception as exc:
         logger.warning("Workflow recovery skipped: %s", exc)
 
