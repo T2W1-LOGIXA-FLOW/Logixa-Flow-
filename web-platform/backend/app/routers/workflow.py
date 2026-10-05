@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect, status
 from starlette.concurrency import run_in_threadpool
 from sqlalchemy import inspect
 from sqlalchemy.exc import SQLAlchemyError
@@ -25,6 +25,7 @@ from app.schemas import (
     WorkflowTelemetryEvent,
 )
 from app.security import _verify_supabase_token, require_admin
+from app.qstash import publish_workflow_run, qstash_configured
 
 router = APIRouter(prefix="/api/admin/workflow", tags=["admin", "workflow"])
 
@@ -836,8 +837,67 @@ async def enqueue_workflow_run(
     if controller_id:
         _CONTROLLER_RUNS[run.run_id] = controller_id
     _schedule_run(run.run_id, priority=priority, delay_seconds=delay_seconds)
-    start_queue_worker()
+
+    if os.getenv("CELERY_ENABLED", "false").lower() == "true":
+        if qstash_configured():
+            scheduled_for = (_now() + timedelta(seconds=max(delay_seconds, 0))).timestamp()
+            try:
+                publish_workflow_run(run.run_id, scheduled_for)
+            except Exception:
+                logger.exception(
+                    "Failed to publish workflow run to QStash",
+                    extra={"run_id": run.run_id, "operation": "qstash_publish"},
+                )
+                _mark_job_terminal(run.run_id, "failed")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Workflow queue is temporarily unavailable",
+                )
+        else:
+            from app.workers.tasks import execute_workflow_task
+            execute_workflow_task.apply_async(
+                args=[run.run_id],
+                countdown=max(delay_seconds, 0),
+            )
+    else:
+        start_queue_worker()
     return run
+
+
+@router.post("/qstash-dispatch", include_in_schema=False)
+async def qstash_dispatch(request: Request) -> dict[str, str]:
+    """Receive a signed QStash delivery and hand execution to Celery."""
+    from qstash import Receiver
+
+    signature = request.headers.get("Upstash-Signature", "")
+    body = await request.body()
+    current_key = os.getenv("QSTASH_CURRENT_SIGNING_KEY", "").strip()
+    next_key = os.getenv("QSTASH_NEXT_SIGNING_KEY", "").strip()
+    if not signature or not current_key or not next_key:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid QStash request")
+
+    receiver = Receiver(current_signing_key=current_key, next_signing_key=next_key)
+    try:
+        receiver.verify(
+            body=body.decode("utf-8"),
+            signature=signature,
+            url=str(request.url),
+            upstash_region=request.headers.get("upstash-region"),
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid QStash signature") from exc
+
+    try:
+        payload = json.loads(body.decode("utf-8"))
+        run_id = str(payload.get("run_id", "")).strip()
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid workflow payload") from exc
+    if not run_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing workflow run id")
+
+    from app.workers.tasks import execute_workflow_task
+    execute_workflow_task.delay(run_id)
+    return {"status": "queued", "run_id": run_id}
 
 
 @router.get("/queue")
