@@ -7,18 +7,32 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
-from .. import schemas
+from .. import models, schemas
+from ..database import SessionLocal
 from ..security import require_admin
-from ..storage import upload_image
+from ..storage import B2_MAX_BYTES, IMAGE_MAX_BYTES, IMAGE_TYPES, classify_storage, upload_routed
 
 router = APIRouter()
 UPLOAD_DIR = Path(__file__).resolve().parents[2] / "uploads"
-ALLOWED_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif"}
-MAX_UPLOAD_BYTES = min(max(int(os.getenv("MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)), 1), 1), 20 * 1024 * 1024)
+ALLOWED_IMAGE_TYPES = IMAGE_TYPES
+ALLOWED_DOCUMENT_TYPES = {
+    "application/pdf",
+    "text/plain",
+    "text/csv",
+    "application/csv",
+    "application/json",
+    "application/xml",
+    "text/xml",
+    "application/zip",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+}
+MAX_UPLOAD_BYTES = min(max(int(os.getenv("MAX_UPLOAD_BYTES", str(B2_MAX_BYTES)), 1), 1), B2_MAX_BYTES)
 
 
 def _validate_image_upload(file: UploadFile, content: bytes) -> None:
-    content_type = file.content_type or ""
+    content_type = (file.content_type or "").split(";", 1)[0].strip().lower()
     signatures = {
         "image/jpeg": content.startswith(b"\xff\xd8\xff"),
         "image/png": content.startswith(b"\x89PNG\r\n\x1a\n"),
@@ -26,43 +40,128 @@ def _validate_image_upload(file: UploadFile, content: bytes) -> None:
         "image/webp": len(content) >= 12 and content[:4] == b"RIFF" and content[8:12] == b"WEBP",
     }
     if not signatures.get(content_type, False):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded file content does not match its image type")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file content does not match its image type",
+        )
 
 
-def _storage_backend() -> str:
-    return os.getenv("UPLOAD_STORAGE_BACKEND", os.getenv("STORAGE_BACKEND", "local")).strip().lower()
-
-
-def _public_url(filename: str) -> str:
-    return f"/uploads/{filename}"
+def _owner_id(admin: object) -> str | None:
+    if isinstance(admin, dict):
+        value = admin.get("sub") or admin.get("user_id") or admin.get("id")
+        return str(value) if value else None
+    return None
 
 
 @router.post("/uploads", response_model=schemas.UploadOut, status_code=status.HTTP_201_CREATED)
-def upload_image(file: UploadFile = File(...), _=Depends(require_admin)):
-    extension = ALLOWED_TYPES.get(file.content_type or "")
-    if not extension:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only image uploads are allowed")
+def upload_file(file: UploadFile = File(...), _admin=Depends(require_admin)):
+    content_type = (file.content_type or "").split(";", 1)[0].strip().lower()
+    if content_type not in ALLOWED_IMAGE_TYPES | ALLOWED_DOCUMENT_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported file type",
+        )
 
-    content = file.file.read(MAX_UPLOAD_BYTES + 1)
-    if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Image upload exceeds the configured size limit")
-    _validate_image_upload(file, content)
+    file.file.seek(0, 2)
+    size_bytes = file.file.tell()
     file.file.seek(0)
+    if size_bytes > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="File exceeds the configured upload size limit",
+        )
 
-    filename = f"{uuid4().hex}{extension}"
-    backend = _storage_backend()
-    if backend in {"cloudinary", "supabase", "b2", "r2", "s3"}:
-        try:
-            url = upload_image(file.file, filename, file.content_type or "application/octet-stream")
-        except Exception as exc:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Upload storage rejected the file",
-            ) from exc
-        return schemas.UploadOut(url=url)
+    if content_type in ALLOWED_IMAGE_TYPES:
+        if size_bytes > B2_MAX_BYTES:
+            raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Image exceeds maximum supported size")
+        signature = file.file.read(32)
+        file.file.seek(0)
+        _validate_image_upload(file, signature)
 
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    destination = UPLOAD_DIR / filename
-    with destination.open("wb") as handle:
-        shutil.copyfileobj(file.file, handle)
-    return schemas.UploadOut(url=_public_url(filename))
+    try:
+        storage_class = classify_storage(file.filename or "upload", content_type, size_bytes)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)) from exc
+
+    filename = f"{uuid4().hex}-{Path(file.filename or 'upload').name}"
+    try:
+        backend, storage_class, url = upload_routed(
+            file.file,
+            filename,
+            content_type,
+            size_bytes,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Upload storage rejected the file",
+        ) from exc
+
+    record = models.StoredFile(
+        id=uuid4().hex,
+        original_filename=Path(file.filename or "upload").name[:500],
+        storage_backend=backend,
+        storage_class=storage_class,
+        content_type=content_type,
+        size_bytes=size_bytes,
+        object_key=filename,
+        url=url,
+        owner_id=_owner_id(_admin),
+        is_export=False,
+    )
+    db = SessionLocal()
+    try:
+        db.add(record)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="File metadata could not be persisted") from exc
+    finally:
+        db.close()
+
+    return schemas.UploadOut(url=url)
+
+
+@router.post("/uploads/drive-export", response_model=schemas.UploadOut, status_code=status.HTTP_201_CREATED)
+def export_file_to_drive(file: UploadFile = File(...), _admin=Depends(require_admin)):
+    content_type = (file.content_type or "").split(";", 1)[0].strip().lower()
+    file.file.seek(0, 2)
+    size_bytes = file.file.tell()
+    file.file.seek(0)
+    if size_bytes > B2_MAX_BYTES:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Export exceeds the supported 5 GB limit")
+
+    from ..storage import export_to_google_drive
+
+    try:
+        url = export_to_google_drive(
+            file.file,
+            Path(file.filename or "export").name,
+            content_type,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Google Drive export is not configured or failed") from exc
+
+    record = models.StoredFile(
+        id=uuid4().hex,
+        original_filename=Path(file.filename or "export").name[:500],
+        storage_backend="google_drive",
+        storage_class="export",
+        content_type=content_type or "application/octet-stream",
+        size_bytes=size_bytes,
+        object_key=url,
+        url=url,
+        owner_id=_owner_id(_admin),
+        is_export=True,
+    )
+    db = SessionLocal()
+    try:
+        db.add(record)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Export metadata could not be persisted") from exc
+    finally:
+        db.close()
+
+    return schemas.UploadOut(url=url)
