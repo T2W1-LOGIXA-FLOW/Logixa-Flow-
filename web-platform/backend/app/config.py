@@ -9,6 +9,11 @@ AI_PROVIDER_ENV_KEYS = (
 )
 S3_ENV_KEYS = ("S3_ENDPOINT_URL", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_BUCKET", "S3_PUBLIC_BASE_URL")
 
+# Server-side AI safety controls. These default to enabled so production does not
+# require a deployment-time opt-in to protect provider-bound prompts and outputs.
+PII_REDACTION_ENABLED = os.getenv("ENABLE_PII_REDACTION", "true").lower() != "false"
+PROMPT_SANITIZER_LEVEL = os.getenv("PROMPT_SANITIZER_LEVEL", "moderate").strip().lower() or "moderate"
+
 
 def resolve_ai_key_for_role(role: str, provider_env_key: str) -> str:
     """Resolve a role-aware provider key with a clear user/admin split.
