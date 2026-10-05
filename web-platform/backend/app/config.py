@@ -57,17 +57,18 @@ def ai_provider_configured(role: str | None = None) -> bool:
 
 
 def upload_storage_configured() -> bool:
-    """Return true when the selected upload storage backend is usable."""
-    backend = os.getenv("UPLOAD_STORAGE_BACKEND", os.getenv("STORAGE_BACKEND", "local")).lower()
-    if backend == "local":
+    """Return true when the configured file-routing backends are usable."""
+    configured = {
+        "cloudinary": all(env_configured(key) for key in ("CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET")),
+        "supabase": all(env_configured(key) for key in ("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_STORAGE_BUCKET")),
+        "b2": all(env_configured(key) for key in S3_ENV_KEYS),
+        "google_drive": env_configured("GOOGLE_DRIVE_CREDENTIALS_JSON"),
+    }
+    primary = os.getenv("UPLOAD_STORAGE_BACKEND", "local").strip().lower()
+    fallbacks = [item.strip().lower() for item in os.getenv("STORAGE_FALLBACK_BACKENDS", "").split(",") if item.strip()]
+    if primary == "local":
         return True
-    if backend == "cloudinary":
-        return all(env_configured(key) for key in ("CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"))
-    if backend == "supabase":
-        return env_configured("SUPABASE_URL") and env_configured("SUPABASE_SERVICE_ROLE_KEY")
-    if backend in {"b2", "r2", "s3"}:
-        return all(env_configured(key) for key in S3_ENV_KEYS)
-    return False
+    return all(configured.get(item, False) for item in [primary, *fallbacks] if item != "google_drive") and bool(configured.get(primary, False))
 
 
 def validate_env() -> list[str]:
