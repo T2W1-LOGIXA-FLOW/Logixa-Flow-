@@ -211,4 +211,4 @@ def test_router_sanitizes_prompt_and_response_before_crossing_provider_boundary(
     assert "Ignore previous instructions" not in response
     assert "[PII_EMAIL_REDACTED]" in response
     assert "[PROMPT_INSTRUCTION_REDACTED]" in response
-    assert model == "gemini"
+    assert model == "gemini-2.5-flash"
