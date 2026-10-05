@@ -239,3 +239,27 @@ def test_bootstrap_only_verifies_alembic_head_and_never_changes_schema(
         assert inspect(engine).get_table_names() == ["alembic_version"]
     finally:
         engine.dispose()
+
+
+def test_monetary_columns_are_numeric_after_current_head_upgrade(tmp_path) -> None:
+    database_url = f"sqlite:///{(tmp_path / 'money-types.db').as_posix()}"
+    run_alembic(command.upgrade, database_url, "head")
+
+    engine = create_engine(database_url)
+    expected = {
+        "ai_memory_brain": {"cost_estimate"},
+        "agent_runs": {"cost_estimate"},
+        "api_usage_logs": {"cost"},
+        "chat_messages": {"cost_estimate"},
+        "company_budgets": {"total_budget", "spent_amount"},
+        "expense_categories": {"budget"},
+        "project_revenues": {"estimated_revenue", "estimated_cost", "actual_revenue", "actual_cost"},
+    }
+    try:
+        schema = inspect(engine)
+        for table, columns in expected.items():
+            actual = {column["name"]: str(column["type"]).upper() for column in schema.get_columns(table)}
+            for column in columns:
+                assert "NUMERIC" in actual[column]
+    finally:
+        engine.dispose()
