@@ -8,6 +8,7 @@ from .. import models
 from .embeddings import embed_text, embedding_from_json
 from .pgvector_store import pgvector_enabled, similarity_search_pgvector
 from .semantic_cache import get_cached_answer, set_cached_answer
+from .sanitizer import sanitize_for_llm
 from .vector_math import cosine_similarity
 
 
@@ -29,7 +30,7 @@ def _attach_citations(db: Session, matches: list[dict]) -> list[dict]:
                 "source_id": source.id,
                 "title": source.title,
                 "url": source.url,
-                "excerpt": (source.content_text or source.notes or match.get("content", ""))[:500],
+                "excerpt": sanitize_for_llm((source.content_text or source.notes or match.get("content", ""))[:500]),
                 "published_or_updated_at": source.updated_at,
                 "trust_score": source.trust_score,
                 "freshness_score": source.freshness_score,
@@ -40,7 +41,8 @@ def _attach_citations(db: Session, matches: list[dict]) -> list[dict]:
 
 def similarity_search(db: Session, query: str, top_k: int | None = None) -> list[dict]:
     limit = top_k or int(os.getenv("RAG_TOP_K", "6"))
-    query_vector, model_name = embed_text(query)
+    safe_query = sanitize_for_llm(query)
+    query_vector, model_name = embed_text(safe_query)
 
     if pgvector_enabled(db):
         try:
@@ -63,7 +65,7 @@ def similarity_search(db: Session, query: str, top_k: int | None = None) -> list
                 "source_type": row.source_type,
                 "source_id": row.source_id,
                 "title": row.title,
-                "content": row.content[:1200],
+                "content": sanitize_for_llm(row.content[:1200]),
                 "embedding_model": row.embedding_model or model_name,
             }
         )
@@ -71,7 +73,8 @@ def similarity_search(db: Session, query: str, top_k: int | None = None) -> list
 
 
 def build_rag_context(db: Session, query: str, source_ids: list[int] | None = None) -> str:
-    cached = get_cached_answer(query)
+    safe_query = sanitize_for_llm(query)
+    cached = get_cached_answer(safe_query)
     if cached and cached.get("context"):
         return str(cached["context"])
 
@@ -84,15 +87,15 @@ def build_rag_context(db: Session, query: str, source_ids: list[int] | None = No
 
     if not matches:
         context = "No retrieved RAG context available."
-        set_cached_answer(query, {"context": context, "matches": []})
+        set_cached_answer(safe_query, {"context": context, "matches": []})
         return context
 
     lines = ["Retrieved grounded context:"]
     for index, match in enumerate(matches, start=1):
         lines.append(
             f"{index}. [{match['source_type']}:{match['source_id']}] "
-            f"(score={match['score']}) {match['title']}: {match['content']}"
+            f"(score={match['score']}) {sanitize_for_llm(str(match['title']))}: {sanitize_for_llm(str(match['content']))}"
         )
     context = "\n".join(lines)
-    set_cached_answer(query, {"context": context, "matches": matches})
+    set_cached_answer(safe_query, {"context": context, "matches": matches})
     return context
