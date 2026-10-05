@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
-from threading import Thread
+from threading import Lock, Thread
 from time import sleep
 
 import logging
@@ -11,6 +11,8 @@ from .analytics import log_analytics_event
 from .database import SessionLocal
 from .models import AiMemoryBrain, IntelligenceSource
 from .routers.agent import generate_agent_brief, score_source_grounding
+
+_SCHEDULER_LOCK = Lock()
 
 
 def generate_daily_agent_preview() -> None:
@@ -83,8 +85,21 @@ def start_scheduler() -> None:
     interval_hours = max(int(os.getenv("SCHEDULER_INTERVAL_HOURS", "24")), 1)
 
     def loop() -> None:
-        while True:
-            generate_daily_agent_preview()
-            sleep(interval_hours * 60 * 60)
+        logger = logging.getLogger(__name__)
+        if not _SCHEDULER_LOCK.acquire(blocking=False):
+            logger.warning("Scheduler instance already active; skipping duplicate worker")
+            return
+        try:
+            while True:
+                try:
+                    generate_daily_agent_preview()
+                except Exception:
+                    logger.exception(
+                        "Scheduled daily preview failed; scheduler will continue",
+                        extra={"operation": "scheduled_daily_preview"},
+                    )
+                sleep(interval_hours * 60 * 60)
+        finally:
+            _SCHEDULER_LOCK.release()
 
-    Thread(target=loop, daemon=True).start()
+    Thread(target=loop, name="logixa-scheduler", daemon=True).start()
