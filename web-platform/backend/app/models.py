@@ -227,6 +227,23 @@ class AnalyticsEvent(Base):
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
 
 
+
+class StoredFile(Base):
+    __tablename__ = "stored_files"
+
+    id = Column(String(80), primary_key=True, index=True)
+    original_filename = Column(String(500), nullable=False)
+    storage_backend = Column(String(40), nullable=False, index=True)
+    storage_class = Column(String(40), nullable=False, index=True)
+    content_type = Column(String(160), nullable=False)
+    size_bytes = Column(Integer, nullable=False)
+    object_key = Column(String(1000), nullable=False, index=True)
+    url = Column(String(2000), nullable=True)
+    owner_id = Column(String(255), nullable=True, index=True)
+    is_export = Column(Boolean, nullable=False, default=False, index=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
+
+
 class AuditEvent(Base):
     __tablename__ = "audit_events"
 
