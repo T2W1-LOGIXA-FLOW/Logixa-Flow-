@@ -12,6 +12,11 @@ const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@logixaflow.com';
 const EMAIL_ADMIN = process.env.EMAIL_ADMIN || process.env.ADMIN_EMAIL || 'admin@logixaflow.com';
 
 const isMockEmailService = EMAIL_SERVICE_MODE === 'mock' || !EMAIL_USER || !EMAIL_PASSWORD;
+const isProduction = process.env.NODE_ENV === 'production' || process.env.ENVIRONMENT === 'production';
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character] || character);
+}
 
 function logMockEmail(to: string, subject: string, body: string) {
   console.info('[Mock Email Service]', JSON.stringify({
@@ -58,6 +63,10 @@ async function sendMailWithFallback({
   }
 
   if (!transporter || isMockEmailService) {
+    if (isProduction) {
+      console.error('Email service is not configured; refusing to report a mock email as sent.');
+      return false;
+    }
     logMockEmail(to, subject, text || html);
     return true;
   }
@@ -84,10 +93,10 @@ export async function sendConfirmationEmail(
 ): Promise<boolean> {
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2>Thank you, ${name}! 🎉</h2>
+      <h2>Thank you, ${escapeHtml(name)}! 🎉</h2>
       <p>We have received your contact form submission.</p>
       <p>Our team will review your message and get back to you as soon as possible.</p>
-      ${submissionId ? `<p><strong>Reference ID:</strong> ${submissionId}</p>` : ''}
+      ${submissionId ? `<p><strong>Reference ID:</strong> ${escapeHtml(submissionId)}</p>` : ''}
       <hr />
       <p style="color: #666; font-size: 12px;">
         This is an automated email from Logixa Flow. Please do not reply to this email.
@@ -113,13 +122,13 @@ export async function sendAdminNotification(
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2>New Contact Submission</h2>
-      <p><strong>Name:</strong> ${contactName}</p>
-      <p><strong>Email:</strong> <a href="mailto:${contactEmail}">${contactEmail}</a></p>
-      ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
-      <p><strong>Subject:</strong> ${subject}</p>
+      <p><strong>Name:</strong> ${escapeHtml(contactName)}</p>
+      <p><strong>Email:</strong> <a href="mailto:${encodeURIComponent(contactEmail)}">${escapeHtml(contactEmail)}</a></p>
+      ${phone ? `<p><strong>Phone:</strong> ${escapeHtml(phone)}</p>` : ''}
+      <p><strong>Subject:</strong> ${escapeHtml(subject)}</p>
       <hr />
       <h3>Message:</h3>
-      <p style="white-space: pre-wrap;">${message}</p>
+      <p style="white-space: pre-wrap;">${escapeHtml(message)}</p>
       <hr />
       <p style="color: #666; font-size: 12px;">
         Submitted on: ${new Date().toLocaleString()}
