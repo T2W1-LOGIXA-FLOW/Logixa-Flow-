@@ -164,7 +164,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-if os.getenv("USE_SLOWAPI", "true").lower() == "true":
+if os.getenv("USE_SLOWAPI", "false").lower() == "true":
     try:
         from slowapi import Limiter, _rate_limit_exceeded_handler
         from slowapi.errors import RateLimitExceeded
