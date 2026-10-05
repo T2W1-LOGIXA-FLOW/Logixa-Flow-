@@ -61,6 +61,10 @@ def upload_storage_configured() -> bool:
     backend = os.getenv("UPLOAD_STORAGE_BACKEND", os.getenv("STORAGE_BACKEND", "local")).lower()
     if backend == "local":
         return True
+    if backend == "cloudinary":
+        return all(env_configured(key) for key in ("CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"))
+    if backend == "supabase":
+        return env_configured("SUPABASE_URL") and env_configured("SUPABASE_SERVICE_ROLE_KEY")
     if backend in {"b2", "r2", "s3"}:
         return all(env_configured(key) for key in S3_ENV_KEYS)
     return False
