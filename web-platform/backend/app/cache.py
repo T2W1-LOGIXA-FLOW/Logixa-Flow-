@@ -90,18 +90,29 @@ class RateLimiter:
     def backend(self) -> str:
         return "redis" if self._redis else "memory"
 
-    def allow(self, key: str) -> bool:
+    def allow(
+        self,
+        key: str,
+        *,
+        limit: int | None = None,
+        window_seconds: int | None = None,
+    ) -> bool:
+        effective_limit = self.limit if limit is None else max(1, int(limit))
+        effective_window = self.window_seconds if window_seconds is None else max(1, int(window_seconds))
+
         if self._redis:
-            redis_key = f"rl:{key}"
+            redis_key = f"rl:{key}:{effective_limit}:{effective_window}"
             count = self._redis.incr(redis_key)
             if count == 1:
-                self._redis.expire(redis_key, self.window_seconds)
-            return int(count) <= self.limit
+                self._redis.expire(redis_key, effective_window)
+            return int(count) <= effective_limit
+
         now = time.time()
-        hits = self._hits[key]
-        while hits and hits[0] <= now - self.window_seconds:
+        memory_key = f"{key}:{effective_limit}:{effective_window}"
+        hits = self._hits[memory_key]
+        while hits and hits[0] <= now - effective_window:
             hits.popleft()
-        if len(hits) >= self.limit:
+        if len(hits) >= effective_limit:
             return False
         hits.append(now)
         return True
