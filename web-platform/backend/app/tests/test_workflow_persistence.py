@@ -393,3 +393,56 @@ async def test_queue_worker_keeps_job_queued_when_claim_database_fails(monkeypat
     assert workflow._EXECUTION_QUEUE == [item]
     assert workflow._QUEUE_WORKER_RUNNING is False
     assert logged.get("called") is True
+
+
+def test_claim_job_due_time_and_single_winner() -> None:
+    db = workflow.SessionLocal()
+    try:
+        now = workflow._now()
+        db.add(
+            models.ScheduledWorkflowJob(
+                id="job-claim-winner",
+                run_id="claim-winner",
+                workflow_id="claim-flow",
+                priority=1,
+                scheduled_for=now,
+                status="queued",
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    assert workflow._claim_job("claim-winner") is True
+    assert workflow._claim_job("claim-winner") is False
+
+    db = workflow.SessionLocal()
+    try:
+        job = db.query(models.ScheduledWorkflowJob).filter(
+            models.ScheduledWorkflowJob.run_id == "claim-winner"
+        ).one()
+        assert job.status == "running"
+        assert job.claimed_by == workflow._WORKER_ID
+        assert job.claimed_at is not None
+    finally:
+        db.close()
+
+
+def test_claim_job_rejects_future_schedule() -> None:
+    db = workflow.SessionLocal()
+    try:
+        db.add(
+            models.ScheduledWorkflowJob(
+                id="job-future-claim",
+                run_id="future-claim",
+                workflow_id="future-flow",
+                priority=1,
+                scheduled_for=workflow._now() + __import__("datetime").timedelta(minutes=5),
+                status="queued",
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    assert workflow._claim_job("future-claim") is False
