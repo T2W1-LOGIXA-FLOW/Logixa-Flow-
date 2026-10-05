@@ -121,28 +121,20 @@ def delete_email_template(
     return None
 
 
-@router.post("/{template_id}/send-test")
+@router.post("/{template_id}/send-test", status_code=status.HTTP_501_NOT_IMPLEMENTED)
 def send_test_email(
     template_id: str,
     recipient_email: str,
     db: Session = Depends(get_db),
     _: dict = Depends(require_admin),
 ):
-    """
-    Send a test email using the specified template.
-    Beta fallback: production email delivery is not connected here yet.
-    """
+    """Reject test sends until a real transactional email provider is connected."""
     template = db.query(models.EmailTemplate).filter(models.EmailTemplate.id == template_id).first()
     if not template:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Email template not found")
-    
     if not template.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Template is not active")
-    
-    return {
-        "success": True,
-        "beta_mode": True,
-        "message": f"Beta preview only. No email was sent to {recipient_email}. Template: '{template.name}'",
-        "template_id": template_id,
-        "recipient": recipient_email
-    }
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="Transactional email delivery is not configured; no email was sent.",
+    )
