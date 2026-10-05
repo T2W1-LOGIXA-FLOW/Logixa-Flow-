@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from decimal import Decimal, InvalidOperation
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -17,7 +18,7 @@ router = APIRouter()
 
 class CostRecord(BaseModel):
     service: str
-    amount: float
+    amount: Decimal
     details: Optional[str] = None
     timestamp: Optional[str] = None
 
@@ -26,7 +27,7 @@ class CostRecord(BaseModel):
 def record_cost(payload: CostRecord, db: Session = Depends(get_db), _: dict = Depends(require_admin)) -> dict:
     details = {
         "service": payload.service,
-        "amount": payload.amount,
+        "amount": str(payload.amount),
         "details": payload.details,
         "timestamp": payload.timestamp,
     }
@@ -79,7 +80,10 @@ def costs_summary(
             payload = json.loads(r.details or "{}")
         except Exception:
             payload = {}
-        amount = float(payload.get("amount") or 0)
+        try:
+            amount = Decimal(str(payload.get("amount") or "0"))
+        except (InvalidOperation, TypeError, ValueError):
+            amount = Decimal("0")
         service = payload.get("service") or "unknown"
         # prefer payload timestamp if provided
         ts = None
@@ -99,16 +103,16 @@ def costs_summary(
         rows = [row for row in rows if row["date"] <= end]
 
     # aggregate totals
-    total_cost = sum(r["amount"] for r in rows)
+    total_cost = sum((r["amount"] for r in rows), Decimal("0"))
     by_service = {}
     by_day = {}
 
     for r in rows:
-        by_service[r["service"]] = by_service.get(r["service"], 0) + r["amount"]
+        by_service[r["service"]] = by_service.get(r["service"], Decimal("0")) + r["amount"]
         day = r["date"]
-        by_day.setdefault(day, {"date": day, "total": 0, "services": {}})
+        by_day.setdefault(day, {"date": day, "total": Decimal("0"), "services": {}})
         by_day[day]["total"] += r["amount"]
-        by_day[day]["services"][r["service"]] = by_day[day]["services"].get(r["service"], 0) + r["amount"]
+        by_day[day]["services"][r["service"]] = by_day[day]["services"].get(r["service"], Decimal("0")) + r["amount"]
 
     daily = [v for k, v in sorted(by_day.items())]
 
