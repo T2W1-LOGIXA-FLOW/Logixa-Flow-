@@ -294,6 +294,11 @@ class NewsletterSendResponse(BaseModel):
     test_mode: bool
 
 
+class DataDeletionRequest(BaseModel):
+    subject_email: EmailStr
+    confirmation: str = Field(min_length=1, max_length=320)
+
+
 class LoginRequest(BaseModel):
     username: str = Field(min_length=2, max_length=120)
     password: str = Field(min_length=4, max_length=200)
