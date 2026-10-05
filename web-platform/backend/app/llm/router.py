@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 from decimal import Decimal, InvalidOperation
 
@@ -93,7 +94,13 @@ class LLMRouter:
 
     def _provider_order(self) -> list[tuple[str, LLMProvider]]:
         selected = self._selected_provider_name()
-        names = [selected, "gemini", "groq", "cerebras", "mistral", "cohere", "nvidia", "openrouter-llama", "openrouter-deepseek", "local"]
+        names = [selected, "gemini", "groq", "cerebras", "mistral", "cohere", "nvidia", "openrouter-llama", "openrouter-deepseek"]
+        allow_local_fallback = os.getenv(
+            "ALLOW_LOCAL_LLM_FALLBACK",
+            "true" if os.getenv("ENVIRONMENT", "development").lower() not in {"production", "prod"} else "false",
+        ).lower() == "true"
+        if allow_local_fallback:
+            names.append("local")
         ordered: list[tuple[str, LLMProvider]] = []
         seen: set[str] = set()
         for name in names:
@@ -179,6 +186,13 @@ class LLMRouter:
                 provider_errors.append(error_summary)
                 logger.warning("LLM provider failed; trying next provider. %s", error_summary)
                 continue
+        allow_local_fallback = os.getenv(
+            "ALLOW_LOCAL_LLM_FALLBACK",
+            "true" if os.getenv("ENVIRONMENT", "development").lower() not in {"production", "prod"} else "false",
+        ).lower() == "true"
+        if not allow_local_fallback:
+            detail = "; ".join(provider_errors[-3:]) if provider_errors else "no configured provider is available"
+            raise RuntimeError(f"LLM generation unavailable: {detail}")
         if provider_errors:
             logger.warning("All configured LLM providers failed; using local fallback. attempts=%s", provider_errors)
         else:
