@@ -812,6 +812,33 @@ def _track_task(task: asyncio.Task[None]) -> None:
     task.add_done_callback(_RUN_TASKS.discard)
 
 
+def _dispatch_workflow_run(run_id: str, delay_seconds: int = 0) -> None:
+    """Dispatch a persisted workflow run through QStash/Celery or the local fallback."""
+    if os.getenv("CELERY_ENABLED", "false").lower() == "true":
+        if qstash_configured():
+            scheduled_for = (_now() + timedelta(seconds=max(delay_seconds, 0))).timestamp()
+            try:
+                publish_workflow_run(run_id, scheduled_for)
+                return
+            except Exception:
+                logger.exception(
+                    "Failed to publish workflow run to QStash",
+                    extra={"run_id": run_id, "operation": "qstash_publish"},
+                )
+                _mark_job_terminal(run_id, "failed")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Workflow queue is temporarily unavailable",
+                )
+        from app.workers.tasks import execute_workflow_task
+        execute_workflow_task.apply_async(
+            args=[run_id],
+            countdown=max(delay_seconds, 0),
+        )
+        return
+    start_queue_worker()
+
+
 async def enqueue_workflow_run(
     workflow_id: str,
     priority: int = 1,
@@ -838,29 +865,7 @@ async def enqueue_workflow_run(
         _CONTROLLER_RUNS[run.run_id] = controller_id
     _schedule_run(run.run_id, priority=priority, delay_seconds=delay_seconds)
 
-    if os.getenv("CELERY_ENABLED", "false").lower() == "true":
-        if qstash_configured():
-            scheduled_for = (_now() + timedelta(seconds=max(delay_seconds, 0))).timestamp()
-            try:
-                publish_workflow_run(run.run_id, scheduled_for)
-            except Exception:
-                logger.exception(
-                    "Failed to publish workflow run to QStash",
-                    extra={"run_id": run.run_id, "operation": "qstash_publish"},
-                )
-                _mark_job_terminal(run.run_id, "failed")
-                raise HTTPException(
-                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail="Workflow queue is temporarily unavailable",
-                )
-        else:
-            from app.workers.tasks import execute_workflow_task
-            execute_workflow_task.apply_async(
-                args=[run.run_id],
-                countdown=max(delay_seconds, 0),
-            )
-    else:
-        start_queue_worker()
+    _dispatch_workflow_run(run.run_id, delay_seconds=delay_seconds)
     return run
 
 
@@ -1005,8 +1010,7 @@ async def approve_workflow_run(run_id: str, node_id: str | None = None, _admin=D
                 db.commit()
     finally:
         db.close()
-    _schedule_run(run.run_id, priority=priority, delay_seconds=0)
-    start_queue_worker()
+    _dispatch_workflow_run(run.run_id, delay_seconds=0)
     return {"run_id": run.run_id, "status": "queued", "approved_node": node.id}
 
 
