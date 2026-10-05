@@ -22,7 +22,7 @@ SCHEMA_MIGRATION = (
 MONEY_MIGRATION = (
     MIGRATIONS_DIR / "versions" / "20261005_0007_convert_money_to_numeric.py"
 )
-CURRENT_HEAD = "20261005_0009"
+CURRENT_HEAD = "20261005_0010"
 
 
 def alembic_config(database_url: str) -> Config:
@@ -93,7 +93,7 @@ def test_schema_reconciliation_follows_rls_and_secures_every_model_table() -> No
         )
     )
     protected_tables = set(ast.literal_eval(assignment.value))
-    assert (set(models.Base.metadata.tables) - {"audit_events"}) <= protected_tables
+    assert (set(models.Base.metadata.tables) - {"audit_events", "stored_files"}) <= protected_tables
     assert "revision = '20261003_0006'" in source
     assert "down_revision = '20261003_0005'" in source
     assert "ENABLE ROW LEVEL SECURITY" in source
@@ -120,6 +120,8 @@ def test_schema_reconciliation_follows_rls_and_secures_every_model_table() -> No
     assert "down_revision = \"20261005_0008\"" in audit_source
     assert "create_table" in audit_source
     assert "audit_events" in audit_source
+    stored_source = (MIGRATIONS_DIR / "versions" / "20261005_0010_stored_files.py").read_text(encoding="utf-8")
+    assert "stored_files" in stored_source
 
     rls_source = RLS_MIGRATION.read_text(encoding="utf-8")
     assert 'revision = "20261003_0005"' in rls_source
