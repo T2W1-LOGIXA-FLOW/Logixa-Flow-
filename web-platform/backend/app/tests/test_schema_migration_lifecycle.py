@@ -19,6 +19,10 @@ RLS_MIGRATION = MIGRATIONS_DIR / "versions" / "20261003_0005_supabase_rls_grants
 SCHEMA_MIGRATION = (
     MIGRATIONS_DIR / "versions" / "20261003_0006_reconcile_current_application_schema.py"
 )
+MONEY_MIGRATION = (
+    MIGRATIONS_DIR / "versions" / "20261005_0007_convert_money_to_numeric.py"
+)
+CURRENT_HEAD = "20261005_0007"
 
 
 def alembic_config(database_url: str) -> Config:
@@ -71,7 +75,7 @@ def test_fresh_alembic_upgrade_creates_current_model_schema(tmp_path) -> None:
 
         with engine.connect() as connection:
             revision = connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-        assert revision == "20261003_0006"
+        assert revision == CURRENT_HEAD
     finally:
         engine.dispose()
 
@@ -171,7 +175,7 @@ def test_existing_pre_batch_schema_upgrade_preserves_rows(tmp_path) -> None:
             assert run == ("{}", "[]", 1)
             assert connection.execute(
                 text("SELECT version_num FROM alembic_version")
-            ).scalar_one() == "20261003_0006"
+            ).scalar_one() == CURRENT_HEAD
         assert set(models.Base.metadata.tables) <= set(inspect(engine).get_table_names())
     finally:
         engine.dispose()
@@ -223,7 +227,8 @@ def test_bootstrap_only_verifies_alembic_head_and_never_changes_schema(
                 text("CREATE TABLE alembic_version (version_num VARCHAR(32) NOT NULL)")
             )
             connection.execute(
-                text("INSERT INTO alembic_version (version_num) VALUES ('20261003_0006')")
+                text("INSERT INTO alembic_version (version_num) VALUES (:revision)"),
+                {"revision": CURRENT_HEAD},
             )
         try:
             db_bootstrap.bootstrap_database()
