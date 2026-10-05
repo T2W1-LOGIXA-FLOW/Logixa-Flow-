@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from decimal import Decimal
 import json
 from uuid import uuid4
 
@@ -229,7 +230,7 @@ def generate_ai_response(
         "agent_id": agent_id,
         "model_used": model_used,
         "tokens_used": 0,
-        "cost_estimate": 0.0,
+        "cost_estimate": Decimal("0"),
     }
 
 
