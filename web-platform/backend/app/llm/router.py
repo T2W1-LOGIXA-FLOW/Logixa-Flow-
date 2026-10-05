@@ -176,7 +176,7 @@ class LLMRouter:
         else:
             logger.info("No configured LLM provider is available; using local fallback.")
         provider = FallbackLocalProvider()
-        return provider.generate(prompt, **kwargs), "local"
+        return sanitize_for_llm(provider.generate(safe_prompt, **kwargs)), "local"
     
     def generate(self, prompt: str, **kwargs) -> str:
         response, _ = self.generate_with_provider(prompt, **kwargs)
