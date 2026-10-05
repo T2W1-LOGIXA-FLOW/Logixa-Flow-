@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import ipaddress
 import json
 import os
 import re
+import socket
 import urllib.request
 import xml.etree.ElementTree as ET
+from urllib.parse import urljoin, urlparse
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +22,32 @@ PROJECT_ROOT = Path(os.getenv("PROJECT_ROOT", "")).resolve() if os.getenv("PROJE
     _APP_FILE.parents[3] if len(_APP_FILE.parents) > 3 else _APP_FILE.parents[1]
 )
 DEFAULT_DRAFTS_DIR = PROJECT_ROOT / "agents" / "data" / "drafts"
+
+def _validate_rss_url(url: str) -> str:
+    parsed = urlparse(url.strip())
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise ValueError("RSS feed URL must use http or https")
+    if parsed.username or parsed.password:
+        raise ValueError("RSS feed URL must not contain credentials")
+    host = parsed.hostname.rstrip(".").lower()
+    if host in {"localhost", "localhost.localdomain"}:
+        raise ValueError("RSS feed host is not allowed")
+    try:
+        addresses = {ipaddress.ip_address(info[4][0]) for info in socket.getaddrinfo(host, parsed.port or (443 if parsed.scheme == "https" else 80), type=socket.SOCK_STREAM)}
+    except (OSError, ValueError):
+        raise ValueError("RSS feed host could not be resolved")
+    if any(address.is_private or address.is_loopback or address.is_link_local or address.is_reserved or address.is_multicast or address.is_unspecified for address in addresses):
+        raise ValueError("RSS feed host resolves to a private or reserved address")
+    return parsed.geturl()
+
+
+class _SafeRSSRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        _validate_rss_url(urljoin(req.full_url, newurl))
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_RSS_OPENER = urllib.request.build_opener(_SafeRSSRedirectHandler)
 
 DEFAULT_RSS_FEEDS = [
     "https://news.google.com/rss/search?q=supply+chain+management&hl=en-US&gl=US&ceid=US:en",
@@ -94,8 +123,13 @@ def import_rss_feed(
     imported = 0
     skipped = 0
     try:
-        with urllib.request.urlopen(feed_url, timeout=12) as response:
-            xml_data = response.read()
+        safe_url = _validate_rss_url(feed_url)
+        request = urllib.request.Request(
+            safe_url,
+            headers={"User-Agent": "Logixa-Flow-RSS/1.0"},
+        )
+        with _RSS_OPENER.open(request, timeout=12) as response:
+            xml_data = response.read(2_000_000)
     except Exception:
         return 0, 0
     try:
