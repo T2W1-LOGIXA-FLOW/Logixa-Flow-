@@ -39,6 +39,13 @@ def upgrade() -> None:
     op.create_index("ix_audit_events_subject_hash", "audit_events", ["subject_hash"], unique=False)
     op.create_index("ix_audit_events_created_at", "audit_events", ["created_at"], unique=False)
 
+    if bind.dialect.name == "postgresql":
+        op.execute("ALTER TABLE public.audit_events ENABLE ROW LEVEL SECURITY")
+        op.execute("REVOKE ALL PRIVILEGES ON TABLE public.audit_events FROM PUBLIC")
+        op.execute("REVOKE ALL PRIVILEGES ON TABLE public.audit_events FROM anon")
+        op.execute("REVOKE ALL PRIVILEGES ON TABLE public.audit_events FROM authenticated")
+        op.execute("GRANT ALL PRIVILEGES ON TABLE public.audit_events TO service_role")
+
 
 def downgrade() -> None:
     op.drop_index("ix_audit_events_created_at", table_name="audit_events")
