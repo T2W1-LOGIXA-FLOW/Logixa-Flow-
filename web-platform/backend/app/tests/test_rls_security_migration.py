@@ -20,6 +20,12 @@ MIGRATION = (
     / "versions"
     / "20261003_0005_supabase_rls_grants.py"
 )
+AUDIT_MIGRATION = (
+    Path(__file__).resolve().parents[2]
+    / "migrations"
+    / "versions"
+    / "20261005_0009_audit_events.py"
+)
 
 
 def test_rls_migration_covers_all_application_tables_and_legacy_sql_tables() -> None:
@@ -40,8 +46,13 @@ def test_rls_migration_covers_all_application_tables_and_legacy_sql_tables() -> 
         "admin_activity_logs",
     }
 
-    assert model_tables <= covered_tables
+    assert (model_tables - {"audit_events"}) <= covered_tables
     assert stale_sql_tables <= covered_tables
+
+    audit_source = AUDIT_MIGRATION.read_text(encoding="utf-8")
+    assert "audit_events" in audit_source
+    assert "ENABLE ROW LEVEL SECURITY" in audit_source
+    assert "REVOKE ALL PRIVILEGES ON TABLE" in audit_source
     rls_block = source.split("DO $rls$", 1)[1].split("$rls$", 1)[0]
     assert all(f"'{table}'" in rls_block for table in covered_tables)
 
