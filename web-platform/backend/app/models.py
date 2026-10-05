@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, Numeric, String, Text, ForeignKey
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float, Integer, Numeric, String, Text, ForeignKey
 
 from .database import Base
 
@@ -236,7 +236,7 @@ class StoredFile(Base):
     storage_backend = Column(String(40), nullable=False, index=True)
     storage_class = Column(String(40), nullable=False, index=True)
     content_type = Column(String(160), nullable=False)
-    size_bytes = Column(Integer, nullable=False)
+    size_bytes = Column(BigInteger, nullable=False)
     object_key = Column(String(1000), nullable=False, index=True)
     url = Column(String(2000), nullable=True)
     owner_id = Column(String(255), nullable=True, index=True)
