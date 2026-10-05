@@ -1,7 +1,7 @@
 # PostgreSQL production driver (Neon/Supabase pgvector)
 # pip install -r requirements-postgres.txt
 psycopg2-binary==2.9.10
-psycopg[binary]>=3.2.0,<4
+psycopg[binary]>=3.3.6,<4
 
 # Optional dependencies used by admin import
 pypdf==6.19.0
