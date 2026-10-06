@@ -54,47 +54,51 @@ class LLMRouter:
     def __init__(self, db: Session, role: str = "admin"):
         self.db = db
         self.role = (role or "admin").strip().lower()
-        if self.role == "user":
-            self.providers = {
-                "gemini": GeminiProvider(role=self.role),
-                "local": FallbackLocalProvider(),
-            }
-        else:
-            self.providers = {
-                "gemini": GeminiProvider(role=self.role),
-                "openrouter-llama": OpenRouterProvider(
-                    model=clean_env_value("OPENROUTER_LLAMA_MODEL") or "meta-llama/llama-3.3-70b-instruct:free",
-                    role=self.role,
-                ),
-                "openrouter-deepseek": OpenRouterProvider(
-                    model=clean_env_value("OPENROUTER_DEEPSEEK_MODEL") or "deepseek/deepseek-r1:free",
-                    role=self.role,
-                ),
-                "groq": GroqProvider(role=self.role),
-                "cerebras": CerebrasProvider(role=self.role),
-                "mistral": MistralProvider(role=self.role),
-                "cohere": CohereProvider(role=self.role),
-                "nvidia": NvidiaNimProvider(role=self.role),
-                "local": FallbackLocalProvider(),
-            }
+        # Every role gets the full provider set. Provider credentials are still
+        # role-isolated because each provider resolves ROLE_PROVIDER_API_KEY first.
+        self.providers = {
+            "gemini": GeminiProvider(role=self.role),
+            "openrouter-llama": OpenRouterProvider(
+                model=clean_env_value("OPENROUTER_LLAMA_MODEL") or "meta-llama/llama-3.3-70b-instruct:free",
+                role=self.role,
+            ),
+            "openrouter-deepseek": OpenRouterProvider(
+                model=clean_env_value("OPENROUTER_DEEPSEEK_MODEL") or "deepseek/deepseek-r1:free",
+                role=self.role,
+            ),
+            "groq": GroqProvider(role=self.role),
+            "cerebras": CerebrasProvider(role=self.role),
+            "mistral": MistralProvider(role=self.role),
+            "cohere": CohereProvider(role=self.role),
+            "nvidia": NvidiaNimProvider(role=self.role),
+            "local": FallbackLocalProvider(),
+        }
 
     def _selected_provider_name(self) -> str:
         setting = self.db.query(models.AppSetting).filter(
             models.AppSetting.key == "writer_ai_model"
         ).first()
-        selected = setting.value if setting else "gemini"
+        role_provider = clean_env_value(f"{self.role.upper()}_AI_PROVIDER")
+        selected = role_provider or (setting.value if setting else "gemini")
         aliases = {
             "llama3": "openrouter-llama",
+            "openrouter": "openrouter-llama",
             "deepseek": "openrouter-deepseek",
+            "nvidia-nim": "nvidia",
         }
-        selected = aliases.get(selected, selected)
-        if self.role == "user" and selected not in {"gemini", "local"}:
-            return "gemini"
-        return selected
+        return aliases.get(selected.lower(), selected.lower())
 
     def _provider_order(self) -> list[tuple[str, LLMProvider]]:
         selected = self._selected_provider_name()
         names = [selected, "gemini", "groq", "cerebras", "mistral", "cohere", "nvidia", "openrouter-llama", "openrouter-deepseek"]
+
+        # Generic role model applies only to the selected provider. Fallback
+        # providers retain their own provider-specific model configuration.
+        selected_model = clean_env_value(f"{self.role.upper()}_AI_MODEL")
+        if selected_model and selected in self.providers:
+            provider = self.providers[selected]
+            if hasattr(provider, "model"):
+                provider.model = selected_model
         allow_local_fallback = os.getenv(
             "ALLOW_LOCAL_LLM_FALLBACK",
             "true" if os.getenv("ENVIRONMENT", "development").lower() not in {"production", "prod"} else "false",
