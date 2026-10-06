@@ -202,6 +202,8 @@ git status --short
 - `docs/DEPLOY_CHECKLIST.md` — deployment/repository hygiene checklist.
 - `web-platform/docs/RAG_ERROR_REPORTING.md` — RAG error/retry/monitoring behavior.
 
+The Render account now contains a service named `logixa-flow-worker`, but live Render metadata currently reports it as a `web_service` and its initial build failed because it used repository root `.` instead of `web-platform/backend`. It is therefore **not yet counted as the actual Celery Worker release gate**. The intended `type: worker` definition remains in `render.yaml` and must be provisioned/synchronized as a real Render Worker before QStash → Celery → workflow E2E can be marked complete.
+
 ## Current production status
 
 The main branch contains the production hardening work completed so far. Render backend startup has been verified and the production database is at Alembic revision `20261005_0010`.
