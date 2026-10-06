@@ -50,7 +50,11 @@ Google Drive exports:
 - GOOGLE_DRIVE_EXPORT_FOLDER_ID (optional)
 
 AI:
-- At least one provider key for the selected user/admin AI route.
+- `USER_AI_ENABLED=false` unless public AI is intentionally being exposed.
+- `ADMIN_AI_ENABLED=true` for internal AI workflows.
+- `NEXT_PUBLIC_USER_AI_ENABLED=false` in the frontend unless public AI is intentionally exposed.
+- At least one provider key for the selected admin AI route.
+- User/provider keys remain role-specific and backend-only.
 - Prefer separate USER_* and ADMIN_* credentials where the provider supports it.
 
 Payments (only after webhook fulfillment tests pass):
