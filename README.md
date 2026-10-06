@@ -15,7 +15,7 @@ It is not only a blog, chatbot, RSS scraper, CMS, or workflow editor. Those are 
 ## Core capabilities
 
 ### AI and knowledge
-- Public and admin AI chat experiences.
+- Admin AI chat/agent experiences; public AI is feature-gated and currently disabled by default.
 - AI agent runs for research/generation with persisted run and step records.
 - AI Memory / Brain for reviewable generated intelligence.
 - Confidence, hallucination, and feedback quality signals.
@@ -210,6 +210,8 @@ The main branch contains the production hardening work completed so far. Render 
 
 The remaining release gates are explicit: latest-main CI must be green; real configured storage/provider E2E must pass; QStash → `/qstash-dispatch` → workflow completion and recovery must be verified; authentication/API smoke tests and monitoring checks must pass. A Render Background Worker is not a release prerequisite for the current Free architecture.
 
+Public AI is intentionally disabled by default with `USER_AI_ENABLED=false`; admin AI remains enabled with `ADMIN_AI_ENABLED=true`. The backend enforces the gate on public/admin AI routes, while the frontend hides public AI navigation and UI unless `NEXT_PUBLIC_USER_AI_ENABLED=true` is set. Source ingestion, RAG, admin agents, drafts, review, and publishing remain independent of the public-chat gate.
+
 Vercel is governed by the operational lock in `SECURITY.md`: if it is disabled, it must stay disabled until explicit project-owner authorization.
 
 ## Engineering principles
@@ -224,6 +226,8 @@ Vercel is governed by the operational lock in `SECURITY.md`: if it is disabled, 
 8. Treat AI output as reviewable intelligence, not automatically trusted truth.
 9. When changing workflow behavior, update persistence/recovery and tests together.
 10. When changing RAG behavior, consider ingestion, embedding, retrieval, quality, telemetry, and failure handling together.
+11. For source-driven content, preserve provenance from source → extracted evidence → draft → review → publication metadata.
+12. SEO packaging should be generated and validated as part of content production, not treated as an afterthought.
 11. Prefer existing Workflow/Controller architecture for new automation.
 12. For content automation, prefer Source → RAG → Agent → Brain → Approval → Publish.
 
