@@ -52,8 +52,10 @@ Settings:
 ```text
 Framework: Next.js
 Root directory: web-platform/frontend
-Install command: npm install
+Install command: npm ci
 Build command: npm run build
+
+Do not create or restore `web-platform/frontend/vercel.json`. Vercel-specific overrides are intentionally removed.
 ```
 
 Required variables:
@@ -81,8 +83,6 @@ Required variables:
 DATABASE_PROFILE=supabase
 DATABASE_URL=postgresql://...
 AGENT_SERVICE_TOKEN=<same high-entropy secret configured on the Render backend and worker>
-ADMIN_USERNAME=...
-ADMIN_PASSWORD=...
 JWT_SECRET=...
 API_SECRET_TOKEN=...
 ENVIRONMENT=production
@@ -104,7 +104,8 @@ Storage and cache:
 
 ```text
 REDIS_URL=rediss://...
-UPLOAD_STORAGE_BACKEND=b2
+UPLOAD_STORAGE_BACKEND=cloudinary
+STORAGE_FALLBACK_BACKENDS=supabase,b2
 S3_ENDPOINT_URL=https://s3.<B2-region>.backblazeb2.com
 S3_ACCESS_KEY_ID=...
 S3_SECRET_ACCESS_KEY=...
@@ -120,3 +121,30 @@ S3_PUBLIC_BASE_URL=https://your-public-b2-domain
 - AI chat returns a backend response, not "provider unavailable".
 - Image upload returns a public B2 URL.
 - No `.env`, `node_modules`, `.next`, `.venv`, local databases, or uploaded files appear in GitHub.
+
+
+## Durable Workflow Services
+
+Render web:
+- `CELERY_ENABLED=true`
+- `REDIS_URL` configured
+- QStash token/signing keys/destination configured
+
+Render worker:
+- Create an actual Render **Worker** service from `render.yaml`.
+- Command: `celery -A app.workers.celery_app.celery_app worker --loglevel=INFO --concurrency=1 -Q logixa-workflows`.
+- Do not substitute a Cron Job or second Web Service.
+
+QStash → Celery → workflow execution must be tested end-to-end before removing the legacy local scheduler/queue path.
+
+## Storage Validation
+
+Validate the policy boundaries with real provider credentials:
+- image ≤10 MB → Cloudinary
+- document ≤50 MB → Supabase Storage
+- file >50 MB and ≤5 GB → Backblaze B2
+- export/backup artifact → Google Drive
+
+## Vercel Operational Rule
+
+If Vercel is disabled, keep it disabled until explicit project-owner authorization. The repository intentionally contains no Vercel build/install/output override file.
