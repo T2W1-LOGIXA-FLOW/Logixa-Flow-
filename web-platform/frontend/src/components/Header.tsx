@@ -8,7 +8,7 @@ import { useLocale } from "@/lib/LanguageContext";
 const navItems = [
   { href: "/", label: "home", translate: true },
   { href: "/blog", label: "insights", translate: true },
-  { href: "/agent", label: "AI Agent" },
+  ...(process.env.NEXT_PUBLIC_USER_AI_ENABLED === "true" ? [{ href: "/agent", label: "AI Agent" }] : []),
   { href: "/about", label: "about", translate: true },
   { href: "/contact", label: "contact", translate: true },
 ];
