@@ -4,8 +4,13 @@ import os
 
 
 AI_PROVIDER_ENV_KEYS = (
-    "GEMINI_API_KEY", "OPENROUTER_API_KEY", "GROQ_API_KEY", 
-    "CEREBRAS_API_KEY", "MISTRAL_API_KEY", "COHERE_API_KEY", "NVIDIA_NIM_API_KEY"
+    "GEMINI_API_KEY",
+    "OPENROUTER_API_KEY",
+    "GROQ_API_KEY",
+    "CEREBRAS_API_KEY",
+    "MISTRAL_API_KEY",
+    "COHERE_API_KEY",
+    "NVIDIA_NIM_API_KEY",
 )
 S3_ENV_KEYS = ("S3_ENDPOINT_URL", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_BUCKET", "S3_PUBLIC_BASE_URL")
 
@@ -138,6 +143,30 @@ def provider_env_status() -> list[dict[str, str | bool]]:
             "key": "groq",
             "label": "Groq AI",
             "env": "GROQ_API_KEY",
+            "required": False,
+        },
+        {
+            "key": "cerebras",
+            "label": "Cerebras AI",
+            "env": "CEREBRAS_API_KEY",
+            "required": False,
+        },
+        {
+            "key": "mistral",
+            "label": "Mistral AI",
+            "env": "MISTRAL_API_KEY",
+            "required": False,
+        },
+        {
+            "key": "cohere",
+            "label": "Cohere AI",
+            "env": "COHERE_API_KEY",
+            "required": False,
+        },
+        {
+            "key": "nvidia",
+            "label": "NVIDIA NIM",
+            "env": "NVIDIA_NIM_API_KEY",
             "required": False,
         },
         {
