@@ -53,4 +53,4 @@ This does not weaken security checks for application, dependency, workflow, infr
 
 ## Live Integration Gate
 
-Implementation is not treated as live verification. Before production release, verify Cloudinary, Supabase Storage, B2, Google Drive, the actual Render Background Worker, and QStash → Celery → workflow execution with real infrastructure. Keep the legacy scheduler/queue until those checks and recovery tests pass.
+Implementation is not treated as live verification. Before production release, verify configured Cloudinary, Supabase Storage, B2, Google Drive, signed QStash delivery, workflow completion/recovery, and authentication/API behavior with real infrastructure. The current Render Free architecture does not require a Background Worker.
