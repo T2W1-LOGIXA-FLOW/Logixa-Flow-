@@ -346,3 +346,7 @@ GitHub Actions is configured to minimize redundant queued work:
 - Pull requests targeting `main` still run validation.
 
 This is an efficiency control, not a replacement for release validation. Code changes, dependency changes, workflow changes, configuration changes, and infrastructure changes must continue to trigger validation normally.
+
+## 15. Release-gate status
+
+Repository implementation is present for storage routing, Google Drive export, QStash delivery, Celery/Redis execution, and Alembic migrations. Live verification remains required for provider E2E, the actual Render Background Worker, the complete QStash → Celery → workflow path, and operational failure/recovery scenarios.
