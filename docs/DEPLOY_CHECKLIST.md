@@ -148,3 +148,14 @@ Validate the policy boundaries with real provider credentials:
 ## Vercel Operational Rule
 
 If Vercel is disabled, keep it disabled until explicit project-owner authorization. The repository intentionally contains no Vercel build/install/output override file.
+
+## GitHub Actions efficiency
+
+The repository intentionally prevents redundant Actions work:
+- CI and CodeQL use `concurrency.cancel-in-progress: true` per workflow/ref.
+- A newer main commit supersedes an older in-progress run instead of allowing both to consume runner time.
+- Documentation-only push commits are ignored by CI and CodeQL.
+- Pull requests remain validated.
+- `workflow_dispatch` is available for an intentional full run after documentation-only changes or before a release.
+
+Do not add `paths-ignore` to application/config/dependency/infrastructure paths. Only documentation-only changes are excluded.
