@@ -13,7 +13,7 @@ from sqlalchemy import text
 
 from . import models
 from .cache import cache_client, rate_limiter
-from .config import ai_provider_configured, upload_storage_configured, validate_env
+from .config import ai_feature_status, ai_provider_configured, upload_storage_configured, validate_env
 from .database import SessionLocal
 from .db_bootstrap import bootstrap_database, database_profile
 from .logging_config import setup_logging
@@ -298,6 +298,7 @@ def health() -> dict[str, object]:
         "scheduler_enabled": sched["enabled"],
         "scheduler_interval_hours": sched["interval_hours"],
         "ai_key_configured": ai_provider_configured(),
+        "ai_feature_status": ai_feature_status(),
         "embedding_model": os.getenv("EMBEDDING_MODEL", "models/text-embedding-004"),
         "pgvector_enabled": pgvector_status.get("enabled", False),
         "pgvector_reason": pgvector_status.get("reason"),
