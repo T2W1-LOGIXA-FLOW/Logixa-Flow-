@@ -857,29 +857,35 @@ def _track_task(task: asyncio.Task[None]) -> None:
 
 
 def _dispatch_workflow_run(run_id: str, delay_seconds: int = 0) -> None:
-    """Dispatch a persisted workflow run through QStash/Celery or the local fallback."""
+    """Dispatch a persisted workflow run through QStash or the in-process fallback.
+
+    QStash is deliberately usable without Celery so the production Free Web Service
+    can keep durable delivery/scheduling while avoiding a paid Render worker.
+    """
+    if qstash_configured():
+        scheduled_for = (_now() + timedelta(seconds=max(delay_seconds, 0))).timestamp()
+        try:
+            publish_workflow_run(run_id, scheduled_for)
+            return
+        except Exception:
+            logger.exception(
+                "Failed to publish workflow run to QStash",
+                extra={"run_id": run_id, "operation": "qstash_publish"},
+            )
+            _mark_job_terminal(run_id, "failed")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Workflow queue is temporarily unavailable",
+            )
+
     if os.getenv("CELERY_ENABLED", "false").lower() == "true":
-        if qstash_configured():
-            scheduled_for = (_now() + timedelta(seconds=max(delay_seconds, 0))).timestamp()
-            try:
-                publish_workflow_run(run_id, scheduled_for)
-                return
-            except Exception:
-                logger.exception(
-                    "Failed to publish workflow run to QStash",
-                    extra={"run_id": run_id, "operation": "qstash_publish"},
-                )
-                _mark_job_terminal(run_id, "failed")
-                raise HTTPException(
-                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail="Workflow queue is temporarily unavailable",
-                )
         from app.workers.tasks import execute_workflow_task
         execute_workflow_task.apply_async(
             args=[run_id],
             countdown=max(delay_seconds, 0),
         )
         return
+
     start_queue_worker()
 
 
@@ -915,7 +921,7 @@ async def enqueue_workflow_run(
 
 @router.post("/qstash-dispatch", include_in_schema=False)
 async def qstash_dispatch(request: Request) -> dict[str, str]:
-    """Receive a signed QStash delivery and hand execution to Celery."""
+    """Receive a signed QStash delivery and execute locally when Celery is disabled."""
     from qstash import Receiver
 
     signature = request.headers.get("Upstash-Signature", "")
@@ -944,9 +950,16 @@ async def qstash_dispatch(request: Request) -> dict[str, str]:
     if not run_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing workflow run id")
 
-    from app.workers.tasks import execute_workflow_task
-    execute_workflow_task.delay(run_id)
-    return {"status": "queued", "run_id": run_id}
+    if os.getenv("CELERY_ENABLED", "false").lower() == "true":
+        from app.workers.tasks import execute_workflow_task
+        execute_workflow_task.delay(run_id)
+        return {"status": "queued", "run_id": run_id}
+
+    # Free Render mode: keep execution inside the QStash request so QStash owns
+    # retry/delivery and can wake the sleeping Web Service for scheduled runs.
+    await _execute_workflow(run_id)
+    run = _WORKFLOW_RUNS.get(run_id)
+    return {"status": run.state.status if run is not None else "completed", "run_id": run_id}
 
 
 @router.get("/queue")
