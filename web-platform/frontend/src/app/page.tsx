@@ -683,7 +683,7 @@ export default function Home() {
                 Sample questions you can ask:
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button
+                {process.env.NEXT_PUBLIC_USER_AI_ENABLED === "true" ? <button
                   onClick={() => window.location.href = "/agent"}
                   className="text-left p-4 rounded-lg bg-slate-900/40 hover:bg-slate-800/50 transition border border-white/10 hover:border-cyan-500/50 backdrop-blur"
                 >
@@ -710,7 +710,7 @@ export default function Home() {
                 >
                   <p className="font-semibold text-white">{t("aiQuestion4")}</p>
                   <p className="text-sm text-slate-400">{t("aiQuestion4Desc")}</p>
-                </button>
+                </button> : null}
               </div>
             </div>
 
