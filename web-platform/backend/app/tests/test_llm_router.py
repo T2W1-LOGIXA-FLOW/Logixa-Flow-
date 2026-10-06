@@ -221,7 +221,7 @@ def test_user_role_can_fail_over_across_all_configured_providers(monkeypatch):
     monkeypatch.delenv("USER_GEMINI_API_KEY", raising=False)
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.setenv("USER_MISTRAL_API_KEY", "user_mistral_key")
-    monkeypatch.setenv("USER_GROQ_API_KEY", "user_groq_key")
+    monkeypatch.delenv("USER_GROQ_API_KEY", raising=False)
     monkeypatch.setenv("USER_AI_PROVIDER", "gemini")
 
     db = MagicMock()
