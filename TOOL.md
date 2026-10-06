@@ -24,33 +24,22 @@ Do not broaden `paths-ignore` to application, dependency, workflow, infrastructu
 
 Production backend:
 - Render Web Service
+- Free plan
 - Docker
 - root directory: `web-platform/backend`
 - health: `/health`
 
 Durable workflow execution:
-- QStash = delivery, delay, retry
-- Redis = Celery broker/backend
-- Celery = actual long-running execution
+- QStash = delivery, delay, retry, deduplication
 - PostgreSQL = durable workflow/run state
+- Render Web Service = signed QStash receiver and canonical in-process workflow execution when `CELERY_ENABLED=false`
+- Celery + Redis = optional execution mode only when explicitly enabled
 
-Canonical worker command:
-
-```text
-celery -A app.workers.celery_app.celery_app worker --loglevel=INFO --concurrency=1 -Q logixa-workflows
-```
-
-The repository's `render.yaml` contains the intended `type: worker` definition. Do not replace it with a Cron Job or Web Service.
-
-## Current Render limitation
-
-The connected Render API can list/create Web Services, Cron Jobs, and Key Value resources, but it does not expose a Background Worker creation/synchronization operation. A resource named `logixa-flow-worker` may exist while still being `type=web_service`; that does not satisfy the worker gate.
-
-An actual Render Background Worker must be verified by its Render resource type before declaring the worker gate complete.
+The current production architecture intentionally has no Render Background Worker.
 
 ## Redis
 
-Celery requires `REDIS_URL`. A Render Key Value resource `logixa-flow-redis` has been provisioned. The connected API does not expose its connection URL, so never invent one. Configure the real Render-provided internal Redis URL as `REDIS_URL` on the backend and actual Celery Worker.
+Redis is not required by the current Render Free workflow path because `CELERY_ENABLED=false`. Do not invent or configure a Redis URL solely to satisfy an obsolete worker requirement.
 
 ## Storage routing
 
@@ -63,18 +52,15 @@ The backend implementation includes provider fallbacks. Real provider E2E is sep
 
 ## Release gates
 
-Do not remove the legacy scheduler/local queue until all of these have live evidence:
-1. Actual Render Background Worker is running.
-2. Cloudinary real upload succeeds.
-3. Supabase Storage real upload succeeds.
-4. B2 real upload succeeds.
-5. Google Drive real export succeeds.
-6. QStash delivers to the backend dispatch endpoint.
-7. Celery receives and executes the workflow.
-8. Duplicate claim is rejected safely.
-9. Failed execution retries and/or releases its claim correctly.
-10. Stale worker claims are recovered after lease expiry.
-11. Monitoring/log evidence is sufficient for incident investigation.
+Do not remove the local recovery path until all of these have live evidence:
+1. QStash signed delivery reaches the production dispatch endpoint.
+2. A workflow completes through the canonical executor.
+3. Duplicate delivery is safely deduplicated/claimed.
+4. Failed execution retries or releases its claim correctly.
+5. Stale workflow claims are recovered after lease expiry.
+6. Monitoring/log evidence is sufficient for incident investigation.
+7. Configured storage providers and Google Drive export pass real E2E.
+8. Production authentication/API smoke tests pass.
 
 ## Documentation rule
 
@@ -90,4 +76,4 @@ Never document a mocked or unverified provider integration as live.
 
 ## Final decision rule
 
-Legacy scheduler/local queue removal is a post-E2E change. Keep it until the complete QStash -> Celery -> workflow path and recovery scenarios are verified in production.
+Keep the PostgreSQL-backed recovery path and QStash dispatch until the complete signed QStash → workflow execution and recovery scenarios are verified in production.
