@@ -84,3 +84,54 @@ def test_production_env_requires_celery_redis_and_storage(monkeypatch: pytest.Mo
     assert any(item.startswith("CLOUDINARY_CLOUD_NAME") for item in missing)
     assert any(item.startswith("SUPABASE_URL") for item in missing)
     assert any(item.startswith("S3_ENDPOINT_URL") for item in missing)
+
+
+def test_qstash_publish_targets_dispatch_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("QSTASH_TOKEN", "token")
+    monkeypatch.setenv("QSTASH_DESTINATION_URL", "https://logixa-flow.onrender.com")
+
+    class Response:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, str]:
+            return {"messageId": "msg-123"}
+
+    captured: dict[str, object] = {}
+
+    def fake_post(url, json, headers, timeout):
+        captured.update({"url": url, "json": json, "headers": headers, "timeout": timeout})
+        return Response()
+
+    monkeypatch.setattr(qstash.requests, "post", fake_post)
+    message_id = qstash.publish_workflow_run("run-123", 1_900_000_000)
+
+    assert message_id == "msg-123"
+    assert captured["url"] == "https://qstash.upstash.io/v2/publish/https://logixa-flow.onrender.com/api/admin/workflow/qstash-dispatch"
+    assert captured["json"] == {"run_id": "run-123"}
+    headers = captured["headers"]
+    assert headers["Upstash-Deduplication-Id"] == "run-123"
+    assert headers["Upstash-Not-Before"] == "1900000000"
+
+
+def test_production_env_allows_render_free_without_celery(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("JWT_SECRET", "j" * 32)
+    monkeypatch.setenv("API_SECRET_TOKEN", "a" * 32)
+    monkeypatch.setenv("CELERY_ENABLED", "false")
+    monkeypatch.delenv("REDIS_URL", raising=False)
+    monkeypatch.setenv("QSTASH_TOKEN", "qstash-token")
+    monkeypatch.setenv("QSTASH_DESTINATION_URL", "https://logixa-flow.onrender.com")
+    monkeypatch.setenv("QSTASH_CURRENT_SIGNING_KEY", "current")
+    monkeypatch.setenv("QSTASH_NEXT_SIGNING_KEY", "next")
+    monkeypatch.setenv("UPLOAD_STORAGE_BACKEND", "cloudinary")
+    monkeypatch.setenv("STORAGE_FALLBACK_BACKENDS", "supabase,b2")
+    for key in (
+        "CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET",
+        "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_STORAGE_BUCKET",
+        "S3_ENDPOINT_URL", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_BUCKET", "S3_PUBLIC_BASE_URL",
+    ):
+        monkeypatch.delenv(key, raising=False)
+
+    missing = config.validate_env()
+    assert not any(item.startswith("REDIS_URL") for item in missing)
