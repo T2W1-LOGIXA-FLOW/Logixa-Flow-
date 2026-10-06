@@ -24,6 +24,10 @@ services:
         sync: false
       - key: REQUIRE_AI_KEY
         value: false
+      - key: USER_AI_ENABLED
+        value: false
+      - key: ADMIN_AI_ENABLED
+        value: true
       - key: USER_AI_PROVIDER
         value: gemini
       - key: USER_AI_MODEL
