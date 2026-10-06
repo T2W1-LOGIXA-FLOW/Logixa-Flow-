@@ -161,7 +161,7 @@ Object storage / external providers
 - **Backend:** Render — https://logixa-flow.onrender.com
 - **Database:** Supabase PostgreSQL + pgvector
 - **Object storage:** Cloudinary → Supabase Storage → Backblaze B2 according to file class; Google Drive for exports/backups.
-- **Workflow dispatch:** QStash → Celery + Redis.
+- **Workflow dispatch:** QStash → Render Web Service `/qstash-dispatch` → in-process workflow execution when `CELERY_ENABLED=false`. Celery/Redis remain optional for non-Free deployments.
 - **Source control:** GitHub
 
 ## Local development
@@ -202,13 +202,13 @@ git status --short
 - `docs/DEPLOY_CHECKLIST.md` — deployment/repository hygiene checklist.
 - `web-platform/docs/RAG_ERROR_REPORTING.md` — RAG error/retry/monitoring behavior.
 
-The Render account now contains a service named `logixa-flow-worker`, but live Render metadata currently reports it as a `web_service` and its initial build failed because it used repository root `.` instead of `web-platform/backend`. It is therefore **not yet counted as the actual Celery Worker release gate**. The intended `type: worker` definition remains in `render.yaml` and must be provisioned/synchronized as a real Render Worker before QStash → Celery → workflow E2E can be marked complete.
+Render Free production intentionally uses a single Web Service. The Background Worker service was removed because Render Free does not provide a Background Worker. Durable workflow delivery is handled by QStash, which signs and retries delivery to `/api/admin/workflow/qstash-dispatch`; with `CELERY_ENABLED=false`, the web service executes the canonical workflow engine in-process while PostgreSQL remains the durable state store.
 
 ## Current production status
 
 The main branch contains the production hardening work completed so far. Render backend startup has been verified and the production database is at Alembic revision `20261005_0010`.
 
-The remaining release gates are explicit: latest-main CI must be green; real Cloudinary/Supabase Storage/B2/Google Drive provider E2E must pass; the actual Render Celery Worker service must exist and execute a QStash-dispatched workflow; and operational recovery/observability checks must pass. These are not marked complete until live evidence exists.
+The remaining release gates are explicit: latest-main CI must be green; real configured storage/provider E2E must pass; QStash → `/qstash-dispatch` → workflow completion and recovery must be verified; authentication/API smoke tests and monitoring checks must pass. A Render Background Worker is not a release prerequisite for the current Free architecture.
 
 Vercel is governed by the operational lock in `SECURITY.md`: if it is disabled, it must stay disabled until explicit project-owner authorization.
 
@@ -231,10 +231,10 @@ Vercel is governed by the operational lock in `SECURITY.md`: if it is disabled, 
 
 GitHub Actions uses workflow concurrency with `cancel-in-progress: true` on the main branch, so a newer run supersedes an older queued/in-progress run for the same workflow and ref. CI and CodeQL also ignore documentation-only pushes; documentation commits therefore do not start full validation runs. Use manual `workflow_dispatch` when a full validation run is intentionally required.
 
-The production release gates remain live-evidence gates: actual Render Worker provisioning, real provider E2E, QStash → Celery → workflow E2E, and operational recovery must be verified before legacy scheduler/queue removal.
+The production release gates remain live-evidence gates: QStash delivery/verification, workflow completion and recovery, real provider E2E, and operational monitoring must be verified before removing or changing the local recovery path.
 
 ## Current release gates
 
-Verified in repository/production code: storage routing (Cloudinary/Supabase Storage/B2), Google Drive export implementation, QStash integration, Celery + Redis worker configuration, Alembic migrations, and CI/CodeQL queue controls.
+Verified in repository/production code: storage routing, Google Drive export implementation, QStash integration, Render-Free workflow configuration, Alembic migrations, and CI/CodeQL queue controls.
 
-Still requiring live infrastructure evidence: an actual Render Background Worker, real provider upload/export E2E, QStash → Celery → workflow E2E, and failure/retry/recovery/duplicate-claim monitoring tests. Legacy local scheduler/queue removal is blocked until those gates pass.
+Still requiring live infrastructure evidence: real provider upload/export E2E, QStash signed delivery → workflow completion, failure/retry/recovery/duplicate-delivery checks, and production authentication/API smoke tests.
