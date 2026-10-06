@@ -596,16 +596,24 @@ def _record_controller_result(run_id: str, status_value: str) -> None:
 
 
 def _claim_job(run_id: str) -> bool:
-    """Atomically claim a due queued DB job for this worker instance."""
+    """Atomically claim a due queued job, or reclaim an expired worker lease."""
     db = SessionLocal()
     try:
         if not db.bind or not inspect(db.bind).has_table("scheduled_workflow_jobs"):
             return True
         now = _now()
+        lease_seconds = max(int(os.getenv("WORKFLOW_CLAIM_LEASE_SECONDS", "3600")), 60)
+        stale_before = now - timedelta(seconds=lease_seconds)
         updated = db.query(models.ScheduledWorkflowJob).filter(
             models.ScheduledWorkflowJob.run_id == run_id,
-            models.ScheduledWorkflowJob.status == "queued",
             models.ScheduledWorkflowJob.scheduled_for <= now,
+            (
+                (models.ScheduledWorkflowJob.status == "queued")
+                | (
+                    (models.ScheduledWorkflowJob.status == "running")
+                    & (models.ScheduledWorkflowJob.claimed_at <= stale_before)
+                )
+            ),
         ).update(
             {
                 "status": "running",
@@ -624,6 +632,42 @@ def _claim_job(run_id: str) -> bool:
             extra={
                 "run_id": run_id,
                 "operation": "claim_job",
+                "error_type": "database_failure",
+            },
+        )
+        raise
+    finally:
+        db.close()
+
+
+def _release_job_claim(run_id: str) -> None:
+    """Return a failed worker-owned job to queued state for retry/recovery."""
+    db = SessionLocal()
+    try:
+        if not db.bind or not inspect(db.bind).has_table("scheduled_workflow_jobs"):
+            return
+        now = _now()
+        db.query(models.ScheduledWorkflowJob).filter(
+            models.ScheduledWorkflowJob.run_id == run_id,
+            models.ScheduledWorkflowJob.status == "running",
+            models.ScheduledWorkflowJob.claimed_by == _WORKER_ID,
+        ).update(
+            {
+                "status": "queued",
+                "claimed_by": None,
+                "claimed_at": None,
+                "updated_at": now,
+            },
+            synchronize_session=False,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception(
+            "Failed to release workflow job claim",
+            extra={
+                "run_id": run_id,
+                "operation": "release_claim",
                 "error_type": "database_failure",
             },
         )
