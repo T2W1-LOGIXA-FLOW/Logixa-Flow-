@@ -70,10 +70,6 @@ services:
         value: true
       - key: CELERY_QUEUE
         value: logixa-workflows
-      - key: GOOGLE_DRIVE_CREDENTIALS_JSON
-        sync: false
-      - key: GOOGLE_DRIVE_EXPORT_FOLDER_ID
-        sync: false
       - key: QSTASH_URL
         value: https://qstash.upstash.io
       - key: QSTASH_TOKEN
