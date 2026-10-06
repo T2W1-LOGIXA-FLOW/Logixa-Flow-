@@ -227,7 +227,7 @@ WORKER_RUN_ON_START=true
 WORKER_ONCE=false
 ```
 
-Set `AGENT_SERVICE_TOKEN` manually as a high-entropy secret where the optional agent-service pipeline is enabled; the repository intentionally contains no token value. Legacy `ADMIN_USERNAME`/`ADMIN_PASSWORD` credentials are not part of the production authentication path and must not be reintroduced. `AUTO_APPROVE_PUBLISH=false` remains intentional: AI-generated content stays reviewable before publication.
+Set `AGENT_SERVICE_TOKEN` manually as a high-entropy secret where the optional agent-service pipeline is enabled; the repository intentionally contains no token value. Legacy password-based admin credentials are not part of the production authentication path and must not be reintroduced. `AUTO_APPROVE_PUBLISH=false` remains intentional: AI-generated content stays reviewable before publication.
 
 `AUTO_APPROVE_PUBLISH=false` is intentional: AI-generated content should remain reviewable before publication.
 
