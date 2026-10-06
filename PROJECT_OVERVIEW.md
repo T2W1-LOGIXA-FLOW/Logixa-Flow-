@@ -6,10 +6,10 @@
 **Type:** AI-Powered Supply Chain Intelligence and Workflow Automation Platform  
 **Product shape:** Public knowledge website + private admin control plane + AI/RAG + workflow automation + operational tools  
 **Source of truth:** GitHub `main` branch  
-**Production frontend:** Vercel  
+**Frontend deployment:** Vercel only when explicitly enabled  
 **Production backend:** Render  
 **Database:** Supabase PostgreSQL + pgvector  
-**Object storage:** Backblaze B2 / S3-compatible storage
+**Object storage:** Cloudinary → Supabase Storage → Backblaze B2, with Google Drive for exports/backups
 
 ## 2. Purpose
 
@@ -133,7 +133,7 @@ It is separate from the main FastAPI web service and should not be confused with
 - 5,000-row limit for tabular imports.
 - Imported records can create pending Brain knowledge and draft posts.
 - Image upload endpoint requires admin authorization and validates image MIME types.
-- B2/S3-compatible storage is supported through boto3.
+- Cloudinary, Supabase Storage, and B2/S3-compatible routing is implemented with policy-based size/class selection.
 - RAG batch file ingestion reports per-file success/failure and recovery metadata.
 
 ## 5. Data model and taxonomy
@@ -202,8 +202,11 @@ These taxonomies should not be conflated with the narrower Post model status/cat
 - Optional `agents/` worker pipeline
 
 ### Storage/integrations
-- Backblaze B2 / S3-compatible object storage
-- Upstash Redis helper infrastructure
+- Cloudinary / Supabase Storage / Backblaze B2
+- Google Drive exports/backups
+- Upstash Redis
+- QStash
+- Celery + Redis
 - RSS feeds
 - Email provider integration
 
@@ -248,29 +251,27 @@ The frontend is deployed through Vercel with `web-platform/frontend` as the root
 
 The backend is a Docker-based Render service using `web-platform/backend`, with `/health` as the health-check path.
 
-The production backend was synchronized to the latest main commit during the final deployment verification.
+The production backend is deployed on Render. Production database migration is at Alembic revision `20261005_0010`.
 
 ## 9. Current release state
 
-The current main branch is production-usable.
+Main-branch hardening is in progress toward final operational closure.
 
-Verified during the release hardening sequence:
-- Frontend build passes.
-- Backend tests pass.
-- CI run succeeded.
-- Vercel production deployment is ready.
-- Vercel production URL returns HTTP 200.
-- Recent Vercel runtime-error checks showed no runtime errors in the selected window.
-- Render backend deployment is live.
-- Render startup completed successfully.
-- Supabase project is active/healthy.
-- Alembic migrations through `20261003_0006` define the backend schema and RLS/grant baseline; live PostgreSQL/Supabase migration execution and privilege inspection are still required.
-- pgvector is installed at 0.8.2 and has been moved to `extensions`.
-- Workflow persistence/recovery is covered by backend tests.
-- RAG ingestion/search code has explicit failure handling and telemetry.
-- LLM routing has provider fallback logic.
+Verified:
+- Render backend startup is live.
+- Production database is at Alembic revision `20261005_0010`.
+- Vercel build overrides in `web-platform/frontend/vercel.json` have been removed.
+- Vercel operational lock is documented in `SECURITY.md`.
+- QStash dispatch and Celery worker code are present.
+- Storage routing and Google Drive export code are present.
 
-A transient Gemini generation HTTP 503 was observed in Render logs during startup verification; the LLM router handled provider failure by attempting another configured provider. This is an external provider-health event, not evidence that all providers are permanently healthy.
+Final release gates:
+- Latest main CI must be green.
+- Real Cloudinary, Supabase Storage, B2, and Google Drive provider E2E must pass.
+- Actual Render Celery Worker provisioning and QStash → Celery → workflow E2E must pass.
+- Operational recovery, monitoring, and failure-mode checks must pass.
+
+Do not mark a gate complete without live evidence.
 
 ## 10. What is implemented vs. what must still be live-tested
 
