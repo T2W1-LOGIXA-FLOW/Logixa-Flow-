@@ -13,6 +13,7 @@ from ..database import get_db
 from ..llm.router import LLMRouter
 from ..security import require_admin
 from ..cache import cache_client, rate_limiter
+from ..config import ai_enabled_for_role
 
 router = APIRouter()
 
@@ -62,6 +63,8 @@ def chat_query(
     """
     Process a chat query with AI integration.
     """
+    if not ai_enabled_for_role("admin"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin AI is temporarily disabled")
     owner_id = _admin_owner_id(admin)
     session: models.ChatSession | None = None
     
@@ -150,6 +153,9 @@ def public_chat_query(
 
     Rate limit: 5 requests per minute per client IP.
     """
+    if not ai_enabled_for_role("user"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Public AI is temporarily disabled")
+
     # Use the ASGI client address rather than trusting a spoofable X-Forwarded-For
     # header. If a trusted proxy middleware is added later, its normalized client
     # address will already be reflected in request.client.
