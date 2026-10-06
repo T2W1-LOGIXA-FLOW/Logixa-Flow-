@@ -29,7 +29,9 @@ export default function MobileDrawer() {
             <nav className="mt-6 flex flex-col gap-2 text-sm">
               <Link href="/" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-slate-200 hover:bg-cyan-400/10 hover:text-cyan-300">{t("home")}</Link>
               <Link href="/blog" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-slate-200 hover:bg-cyan-400/10 hover:text-cyan-300">{t("insights")}</Link>
-              <Link href="/agent" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-slate-200 hover:bg-cyan-400/10 hover:text-cyan-300">AI Agent</Link>
+              {process.env.NEXT_PUBLIC_USER_AI_ENABLED === "true" ? (
+                <Link href="/agent" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-slate-200 hover:bg-cyan-400/10 hover:text-cyan-300">AI Agent</Link>
+              ) : null}
               <Link href="/estimator" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-slate-200 hover:bg-cyan-400/10 hover:text-cyan-300">Estimator</Link>
               <Link href="/about" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-slate-200 hover:bg-cyan-400/10 hover:text-cyan-300">{t("about")}</Link>
               <Link href="/contact" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-slate-200 hover:bg-cyan-400/10 hover:text-cyan-300">{t("contact")}</Link>
