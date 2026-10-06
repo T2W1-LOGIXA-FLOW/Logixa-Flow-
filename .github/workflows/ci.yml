@@ -80,19 +80,19 @@ jobs:
           node - <<'NODE'
           const report = require("./npm-audit.json");
           const ignored = new Set([
-  "braces",
-  "postcss",
-  "postcss-selector-parser",
-  // Build/dev-only dependency chains; not shipped as runtime application code.
-  "@next/eslint-plugin-next",
-  "eslint-config-next",
-  "chokidar",
-  "fast-glob",
-  "globby",
-  "micromatch",
-  "next-pwa",
-  "tailwindcss",
-]);
+            "braces",
+            "postcss",
+            "postcss-selector-parser",
+            // Build/dev-only dependency chains; not shipped as runtime application code.
+            "@next/eslint-plugin-next",
+            "eslint-config-next",
+            "chokidar",
+            "fast-glob",
+            "globby",
+            "micromatch",
+            "next-pwa",
+            "tailwindcss",
+          ]);
           const actionable = Object.entries(report.vulnerabilities || {})
             .filter(([name, advisory]) => !ignored.has(name) && ["high", "critical"].includes(advisory.severity));
           if (actionable.length) {
