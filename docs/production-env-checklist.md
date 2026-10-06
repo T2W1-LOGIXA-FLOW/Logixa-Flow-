@@ -1,6 +1,6 @@
 # Logixa Flow production environment checklist
 
-## Backend / Render web + Celery worker
+## Backend / Render Free Web Service
 
 Required:
 - DATABASE_URL
@@ -8,9 +8,8 @@ Required:
 - API_SECRET_TOKEN
 - AGENT_SERVICE_TOKEN
 - CORS_ORIGINS
-- REDIS_URL
-- CELERY_ENABLED=true
-- CELERY_QUEUE=logixa-workflows
+- CELERY_ENABLED=false
+- REDIS_URL is optional and only required if Celery execution is explicitly enabled
 
 QStash:
 - QSTASH_URL
@@ -78,6 +77,14 @@ Only public configuration belongs here:
 - NEXT_PUBLIC_TURNSTILE_SITE_KEY when Turnstile is enabled
 
 Never put server secrets, signing keys, service-role keys, Stripe secret keys, QStash tokens, or provider private keys in NEXT_PUBLIC_* variables.
+
+## Workflow runtime
+
+Production Free path:
+- QStash publishes to `QSTASH_DESTINATION_URL + /api/admin/workflow/qstash-dispatch`.
+- The endpoint verifies `QSTASH_CURRENT_SIGNING_KEY` / `QSTASH_NEXT_SIGNING_KEY`.
+- With `CELERY_ENABLED=false`, the request executes the canonical workflow engine in-process.
+- PostgreSQL persists workflow/run state and recovery metadata.
 
 ## Operational rule
 
