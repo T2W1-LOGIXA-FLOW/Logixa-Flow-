@@ -1,12 +1,20 @@
 name: CodeQL
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
   pull_request:
     branches: [main]
   schedule:
     - cron: "30 2 * * 1"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   analyze:
