@@ -72,8 +72,6 @@ services:
         value: logixa-workflows
       - key: WORKFLOW_CLAIM_LEASE_SECONDS
         value: "3600"
-      - key: WORKFLOW_CLAIM_LEASE_SECONDS
-        value: "3600"
       - key: QSTASH_URL
         value: https://qstash.upstash.io
       - key: QSTASH_TOKEN
@@ -147,3 +145,5 @@ services:
         value: true
       - key: CELERY_QUEUE
         value: logixa-workflows
+      - key: WORKFLOW_CLAIM_LEASE_SECONDS
+        value: "3600"
