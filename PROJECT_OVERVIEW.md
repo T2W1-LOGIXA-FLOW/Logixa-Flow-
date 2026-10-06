@@ -26,7 +26,7 @@ The platform is deliberately broader than any one feature. Blog/content, RSS col
 ### Public surface
 - Supply-chain and logistics knowledge/content.
 - Public articles and publishing output.
-- Public AI/agent experience where enabled.
+- Public AI/agent experience is feature-gated and currently disabled by default; admin AI remains available.
 - Public-facing site built with Next.js.
 
 ### Admin surface
@@ -348,3 +348,24 @@ This is an efficiency control, not a replacement for release validation. Code ch
 ## 15. Release-gate status
 
 Repository implementation is present for storage routing, Google Drive export, QStash delivery, Render-Free workflow execution, and Alembic migrations. Live verification remains required for provider E2E, signed QStash delivery, workflow completion/recovery, and operational failure/monitoring scenarios.
+
+
+## 12. Current AI and source-to-content operating mode
+
+Public AI is controlled independently from admin AI. Production defaults are `USER_AI_ENABLED=false` and `ADMIN_AI_ENABLED=true`. The backend rejects disabled public/admin AI generation with an explicit 403, and the frontend hides public AI navigation/entry points unless `NEXT_PUBLIC_USER_AI_ENABLED=true`.
+
+The source/content foundation already exists: manual/file/URL/RSS sources, CSV/XLSX/PDF import, RAG ingestion/chunking/embeddings, source-aware retrieval, AI Brain records, agent runs, draft posts, review states, and publication controls. This is sufficient for a source-grounded content workflow, but it should not be described as a fully verified one-click universal “upload any file → final publish” pipeline until real provider/storage E2E and provenance/SEO QA are validated together.
+
+The intended production content flow is:
+
+`Source/File/Feed → Extract/Normalize → Provenance → RAG → Research/Agent → Draft → SEO Packaging → Fact/Source QA → Human Approval → Publish`
+
+Publication-sensitive AI output remains reviewable; automatic publication is not the default.
+
+## 13. SEO and news-content status
+
+The frontend contains SEO metadata/structured-data helpers and the content model supports news/analysis/education posts. However, “SEO-ready” should mean more than title/meta generation. Production content automation should also validate slug, canonical URL, description, Open Graph/Twitter metadata, structured data, internal links, source attribution, freshness/timestamps for news, and duplicate/corroboration checks.
+
+News generation should therefore follow:
+
+`Source/Event → Timestamp & Corroboration → Fact Extraction → Hook/Headline → Article → SEO Package → Source Attribution → QA → Approval → Publish`
