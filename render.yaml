@@ -30,11 +30,35 @@ services:
         value: gemini-2.5-flash
       - key: USER_GEMINI_API_KEY
         sync: false
+      - key: USER_OPENROUTER_API_KEY
+        sync: false
+      - key: USER_GROQ_API_KEY
+        sync: false
+      - key: USER_CEREBRAS_API_KEY
+        sync: false
+      - key: USER_MISTRAL_API_KEY
+        sync: false
+      - key: USER_COHERE_API_KEY
+        sync: false
+      - key: USER_NVIDIA_NIM_API_KEY
+        sync: false
       - key: ADMIN_AI_PROVIDER
         value: mistral
       - key: ADMIN_AI_MODEL
         value: mistral-small-latest
+      - key: ADMIN_GEMINI_API_KEY
+        sync: false
+      - key: ADMIN_OPENROUTER_API_KEY
+        sync: false
+      - key: ADMIN_GROQ_API_KEY
+        sync: false
+      - key: ADMIN_CEREBRAS_API_KEY
+        sync: false
       - key: ADMIN_MISTRAL_API_KEY
+        sync: false
+      - key: ADMIN_COHERE_API_KEY
+        sync: false
+      - key: ADMIN_NVIDIA_NIM_API_KEY
         sync: false
       - key: GEMINI_API_KEY
         sync: false
@@ -54,6 +78,10 @@ services:
         sync: false
       - key: COHERE_MODEL
         value: command-r-plus
+      - key: MISTRAL_API_KEY
+        sync: false
+      - key: MISTRAL_MODEL
+        value: mistral-small-latest
       - key: NVIDIA_NIM_API_KEY
         sync: false
       - key: NVIDIA_NIM_MODEL
@@ -82,8 +110,6 @@ services:
         sync: false
       - key: QSTASH_DESTINATION_URL
         sync: false
-      - key: QSTASH_LOCAL_EXECUTION
-        value: true
       - key: QSTASH_TIMEOUT
         value: 10s
       - key: QSTASH_RETRIES
