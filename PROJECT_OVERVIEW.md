@@ -333,3 +333,14 @@ These are validation tasks, not reasons to treat the current deployment as non-p
 **Logixa Flow = Supply-chain intelligence + RAG knowledge + AI agents/chat + human-reviewed content + durable workflows + scheduling/controllers + operational tools.**
 
 The strength of the platform is the connection between these layers rather than any individual feature.
+
+## 14. CI execution policy
+
+GitHub Actions is configured to minimize redundant queued work:
+- Main-branch CI and CodeQL use concurrency groups per workflow/ref.
+- `cancel-in-progress: true` cancels a superseded in-progress run when a newer commit arrives.
+- Documentation-only changes (`*.md` and `docs/**`) do not trigger push-based CI/CodeQL.
+- `workflow_dispatch` remains available for deliberate full validation.
+- Pull requests targeting `main` still run validation.
+
+This is an efficiency control, not a replacement for release validation. Code changes, dependency changes, workflow changes, configuration changes, and infrastructure changes must continue to trigger validation normally.
