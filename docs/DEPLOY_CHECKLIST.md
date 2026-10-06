@@ -123,7 +123,7 @@ S3_PUBLIC_BASE_URL=https://your-public-b2-domain
 - No `.env`, `node_modules`, `.next`, `.venv`, local databases, or uploaded files appear in GitHub.
 
 
-Live Render check: the account currently has a `logixa-flow-worker` resource, but its API type is `web_service` and its first build failed at `Dockerfile` lookup from repository root. Do not count this as the Celery Worker. Provision/synchronize the `type: worker` entry in `render.yaml` with Docker context `web-platform/backend` and command `celery -A app.workers.celery_app.celery_app worker --loglevel=INFO --concurrency=1 -Q logixa-workflows`.
+Live Render check: the Render workspace currently has the production Web Service only; no actual `logixa-flow-worker` Background Worker resource is exposed by the connected Render API. Do not create a Web Service or Cron Job as a substitute. Provision the `type: worker` entry in `render.yaml` as an actual Render Background Worker with Docker context `web-platform/backend` and command `celery -A app.workers.celery_app.celery_app worker --loglevel=INFO --concurrency=1 -Q logixa-workflows`. Provision/synchronize the `type: worker` entry in `render.yaml` with Docker context `web-platform/backend` and command `celery -A app.workers.celery_app.celery_app worker --loglevel=INFO --concurrency=1 -Q logixa-workflows`.
 
 ## Durable Workflow Services
 
