@@ -251,9 +251,7 @@ The frontend is deployed through Vercel with `web-platform/frontend` as the root
 
 The backend is a Docker-based Render service using `web-platform/backend`, with `/health` as the health-check path.
 
-The production backend is deployed on Render. Production database migration is at Alembic revision `20261005_0010`.
-
-Live Render verification found a `logixa-flow-worker` service name, but Render currently reports that resource as `web_service`; its first build failed because the Dockerfile context was repository root instead of `web-platform/backend`. The production release gate therefore remains open until a real Render Worker is provisioned from the `type: worker` definition in `render.yaml`.
+The production backend is deployed on Render as a single Free Web Service. `CELERY_ENABLED=false` is intentional: the service uses QStash for durable delivery/delay/retry and executes the canonical workflow engine in-process through `/api/admin/workflow/qstash-dispatch`. PostgreSQL remains the durable workflow/run source of truth.
 
 ## 9. Current release state
 
@@ -270,7 +268,7 @@ Verified:
 Final release gates:
 - Latest main CI must be green.
 - Real Cloudinary, Supabase Storage, B2, and Google Drive provider E2E must pass.
-- Actual Render Celery Worker provisioning and QStash → Celery → workflow E2E must pass.
+- QStash signed delivery → `/qstash-dispatch` → workflow completion must pass.
 - Operational recovery, monitoring, and failure-mode checks must pass.
 
 Do not mark a gate complete without live evidence.
@@ -349,4 +347,4 @@ This is an efficiency control, not a replacement for release validation. Code ch
 
 ## 15. Release-gate status
 
-Repository implementation is present for storage routing, Google Drive export, QStash delivery, Celery/Redis execution, and Alembic migrations. Live verification remains required for provider E2E, the actual Render Background Worker, the complete QStash → Celery → workflow path, and operational failure/recovery scenarios.
+Repository implementation is present for storage routing, Google Drive export, QStash delivery, Render-Free workflow execution, and Alembic migrations. Live verification remains required for provider E2E, signed QStash delivery, workflow completion/recovery, and operational failure/monitoring scenarios.
