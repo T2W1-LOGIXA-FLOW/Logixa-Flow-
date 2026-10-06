@@ -98,6 +98,17 @@ def test_non_owner_and_ownerless_sessions_are_denied(db):
     assert exc_info.value.status_code == 404
 
 
+def test_public_query_is_blocked_when_user_ai_is_disabled(db, monkeypatch):
+    monkeypatch.setenv("USER_AI_ENABLED", "false")
+    monkeypatch.setattr(chat.rate_limiter, "allow", lambda *args, **kwargs: True)
+
+    with pytest.raises(HTTPException) as exc_info:
+        chat.public_chat_query(schemas.ChatQueryRequest(query="Public question"), db=db)
+
+    assert exc_info.value.status_code == 403
+    assert exc_info.value.detail == "Public AI is temporarily disabled"
+
+
 def test_public_query_does_not_create_admin_sessions(db, monkeypatch):
     monkeypatch.setattr(
         chat,
