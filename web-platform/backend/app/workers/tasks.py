@@ -11,6 +11,11 @@ logger = logging.getLogger(__name__)
 @celery_app.task(
     bind=True,
     name="logixa_flow.execute_workflow",
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=60,
+    retry_jitter=True,
+    max_retries=3,
 )
 def execute_workflow_task(self, run_id: str) -> str:
     """Execute one durable workflow run outside the web process."""
@@ -38,5 +43,6 @@ def execute_workflow_task(self, run_id: str) -> str:
         asyncio.run(workflow._execute_workflow(run_id))
     except Exception:
         logger.exception("Celery workflow task failed", extra={"run_id": run_id})
+        workflow._release_job_claim(run_id)
         raise
     return workflow._WORKFLOW_RUNS[run_id].state.status
