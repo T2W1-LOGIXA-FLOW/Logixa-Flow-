@@ -67,7 +67,7 @@ services:
       - key: SCHEDULER_INTERVAL_HOURS
         value: "24"
       - key: CELERY_ENABLED
-        value: true
+        value: false
       - key: CELERY_QUEUE
         value: logixa-workflows
       - key: WORKFLOW_CLAIM_LEASE_SECONDS
@@ -82,6 +82,8 @@ services:
         sync: false
       - key: QSTASH_DESTINATION_URL
         sync: false
+      - key: QSTASH_LOCAL_EXECUTION
+        value: true
       - key: QSTASH_TIMEOUT
         value: 10s
       - key: QSTASH_RETRIES
@@ -118,32 +120,3 @@ services:
         sync: false
       - key: GOOGLE_DRIVE_EXPORT_FOLDER_ID
         sync: false
-
-  - type: worker
-    name: logixa-flow-worker
-    runtime: docker
-    plan: 0.5c-512mb
-    dockerfilePath: ./web-platform/backend/Dockerfile
-    dockerContext: ./web-platform/backend
-    dockerCommand: celery -A app.workers.celery_app.celery_app worker --loglevel=INFO --concurrency=1 -Q logixa-workflows
-    envVars:
-      - key: ENVIRONMENT
-        value: production
-      - key: DATABASE_PROFILE
-        value: supabase
-      - key: DATABASE_URL
-        sync: false
-      - key: JWT_SECRET
-        sync: false
-      - key: API_SECRET_TOKEN
-        sync: false
-      - key: AGENT_SERVICE_TOKEN
-        sync: false
-      - key: REDIS_URL
-        sync: false
-      - key: CELERY_ENABLED
-        value: true
-      - key: CELERY_QUEUE
-        value: logixa-workflows
-      - key: WORKFLOW_CLAIM_LEASE_SECONDS
-        value: "3600"
