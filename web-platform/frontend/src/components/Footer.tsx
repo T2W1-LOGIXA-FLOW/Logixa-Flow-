@@ -11,7 +11,7 @@ export default function Footer() {
   const productLinks = [
     { href: "/features", label: "Features" },
     { href: "/pricing", label: "Pricing" },
-    { href: "/agent", label: "AI Agent" },
+    ...(process.env.NEXT_PUBLIC_USER_AI_ENABLED === "true" ? [{ href: "/agent", label: "AI Agent" }] : []),
   ];
 
   const companyLinks = [
