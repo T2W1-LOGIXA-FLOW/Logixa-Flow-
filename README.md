@@ -232,3 +232,9 @@ Vercel is governed by the operational lock in `SECURITY.md`: if it is disabled, 
 GitHub Actions uses workflow concurrency with `cancel-in-progress: true` on the main branch, so a newer run supersedes an older queued/in-progress run for the same workflow and ref. CI and CodeQL also ignore documentation-only pushes; documentation commits therefore do not start full validation runs. Use manual `workflow_dispatch` when a full validation run is intentionally required.
 
 The production release gates remain live-evidence gates: actual Render Worker provisioning, real provider E2E, QStash → Celery → workflow E2E, and operational recovery must be verified before legacy scheduler/queue removal.
+
+## Current release gates
+
+Verified in repository/production code: storage routing (Cloudinary/Supabase Storage/B2), Google Drive export implementation, QStash integration, Celery + Redis worker configuration, Alembic migrations, and CI/CodeQL queue controls.
+
+Still requiring live infrastructure evidence: an actual Render Background Worker, real provider upload/export E2E, QStash → Celery → workflow E2E, and failure/retry/recovery/duplicate-claim monitoring tests. Legacy local scheduler/queue removal is blocked until those gates pass.
