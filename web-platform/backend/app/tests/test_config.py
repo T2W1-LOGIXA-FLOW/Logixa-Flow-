@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..config import validate_env
+from ..config import ai_enabled_for_role, validate_env
 
 
 def set_required_secrets(monkeypatch, jwt_secret: str, api_secret: str) -> None:
@@ -47,3 +47,18 @@ def test_development_preserves_existing_secret_validation(monkeypatch):
     monkeypatch.setenv("ADMIN_PASSWORD", "test-admin-password")
 
     assert validate_env() == []
+
+def test_ai_feature_gates_default_to_public_off_and_admin_on(monkeypatch):
+    monkeypatch.delenv("USER_AI_ENABLED", raising=False)
+    monkeypatch.delenv("ADMIN_AI_ENABLED", raising=False)
+
+    assert ai_enabled_for_role("user") is False
+    assert ai_enabled_for_role("admin") is True
+
+
+def test_ai_feature_gates_are_independently_configurable(monkeypatch):
+    monkeypatch.setenv("USER_AI_ENABLED", "true")
+    monkeypatch.setenv("ADMIN_AI_ENABLED", "false")
+
+    assert ai_enabled_for_role("user") is True
+    assert ai_enabled_for_role("admin") is False
