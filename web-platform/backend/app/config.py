@@ -16,6 +16,22 @@ S3_ENV_KEYS = ("S3_ENDPOINT_URL", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S
 
 # Server-side AI safety controls. These default to enabled so production does not
 # require a deployment-time opt-in to protect provider-bound prompts and outputs.
+
+def ai_enabled_for_role(role: str) -> bool:
+    """Return whether AI generation is enabled for a public role or admin role."""
+    normalized_role = (role or "user").strip().lower()
+    env_key = "ADMIN_AI_ENABLED" if normalized_role == "admin" else "USER_AI_ENABLED"
+    default = "true" if normalized_role == "admin" else "false"
+    return os.getenv(env_key, default).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def ai_feature_status() -> dict[str, bool]:
+    """Expose safe feature-gate state without exposing provider credentials."""
+    return {
+        "user_ai_enabled": ai_enabled_for_role("user"),
+        "admin_ai_enabled": ai_enabled_for_role("admin"),
+    }
+
 PII_REDACTION_ENABLED = os.getenv("ENABLE_PII_REDACTION", "true").lower() != "false"
 PROMPT_SANITIZER_LEVEL = os.getenv("PROMPT_SANITIZER_LEVEL", "moderate").strip().lower() or "moderate"
 
