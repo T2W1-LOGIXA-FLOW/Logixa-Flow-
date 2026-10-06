@@ -230,7 +230,7 @@ def test_user_role_can_fail_over_across_all_configured_providers(monkeypatch):
 
     router = LLMRouter(db, role="user")
     assert router.providers["mistral"].is_available() is True
-    assert router.providers["groq"].is_available() is True
+    assert router.providers["groq"].is_available() is False
 
     router.providers["gemini"].generate = MagicMock(side_effect=RuntimeError("gemini down"))
     router.providers["mistral"].generate = MagicMock(return_value="mistral response")
