@@ -116,9 +116,10 @@ S3_PUBLIC_BASE_URL=https://your-public-b2-domain
 ## Deployment Validation
 
 - Backend `/health` opens and returns healthy status.
-- Vercel public pages load: `/`, `/about`, `/contact`, `/blog`, `/agent`.
+- Vercel public pages load: `/`, `/about`, `/contact`, `/blog`.
+- `/agent` is intentionally hidden/disabled when `NEXT_PUBLIC_USER_AI_ENABLED=false`; backend `/api/chat/public-query` must return 403 while `USER_AI_ENABLED=false`.
 - Admin login works at `/admin/login`.
-- AI chat returns a backend response, not "provider unavailable".
+- Admin AI chat/agent routes work when `ADMIN_AI_ENABLED=true`; public AI is only tested as enabled when the feature gate is explicitly turned on.
 - Image upload returns a public B2 URL.
 - No `.env`, `node_modules`, `.next`, `.venv`, local databases, or uploaded files appear in GitHub.
 
@@ -157,3 +158,16 @@ The repository intentionally prevents redundant Actions work:
 - `workflow_dispatch` is available for an intentional full run after documentation-only changes or before a release.
 
 Do not add `paths-ignore` to application/config/dependency/infrastructure paths. Only documentation-only changes are excluded.
+
+
+## AI feature-gate validation
+
+- `USER_AI_ENABLED=false` is the production default.
+- `ADMIN_AI_ENABLED=true` keeps internal AI workflows available.
+- `NEXT_PUBLIC_USER_AI_ENABLED=false` hides public AI navigation and the public agent UI.
+- Backend 403 enforcement is required even if the frontend hides the feature.
+- Re-enabling public AI requires both the backend gate and frontend public env to be changed deliberately.
+
+## Source-to-content release gate
+
+The repository contains source ingestion, CSV/XLSX/PDF import, RAG, agent generation, drafts, review, and publishing primitives. A release should not claim universal one-click source-to-publish E2E until real storage/provider tests, provenance checks, SEO packaging, fact/source QA, and human approval have all been exercised in production-like conditions.
