@@ -224,3 +224,9 @@ Vercel is governed by the operational lock in `SECURITY.md`: if it is disabled, 
 10. When changing RAG behavior, consider ingestion, embedding, retrieval, quality, telemetry, and failure handling together.
 11. Prefer existing Workflow/Controller architecture for new automation.
 12. For content automation, prefer Source → RAG → Agent → Brain → Approval → Publish.
+
+### CI and change-efficiency policy
+
+GitHub Actions uses workflow concurrency with `cancel-in-progress: true` on the main branch, so a newer run supersedes an older queued/in-progress run for the same workflow and ref. CI and CodeQL also ignore documentation-only pushes; documentation commits therefore do not start full validation runs. Use manual `workflow_dispatch` when a full validation run is intentionally required.
+
+The production release gates remain live-evidence gates: actual Render Worker provisioning, real provider E2E, QStash → Celery → workflow E2E, and operational recovery must be verified before legacy scheduler/queue removal.
