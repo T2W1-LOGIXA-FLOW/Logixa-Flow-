@@ -253,6 +253,8 @@ The backend is a Docker-based Render service using `web-platform/backend`, with 
 
 The production backend is deployed on Render. Production database migration is at Alembic revision `20261005_0010`.
 
+Live Render verification found a `logixa-flow-worker` service name, but Render currently reports that resource as `web_service`; its first build failed because the Dockerfile context was repository root instead of `web-platform/backend`. The production release gate therefore remains open until a real Render Worker is provisioned from the `type: worker` definition in `render.yaml`.
+
 ## 9. Current release state
 
 Main-branch hardening is in progress toward final operational closure.
