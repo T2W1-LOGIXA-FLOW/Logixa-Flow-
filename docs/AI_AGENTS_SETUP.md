@@ -261,3 +261,40 @@ Use precise language such as:
 - manual/live E2E still required
 
 rather than claiming universal availability.
+
+
+## Current production feature gates
+
+Public AI and admin AI are deliberately independent:
+
+- `USER_AI_ENABLED=false` — public AI is off by default.
+- `ADMIN_AI_ENABLED=true` — admin AI remains enabled by default.
+- `NEXT_PUBLIC_USER_AI_ENABLED=false` — public AI UI remains hidden unless explicitly enabled in the frontend deployment.
+- Backend enforcement is authoritative; hiding the UI is not a security control by itself.
+- AI provider credentials remain server-side and role-specific.
+
+This does not disable source ingestion, RAG, admin agent runs, Brain review, drafting, workflow automation, or publication review.
+
+## Source-to-content pipeline boundary
+
+The repository already contains the major building blocks for source-driven content:
+
+`file/feed/source → ingestion → chunking/embedding → retrieval → agent generation → Brain/draft → review → publish`
+
+CSV/XLSX/PDF import is implemented, and RAG supports batch ingestion/recovery reporting. Before claiming universal one-click publishing, validate each real production storage/provider path and preserve source provenance down to the relevant file/page/sheet/row or URL where practical.
+
+## SEO/news quality gate
+
+Content automation should package SEO metadata alongside the draft and then validate:
+
+- title and search-intent alignment
+- meta description and slug
+- canonical URL
+- Open Graph/social metadata
+- structured data
+- internal-link opportunities
+- source attribution and freshness
+- duplicate/corroboration checks for news
+- factual/source-grounding review
+- human approval before publication
+
