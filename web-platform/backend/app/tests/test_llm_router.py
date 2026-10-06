@@ -215,3 +215,43 @@ def test_router_sanitizes_prompt_and_response_before_crossing_provider_boundary(
     assert "[PII_EMAIL_REDACTED]" in response
     assert "[PROMPT_INSTRUCTION_REDACTED]" in response
     assert model == "gemini-2.5-flash"
+
+
+def test_user_role_can_fail_over_across_all_configured_providers(monkeypatch):
+    monkeypatch.delenv("USER_GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.setenv("USER_MISTRAL_API_KEY", "user_mistral_key")
+    monkeypatch.setenv("USER_GROQ_API_KEY", "user_groq_key")
+    monkeypatch.setenv("USER_AI_PROVIDER", "gemini")
+
+    db = MagicMock()
+    setting = models.AppSetting(key="writer_ai_model", value="gemini")
+    db.query().filter().first.return_value = setting
+
+    router = LLMRouter(db, role="user")
+    assert router.providers["mistral"].is_available() is True
+    assert router.providers["groq"].is_available() is True
+
+    router.providers["gemini"].generate = MagicMock(side_effect=RuntimeError("gemini down"))
+    router.providers["mistral"].generate = MagicMock(return_value="mistral response")
+
+    response, model = router.generate_with_provider("test prompt")
+    assert response == "mistral response"
+    assert model == "mistral-small-latest"
+
+
+def test_role_provider_and_model_env_override_database_selection(monkeypatch):
+    monkeypatch.setenv("ADMIN_MISTRAL_API_KEY", "admin_mistral_key")
+    monkeypatch.setenv("ADMIN_AI_PROVIDER", "mistral")
+    monkeypatch.setenv("ADMIN_AI_MODEL", "mistral-large-latest")
+
+    db = MagicMock()
+    setting = models.AppSetting(key="writer_ai_model", value="gemini")
+    db.query().filter().first.return_value = setting
+
+    router = LLMRouter(db, role="admin")
+    provider = router.get_active_provider()
+
+    assert provider.__class__.__name__ == "MistralProvider"
+    assert provider.api_key == "admin_mistral_key"
+    assert provider.model == "mistral-large-latest"
