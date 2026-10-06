@@ -44,3 +44,9 @@ The security workflow fails on high/critical findings that are not explicitly cl
 Production database schema is at Alembic revision `20261005_0010`. RLS remains deny-by-default for the newly protected audit/storage tables. Provider secrets remain backend/Render-side and are not intended for frontend code.
 
 Vercel remains under an explicit operational lock: if it is disabled, do not re-enable it or restore Vercel-specific override configuration without project-owner authorization.
+
+## CI Execution and Queue Control
+
+CI and CodeQL use per-workflow/per-ref concurrency with `cancel-in-progress: true`. A newer commit supersedes an older in-progress run, reducing stale queued work. Documentation-only pushes are ignored by the push triggers; pull-request validation remains active, and manual dispatch remains available for deliberate full validation.
+
+This does not weaken security checks for application, dependency, workflow, infrastructure, or configuration changes.
