@@ -19,6 +19,8 @@ const quickPrompts = [
   "Explain supply chain risk in simple terms.",
 ];
 
+const PUBLIC_AI_ENABLED = process.env.NEXT_PUBLIC_USER_AI_ENABLED === "true";
+
 export default function PublicAgentPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -83,6 +85,26 @@ export default function PublicAgentPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     void sendMessage(input);
+  }
+
+  if (!PUBLIC_AI_ENABLED) {
+    return (
+      <PageBackground overlayOpacity={0.88}>
+        <main className="flex min-h-screen items-center justify-center px-4 py-10 text-white sm:px-6">
+          <section className="logixa-card max-w-2xl p-8 text-center sm:p-12">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-300">AI Assistant</p>
+            <h1 className="mt-4 text-3xl font-black sm:text-4xl">Public AI is temporarily unavailable.</h1>
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-300 sm:text-base">
+              The public assistant is currently disabled while Logixa Flow focuses on source-driven content and internal automation.
+            </p>
+            <Link href="/blog" className="mt-8 inline-flex items-center gap-2 rounded-full border border-cyan-400/30 px-5 py-3 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300 hover:bg-cyan-400/10">
+              Explore published insights
+              <CornerRightUp className="h-4 w-4" />
+            </Link>
+          </section>
+        </main>
+      </PageBackground>
+    );
   }
 
   return (
