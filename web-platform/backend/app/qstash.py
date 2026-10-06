@@ -14,7 +14,9 @@ def qstash_configured() -> bool:
 def publish_workflow_run(run_id: str, scheduled_for: float) -> str:
     """Publish a workflow trigger to QStash.
 
-    QStash owns delivery, delay and retry. Celery owns actual execution.
+    QStash owns delivery, delay, retry, and deduplication. In Render Free mode
+    the signed delivery is consumed by the web service itself; Celery remains
+    an optional execution path for deployments that explicitly enable it.
     """
     token = os.getenv("QSTASH_TOKEN", "").strip()
     destination = os.getenv("QSTASH_DESTINATION_URL", "").strip().rstrip("/")
