@@ -10,20 +10,24 @@ GitHub Actions in `.github/workflows/ci.yml` and `.github/workflows/codeql.yml` 
 
 Use the GitHub Actions UI to manually dispatch a full run when a documentation-only change needs explicit validation.
 
+## Current production workflow runtime
+
+Render Free production uses one Web Service. Do not create or require a Render Background Worker for the current architecture.
+
+Workflow dispatch path:
+
+`workflow enqueue → QStash → signed /api/admin/workflow/qstash-dispatch → canonical workflow executor → PostgreSQL durable state`
+
+`CELERY_ENABLED=false` is intentional. Celery/Redis remain supported as an optional execution mode for deployments that explicitly enable them.
+
 ## Durable workflow release gates
 
-Do not remove the legacy scheduler/local queue until live evidence exists for: actual Render `logixa-flow-worker`; worker consumption of `logixa-workflows`; QStash signature verification; QStash to Celery delivery; real workflow completion; controlled retry; stale-claim recovery; duplicate-delivery protection; failure/recovery logs and metrics; and provider E2E for Cloudinary, Supabase Storage, B2, and Google Drive.
-
-## Render Worker
-
-The canonical Worker definition is `render.yaml`. Do not create a Cron Job or second Web Service as a substitute. The current Render connector does not expose a Docker Worker creation API, so actual provisioning must be performed through Render service creation/Blueprint UI using the repository `render.yaml`.
-
-Expected command:
-
-```text
-celery -A app.workers.celery_app.celery_app worker --loglevel=INFO --concurrency=1 -Q logixa-workflows
-```
+Do not remove the recovery/local execution path until live evidence exists for: QStash signature verification; QStash delivery to the Render dispatch endpoint; real workflow completion; controlled retry; stale-claim recovery; duplicate-delivery protection; failure/recovery logs and metrics; and provider E2E for configured Cloudinary, Supabase Storage, B2, and Google Drive integrations.
 
 ## Provider E2E
 
 Run provider tests only with real credentials supplied through the deployment environment. Never paste credentials into this repository or documentation.
+
+## Render Free constraint
+
+The connected Render API exposes Web Services, Cron Jobs, and Key Value resources, but the current production plan does not include a Background Worker. Do not substitute a Cron Job or second Web Service for the workflow runtime; QStash is the durable external dispatcher.
