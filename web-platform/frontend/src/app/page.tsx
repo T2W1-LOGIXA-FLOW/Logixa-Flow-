@@ -655,7 +655,8 @@ export default function Home() {
       </section>
 
       {/* AI Agent Chat Section */}
-      <section className="py-24 bg-gradient-to-b from-slate-900/20 to-slate-950/20">
+      {process.env.NEXT_PUBLIC_USER_AI_ENABLED === "true" ? (
+<section className="py-24 bg-gradient-to-b from-slate-900/20 to-slate-950/20">
         <div className="mx-auto max-w-4xl px-4 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -736,6 +737,7 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+) : null}
 
       </main>
     </>
