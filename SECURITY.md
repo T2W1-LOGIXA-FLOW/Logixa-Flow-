@@ -50,3 +50,7 @@ Vercel remains under an explicit operational lock: if it is disabled, do not re-
 CI and CodeQL use per-workflow/per-ref concurrency with `cancel-in-progress: true`. A newer commit supersedes an older in-progress run, reducing stale queued work. Documentation-only pushes are ignored by the push triggers; pull-request validation remains active, and manual dispatch remains available for deliberate full validation.
 
 This does not weaken security checks for application, dependency, workflow, infrastructure, or configuration changes.
+
+## Live Integration Gate
+
+Implementation is not treated as live verification. Before production release, verify Cloudinary, Supabase Storage, B2, Google Drive, the actual Render Background Worker, and QStash → Celery → workflow execution with real infrastructure. Keep the legacy scheduler/queue until those checks and recovery tests pass.
