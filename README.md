@@ -56,7 +56,7 @@ It is not only a blog, chatbot, RSS scraper, CMS, or workflow editor. Those are 
 - CSV, XLSX, and PDF import support.
 - File-size and row-count limits.
 - Imported knowledge is stored in AI Memory and can create draft posts for review.
-- Admin image uploads support local storage or S3-compatible storage such as Backblaze B2.
+- Image/thumbnail/icon uploads route to Cloudinary up to 10 MB, documents to Supabase Storage up to 50 MB, and larger files to Backblaze B2 up to 5 GB. Google Drive is used for exports and workflow backup artifacts.
 - RAG also supports batch file ingestion with per-file status/recovery reporting.
 
 ## Architecture
@@ -123,8 +123,11 @@ Object storage / external providers
 - Usage/cost telemetry
 
 ### Storage and integrations
-- Backblaze B2 / S3-compatible object storage
-- Upstash Redis helper for cache/queue-related infrastructure
+- Cloudinary / Supabase Storage / Backblaze B2 storage routing
+- Google Drive exports and workflow backup artifacts
+- Upstash Redis
+- QStash for durable delivery/scheduling
+- Celery + Redis for long-running workflow execution
 - RSS feeds
 - Email integration
 
@@ -154,10 +157,11 @@ Object storage / external providers
 
 ## Deployment
 
-- **Frontend:** Vercel — https://logixa-flow.vercel.app
+- **Frontend:** Vercel is optional and must remain off unless explicitly authorized; `web-platform/frontend/vercel.json` has been removed so it cannot override the build configuration.
 - **Backend:** Render — https://logixa-flow.onrender.com
 - **Database:** Supabase PostgreSQL + pgvector
-- **Object storage:** Backblaze B2 / S3-compatible configuration
+- **Object storage:** Cloudinary → Supabase Storage → Backblaze B2 according to file class; Google Drive for exports/backups.
+- **Workflow dispatch:** QStash → Celery + Redis.
 - **Source control:** GitHub
 
 ## Local development
@@ -200,9 +204,11 @@ git status --short
 
 ## Current production status
 
-The current main branch is deployed to production. Frontend and backend are synchronized to the latest verified main commit, CI/build checks have passed, Supabase security hardening has been applied, and the production services are live.
+The main branch contains the production hardening work completed so far. Render backend startup has been verified and the production database is at Alembic revision `20261005_0010`.
 
-This does not mean every third-party provider is permanently available: provider availability depends on external service health and configured credentials. The LLM router is designed to fall back when a configured provider fails.
+The remaining release gates are explicit: latest-main CI must be green; real Cloudinary/Supabase Storage/B2/Google Drive provider E2E must pass; the actual Render Celery Worker service must exist and execute a QStash-dispatched workflow; and operational recovery/observability checks must pass. These are not marked complete until live evidence exists.
+
+Vercel is governed by the operational lock in `SECURITY.md`: if it is disabled, it must stay disabled until explicit project-owner authorization.
 
 ## Engineering principles
 
