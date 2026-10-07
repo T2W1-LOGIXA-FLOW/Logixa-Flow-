@@ -155,3 +155,48 @@ async def test_workflow_websocket_closes_after_supabase_session_is_revoked(
     assert verification_count == 2
     assert websocket.closed_code == 4401
     assert websocket not in workflow._SUBSCRIBERS
+
+
+@pytest.mark.anyio
+async def test_qstash_dispatch_restores_durable_run_before_execution(monkeypatch: pytest.MonkeyPatch) -> None:
+    restored = workflow.WorkflowRunOut(
+        run_id="durable-run",
+        workflow_id="durable-workflow",
+        state=workflow.WorkflowState(status="queued"),
+    )
+    definition = WorkflowStorageCreate(
+        id="durable-workflow",
+        name="Durable workflow",
+        nodes=[WorkflowNode(id="first", name="First task")],
+    )
+    monkeypatch.setenv("CELERY_ENABLED", "false")
+    monkeypatch.setenv("QSTASH_CURRENT_SIGNING_KEY", "test-current")
+    monkeypatch.setenv("QSTASH_NEXT_SIGNING_KEY", "test-next")
+    monkeypatch.setenv("QSTASH_DESTINATION_URL", "https://logixa-flow.onrender.com")
+
+    class FakeReceiver:
+        def __init__(self, **_: str) -> None:
+            pass
+        def verify(self, **_: str) -> bool:
+            return True
+
+    class FakeRequest:
+        headers = {"Upstash-Signature": "signed"}
+        async def body(self) -> bytes:
+            return b'{"run_id":"durable-run"}'
+
+    monkeypatch.setattr("qstash.Receiver", FakeReceiver)
+    monkeypatch.setattr(workflow, "_load_run_state", lambda _: restored)
+    monkeypatch.setattr(workflow, "_load_workflow_definition", lambda _: workflow.WorkflowStorageOut(
+        **definition.model_dump(), created_at=workflow._now(), updated_at=workflow._now()
+    ))
+    executed: list[str] = []
+    async def fake_execute(run_id: str) -> None:
+        executed.append(run_id)
+    monkeypatch.setattr(workflow, "_execute_workflow", fake_execute)
+
+    result = await workflow.qstash_dispatch(FakeRequest())  # type: ignore[arg-type]
+
+    assert result == {"status": "completed", "run_id": "durable-run"}
+    assert executed == ["durable-run"]
+    assert "durable-run" in workflow._WORKFLOW_RUNS
