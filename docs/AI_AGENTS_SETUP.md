@@ -197,6 +197,18 @@ STRICT_LLM_ERRORS=false
 
 Only configured/available providers participate in routing. Provider configuration is not the same as provider health: a key can be configured while the upstream service is rate-limited or temporarily unavailable. Live health checks must record provider state without exposing credentials.
 
+Task-aware routing is supported without duplicating provider credentials. Optional backend variables can select a provider for a task while preserving the normal fallback chain:
+
+```text
+AI_TASK_PROVIDER_RESEARCH=...
+AI_TASK_PROVIDER_ANALYSIS=...
+AI_TASK_PROVIDER_WRITING=...
+AI_TASK_PROVIDER_SEO=...
+AI_TASK_PROVIDER_FACTCHECK=...
+```
+
+Use provider names such as `gemini`, `groq`, `cerebras`, `mistral`, `cohere`, `nvidia`, `openrouter-llama`, or `openrouter-deepseek`. Leave a task override empty when the role-level provider should remain the default. This is a routing layer, not a requirement to create a separate API key for every agent.
+
 ## Background worker
 
 The optional worker is designed to run separately from FastAPI:
