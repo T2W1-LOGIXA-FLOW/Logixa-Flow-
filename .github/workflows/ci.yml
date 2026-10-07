@@ -85,28 +85,14 @@ jobs:
       - name: Audit npm dependencies (actionable advisories)
         working-directory: web-platform/frontend
         run: |
-          npm audit --json > npm-audit.json || true
+          npm audit --omit=dev --json > npm-audit.json || true
           node - <<'NODE'
           const report = require("./npm-audit.json");
-          const ignored = new Set([
-            "braces",
-            "postcss",
-            "postcss-selector-parser",
-            // Build/dev-only dependency chains; not shipped as runtime application code.
-            "@next/eslint-plugin-next",
-            "eslint-config-next",
-            "chokidar",
-            "fast-glob",
-            "globby",
-            "micromatch",
-            "next-pwa",
-            "tailwindcss",
-          ]);
           const actionable = Object.entries(report.vulnerabilities || {})
-            .filter(([name, advisory]) => !ignored.has(name) && ["high", "critical"].includes(advisory.severity));
+            .filter(([name, advisory]) => ["high", "critical"].includes(advisory.severity));
           if (actionable.length) {
             console.error(JSON.stringify(Object.fromEntries(actionable), null, 2));
             process.exit(1);
           }
-          console.log("No actionable high/critical runtime npm advisories; known build/dev-only dependency findings are explicitly tracked separately.");
+          console.log("No high/critical production npm advisories (dev dependencies are handled by Dependabot and CodeQL).");
           NODE
