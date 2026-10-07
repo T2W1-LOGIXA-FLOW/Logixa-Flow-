@@ -24,7 +24,7 @@ NODE_TASKS = (
     ('writer', 'writing'),
     ('seo', 'seo'),
     ('fact_checker', 'factcheck'),
-    ('quality_gate', 'analysis'),
+    ('quality_gate', 'quality'),
 )
 
 def _parse_json(text: str) -> dict[str, Any]:
@@ -63,7 +63,8 @@ def _prompt_for(task: str, objective: str, evidence: str, state: dict[str, Any])
         return ('You are the fact-checking agent in Logixa Flow. Compare material claims against the research evidence. '
                 'Return JSON with verdict (pass|review|fail), checked_claims[], unsupported_claims[], corrections[]. '
                 'A missing source means review, not approval.\nEVIDENCE:\n' + evidence[:14000] + '\nSTATE:\n' + prior)
-    return ('You are the quality gate agent in Logixa Flow. Decide whether content is ready for human review. '
+    if task == 'quality':
+        return ('You are the quality gate agent in Logixa Flow. Decide whether content is ready for human review. '
             'Return JSON with verdict (pass|review|fail), reasons[], required_edits[]. Publishing must never be automatic.\n'
             'STATE:\n' + prior)
 
