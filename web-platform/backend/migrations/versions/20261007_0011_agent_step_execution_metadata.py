@@ -22,9 +22,7 @@ def upgrade() -> None:
     op.add_column("agent_steps", sa.Column("token_usage", sa.Integer(), nullable=True))
     op.add_column("agent_steps", sa.Column("output_json", sa.Text(), nullable=False, server_default="{}"))
     op.add_column("agent_steps", sa.Column("error", sa.Text(), nullable=True))
-    op.alter_column("agent_steps", "status", server_default=None)
-    op.alter_column("agent_steps", "output_json", server_default=None)
-
+    # SQLite cannot ALTER COLUMN to drop a default. PostgreSQL can, and the\n    # production schema should not retain the migration-time defaults.\n    if op.get_bind().dialect.name != "sqlite":\n        op.alter_column("agent_steps", "status", server_default=None)\n        op.alter_column("agent_steps", "output_json", server_default=None)\n
 
 def downgrade() -> None:
     op.drop_column("agent_steps", "error")
