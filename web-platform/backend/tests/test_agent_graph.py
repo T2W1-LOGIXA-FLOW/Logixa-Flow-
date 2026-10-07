@@ -8,7 +8,7 @@ def test_agent_graph_has_distinct_content_stages():
         'researcher', 'analyst', 'writer', 'seo', 'fact_checker', 'quality_gate'
     ]
     assert [task for _, task in NODE_TASKS] == [
-        'research', 'analysis', 'writing', 'seo', 'factcheck', 'analysis'
+        'research', 'analysis', 'writing', 'seo', 'factcheck', 'quality'
     ]
 
 
