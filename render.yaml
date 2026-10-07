@@ -64,6 +64,18 @@ services:
         sync: false
       - key: ADMIN_NVIDIA_NIM_API_KEY
         sync: false
+      # Optional task-specific provider overrides. If unset, the role-level
+      # provider remains the default and the normal fallback chain applies.
+      - key: AI_TASK_PROVIDER_RESEARCH
+        value: ""
+      - key: AI_TASK_PROVIDER_ANALYSIS
+        value: ""
+      - key: AI_TASK_PROVIDER_WRITING
+        value: ""
+      - key: AI_TASK_PROVIDER_SEO
+        value: ""
+      - key: AI_TASK_PROVIDER_FACTCHECK
+        value: ""
       - key: GEMINI_API_KEY
         sync: false
       - key: OPENROUTER_API_KEY
