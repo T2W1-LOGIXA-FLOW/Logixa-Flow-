@@ -933,11 +933,14 @@ async def qstash_dispatch(request: Request) -> dict[str, str]:
 
     receiver = Receiver(current_signing_key=current_key, next_signing_key=next_key)
     try:
+        destination = os.getenv("QSTASH_DESTINATION_URL", "").strip().rstrip("/")
+        if not destination:
+            raise ValueError("QSTASH_DESTINATION_URL is required for QStash verification")
+        verification_url = f"{destination}/api/admin/workflow/qstash-dispatch"
         receiver.verify(
             body=body.decode("utf-8"),
             signature=signature,
-            url=str(request.url),
-            upstash_region=request.headers.get("upstash-region"),
+            url=verification_url,
         )
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid QStash signature") from exc
