@@ -712,7 +712,8 @@ export default function Home() {
                 >
                   <p className="font-semibold text-white">{t("aiQuestion4")}</p>
                   <p className="text-sm text-slate-400">{t("aiQuestion4Desc")}</p>
-                </button> : null}
+                </button>
+                </> : null}
               </div>
             </div>
 
