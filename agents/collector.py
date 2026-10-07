@@ -35,8 +35,13 @@ def clean_html(value: str | None) -> str:
 def canonicalize_url(url: str) -> str:
     parsed = urlparse(url)
     query = parse_qs(parsed.query)
-    if "url" in query and parsed.netloc.endswith("google.com"):
-        return unquote(query["url"][0])
+    if "url" in query and parsed.hostname and (
+        parsed.hostname == "google.com" or parsed.hostname.endswith(".google.com")
+    ):
+        candidate = unquote(query["url"][0])
+        candidate_parsed = urlparse(candidate)
+        if candidate_parsed.scheme in {"http", "https"} and candidate_parsed.netloc:
+            return candidate_parsed._replace(fragment="").geturl()
     return parsed._replace(fragment="").geturl()
 
 
