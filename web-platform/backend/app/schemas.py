@@ -385,6 +385,12 @@ class AgentStepOut(BaseModel):
     step_order: int
     agent: str
     message: str
+    status: str = "completed"
+    provider: str | None = None
+    model: str | None = None
+    token_usage: int | None = None
+    output_json: str = "{}"
+    error: str | None = None
     created_at: datetime
 
 

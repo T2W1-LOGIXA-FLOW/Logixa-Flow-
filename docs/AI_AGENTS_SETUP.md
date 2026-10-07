@@ -214,39 +214,34 @@ AI_TASK_MODEL_FACTCHECK=...
 
 Use provider names such as `gemini`, `groq`, `cerebras`, `mistral`, `cohere`, `nvidia`, `openrouter-llama`, or `openrouter-deepseek`. Leave a task override empty when the role-level provider should remain the default. This is a routing layer, not a requirement to create a separate API key for every agent.
 
-## Background worker
+## Agent execution graph
 
-The optional worker is designed to run separately from FastAPI:
+The canonical admin content path is now a persisted multi-stage execution graph:
 
-```text
-Service Type: Background Worker
-Runtime: Docker
-Branch: main
-Docker Build Context Directory: .
-Dockerfile Path: agents/Dockerfile
-Docker Command: python worker_loop.py
-```
+`Source → RAG evidence → Research → Analysis → Writing → SEO → Fact Check → Quality Gate → Human Review → Publish`
 
-Typical worker variables:
+Each AI node is executed independently through the shared LLM router with task-aware provider selection. Every node writes an `agent_steps` record with execution status, provider/model, token usage, structured output, and sanitized error state. The graph never auto-publishes content; the final Brain item remains private and reviewable.
 
-```text
-BACKEND_URL=https://your-render-backend.onrender.com
-AGENT_SERVICE_TOKEN=<same secret configured on the Render backend and worker>
-LLM_PROVIDER=gemini
-GEMINI_API_KEY=<secret>
-OPENROUTER_API_KEY=<secret>
-GROQ_API_KEY=<secret>
-PIPELINE_BATCH_LIMIT=3
-AUTO_APPROVE_PUBLISH=false
-WORKER_MODE=web-pipeline
-WORKER_INTERVAL_SECONDS=3600
-WORKER_RUN_ON_START=true
-WORKER_ONCE=false
-```
+Node responsibilities:
 
-Set `AGENT_SERVICE_TOKEN` manually as a high-entropy secret where the optional agent-service pipeline is enabled; the repository intentionally contains no token value. Legacy password-based admin credentials are not part of the production authentication path and must not be reintroduced. `AUTO_APPROVE_PUBLISH=false` remains intentional: AI-generated content stays reviewable before publication.
+- **Research:** extract source-grounded claims, evidence, gaps, and provenance.
+- **Analysis:** convert evidence into operational signals, impacts, risks, and implications.
+- **Writing:** create the private editorial draft.
+- **SEO:** produce search metadata and internal-link topics without changing factual claims.
+- **Fact Check:** classify claims as pass/review/fail against supplied evidence.
+- **Quality Gate:** decide whether the artifact is ready for human review and list required edits.
 
-`AUTO_APPROVE_PUBLISH=false` is intentional: AI-generated content should remain reviewable before publication.
+Provider routing remains centralized. Agents do not receive separate frontend credentials and do not require a unique API key per node. Configure task-specific providers/models only when there is a deliberate reason to specialize a task.
+
+## Legacy agent-service pipeline
+
+The repository still contains an optional `agents/` content pipeline for compatibility and local/managed deployments. It is **not part of the current Render Free production runtime**.
+
+Production workflow execution uses:
+
+`QStash → FastAPI → PostgreSQL`
+
+Do not create or re-enable a Render Background Worker as a prerequisite for production. If the legacy agent-service pipeline is enabled in another environment, it must use the scoped `AGENT_SERVICE_TOKEN` and remain separate from human admin authentication.
 
 ## Verification checklist
 
