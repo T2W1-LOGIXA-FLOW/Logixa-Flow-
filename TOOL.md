@@ -1,79 +1,131 @@
 # TOOL.md — Logixa Flow Operational Agent Guide
 
-## Source of truth
+> Owner: Project / Engineering
+> Update when: working protocol, phase gates, documentation routing, tools, or definition of done changes
+> Last Updated: 2026-10-08
+> Do NOT put here: domain implementation detail that belongs in docs/.
 
-Work directly on `main` unless the project owner explicitly authorizes another branch. Do not create feature branches for routine remediation.
+## 1. Read order
 
-Before changing infrastructure or production schema, inspect the current live state. Do not invent provider secrets, connection strings, or deployment identifiers.
+1. README.md
+2. PROJECT_OVERVIEW.md
+3. CURRENT_STATE.md
+4. ROADMAP.md
+5. UI_DESIGN_SYSTEM.md when UI work is involved
+6. TOOL.md
+7. SECURITY.md for security-sensitive work
+8. Relevant docs/* domain document
 
-## GitHub Actions efficiency
+Before changing infrastructure or production schema, inspect current live state. Do not invent provider secrets, connection strings, deployment identifiers, or verification evidence.
 
-CI and CodeQL use:
+## 2. Git workflow
 
-```yaml
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-```
+Work directly on main unless the project owner explicitly authorizes another branch. For routine remediation, do not create a feature branch. Keep changes atomic enough to review and run git diff --check before completion.
 
-This means a newer run supersedes an older in-progress run for the same workflow/ref. Documentation-only pushes are ignored by push-based CI/CodeQL. Pull requests still validate, and `workflow_dispatch` is available for deliberate full runs.
+## 3. Phase completion protocol
 
-Do not broaden `paths-ignore` to application, dependency, workflow, infrastructure, or configuration files.
+1. Inspect current repository and relevant live state.
+2. Define the exact scope and acceptance criteria.
+3. Make the smallest architecture-preserving change.
+4. Run relevant tests/checks.
+5. Inspect the resulting diff and links.
+6. Verify status claims against evidence.
+7. Update documentation immediately.
+8. Record remaining VERIFY/PENDING/DEFERRED items in CURRENT_STATE or ROADMAP.
 
-## Deployment architecture
+## 4. Documentation Update Protocol
 
-Production backend:
-- Render Web Service
-- Free plan
-- Docker
-- root directory: `web-platform/backend`
-- health: `/health`
+### Trigger table
 
-Durable workflow execution:
-- QStash = delivery, delay, retry, deduplication
-- PostgreSQL = durable workflow/run state
-- Render Web Service = signed QStash receiver and canonical in-process workflow execution when `CELERY_ENABLED=false`
-- Celery + Redis = optional execution mode only when explicitly enabled
+| Change type | Canonical update |
+| --- | --- |
+| Project identity/high-level architecture | README.md / PROJECT_OVERVIEW.md |
+| Current status or release gate | CURRENT_STATE.md |
+| Planned work or acceptance criteria | ROADMAP.md |
+| UI token/component/accessibility rule | UI_DESIGN_SYSTEM.md |
+| Working process, git, CI, phase, evidence rule | TOOL.md |
+| Threat model, authz, secrets, security boundary | SECURITY.md |
+| Architecture decision | docs/ARCHITECTURE.md |
+| Development/setup/CI detail | docs/DEVELOPMENT.md |
+| Test strategy/evidence | docs/TESTING.md |
+| Deployment/environment topology | docs/DEPLOYMENT.md |
+| Operations/recovery/monitoring/runbook | docs/OPERATIONS.md or docs/TROUBLESHOOTING.md |
+| Database/schema/migration/RLS | docs/DATABASE.md |
+| API route/contract | docs/API.md |
+| AI/provider/RAG behavior | docs/AI_RAG.md |
+| Storage routing/provider behavior | docs/STORAGE.md |
 
-The current production architecture intentionally has no Render Background Worker.
+### Phase completion checklist
 
-## Redis
+- Update the owning canonical document.
+- Update CURRENT_STATE.md when status changes.
+- Update ROADMAP.md when a plan/gate changes.
+- Add evidence or a VERIFY label; never imply evidence that does not exist.
+- Remove stale duplicate ownership from source documents before archiving them.
+- Fix links to canonical destinations.
 
-Redis is not required by the current Render Free workflow path because `CELERY_ENABLED=false`. Do not invent or configure a Redis URL solely to satisfy an obsolete worker requirement.
+### Session start
 
-## Storage routing
+Read the canonical order above. Check git status, current branch, recent commit context, and the relevant domain documents before editing.
 
-- Images <= 10 MB: Cloudinary
-- Documents <= 50 MB: Supabase Storage
-- Files > 50 MB and <= 5 GB: Backblaze B2
-- Export/backup artifacts: Google Drive
+### Session end
 
-The backend implementation includes provider fallbacks. Real provider E2E is separate from code verification.
+Run applicable tests/checks, inspect git diff, confirm documentation ownership, confirm no stale claims were introduced, and record remaining VERIFY/PENDING/DEFERRED work.
+
+### Doc drift rule
+
+If code/configuration changes invalidate a documentation statement, the documentation is stale immediately. Correct it in the same change cycle. Do not preserve a known false status claim for convenience.
+
+## 5. Tools matrix
+
+| Tool/work | Primary source |
+| --- | --- |
+| Repository files/history | GitHub |
+| Code/config facts | Repository source/config |
+| Live infrastructure | Appropriate provider/API tooling |
+| DNS/email authentication | DNS Doctor |
+| UI design implementation | Figma when explicitly used |
+| Deployment/runtime | Render/Vercel/provider tooling |
+
+Never use a secondary document as proof against current code/configuration when direct repository evidence is available.
+
+## 6. Definition of Done
+
+A change is done only when:
+- Code/configuration is correct.
+- Relevant tests/checks pass.
+- Diff is clean.
+- Canonical documentation is updated.
+- Status labels reflect evidence.
+- No secrets are committed.
+- No duplicate canonical document is created.
+- Remaining work is explicitly recorded.
+
+## 7. Evidence rules
+
+Use these distinctions everywhere:
+- DONE = code/implementation exists.
+- VERIFIED = evidence exists for the stated condition.
+- PENDING = intended work not yet complete.
+- BLOCKED = cannot proceed because a specific blocker exists.
+- DEFERRED = intentionally postponed.
+- NEXT = immediate follow-up action.
+- VERIFY = evidence is required before claiming truth.
+
+Keep repository migration head separate from live production head. Keep implemented separate from configured, enabled, and live-tested. Never claim provider health from credentials alone. Never claim a live integration solely from unit tests.
+
+## Current deployment architecture
+
+Render Free uses one Web Service. QStash provides durable delivery/delay/retry for the current path. PostgreSQL is durable workflow/run state. CELERY_ENABLED=false is intentional. Celery/Redis are optional only when explicitly enabled. A Render Background Worker is not a current prerequisite.
+
+## Current storage routing
+
+Images <=10 MB: Cloudinary. Documents <=50 MB: Supabase Storage. Files >50 MB and <=5 GB: Backblaze B2. Export/backup artifacts: Google Drive. Real provider E2E remains separate from repository verification.
 
 ## Release gates
 
-Do not remove the local recovery path until all of these have live evidence:
-1. QStash signed delivery reaches the production dispatch endpoint.
-2. A workflow completes through the canonical executor.
-3. Duplicate delivery is safely deduplicated/claimed.
-4. Failed execution retries or releases its claim correctly.
-5. Stale workflow claims are recovered after lease expiry.
-6. Monitoring/log evidence is sufficient for incident investigation.
-7. Configured storage providers and Google Drive export pass real E2E.
-8. Production authentication/API smoke tests pass.
-
-## Documentation rule
-
-When implementation or infrastructure state changes, update:
-- `README.md`
-- `PROJECT_OVERVIEW.md`
-- `SECURITY.md`
-- `docs/DEPLOY_CHECKLIST.md`
-- `docs/AI_AGENTS_SETUP.md`
-- `web-platform/docs/RAG_ERROR_REPORTING.md` when RAG behavior changes
-
-Never document a mocked or unverified provider integration as live.
+Do not remove the local recovery path until live evidence exists for signed QStash delivery, canonical workflow completion, duplicate-delivery protection, retry/claim recovery, stale-claim recovery, monitoring evidence, storage-provider E2E, Google Drive E2E, and production authentication/API smoke tests.
 
 ## Final decision rule
 
-Keep the PostgreSQL-backed recovery path and QStash dispatch until the complete signed QStash → workflow execution and recovery scenarios are verified in production.
+Preserve the PostgreSQL-backed recovery path and QStash dispatch until the complete signed QStash → workflow execution and recovery scenarios are verified in production.
