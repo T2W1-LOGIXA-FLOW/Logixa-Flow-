@@ -953,6 +953,25 @@ async def qstash_dispatch(request: Request) -> dict[str, str]:
     if not run_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing workflow run id")
 
+    if run_id not in _WORKFLOW_RUNS:
+        restored = _load_run_state(run_id)
+        if restored is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow run not found")
+        workflow = _load_workflow_definition(restored.workflow_id)
+        if workflow is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow definition not found")
+        _WORKFLOW_RUNS[run_id] = restored
+        _WORKFLOW_STORAGE[workflow.id] = workflow
+        _EXECUTION_STATES[run_id] = {
+            "run_id": run_id,
+            "workflow_id": restored.workflow_id,
+            "status": restored.state.status,
+            "current_node": restored.state.current_node,
+            "completed_nodes": restored.state.completed_nodes,
+            "error": restored.state.error,
+            "approval_node": restored.state.approval_node,
+        }
+
     if os.getenv("CELERY_ENABLED", "false").lower() == "true":
         from app.workers.tasks import execute_workflow_task
         execute_workflow_task.delay(run_id)

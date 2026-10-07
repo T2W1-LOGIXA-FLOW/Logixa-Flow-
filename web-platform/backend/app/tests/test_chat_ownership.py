@@ -110,6 +110,7 @@ def test_public_query_is_blocked_when_user_ai_is_disabled(db, monkeypatch):
 
 
 def test_public_query_does_not_create_admin_sessions(db, monkeypatch):
+    monkeypatch.setenv("USER_AI_ENABLED", "true")
     monkeypatch.setattr(
         chat,
         "generate_ai_response",
@@ -133,6 +134,7 @@ def test_public_query_does_not_create_admin_sessions(db, monkeypatch):
 
 
 def test_public_query_has_dedicated_rate_limit(monkeypatch, db):
+    monkeypatch.setenv("USER_AI_ENABLED", "true")
     calls = {"count": 0}
 
     monkeypatch.setattr(

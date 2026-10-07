@@ -15,7 +15,6 @@ from ..analytics import log_analytics_event
 from ..agent_graph import execute_content_graph
 from ..database import get_db
 from ..integration_service import import_rss_feed
-from ..llm.router import LLMRouter
 from ..models import utc_now
 from ..rag.sanitizer import sanitize_for_llm
 from ..security import require_admin

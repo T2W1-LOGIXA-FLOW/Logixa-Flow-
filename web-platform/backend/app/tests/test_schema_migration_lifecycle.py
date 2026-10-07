@@ -22,7 +22,7 @@ SCHEMA_MIGRATION = (
 MONEY_MIGRATION = (
     MIGRATIONS_DIR / "versions" / "20261005_0007_convert_money_to_numeric.py"
 )
-CURRENT_HEAD = "20261005_0010"
+CURRENT_HEAD = "20261007_0011"
 
 
 def alembic_config(database_url: str) -> Config:

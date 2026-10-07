@@ -7,6 +7,7 @@ import re
 import socket
 import urllib.request
 import xml.etree.ElementTree as ET
+from decimal import Decimal, InvalidOperation
 from urllib.parse import urljoin, urlparse
 from pathlib import Path
 from typing import Any
@@ -268,36 +269,64 @@ async def run_preview_agent(
     message: str | None = None,
     max_sources: int = 8,
 ) -> dict[str, Any]:
-    from .routers.agent import build_steps, generate_agent_brief, score_source_grounding, serialize_run
+    from .agent_graph import execute_content_graph
+    from .routers.agent import score_source_grounding, serialize_run
 
     sources = db.query(models.IntelligenceSource).order_by(models.IntelligenceSource.updated_at.desc()).limit(max_sources).all()
     objective = message or os.getenv(
         "INTEGRATION_AGENT_PROMPT",
         "Generate a Myanmar-ready supply chain preview brief for admin review only.",
     )
-    brief = await generate_agent_brief(objective, sources, db=db)
-    confidence_score, hallucination_score = score_source_grounding(sources)
     run = models.AgentRun(
         objective=objective,
-        model=os.getenv("AI_AGENT_MODEL", "integrated-planner"),
-        status="completed",
+        model="pending",
+        status="running",
+        input_context=json.dumps({"message": objective, "source_ids": [source.id for source in sources]}),
+        source_ids=json.dumps([source.id for source in sources]),
     )
     db.add(run)
     db.commit()
     db.refresh(run)
-    for index, (agent, step_message) in enumerate(build_steps(objective, sources), start=1):
-        db.add(models.AgentStep(run_id=run.id, step_order=index, agent=agent, message=step_message))
+
+    try:
+        graph = execute_content_graph(db, run, objective, sources)
+    except Exception:
+        run.status = "failed"
+        db.commit()
+        raise
+
+    confidence_score, hallucination_score = score_source_grounding(sources)
+    fact_check = graph.final.get("fact_check") or {}
+    quality_gate = graph.final.get("quality_gate") or {}
+    if fact_check.get("verdict") == "fail" or quality_gate.get("verdict") == "fail":
+        confidence_score = min(confidence_score, 0.45)
+        hallucination_score = max(hallucination_score, 0.55)
+
+    content = str(graph.final.get("content_html") or graph.final.get("content") or "").strip()
+    title = str(graph.final.get("title") or "AI Preview: Supply Chain Signal Brief")
+    excerpt = str(graph.final.get("excerpt") or "Private AI-generated draft for admin review.")
+    provider = ",".join(dict.fromkeys(graph.providers)) or "local"
+    run.model = str(graph.final.get("model") or "local")
+    run.provider = provider
+    run.token_usage = graph.total_tokens
+    run.cost_estimate = (graph.total_tokens / 1000) * float(os.getenv("AI_COST_PER_1K", "0.002"))
+    run.status = "completed"
+
     memory = models.AiMemoryBrain(
-        category=brief["category"],
-        source_title=brief["title"],
+        category=sources[0].category if sources else "Supply Chain",
+        source_title=title,
         source_url=sources[0].url if sources else None,
         prompt=objective,
-        content=brief["content"],
-        summary=brief["excerpt"],
+        content=content or "<p>Agent graph completed without a publishable draft.</p>",
+        summary=excerpt[:500],
         status="pending",
         is_public=False,
         confidence_score=confidence_score,
         hallucination_score=hallucination_score,
+        source_ids=json.dumps([source.id for source in sources]),
+        provider=provider,
+        token_usage=graph.total_tokens,
+        cost_estimate=run.cost_estimate,
     )
     db.add(memory)
     db.commit()
@@ -305,10 +334,11 @@ async def run_preview_agent(
     run.final_memory_id = memory.id
     db.commit()
     db.refresh(run)
+
     log_analytics_event(
         db,
         "integration_agent_run",
-        {"run_id": run.id, "memory_id": memory.id, "source_count": len(sources)},
+        {"run_id": run.id, "memory_id": memory.id, "source_count": len(sources), "providers": provider},
     )
     serialized = serialize_run(db, run)
     return {

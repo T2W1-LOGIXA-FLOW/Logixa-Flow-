@@ -310,3 +310,11 @@ Content automation should package SEO metadata alongside the draft and then vali
 - factual/source-grounding review
 - human approval before publication
 
+
+
+## Phase completion boundary
+
+Implementation phases are intentionally separated from live verification. The codebase now has one persisted agent execution graph for admin, scheduled, and integration previews, task-aware provider routing, per-step usage/cost metadata, grounded evidence flow, fact-checking, quality gating, and human approval before publication.
+
+The remaining final verification phase is deliberately deferred until the implementation surface is stable. It requires real provider credentials and authenticated production tests. No provider secret is required to continue the current coding hardening work.
+
