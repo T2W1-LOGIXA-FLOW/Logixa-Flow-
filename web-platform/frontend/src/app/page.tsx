@@ -684,7 +684,8 @@ export default function Home() {
                 Sample questions you can ask:
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {process.env.NEXT_PUBLIC_USER_AI_ENABLED === "true" ? <button
+                {process.env.NEXT_PUBLIC_USER_AI_ENABLED === "true" ? <>
+                 <button
                   onClick={() => window.location.href = "/agent"}
                   className="text-left p-4 rounded-lg bg-slate-900/40 hover:bg-slate-800/50 transition border border-white/10 hover:border-cyan-500/50 backdrop-blur"
                 >
