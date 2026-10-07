@@ -51,7 +51,7 @@ Do not reduce it to only a blog, chatbot, RSS scraper, CMS, workflow editor, or 
 ### 2. RAG / knowledge layer
 - Document/file ingestion.
 - Text chunking.
-- Gemini embeddings.
+- Gemini embeddings (currently verified live for embedding calls).
 - PostgreSQL + pgvector vector storage.
 - Similarity search and context construction.
 - Source-grounded retrieval.
@@ -66,7 +66,7 @@ Do not reduce it to only a blog, chatbot, RSS scraper, CMS, workflow editor, or 
 - AI Memory / Brain.
 - Human review lifecycle.
 - Confidence/hallucination/feedback quality signals.
-- Multi-provider LLM router.
+- Multi-provider LLM router with provider-specific fallback ordering.
 
 Current backend router providers include:
 - Gemini
@@ -110,13 +110,13 @@ The in-process dictionaries in the workflow module are execution caches/state ho
 - Human approval for publication-sensitive AI output.
 
 ### 6. Background agents
-The `agents/` folder is a secondary background content pipeline, separate from the main FastAPI web service.
+The `agents/` folder is a secondary content/automation pipeline, separate from the main FastAPI web service. It is not required for the current Render Free production runtime; durable workflow execution is handled by QStash → FastAPI → PostgreSQL.
 
-Conceptual pipeline:
+Conceptual content pipeline:
 
-`Collector → Writer → Manager → Publisher → Backend review/publish flow`
+`Collector → source normalization → Writer/Manager → Publisher → Backend review/publish flow`
 
-The worker can run independently and is not the canonical workflow engine.
+The canonical durable workflow engine remains `backend/app/routers/workflow.py`. The `agents/` pipeline should integrate with that engine rather than become a second workflow runtime.
 
 ### 7. Business and operations
 - Logistics estimator.
@@ -195,7 +195,7 @@ REQUIRE_AI_KEY=false
 STRICT_LLM_ERRORS=false
 ```
 
-Only configured/available providers participate in routing.
+Only configured/available providers participate in routing. Provider configuration is not the same as provider health: a key can be configured while the upstream service is rate-limited or temporarily unavailable. Live health checks must record provider state without exposing credentials.
 
 ## Background worker
 
