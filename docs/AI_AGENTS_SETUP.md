@@ -214,6 +214,25 @@ AI_TASK_MODEL_FACTCHECK=...
 
 Use provider names such as `gemini`, `groq`, `cerebras`, `mistral`, `cohere`, `nvidia`, `openrouter-llama`, or `openrouter-deepseek`. Leave a task override empty when the role-level provider should remain the default. This is a routing layer, not a requirement to create a separate API key for every agent.
 
+## Agent execution graph
+
+The canonical admin content path is now a persisted multi-stage execution graph:
+
+`Source → RAG evidence → Research → Analysis → Writing → SEO → Fact Check → Quality Gate → Human Review → Publish`
+
+Each AI node is executed independently through the shared LLM router with task-aware provider selection. Every node writes an `agent_steps` record with execution status, provider/model, token usage, structured output, and sanitized error state. The graph never auto-publishes content; the final Brain item remains private and reviewable.
+
+Node responsibilities:
+
+- **Research:** extract source-grounded claims, evidence, gaps, and provenance.
+- **Analysis:** convert evidence into operational signals, impacts, risks, and implications.
+- **Writing:** create the private editorial draft.
+- **SEO:** produce search metadata and internal-link topics without changing factual claims.
+- **Fact Check:** classify claims as pass/review/fail against supplied evidence.
+- **Quality Gate:** decide whether the artifact is ready for human review and list required edits.
+
+Provider routing remains centralized. Agents do not receive separate frontend credentials and do not require a unique API key per node. Configure task-specific providers/models only when there is a deliberate reason to specialize a task.
+
 ## Background worker
 
 The optional worker is designed to run separately from FastAPI:
