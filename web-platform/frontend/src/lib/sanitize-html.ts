@@ -91,7 +91,7 @@ export const SANITIZE_ALLOWED_ATTR = [
   "rowspan",
 ];
 
-const SAFE_URL_REGEXP = /^(?:(?:https?:|mailto:|tel:)|\/|#)/i;
+const SAFE_URL_REGEXP = /^(?:https?:|mailto:|tel:|\/(?!\/)|#)/i;
 
 function getTextContent(input: string): string {
   return input.replace(/<[^>]+>/g, "").trim();
@@ -173,11 +173,5 @@ export function sanitizeHtml(input: string): string {
     return sanitizeFallback(input);
   }
 
-  return sanitized.replace(/<a\b([^>]*)target\s*=\s*["']_blank["']([^>]*)>/gi, (match, before, after) => {
-    const attrs = `${before}${after}`;
-    if (/\srel\s*=/i.test(attrs)) {
-      return `<a${attrs}>`;
-    }
-    return `<a${before} rel="noopener noreferrer"${after}>`;
-  });
+  return sanitized;
 }
