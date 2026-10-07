@@ -74,12 +74,14 @@ class LLMRouter:
             "local": FallbackLocalProvider(),
         }
 
-    def _selected_provider_name(self) -> str:
+    def _selected_provider_name(self, task: str | None = None) -> str:
         setting = self.db.query(models.AppSetting).filter(
             models.AppSetting.key == "writer_ai_model"
         ).first()
         role_provider = clean_env_value(f"{self.role.upper()}_AI_PROVIDER")
-        selected = role_provider or (setting.value if setting else "gemini")
+        task_name = re.sub(r"[^a-z0-9]+", "_", (task or "").strip().lower()).strip("_")
+        task_provider = clean_env_value(f"AI_TASK_PROVIDER_{task_name.upper()}") if task_name else ""
+        selected = task_provider or role_provider or (setting.value if setting else "gemini")
         aliases = {
             "llama3": "openrouter-llama",
             "openrouter": "openrouter-llama",
@@ -88,8 +90,8 @@ class LLMRouter:
         }
         return aliases.get(selected.lower(), selected.lower())
 
-    def _provider_order(self) -> list[tuple[str, LLMProvider]]:
-        selected = self._selected_provider_name()
+    def _provider_order(self, task: str | None = None) -> list[tuple[str, LLMProvider]]:
+        selected = self._selected_provider_name(task)
         names = [selected, "gemini", "groq", "cerebras", "mistral", "cohere", "nvidia", "openrouter-llama", "openrouter-deepseek"]
 
         # Generic role model applies only to the selected provider. Fallback
@@ -115,10 +117,10 @@ class LLMRouter:
             seen.add(name)
         return ordered
 
-    def diagnostics(self) -> dict[str, object]:
-        selected = self._selected_provider_name()
+    def diagnostics(self, task: str | None = None) -> dict[str, object]:
+        selected = self._selected_provider_name(task)
         order = []
-        for name, provider in self._provider_order():
+        for name, provider in self._provider_order(task):
             order.append(
                 {
                     "name": name,
@@ -136,15 +138,15 @@ class LLMRouter:
             "order": order,
         }
 
-    def get_active_provider(self) -> LLMProvider:
-        for _, provider in self._provider_order():
+    def get_active_provider(self, task: str | None = None) -> LLMProvider:
+        for _, provider in self._provider_order(task):
             return provider
         return FallbackLocalProvider()
 
-    def generate_with_provider(self, prompt: str, **kwargs) -> tuple[str, str]:
+    def generate_with_provider(self, prompt: str, task: str | None = None, **kwargs) -> tuple[str, str]:
         safe_prompt = f"{_PROMPT_SAFETY_GUARD}\n\n{sanitize_for_llm(prompt, log_redactions=True, operation="llm_prompt")}"
         provider_errors: list[str] = []
-        for name, provider in self._provider_order():
+        for name, provider in self._provider_order(task):
             try:
                 response = provider.generate(safe_prompt, **kwargs)
                 response = sanitize_for_llm(response, log_redactions=True, operation="llm_response")
@@ -204,6 +206,6 @@ class LLMRouter:
         provider = FallbackLocalProvider()
         return sanitize_for_llm(provider.generate(safe_prompt, **kwargs), log_redactions=True, operation="llm_response"), "local"
     
-    def generate(self, prompt: str, **kwargs) -> str:
-        response, _ = self.generate_with_provider(prompt, **kwargs)
+    def generate(self, prompt: str, task: str | None = None, **kwargs) -> str:
+        response, _ = self.generate_with_provider(prompt, task=task, **kwargs)
         return response
