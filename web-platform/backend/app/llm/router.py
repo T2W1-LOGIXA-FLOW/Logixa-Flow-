@@ -96,7 +96,9 @@ class LLMRouter:
 
         # Generic role model applies only to the selected provider. Fallback
         # providers retain their own provider-specific model configuration.
-        selected_model = clean_env_value(f"{self.role.upper()}_AI_MODEL")
+        task_name = re.sub(r"[^a-z0-9]+", "_", (task or "").strip().lower()).strip("_")
+        task_model = clean_env_value(f"AI_TASK_MODEL_{task_name.upper()}") if task_name else ""
+        selected_model = task_model or ("" if task_name and clean_env_value(f"AI_TASK_PROVIDER_{task_name.upper()}") else clean_env_value(f"{self.role.upper()}_AI_MODEL"))
         if selected_model and selected in self.providers:
             provider = self.providers[selected]
             if hasattr(provider, "model"):
