@@ -8,7 +8,7 @@ from typing import Any, Callable
 from sqlalchemy.orm import Session
 
 from . import models
-from .llm.router import LLMRouter
+from .llm.router import LLMRouter, sanitize_provider_error
 from .rag.search import build_rag_context
 from .rag.sanitizer import sanitize_for_llm
 
@@ -106,7 +106,7 @@ def execute_content_graph(db: Session, run: models.AgentRun, objective: str, sou
                 on_step(step)
         except Exception as exc:
             step.status = 'failed'
-            step.error = str(exc)[:1000]
+            step.error = sanitize_provider_error(str(exc))[:1000]
             step.message = f'{agent_name} failed'
             db.commit()
             raise
