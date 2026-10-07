@@ -159,6 +159,12 @@ class AgentStep(Base):
     step_order = Column(Integer, nullable=False, default=0)
     agent = Column(String(80), nullable=False)
     message = Column(Text, nullable=False)
+    status = Column(String(24), nullable=False, default="completed", index=True)
+    provider = Column(String(120), nullable=True)
+    model = Column(String(160), nullable=True)
+    token_usage = Column(Integer, nullable=True)
+    output_json = Column(Text, nullable=False, default="{}")
+    error = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
 
