@@ -7,6 +7,7 @@ import re
 import socket
 import urllib.request
 import xml.etree.ElementTree as ET
+from decimal import Decimal, InvalidOperation
 from urllib.parse import urljoin, urlparse
 from pathlib import Path
 from typing import Any
