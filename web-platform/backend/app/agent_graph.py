@@ -40,8 +40,24 @@ def _parse_json(text: str) -> dict[str, Any]:
 def _tokens(text: str) -> int:
     return max(1, len(text) // 4)
 
+
+def _merge_state_for_task(task: str, state: dict[str, Any]) -> dict[str, Any]:
+    if task == 'research':
+        return {'objective': state.get('objective'), 'source_ids': state.get('source_ids')}
+    if task == 'analysis':
+        return {'objective': state.get('objective'), 'researcher': state.get('researcher')}
+    if task == 'writing':
+        return {'objective': state.get('objective'), 'researcher': state.get('researcher'), 'analyst': state.get('analyst')}
+    if task == 'seo':
+        return {'writer': state.get('writer')}
+    if task == 'factcheck':
+        return {'researcher': state.get('researcher'), 'writer': state.get('writer')}
+    if task == 'quality':
+        return {'writer': state.get('writer'), 'seo': state.get('seo'), 'fact_checker': state.get('fact_checker')}
+    return state
+
 def _prompt_for(task: str, objective: str, evidence: str, state: dict[str, Any]) -> str:
-    prior = json.dumps(state, ensure_ascii=False)[:14000]
+    prior = json.dumps(_merge_state_for_task(task, state), ensure_ascii=False)[:14000]
     if task == 'research':
         return ('You are the research agent in Logixa Flow. Use only supplied source/RAG evidence. '
                 'Extract verifiable claims, source references, dates, entities, and uncertainties. '
@@ -116,4 +132,6 @@ def execute_content_graph(db: Session, run: models.AgentRun, objective: str, sou
     final['fact_check'] = state.get('fact_checker') or {}
     final['quality_gate'] = state.get('quality_gate') or {}
     final['model'] = providers[-1] if providers else 'local'
+    final['agent_steps'] = state
+    final['quality_ready'] = (final['quality_gate'].get('verdict') == 'pass' and final['fact_check'].get('verdict') == 'pass')
     return AgentGraphResult(final=final, total_tokens=total_tokens, providers=providers)
