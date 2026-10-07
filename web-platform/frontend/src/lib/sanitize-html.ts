@@ -94,7 +94,13 @@ export const SANITIZE_ALLOWED_ATTR = [
 const SAFE_URL_REGEXP = /^(?:https?:|mailto:|tel:|\/(?!\/)|#)/i;
 
 function getTextContent(input: string): string {
-  return input.replace(/<[^>]+>/g, "").trim();
+  const sanitizerWindow = getSanitizerWindow() as (Window & { DOMParser?: typeof DOMParser }) | undefined;
+  if (!sanitizerWindow?.DOMParser) {
+    return input.trim();
+  }
+  const parser = new sanitizerWindow.DOMParser();
+  const doc = parser.parseFromString(`<body>${input}</body>`, "text/html");
+  return doc.body.textContent?.trim() ?? "";
 }
 
 function sanitizeFallback(input: string): string {
@@ -159,13 +165,20 @@ function sanitizeFallback(input: string): string {
 
 export function sanitizeHtml(input: string): string {
   const purifier = createDOMPurify(getSanitizerWindow() as Parameters<typeof createDOMPurify>[0]);
+  purifier.addHook("afterSanitizeAttributes", (node) => {
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    const element = node as Element;
+    if (element.tagName.toLowerCase() === "a" && element.getAttribute("target")?.toLowerCase() === "_blank") {
+      element.setAttribute("rel", "noopener noreferrer");
+    }
+  });
+
   const sanitized = purifier.sanitize(input, {
     ALLOWED_TAGS: SANITIZE_ALLOWED_TAGS,
     ALLOWED_ATTR: SANITIZE_ALLOWED_ATTR,
     FORBID_TAGS: Array.from(SANITIZE_FORBIDDEN_TAGS),
     FORBID_ATTR: ["style"],
     ADD_ATTR: ["class"],
-    ALLOWED_URI_REGEXP: SAFE_URL_REGEXP,
     KEEP_CONTENT: false,
   });
 
