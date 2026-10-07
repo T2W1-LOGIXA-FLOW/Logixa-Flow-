@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..analytics import log_analytics_event
+from ..agent_graph import execute_content_graph
 from ..database import get_db
 from ..integration_service import import_rss_feed
 from ..llm.router import LLMRouter
@@ -241,56 +242,101 @@ async def run_agent(
             .filter(models.IntelligenceSource.id.in_(payload.source_ids))
             .all()
         )
-    brief = await generate_agent_brief(payload.message, sources, db=db)
-    confidence_score, hallucination_score = score_source_grounding(sources)
-    model_used = brief.get("model") or os.getenv("AI_AGENT_MODEL", "local-planner")
-    provider = model_used.split("/", 1)[0] if "/" in model_used else model_used
-    estimated_tokens = max(1, len(payload.message + brief.get("content", "")) // 4)
-    try:
-        agent_cost_per_1k = Decimal(os.getenv("AI_COST_PER_1K", "0.002"))
-    except (InvalidOperation, ValueError):
-        agent_cost_per_1k = Decimal("0")
-    agent_cost_estimate = (Decimal(estimated_tokens) / Decimal("1000")) * agent_cost_per_1k
+
     run = models.AgentRun(
         objective=payload.message,
-        model=model_used,
-        provider=provider,
+        model="pending",
+        provider=None,
         input_context=json.dumps({"message": payload.message, "source_ids": payload.source_ids}),
         source_ids=json.dumps(payload.source_ids),
-        token_usage=estimated_tokens,
-        cost_estimate=agent_cost_estimate,
-        status="completed",
+        status="running",
     )
     db.add(run)
     db.commit()
     db.refresh(run)
-    for index, (agent, message) in enumerate(build_steps(payload.message, sources), start=1):
-        db.add(models.AgentStep(run_id=run.id, step_order=index, agent=agent, message=message))
+
+    try:
+        graph = execute_content_graph(db, run, payload.message, sources)
+    except Exception as exc:
+        run.status = "failed"
+        run.updated_at = utc_now()
+        db.commit()
+        log_analytics_event(
+            db,
+            "agent_run_failed",
+            {"run_id": run.id, "error_type": exc.__class__.__name__},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI agent execution failed; review the run state and retry.",
+        ) from exc
+
+    brief = graph.final
+    confidence_score, hallucination_score = score_source_grounding(sources)
+    fact_check = brief.get("fact_check") or {}
+    quality_gate = brief.get("quality_gate") or {}
+    if fact_check.get("verdict") == "fail" or quality_gate.get("verdict") == "fail":
+        confidence_score = min(confidence_score, 0.45)
+        hallucination_score = max(hallucination_score, 0.55)
+
+    model_used = str(brief.get("model") or "local")
+    provider = ",".join(dict.fromkeys(graph.providers)) or "local"
+    content = str(brief.get("content_html") or brief.get("content") or "").strip()
+    if not content:
+        content = "<p>Agent graph completed without a publishable draft.</p>"
+    excerpt = str(brief.get("excerpt") or "Private AI-generated draft for admin review.")
+    title = str(brief.get("title") or "AI Preview: Supply Chain Signal Brief")
+
+    run.model = model_used
+    run.provider = provider
+    run.token_usage = graph.total_tokens
+    run.cost_estimate = (Decimal(graph.total_tokens) / Decimal("1000")) * Decimal(
+        os.getenv("AI_COST_PER_1K", "0.002")
+    )
+    run.status = "completed"
+    db.add(run)
+
     memory = models.AiMemoryBrain(
-        category=brief["category"],
-        source_title=brief["title"],
+        category=sources[0].category if sources else "Supply Chain",
+        source_title=title,
         source_url=sources[0].url if sources else None,
         prompt=payload.message,
-        content=brief["content"],
-        summary=brief["excerpt"],
+        content=content,
+        summary=excerpt[:500],
         status="pending",
         is_public=False,
         confidence_score=confidence_score,
         hallucination_score=hallucination_score,
+        source_ids=json.dumps(payload.source_ids),
+        provider=provider,
+        token_usage=graph.total_tokens,
+        cost_estimate=run.cost_estimate,
     )
     db.add(memory)
     db.commit()
     db.refresh(memory)
+
     run.final_memory_id = memory.id
     db.commit()
     db.refresh(run)
+
     try:
         from ..rag.ingest import ingest_brain_memory
-
         ingest_brain_memory(db, memory)
     except Exception:
         pass
-    log_analytics_event(db, "agent_run", {"run_id": run.id, "memory_id": memory.id, "confidence_score": confidence_score})
+
+    log_analytics_event(
+        db,
+        "agent_run",
+        {
+            "run_id": run.id,
+            "memory_id": memory.id,
+            "confidence_score": confidence_score,
+            "quality_verdict": quality_gate.get("verdict", "review"),
+            "fact_check_verdict": fact_check.get("verdict", "review"),
+        },
+    )
     return serialize_run(db, run)
 
 
