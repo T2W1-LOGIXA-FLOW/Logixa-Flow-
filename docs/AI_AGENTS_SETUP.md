@@ -233,39 +233,15 @@ Node responsibilities:
 
 Provider routing remains centralized. Agents do not receive separate frontend credentials and do not require a unique API key per node. Configure task-specific providers/models only when there is a deliberate reason to specialize a task.
 
-## Background worker
+## Legacy agent-service pipeline
 
-The optional worker is designed to run separately from FastAPI:
+The repository still contains an optional `agents/` content pipeline for compatibility and local/managed deployments. It is **not part of the current Render Free production runtime**.
 
-```text
-Service Type: Background Worker
-Runtime: Docker
-Branch: main
-Docker Build Context Directory: .
-Dockerfile Path: agents/Dockerfile
-Docker Command: python worker_loop.py
-```
+Production workflow execution uses:
 
-Typical worker variables:
+`QStash → FastAPI → PostgreSQL`
 
-```text
-BACKEND_URL=https://your-render-backend.onrender.com
-AGENT_SERVICE_TOKEN=<same secret configured on the Render backend and worker>
-LLM_PROVIDER=gemini
-GEMINI_API_KEY=<secret>
-OPENROUTER_API_KEY=<secret>
-GROQ_API_KEY=<secret>
-PIPELINE_BATCH_LIMIT=3
-AUTO_APPROVE_PUBLISH=false
-WORKER_MODE=web-pipeline
-WORKER_INTERVAL_SECONDS=3600
-WORKER_RUN_ON_START=true
-WORKER_ONCE=false
-```
-
-Set `AGENT_SERVICE_TOKEN` manually as a high-entropy secret where the optional agent-service pipeline is enabled; the repository intentionally contains no token value. Legacy password-based admin credentials are not part of the production authentication path and must not be reintroduced. `AUTO_APPROVE_PUBLISH=false` remains intentional: AI-generated content stays reviewable before publication.
-
-`AUTO_APPROVE_PUBLISH=false` is intentional: AI-generated content should remain reviewable before publication.
+Do not create or re-enable a Render Background Worker as a prerequisite for production. If the legacy agent-service pipeline is enabled in another environment, it must use the scoped `AGENT_SERVICE_TOKEN` and remain separate from human admin authentication.
 
 ## Verification checklist
 
