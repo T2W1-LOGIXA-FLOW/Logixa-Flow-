@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from decimal import Decimal, InvalidOperation
 from threading import Lock, Thread
 from time import sleep
 
@@ -49,6 +50,11 @@ def _run_scheduled_preview(event_name: str) -> int | None:
         run.model = str(graph.final.get("model") or "local")
         run.provider = provider
         run.token_usage = graph.total_tokens
+        try:
+            cost_per_1k = Decimal(os.getenv("AI_COST_PER_1K", "0.002"))
+        except (InvalidOperation, ValueError):
+            cost_per_1k = Decimal("0")
+        run.cost_estimate = (Decimal(graph.total_tokens) / Decimal("1000")) * cost_per_1k
         run.status = "completed"
         memory = AiMemoryBrain(
             category=sources[0].category if sources else "Supply Chain",
@@ -64,6 +70,7 @@ def _run_scheduled_preview(event_name: str) -> int | None:
             source_ids=json.dumps([source.id for source in sources]),
             provider=provider,
             token_usage=graph.total_tokens,
+            cost_estimate=run.cost_estimate,
         )
         db.add(memory)
         db.commit()
