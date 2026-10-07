@@ -1,56 +1,79 @@
-# Security Policy
+# Logixa Flow — Security Policy
 
-## Supported Versions
+> Owner: Security / Engineering
+> Update when: threat model, authorization boundaries, secrets, dependency policy, or incident procedures change
+> Last Updated: 2026-10-08
+> Do NOT put here: release status details that belong in CURRENT_STATE.md or domain implementation details that belong in docs/.
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+## Scope
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+This policy covers the Logixa Flow frontend, FastAPI backend, PostgreSQL/Supabase data layer, AI/RAG integrations, storage providers, workflow delivery, CI/CD, and operational access boundaries.
 
-## Reporting a Vulnerability
+## Threat model
 
-Use this section to tell people how to report a vulnerability.
+Primary concerns include unauthorized admin/API access, secret exposure, unsafe AI output, cross-owner session access, storage misuse, provider error leakage, insecure database grants/RLS, and supply-chain/dependency risk.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+## Authentication and authorization
 
-## Vercel Operational Lock
+Protected admin routes use backend authentication/authorization dependencies. Authorization is enforced server-side. Frontend visibility is not a security boundary.
 
-Vercel configuration overrides are intentionally not committed in `web-platform/frontend/vercel.json`. If Vercel is disabled or paused for this project, do not re-enable Vercel deployment or restore Vercel-specific build/install/output overrides unless the project owner explicitly authorizes it.
+Public AI and admin AI are independently gated. Backend AI gates are authoritative.
 
-The canonical frontend deployment/runtime configuration is maintained outside this deleted override file. This note is an operational guardrail: **when Vercel is turned off, keep it off until explicit authorization is given to turn it back on.**
+## Admin boundaries
 
+Admin chat sessions are owner-scoped. Foreign, inactive, and ownerless sessions must not expose state. Ownership transfer and cleanup remain server-authorized operations.
 
-## Dependency Bot Policy
+## Database and RLS
 
-Dependabot is enabled weekly for the frontend npm dependencies and backend Python dependencies. Dependency branches are reviewed by impact rather than merged automatically.
+The backend owns application database access. The frontend must not receive service-role credentials. RLS is defense-in-depth and does not replace API authorization. Avoid broad grants or permissive policies solely to silence advisor output.
 
-- `source-map-js-1.2.2`: accepted into `main` because it is a narrow dependency update with no application-level breaking change observed.
-- `multi-d49ef80a9c`: not accepted because it upgrades Tailwind CSS from 3.x to 4.x, which is a major framework change and requires a separate compatibility migration.
-- The remaining stale Dependabot branch is not part of the production release path.
+Schema changes use Alembic. Repository migration head is 20261007_0011; live production head is VERIFY.
 
-## CI Security Gate
+## Service role and secrets
 
-The security workflow fails on high/critical findings that are not explicitly classified as build/dev-only or otherwise reviewed. Known non-runtime dependency findings are documented in the workflow rather than hidden from audit output. Runtime dependencies and application-shipped code remain subject to the high/critical gate.
+Service-role keys, provider keys, QStash tokens/signing keys, database credentials, JWT/API secrets, and other private values remain backend/deployment-side. Never commit or paste secrets into source or documentation.
 
-## Production Security State
+## Frontend/backend boundary
 
-Production database schema is at Alembic revision `20261005_0010`. RLS remains deny-by-default for the newly protected audit/storage tables. Provider secrets remain backend/Render-side and are not intended for frontend code.
+Frontend code uses public configuration only. Server-side provider credentials and privileged database credentials remain on the backend.
 
-Vercel remains under an explicit operational lock: if it is disabled, do not re-enable it or restore Vercel-specific override configuration without project-owner authorization.
+## Rate limits and CORS
 
-## CI Execution and Queue Control
+Backend rate limiting and configured CORS remain part of the API security boundary. Changes must be validated against the actual backend configuration rather than copied from generic templates.
 
-CI and CodeQL use per-workflow/per-ref concurrency with `cancel-in-progress: true`. A newer commit supersedes an older in-progress run, reducing stale queued work. Documentation-only pushes are ignored by the push triggers; pull-request validation remains active, and manual dispatch remains available for deliberate full validation.
+## PII and logging
 
-This does not weaken security checks for application, dependency, workflow, infrastructure, or configuration changes.
+Sanitize provider/database errors before returning or logging them. Preserve correlation IDs where useful for investigation, but do not log secrets or unnecessary sensitive payloads.
 
-## Live Integration Gate
+## Dependency security
 
-Implementation is not treated as live verification. Before production release, verify configured Cloudinary, Supabase Storage, B2, Google Drive, signed QStash delivery, workflow completion/recovery, and authentication/API behavior with real infrastructure. The current Render Free architecture does not require a Background Worker.
+Dependabot and CI security checks are part of the repository security process. Major framework upgrades require compatibility review rather than automatic acceptance. Runtime dependencies remain subject to high/critical security gates as configured by CI.
+
+## AI safety
+
+AI output is reviewable intelligence, not automatically trusted truth. Publication-sensitive AI output requires the intended human approval path. Provider credentials remain server-side. Configured provider credentials do not prove live provider health.
+
+## Vercel operational lock
+
+Vercel override configuration was intentionally removed. If Vercel is disabled or paused, do not restore Vercel-specific build/install/output overrides or re-enable the deployment without explicit project-owner authorization.
+
+## Incident handling
+
+Preserve affected run/session identifiers, timestamps, correlation IDs, sanitized logs, and provider response classes. Do not place credentials or raw secrets in incidents. Escalate authorization, secret exposure, data-access, or production integrity issues before applying destructive changes.
+
+## Deferred risks
+
+Live provider/storage verification, live production migration state, durable RAG observability/feedback, broader retention controls, and other items listed in CURRENT_STATE.md and ROADMAP.md remain explicit verification or future-work areas.
+
+## Verification checklist
+
+- Backend authorization remains authoritative.
+- Service-role and provider secrets are backend-side.
+- RLS/grants match the intended backend access model.
+- Alembic repository head and live head are reported separately.
+- Public AI gate is enforced server-side.
+- Provider health is not inferred from credentials alone.
+- QStash signing is verified before trusting delivery.
+- Storage provider E2E is tested with real infrastructure before release claims.
+- Logs do not expose secrets.
+- Vercel remains locked unless explicitly authorized.
