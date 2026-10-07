@@ -174,7 +174,15 @@ export const validationRules = {
   } as ValidationRule,
   url: {
     required: true,
-    pattern: /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/,
+    custom: (value) => {
+      if (typeof value !== "string" || !value.trim()) return "Please enter a valid URL";
+      try {
+        const parsed = new URL(value.includes("://") ? value : `https://${value}`);
+        return parsed.protocol === "http:" || parsed.protocol === "https:" || "Please enter a valid URL";
+      } catch {
+        return "Please enter a valid URL";
+      }
+    },
   } as ValidationRule,
   creditCard: {
     required: true,
