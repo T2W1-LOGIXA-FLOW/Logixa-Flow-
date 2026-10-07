@@ -127,7 +127,7 @@ Object storage / external providers
 - Google Drive exports and workflow backup artifacts
 - Upstash Redis
 - QStash for durable delivery/scheduling
-- Celery + Redis for long-running workflow execution
+- QStash for durable workflow delivery; Celery + Redis remain optional for non-Free deployments
 - RSS feeds
 - Email integration
 
@@ -202,7 +202,7 @@ git status --short
 - `docs/DEPLOY_CHECKLIST.md` — deployment/repository hygiene checklist.
 - `web-platform/docs/RAG_ERROR_REPORTING.md` — RAG error/retry/monitoring behavior.
 
-Render Free production intentionally uses a single Web Service. The Background Worker service was removed because Render Free does not provide a Background Worker. Durable workflow delivery is handled by QStash, which signs and retries delivery to `/api/admin/workflow/qstash-dispatch`; with `CELERY_ENABLED=false`, the web service executes the canonical workflow engine in-process while PostgreSQL remains the durable state store.
+Render Free production intentionally uses a single Web Service. Durable workflow delivery uses QStash and PostgreSQL-backed recovery; a Background Worker is not required.
 
 ## Current production status
 
