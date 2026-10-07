@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import asyncio
+import json
 import os
 from threading import Lock, Thread
 from time import sleep
@@ -9,67 +9,79 @@ import logging
 
 from .analytics import log_analytics_event
 from .database import SessionLocal
-from .models import AiMemoryBrain, IntelligenceSource
-from .routers.agent import generate_agent_brief, score_source_grounding
+from .models import AiMemoryBrain, AgentRun, IntelligenceSource
+from .agent_graph import execute_content_graph
+from .routers.agent import score_source_grounding
 
 _SCHEDULER_LOCK = Lock()
 
 
-def generate_daily_agent_preview() -> None:
+def _run_scheduled_preview(event_name: str) -> int | None:
     db = SessionLocal()
     try:
-        logger = logging.getLogger(__name__)
-        if os.getenv("GEMINI_API_KEY"):
-            logger.info("GEMINI_API_KEY detected: using Gemini for daily previews when available")
         sources = db.query(IntelligenceSource).order_by(IntelligenceSource.updated_at.desc()).limit(5).all()
         message = os.getenv("DAILY_AGENT_PROMPT", "Generate a preview-only Myanmar supply chain daily brief.")
-        brief = asyncio.run(generate_agent_brief(message, sources, db=db))
-        confidence_score, hallucination_score = score_source_grounding(sources)
-        memory = AiMemoryBrain(
-            category=brief["category"],
-            source_title=f"Daily Preview: {brief['title']}",
-            source_url=sources[0].url if sources else None,
-            prompt=message,
-            content=brief["content"],
-            summary=brief["excerpt"],
-            status="pending",
-            is_public=False,
-            confidence_score=confidence_score,
-            hallucination_score=hallucination_score,
+        run = AgentRun(
+            objective=message,
+            model="pending",
+            status="running",
+            input_context=json.dumps({"message": message, "source_ids": [source.id for source in sources]}),
+            source_ids=json.dumps([source.id for source in sources]),
         )
-        db.add(memory)
+        db.add(run)
         db.commit()
-        log_analytics_event(db, "scheduled_daily_preview", {"memory_id": memory.id})
-    finally:
-        db.close()
+        db.refresh(run)
+        try:
+            graph = execute_content_graph(db, run, message, sources)
+        except Exception:
+            run.status = "failed"
+            db.commit()
+            raise
 
-
-def run_daily_agent_preview_once() -> int | None:
-    db = SessionLocal()
-    try:
-        sources = db.query(IntelligenceSource).order_by(IntelligenceSource.updated_at.desc()).limit(5).all()
-        message = os.getenv("DAILY_AGENT_PROMPT", "Generate a preview-only Myanmar supply chain daily brief.")
-        brief = asyncio.run(generate_agent_brief(message, sources, db=db))
         confidence_score, hallucination_score = score_source_grounding(sources)
+        fact_check = graph.final.get("fact_check") or {}
+        quality_gate = graph.final.get("quality_gate") or {}
+        if fact_check.get("verdict") == "fail" or quality_gate.get("verdict") == "fail":
+            confidence_score = min(confidence_score, 0.45)
+            hallucination_score = max(hallucination_score, 0.55)
+
+        provider = ",".join(dict.fromkeys(graph.providers)) or "local"
+        run.model = str(graph.final.get("model") or "local")
+        run.provider = provider
+        run.token_usage = graph.total_tokens
+        run.status = "completed"
         memory = AiMemoryBrain(
-            category=brief["category"],
-            source_title=f"Manual Daily Preview: {brief['title']}",
+            category=sources[0].category if sources else "Supply Chain",
+            source_title=f"Daily Preview: {graph.final.get('title') or 'Supply Chain Signal Brief'}",
             source_url=sources[0].url if sources else None,
             prompt=message,
-            content=brief["content"],
-            summary=brief["excerpt"],
+            content=str(graph.final.get("content_html") or graph.final.get("content") or "<p>Preview requires admin review.</p>"),
+            summary=str(graph.final.get("excerpt") or "Private AI-generated draft for admin review.")[:500],
             status="pending",
             is_public=False,
             confidence_score=confidence_score,
             hallucination_score=hallucination_score,
+            source_ids=json.dumps([source.id for source in sources]),
+            provider=provider,
+            token_usage=graph.total_tokens,
         )
         db.add(memory)
         db.commit()
         db.refresh(memory)
-        log_analytics_event(db, "manual_daily_preview", {"memory_id": memory.id})
+        run.final_memory_id = memory.id
+        db.commit()
+        log_analytics_event(db, event_name, {"run_id": run.id, "memory_id": memory.id, "providers": provider})
         return memory.id
     finally:
         db.close()
+
+
+def generate_daily_agent_preview() -> None:
+    _run_scheduled_preview("scheduled_daily_preview")
+
+
+def run_daily_agent_preview_once() -> int | None:
+    return _run_scheduled_preview("manual_daily_preview")
 
 
 def scheduler_status() -> dict[str, object]:
