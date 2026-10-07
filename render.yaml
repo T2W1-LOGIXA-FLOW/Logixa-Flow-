@@ -68,13 +68,23 @@ services:
       # provider remains the default and the normal fallback chain applies.
       - key: AI_TASK_PROVIDER_RESEARCH
         value: ""
+      - key: AI_TASK_MODEL_RESEARCH
+        value: ""
       - key: AI_TASK_PROVIDER_ANALYSIS
+        value: ""
+      - key: AI_TASK_MODEL_ANALYSIS
         value: ""
       - key: AI_TASK_PROVIDER_WRITING
         value: ""
+      - key: AI_TASK_MODEL_WRITING
+        value: ""
       - key: AI_TASK_PROVIDER_SEO
         value: ""
+      - key: AI_TASK_MODEL_SEO
+        value: ""
       - key: AI_TASK_PROVIDER_FACTCHECK
+        value: ""
+      - key: AI_TASK_MODEL_FACTCHECK
         value: ""
       - key: GEMINI_API_KEY
         sync: false
