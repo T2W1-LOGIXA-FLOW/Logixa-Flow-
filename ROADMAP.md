@@ -43,6 +43,8 @@ Verification rule: implementation, configuration, or unit tests do not substitut
 ## Pre-staged Phase Plan
 
 ### Phase 7 — Live provider + workflow reliability closure
+- Deterministic retry-recovery and exhaustion coverage is now staged and green in the non-live suite.
+- Deterministic stale-claim, terminal-idempotency, duplicate-delivery, and approval-resume coverage is also staged/green; live evidence remains the release gate.
 Status: ACTIVE.
 - Close Supabase Storage, Backblaze B2, and Google Drive real E2E.
 - Verify retry/recovery, live stale-claim reclamation, controlled failure recovery, and duplicate delivery. Deterministic stale-claim reclamation coverage is already green.
@@ -50,6 +52,8 @@ Status: ACTIVE.
 - Exit gate: every item has direct production/provider evidence or an explicit documented blocker.
 
 ### Phase 8 — Production AI/RAG and workflow journey closure
+- RAG source re-ingestion now has deterministic idempotency coverage.
+- Next live gates: RAG ingest→embed→search, Agent→Brain→publish, approval→resume→completion, and scheduled time-boundary execution.
 Status: PRE-STAGED.
 - Production authentication/API smoke.
 - RAG ingest → embed → search.
@@ -61,6 +65,7 @@ Status: PRE-STAGED.
 - Exit gate: complete business journeys are observed end-to-end with durable final state.
 
 ### Phase 9 — Source-to-content quality and publishing controls
+- Pre-stage provenance, citation integrity, quality scoring, approval/audit controls, and publish idempotency as deterministic tests before external-provider certification.
 Status: PRE-STAGED.
 - Universal source → publish E2E, gated on Phase 7/8.
 - Provenance to file/page/sheet/row/URL.
@@ -69,6 +74,7 @@ Status: PRE-STAGED.
 - Exit gate: publishing claims are evidence-backed and traceable.
 
 ### Phase 10 — Chat/session operations
+- Pre-stage pagination, transcript export, retention, ownership transfer, and audit-search invariants with deterministic tests.
 Status: PRE-STAGED.
 - Paginated chat restore and transcript export.
 - Explicit retention controls, approved purge, administrator lookup.
@@ -77,6 +83,7 @@ Status: PRE-STAGED.
 - Exit gate: session lifecycle is durable, permissioned, auditable, and test-covered.
 
 ### Phase 11 — RAG observability and quality
+- Pre-stage durable metric/event schemas, alert deduplication, evaluation fixtures, and quality-feedback persistence tests.
 Status: PRE-STAGED.
 - Durable RAG metrics/alert history and notification adapter.
 - Rate/window alert policies, retention, pagination, export, and deduplication.
@@ -88,6 +95,7 @@ Status: PRE-STAGED.
 - Exit gate: RAG quality/operations are measurable and recoverable.
 
 ### Phase 12 — Platform evolution and release hardening
+- Pre-stage stronger durable execution, external-provider failover contracts, operational telemetry, backup/restore checks, and release rollback tests.
 Status: PRE-STAGED.
 - Future complex AI workflows and additional integrations.
 - Stronger durable job execution.
@@ -98,6 +106,7 @@ Status: PRE-STAGED.
 - Final release regression, security, dependency, and operational review.
 
 ### Phase 13 — Release certification and maintenance
+- Freeze only after live evidence index, security/dependency refresh, backup/restore, DR/rollback, SLO/error-budget review, and documentation reconciliation all pass.
 Status: PRE-STAGED.
 - Formal release-candidate checklist and evidence index.
 - Dependency/license/security refresh after feature closure.
