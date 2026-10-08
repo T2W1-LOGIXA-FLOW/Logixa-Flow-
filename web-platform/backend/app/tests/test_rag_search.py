@@ -137,3 +137,27 @@ def test_reingest_replaces_source_chunks_without_duplicates(monkeypatch, db: Ses
     assert rows[0].content == "Reingest source Updated source content"
     assert "Initial source content" not in rows[0].content
     assert rows[0].embedding_model == "test-embedding"
+
+
+
+def test_ingest_embed_search_pipeline_returns_grounded_source(monkeypatch, db: Session):
+    monkeypatch.setattr("app.rag.ingest.embed_text", lambda text: ([1.0, 0.0], "test-embedding"))
+    monkeypatch.setattr("app.rag.search.embed_text", lambda text: ([1.0, 0.0], "test-embedding"))
+    source = models.IntelligenceSource(
+        title="Pipeline source",
+        source_type="manual",
+        category="Supply Chain",
+        trust_level="verified",
+        notes="Verified source content about resilient supplier lead times.",
+    )
+    db.add(source)
+    db.commit()
+    db.refresh(source)
+
+    assert ingest_intelligence_source(db, source) == 1
+    matches = similarity_search(db, "supplier lead times", top_k=1)
+
+    assert len(matches) == 1
+    assert matches[0]["source_id"] == str(source.id)
+    assert matches[0]["embedding_model"] == "test-embedding"
+    assert "resilient supplier" in matches[0]["content"].lower()
