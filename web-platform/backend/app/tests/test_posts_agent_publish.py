@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from .. import models, security
+from .. import models, security, schemas
 from ..database import Base, get_db
 from ..main import app
 from ..routers.agent import publish_memory
@@ -115,7 +115,7 @@ def test_agent_service_cannot_publish_when_status_is_omitted(posts_client):
 
 
 
-def test_brain_publish_is_idempotent_for_repeated_publish(db=None):
+def test_brain_publish_is_idempotent_for_repeated_publish():
     # Kept as a direct router-level invariant; the fixture below is created locally.
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
@@ -140,7 +140,7 @@ def test_brain_publish_is_idempotent_for_repeated_publish(db=None):
         session.commit()
         session.refresh(memory)
 
-        first = publish_memory(memory.id, __import__("..schemas", fromlist=["BrainPublishRequest"]).BrainPublishRequest(publish_now=True), db=session, admin={"sub": "admin-user", "role": "admin"})
+        first = publish_memory(memory.id, schemas.BrainPublishRequest(publish_now=True), db=session, admin={"sub": "admin-user", "role": "admin"})
         session.expire_all()
         second = publish_memory(memory.id, __import__("..schemas", fromlist=["BrainPublishRequest"]).BrainPublishRequest(publish_now=True), db=session, admin={"sub": "admin-user", "role": "admin"})
         assert first.id == second.id
