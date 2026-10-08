@@ -20,9 +20,9 @@ A unit test proves its tested path, not external-provider health. Configured cre
 
 ## Current evidence
 
-Repository migration lifecycle tests identify 20261008_0012 as the current repository head. Live production migration history independently verifies 20261007_0011 on 2026-10-08; the new 0012 migration must be applied before production durability claims.
+Repository migration lifecycle tests identify **20261008_0012** as the current repository head. Live production migration history and alembic_version independently verify **20261008_0012** on 2026-10-09.
 
-Latest main release validation is green: CI #414 and CodeQL #161 both succeeded on `6301df760774a64a7d951ae42d76b9276cf039de`.
+Latest confirmed application validation is green: CI #450 and CodeQL #197 both succeeded on `115482a27a9c7d56294c8fe09940190555a8d7a1`. Later Markdown-only commits are excluded from these push workflows by design.
 
 These results verify repository CI/security automation for that main commit; they do not substitute for production/provider E2E evidence.
 
@@ -51,7 +51,7 @@ Use the GitHub Actions **Live Release Gates** workflow with the `production` env
 Required production environment secrets:
 - Cloudinary: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
 - Supabase Storage: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`
-- B2/S3: `S3_ENDPOINT_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`; `S3_REGION` is optional.
+- B2/S3: `S3_ENDPOINT_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, and application-routing `S3_PUBLIC_BASE_URL`; `S3_REGION` is optional.
 - Google Drive: `GOOGLE_DRIVE_CREDENTIALS_JSON`; `GOOGLE_DRIVE_EXPORT_FOLDER_ID` is optional.
 
 Secrets are consumed only by the workflow environment and are not stored in the repository. A successful manual run is production/provider evidence; a green repository CI run is not.
