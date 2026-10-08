@@ -185,5 +185,18 @@ def test_storage_routing_requires_b2_public_base_url(monkeypatch: pytest.MonkeyP
         monkeypatch.setenv(key, value)
     monkeypatch.delenv("S3_PUBLIC_BASE_URL", raising=False)
 
+    class FakeClient:
+        def upload_fileobj(self, *args, **kwargs):
+            return None
+
+    import sys
+    import types
+
+    monkeypatch.setitem(
+        sys.modules,
+        "boto3",
+        types.SimpleNamespace(client=lambda **kwargs: FakeClient()),
+    )
+
     with pytest.raises(RuntimeError, match="S3_PUBLIC_BASE_URL"):
         storage._upload_s3(BytesIO(b"payload"), "file.txt", "text/plain")
