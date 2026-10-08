@@ -17,7 +17,7 @@ Final live-infrastructure verification and documentation reconciliation.
 
 **PENDING** — repository implementation is substantially present; release closure still depends on live evidence.
 
-Repository Alembic head is **20261007_0011**. The live production Alembic head is **VERIFY**.
+Repository Alembic head is **20261007_0011**. Live production Alembic head is **VERIFIED as 20261007_0011**.
 
 ## 4. COMPLETED
 
@@ -35,11 +35,13 @@ Repository Alembic head is **20261007_0011**. The live production Alembic head i
 ## 5. VERIFIED
 
 - Repository migration file `20261007_0011_agent_step_execution_metadata.py` revises `20261005_0010`.
+- **Live production Supabase migration history contains `20261007_0011` as the latest migration**, verified from the connected Supabase project on 2026-10-08. This matches the repository head.
 - Render configuration contains one Free Web Service and `CELERY_ENABLED=false`.
-- Frontend declares Next.js `^15.5.24`; an exact resolved Next.js version is not established here.
+- Frontend declares Next.js `^15.5.24`; **package-lock.json resolves Next.js to `15.5.27`**, verified from the committed lockfile on 2026-10-08.
 - Admin AI defaults are represented as enabled while public AI defaults are represented as disabled.
 - Vercel override configuration was intentionally removed and its re-enable path is operationally locked.
 - RAG alert history, feedback, A/B configuration, and related metrics are process-local rather than durable.
+- **`UnifiedBackground2.tsx` is not present in the current repository tree; repository search on 2026-10-08 found only the archived historical documentation and the canonical note identifying the historical reference.** It is therefore not treated as an active component.
 
 ## 6. IN PROGRESS
 
@@ -105,8 +107,13 @@ No repository-level blocker is established by the current documentation audit.
 
 ## 11. LAST VERIFIED
 
-2026-10-08 repository inspection: repository head `20261007_0011`; Render Free architecture is one Web Service with `CELERY_ENABLED=false`; frontend declares Next.js `^15.5.24`; no live production database head evidence was established.
+2026-10-08 repository and live Supabase inspection:
+- Repository Alembic head: `20261007_0011`.
+- Live Supabase migration history latest entry: `20261007153136 / 20261007_0011_agent_step_execution_metadata`.
+- Frontend lockfile resolves Next.js to `15.5.27`.
+- Current repository tree contains no `UnifiedBackground2.tsx`; only archived historical documentation references it.
+- Remaining release gates are still pending and were not inferred from repository presence alone.
 
 ## 12. NEXT ACTION
 
-Complete the live release gates with real infrastructure evidence. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate in every update.
+Complete the remaining live release gates with real infrastructure evidence. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate in every update.
