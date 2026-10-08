@@ -120,6 +120,10 @@ def _generate_alert_if_needed() -> None:
     _dispatch_alert(alert)
 
 
+def _db_supports_persistence(db: object) -> bool:
+    return all(hasattr(db, attr) for attr in ("execute", "commit", "rollback"))
+
+
 def _record_error(operation: str, error_type: str, db: Session | None = None) -> None:
     _error_events.append(
         {
@@ -129,7 +133,7 @@ def _record_error(operation: str, error_type: str, db: Session | None = None) ->
         }
     )
     del _error_events[:-5000]
-    if db is not None and all(hasattr(db, attr) for attr in ("execute", "commit", "rollback")):
+    if db is not None and _db_supports_persistence(db):
         try:
             record_event(db, "error", operation, {"error_type": error_type})
             db.commit()
@@ -623,13 +627,14 @@ def rag_metrics(
     now = datetime.now(UTC)
     cutoff = now - timedelta(hours=hours)
     events = [event for event in _error_events if datetime.fromisoformat(event["timestamp"]) >= cutoff]
-    try:
-        rows = db.execute(__import__("sqlalchemy").text("SELECT operation, payload, created_at FROM rag_observability_events WHERE event_type = 'error' AND created_at >= :cutoff ORDER BY created_at ASC"), {"cutoff": cutoff}).mappings().all()
-        for row in rows:
-            payload = json.loads(row["payload"] or "{}")
-            events.append({"operation": row["operation"], "error_type": payload.get("error_type", "unknown"), "timestamp": row["created_at"].isoformat()})
-    except Exception:
-        db.rollback()
+    if _db_supports_persistence(db):
+        try:
+            rows = db.execute(__import__("sqlalchemy").text("SELECT operation, payload, created_at FROM rag_observability_events WHERE event_type = 'error' AND created_at >= :cutoff ORDER BY created_at ASC"), {"cutoff": cutoff}).mappings().all()
+            for row in rows:
+                payload = json.loads(row["payload"] or "{}")
+                events.append({"operation": row["operation"], "error_type": payload.get("error_type", "unknown"), "timestamp": row["created_at"].isoformat()})
+        except Exception:
+            db.rollback()
     total_errors = len(events)
     by_type_counts: dict[str, int] = {}
     for event in events:
@@ -714,11 +719,12 @@ def rag_quality_feedback(
         _quality_feedback.append(feedback)
         del _quality_feedback[:-5000]
         count = len(_quality_feedback)
-    try:
-        record_event(db, "quality_feedback", "rag_search", feedback.model_dump(mode="json"))
-        db.commit()
-    except Exception:
-        db.rollback()
+    if _db_supports_persistence(db):
+        try:
+            record_event(db, "quality_feedback", "rag_search", feedback.model_dump(mode="json"))
+            db.commit()
+        except Exception:
+            db.rollback()
     logger.info("RAG quality feedback recorded", extra={"operation": "quality_feedback", "feedback_count": count})
     return {"accepted": True, "feedback_count": count}
 
@@ -728,11 +734,12 @@ def rag_quality(db: Session = Depends(get_db), _: dict = Depends(require_admin))
     with _quality_lock:
         feedback = list(_quality_feedback)
         ab_test = _ab_test
-    try:
-        rows = db.execute(__import__("sqlalchemy").text("SELECT payload FROM rag_observability_events WHERE event_type = 'quality_feedback' ORDER BY created_at ASC")).mappings().all()
-        feedback.extend(RAGFeedback.model_validate(json.loads(row["payload"])) for row in rows)
-    except Exception:
-        db.rollback()
+    if _db_supports_persistence(db):
+        try:
+            rows = db.execute(__import__("sqlalchemy").text("SELECT payload FROM rag_observability_events WHERE event_type = 'quality_feedback' ORDER BY created_at ASC")).mappings().all()
+            feedback.extend(RAGFeedback.model_validate(json.loads(row["payload"])) for row in rows)
+        except Exception:
+            db.rollback()
     count = len(feedback)
     average_rating = sum(item.rating for item in feedback) / count if count else 0.0
     helpful_rate = sum(item.helpful for item in feedback) / count if count else 0.0
@@ -771,11 +778,12 @@ def rag_quality_ab_test_config(
     global _ab_test
     with _quality_lock:
         _ab_test = config
-    try:
-        record_event(db, "ab_test_config", "rag_quality", config.model_dump(mode="json"))
-        db.commit()
-    except Exception:
-        db.rollback()
+    if _db_supports_persistence(db):
+        try:
+            record_event(db, "ab_test_config", "rag_quality", config.model_dump(mode="json"))
+            db.commit()
+        except Exception:
+            db.rollback()
     return {"config": config.model_dump(mode="json"), "persistent": True}
 
 
