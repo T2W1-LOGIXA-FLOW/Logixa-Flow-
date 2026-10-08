@@ -195,7 +195,7 @@ def test_storage_routing_requires_b2_public_base_url(monkeypatch: pytest.MonkeyP
     monkeypatch.setitem(
         sys.modules,
         "boto3",
-        types.SimpleNamespace(client=lambda **kwargs: FakeClient()),
+        types.SimpleNamespace(client=lambda *args, **kwargs: FakeClient()),
     )
 
     with pytest.raises(RuntimeError, match="S3_PUBLIC_BASE_URL"):
