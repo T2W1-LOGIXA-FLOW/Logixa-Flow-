@@ -20,8 +20,8 @@ Status: DONE / VERIFIED at repository level. Repository evidence includes the ca
 Objective: close evidence-based release gates without changing the current architecture merely to satisfy documentation.
 
 Current verified baseline:
-- Latest-main CI: #405 success on `5594052a4b4e5343ec2194b2a293998e93fa78f4`.
-- Latest-main CodeQL: #152 success on the same commit.
+- Latest-main CI: #406 success on `9cb6caddce0591aeb63f21656aea6375b3e14d7b`.
+- Latest-main CodeQL: #153 success on the same commit.
 
 Remaining acceptance criteria:
 - Supabase Storage, B2, and Google Drive E2E pass with real infrastructure.
@@ -43,7 +43,7 @@ Verification rule: implementation, configuration, or unit tests do not substitut
 ## Pre-staged Phase Plan
 
 ### Phase 7 — Live provider + workflow reliability closure
-- Deterministic retry-recovery and exhaustion coverage is now staged and green in the non-live suite.
+- Deterministic retry-recovery/exhaustion and scheduled-delay semantics are now staged and green in the non-live suite.
 - Deterministic stale-claim, terminal-idempotency, duplicate-delivery, and approval-resume coverage is also staged/green; live evidence remains the release gate.
 Status: ACTIVE.
 - Close Supabase Storage, Backblaze B2, and Google Drive real E2E.
@@ -179,4 +179,4 @@ None established by repository evidence. Live tests may remain operationally una
 33. Broader observability/operational controls.
 34. Broader supply-chain intelligence coverage.
 
-CI #405 and CodeQL #152 are green and are the current repository validation baseline. Live provider and production-path evidence remains separate. Cloudinary and the core QStash delivery/completion/idempotency path are also no longer listed as remaining work because they have real evidence.
+CI #406 and CodeQL #153 are green and are the current repository validation baseline. Live provider and production-path evidence remains separate. Cloudinary and the core QStash delivery/completion/idempotency path are also no longer listed as remaining work because they have real evidence.
