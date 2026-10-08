@@ -56,9 +56,8 @@ The remaining work is now limited to live release evidence and explicitly deferr
 Current active closure tracks:
 
 1. Real storage-provider E2E verification.
-2. QStash signed delivery and workflow completion verification.
-3. Workflow retry/recovery and duplicate-delivery verification.
-4. Production authentication/API smoke verification.
+2. Workflow retry/recovery and live stale-claim/failure-recovery verification.
+3. Production authentication/API smoke verification.
 5. Production monitoring/failure-mode verification.
 6. Production RAG and AI publishing E2E verification.
 7. Scheduled workflow, newsletter, and controlled provider-failover verification.
