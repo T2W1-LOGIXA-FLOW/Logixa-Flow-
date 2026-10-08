@@ -31,7 +31,7 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 - RAG ingestion/search/reliability/quality features are implemented, with documented process-local limitations for several observability and feedback features.
 - Alembic migration `20261007_0011` exists and the migration lifecycle test declares it as the repository current head.
 - Documentation audit and Phase 0 ledgers are complete.
-- Latest `main` CI run #401 is green on commit `9321ed377c149e31f117935bedaa2918d27c0522`; CodeQL #148 is also green. The follow-up stale-claim test commit is now under CI #402 / CodeQL #149.
+- Latest `main` CI run #402 is green on commit `34137b30527bbce0975d78ca4b554cb2291af68c`; CodeQL #149 is also green on the same commit. CI #401 / CodeQL #148 are superseded.
 
 ## 5. VERIFIED
 
@@ -39,6 +39,7 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 - **QStash signed delivery + canonical workflow completion passed on 2026-10-08**: QStash message `msg_7YoJxFpwkEy5zBp2YxbmSsWDsqwAbXM5wtckxoReAkhqA6PJibwLF` reached the Render dispatch endpoint and the durable Supabase workflow run `release-gate-qstash-a1` completed with node `probe`; the scheduled job became `completed`.
 - **QStash duplicate-delivery protection passed on 2026-10-08**: a second direct QStash delivery for the same completed run did not add another execution-log entry; the durable run remained `completed` with exactly one `probe` execution entry. This is backed by the terminal-run guard added in commit `3c3e1ca8b7d8e8c07cc6eb53cfe5640d3cd4163a`.
 - Repository migration file `20261007_0011_agent_step_execution_metadata.py` revises `20261005_0010`.
+- Deterministic stale-claim reclamation coverage is now present in commit `34137b30527bbce0975d78ca4b554cb2291af68c`; live production stale-claim recovery remains pending.
 - **Live production Supabase migration history contains `20261007_0011` as the latest migration**, verified from the connected Supabase project on 2026-10-08. Evidence: Supabase project `ephrnmigiwjhdjksreos`, migration listing observed 2026-10-08; dashboard: `https://supabase.com/dashboard/project/ephrnmigiwjhdjksreos/database/migrations`.
 - Render configuration contains one Free Web Service and `CELERY_ENABLED=false`.
 - Frontend declares Next.js `^15.5.24`; **package-lock.json resolves Next.js to `15.5.27`**, verified from the committed lockfile on 2026-10-08.
@@ -46,7 +47,7 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 - Vercel override configuration was intentionally removed and its re-enable path is operationally locked.
 - RAG alert history, feedback, A/B configuration, and related metrics are process-local rather than durable.
 - **`UnifiedBackground2.tsx` is not present in the current repository tree; repository search on 2026-10-08 found only the archived historical documentation and the canonical note identifying the historical reference.** It is therefore not treated as an active component.
-- **CI run #401: success and CodeQL run #148: success on commit `9321ed377c149e31f117935bedaa2918d27c0522`.**
+- **CI run #402: success and CodeQL run #149: success on commit `34137b30527bbce0975d78ca4b554cb2291af68c`.**
 
 ## 6. IN PROGRESS
 
@@ -114,7 +115,7 @@ Repository CI/CodeQL is already green and is no longer a release blocker.
 - Live Supabase migration history latest entry: `20261007153136 / 20261007_0011_agent_step_execution_metadata`.
 - Frontend lockfile resolves Next.js to `15.5.27`.
 - Current repository tree contains no `UnifiedBackground2.tsx`; only archived historical documentation references it.
-- CI run #401: **success** on `9321ed377c149e31f117935bedaa2918d27c0522`; CodeQL #148: **success** on the same commit. CI #400 was superseded after its outdated test assertion was corrected. The next stale-claim coverage commit is `34137b30527bbce0975d78ca4b554cb2291af68c` and is running under CI #402 / CodeQL #149.
+- CI run #401: **success** on `9321ed377c149e31f117935bedaa2918d27c0522`; CodeQL #148: **success** on the same commit. CI #400 was superseded after its outdated test assertion was corrected. The stale-claim coverage commit is `34137b30527bbce0975d78ca4b554cb2291af68c`; CI #402 and CodeQL #149 both completed successfully.
 - Cloudinary live E2E passed with real upload/read/delete evidence.
 - QStash signed delivery and canonical workflow completion passed with durable PostgreSQL evidence.
 - Duplicate QStash delivery was acknowledged without re-executing the completed workflow.
@@ -127,4 +128,4 @@ Repository CI/CodeQL is already green and is no longer a release blocker.
 
 ## 13. NEXT ACTION
 
-Continue Phase 7 closure: re-check CI/CodeQL, then execute provider E2E and recovery gates in dependency order. Phase 8–12 are pre-staged in `ROADMAP.md` so the next implementation batch can begin immediately after Phase 7. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate in every update.
+Continue Phase 7 closure: provider E2E and recovery gates are next; deterministic claim/idempotency coverage is green, while live stale-claim/retry/failure recovery still requires production evidence. Phase 8–12 are pre-staged in `ROADMAP.md` so the next implementation batch can begin immediately after Phase 7. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate in every update.
