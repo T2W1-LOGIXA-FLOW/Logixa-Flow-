@@ -1,5 +1,7 @@
 # Logixa Flow
 
+[![CI](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/workflows/ci.yml) [![CodeQL](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/workflows/codeql.yml)
+
 > Owner: Project / Engineering
 > Update when: project identity, quick-start, documentation map, or high-level snapshot changes
 > Last Updated: 2026-10-08
@@ -31,17 +33,17 @@ AI: Gemini plus a multi-provider router, embeddings, RAG, AI Memory/Brain, agent
 
 Infrastructure: GitHub, Render, optional/locked Vercel frontend deployment, QStash, Cloudinary, Supabase Storage, Backblaze B2/S3-compatible storage, Google Drive.
 
-Frontend dependency declaration: Next.js `^15.5.24`; committed `package-lock.json` resolves Next.js to **15.5.27** (verified 2026-10-08).
+Frontend dependency declaration: Next.js `^15.5.27`; committed `package-lock.json` resolves Next.js to **15.5.27** (verified 2026-10-08).
 
 ## Current snapshot
 
-Repository Alembic head: 20261007_0011.
+Repository Alembic head: **20261008_0012**.
 
-Live production Supabase migration head: **20261007_0011** (verified 2026-10-08).
+Live production Supabase migration head: **20261008_0012** (verified 2026-10-08).
 
 Public AI default: disabled. Admin AI default: enabled in repository configuration. Provider implementation/configuration/live health are tracked separately.
 
-Release closure still requires real storage/provider E2E, QStash delivery/workflow recovery verification, production authentication/API smoke tests, and monitoring/failure-mode evidence.
+Release closure still requires the manual production gates documented in `docs/RELEASE_CERTIFICATION.md`: storage/provider E2E, production authentication/API smoke, isolated backup/restore, workflow recovery, scheduled workflow, RAG/AI publish, newsletter delivery, rollback/DR, and monitoring evidence.
 
 ## Documentation map
 
