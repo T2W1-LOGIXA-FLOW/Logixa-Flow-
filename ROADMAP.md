@@ -48,7 +48,8 @@ Verification rule: implementation, configuration, or unit tests do not substitut
 Status: ACTIVE.
 - Close Supabase Storage, Backblaze B2, and Google Drive real E2E.
 - Verify retry/recovery, live stale-claim reclamation, controlled failure recovery, and duplicate delivery. Deterministic stale-claim reclamation coverage is already green.
-- Keep all live tests opt-in and secret-free in CI.
+- Keep all live tests opt-in and secret-free in normal CI.
+- A manual `.github/workflows/live-release-gates.yml` workflow now consumes GitHub `production` environment secrets, validates required configuration, and runs the selected real-provider E2E without exposing credentials to the repository.
 - Exit gate: every item has direct production/provider evidence or an explicit documented blocker.
 
 ### Phase 8 — Production AI/RAG and workflow journey closure
@@ -123,7 +124,7 @@ Status: PRE-STAGED.
 
 ## Blocked Items
 
-None established by repository evidence. Live tests may remain operationally unavailable until the required provider credentials/access are supplied.
+None established by repository evidence. The live-gate workflow is implemented; execution remains dependent on supplying the required GitHub `production` environment secrets and controlled production access.
 
 ## Remaining Work — Release Closure
 
