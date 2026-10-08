@@ -135,3 +135,55 @@ def test_production_env_allows_render_free_without_celery(monkeypatch: pytest.Mo
 
     missing = config.validate_env()
     assert not any(item.startswith("REDIS_URL") for item in missing)
+
+
+def test_storage_routing_falls_back_from_supabase_to_b2(monkeypatch: pytest.MonkeyPatch) -> None:
+    for key, value in {
+        "SUPABASE_URL": "https://example.supabase.co",
+        "SUPABASE_SERVICE_ROLE_KEY": "service",
+        "SUPABASE_STORAGE_BUCKET": "uploads",
+        "S3_ENDPOINT_URL": "https://s3.example.com",
+        "S3_ACCESS_KEY_ID": "key",
+        "S3_SECRET_ACCESS_KEY": "secret",
+        "S3_BUCKET": "uploads",
+        "S3_PUBLIC_BASE_URL": "https://cdn.example.com",
+    }.items():
+        monkeypatch.setenv(key, value)
+
+    calls: list[str] = []
+
+    def fail_supabase(*args, **kwargs):
+        calls.append("supabase")
+        raise RuntimeError("primary unavailable")
+
+    def succeed_b2(*args, **kwargs):
+        calls.append("b2")
+        return "https://cdn.example.com/file.pdf"
+
+    monkeypatch.setattr(storage, "_upload_supabase", fail_supabase)
+    monkeypatch.setattr(storage, "_upload_s3", succeed_b2)
+
+    backend, storage_class, url = storage.upload_routed(
+        BytesIO(b"document"),
+        "file.pdf",
+        "application/pdf",
+        1024,
+    )
+    assert backend == "b2"
+    assert storage_class == "supabase"
+    assert url.endswith("/file.pdf")
+    assert calls == ["supabase", "b2"]
+
+
+def test_storage_routing_requires_b2_public_base_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    for key, value in {
+        "S3_ENDPOINT_URL": "https://s3.example.com",
+        "S3_ACCESS_KEY_ID": "key",
+        "S3_SECRET_ACCESS_KEY": "secret",
+        "S3_BUCKET": "uploads",
+    }.items():
+        monkeypatch.setenv(key, value)
+    monkeypatch.delenv("S3_PUBLIC_BASE_URL", raising=False)
+
+    with pytest.raises(RuntimeError, match="S3_PUBLIC_BASE_URL"):
+        storage._upload_s3(BytesIO(b"payload"), "file.txt", "text/plain")
