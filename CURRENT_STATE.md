@@ -36,6 +36,9 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 
 ## 5. VERIFIED
 
+- **Cloudinary live E2E passed on 2026-10-08**: a real 1x1 PNG was uploaded to the connected Cloudinary account, retrieved by asset ID, verified for identity/size, and deleted successfully. Test asset: `logixa/release-gate-cloudinary-20261008`.
+- **QStash signed delivery + canonical workflow completion passed on 2026-10-08**: QStash message `msg_7YoJxFpwkEy5zBp2YxbmSsWDsqwAbXM5wtckxoReAkhqA6PJibwLF` reached the Render dispatch endpoint and the durable Supabase workflow run `release-gate-qstash-a1` completed with node `probe`; the scheduled job became `completed`.
+- **QStash duplicate-delivery protection passed on 2026-10-08**: a second direct QStash delivery for the same completed run did not add another execution-log entry; the durable run remained `completed` with exactly one `probe` execution entry. This is backed by the terminal-run guard added in commit `3c3e1ca8b7d8e8c07cc6eb53cfe5640d3cd4163a`.
 - Repository migration file `20261007_0011_agent_step_execution_metadata.py` revises `20261005_0010`.
 - **Live production Supabase migration history contains `20261007_0011` as the latest migration**, verified from the connected Supabase project on 2026-10-08. Evidence: Supabase project `ephrnmigiwjhdjksreos`, migration listing observed 2026-10-08; dashboard: `https://supabase.com/dashboard/project/ephrnmigiwjhdjksreos/database/migrations`.
 - Render configuration contains one Free Web Service and `CELERY_ENABLED=false`.
@@ -63,15 +66,12 @@ Current active closure tracks:
 
 ## 7. PENDING
 
-- Real Cloudinary E2E.
 - Real Supabase Storage E2E.
 - Real Backblaze B2 E2E.
 - Real Google Drive E2E.
-- Signed QStash delivery to the dispatch endpoint.
-- QStash → workflow completion verification.
 - Workflow retry/recovery verification.
 - Stale-claim recovery verification.
-- Duplicate-delivery protection verification.
+- Controlled failure/recovery verification.
 - Production authentication/API smoke tests.
 - Production monitoring/failure-mode checks.
 - End-to-end RAG ingest → embed → search.
@@ -94,10 +94,10 @@ No repository-level blocker is established. Some live gates require production c
 
 ## 10. REMAINING RELEASE GATES
 
-1. Real Cloudinary, Supabase Storage, B2, and Google Drive provider E2E passes.
-2. QStash signing and delivery are verified.
-3. QStash dispatch reaches the canonical workflow engine and PostgreSQL records completion.
-4. Retry, stale-claim recovery, failure recovery, and duplicate-delivery protection are verified.
+1. Real Supabase Storage, B2, and Google Drive provider E2E passes.
+2. Retry, stale-claim recovery, and failure recovery are verified.
+3. Duplicate-delivery protection is verified.
+4. QStash signing, delivery, and canonical workflow completion are verified.
 5. Production authentication/API smoke tests pass.
 6. Monitoring and failure-mode checks pass.
 7. Production RAG ingest → embed → search is verified.
@@ -118,7 +118,11 @@ Repository CI/CodeQL is already green and is no longer a release blocker.
 - Current repository tree contains no `UnifiedBackground2.tsx`; only archived historical documentation references it.
 - Latest `main` CI run #397: **success**.
 - Latest `main` CodeQL run #144: **success**.
-- Remaining release gates are still pending and were not inferred from repository presence alone.
+- Cloudinary live E2E passed with real upload/read/delete evidence.
+- QStash signed delivery and canonical workflow completion passed with durable PostgreSQL evidence.
+- Duplicate QStash delivery was acknowledged without re-executing the completed workflow.
+- A stale-claim production test was seeded but did not reach execution during the observation window; it remains pending rather than being inferred as verified.
+- Remaining provider/recovery gates are still pending and were not inferred from repository presence alone.
 
 ## 12. VERIFY
 
