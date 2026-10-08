@@ -49,7 +49,7 @@ Repository Alembic head is **20261008_0012**. Live production migration history 
 - **`UnifiedBackground2.tsx` is not present in the current repository tree; repository search on 2026-10-08 found only the archived historical documentation and the canonical note identifying the historical reference.** It is therefore not treated as an active component.
 - Deterministic RAG ingest → embed → search coverage is now present, and repeated brain publish is covered for idempotency. An owner-scoped chat transcript export is implemented with deterministic ordering and ownership tests.
 - **CI #450 / CodeQL #197 passed on the current hardening commit `115482a27a9c7d56294c8fe09940190555a8d7a1`.**
-- Production authentication is staged in `.github/workflows/production-auth-smoke.yml` using `PRODUCTION_ADMIN_EMAIL` / `PRODUCTION_ADMIN_PASSWORD`; isolated backup/restore is staged in `.github/workflows/production-backup-restore.yml` using `SUPABASE_DB_URL` / `SUPABASE_RESTORE_DB_URL`.
+- Production authentication is staged in `.github/workflows/production-auth-smoke.yml` using `PRODUCTION_ADMIN_EMAIL` / `PRODUCTION_ADMIN_PASSWORD`; isolated backup/restore is staged in `.github/workflows/production-backup-restore.yml` using `SUPABASE_DB_URL` / `SUPABASE_RESTORE_DB_URL`. The restore gate now checks the actual `scheduled_workflow_jobs` table.
 
 ## 6. IN PROGRESS
 
