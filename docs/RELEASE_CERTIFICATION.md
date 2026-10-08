@@ -12,7 +12,7 @@ Release certification requires repository CI/security validation, live provider 
 
 - Repository head: 20261008_0012.
 - Live production migration head: `20261008_0012_rag_observability`, applied and verified on 2026-10-08.
-- Latest fully green repository baseline: CI #414 / CodeQL #161 on 6301df760774a64a7d951ae42d76b9276cf039de.
+- Latest confirmed green repository validation: CI #450 / CodeQL #197 on `115482a27a9c7d56294c8fe09940190555a8d7a1`. Docs-only commits after this SHA do not trigger these workflows by design.
 - Cloudinary live E2E: VERIFIED 2026-10-08.
 - QStash signed delivery/completion/duplicate protection: VERIFIED 2026-10-08.
 - Supabase Storage: PENDING.
