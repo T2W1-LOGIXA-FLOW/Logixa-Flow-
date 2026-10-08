@@ -11,13 +11,13 @@ Final live-infrastructure verification and release-gate closure.
 
 ## 2. Current Phase
 
-Phase 7 — Live provider + workflow reliability closure.
+Phase 13 — Release certification and maintenance.
 
 ## 3. Overall Status
 
-**PENDING** — repository hardening and CI gates are green; release closure still depends on real production/provider evidence.
+**PENDING** — production migration 0012 is applied and repository-side release controls are staged; final certification still depends on live provider, recovery, monitoring, and release evidence.
 
-Repository Alembic head is **20261008_0012**. Live production Alembic head is **VERIFIED as 20261007_0011**; migration `20261008_0012` is pending production application.
+Repository Alembic head is **20261008_0012**. Live production migration history is now **VERIFIED through `20261008_0012_rag_observability`**, applied on 2026-10-08; production durability is now eligible for live telemetry verification.
 
 ## 4. COMPLETED
 
@@ -31,7 +31,7 @@ Repository Alembic head is **20261008_0012**. Live production Alembic head is **
 - RAG ingestion/search/reliability/quality features are implemented. Durable RAG observability event storage is now implemented in repository code; production durability is pending migration deployment.
 - Alembic migration `20261008_0012` is now the repository head and adds durable RAG observability events.
 - Documentation audit and Phase 0 ledgers are complete.
-- Latest fully green baseline is CI #414 / CodeQL #161 on `6301df760774a64a7d951ae42d76b9276cf039de`. Scheduled workflow delay semantics were added to deterministic coverage and the complete repository CI/security validation passed.
+- Latest fully green repository baseline remains CI #414 / CodeQL #161 on `6301df760774a64a7d951ae42d76b9276cf039de`; new post-baseline changes require a fresh green validation before certification.
 
 ## 5. VERIFIED
 
@@ -45,10 +45,10 @@ Repository Alembic head is **20261008_0012**. Live production Alembic head is **
 - Frontend declares Next.js `^15.5.24`; **package-lock.json resolves Next.js to `15.5.27`**, verified from the committed lockfile on 2026-10-08.
 - Admin AI defaults are represented as enabled while public AI defaults are represented as disabled.
 - Vercel override configuration was intentionally removed and its re-enable path is operationally locked.
-- Phase 11 foundation is implemented: durable RAG error/quality telemetry storage and migration are present; alert delivery, retention/export, experiment analysis, and production verification remain.
+- Phase 11 foundation is implemented: durable RAG error/quality telemetry storage is now deployed in production via migration 0012; alert delivery, retention/export, experiment analysis, and production verification remain.
 - **`UnifiedBackground2.tsx` is not present in the current repository tree; repository search on 2026-10-08 found only the archived historical documentation and the canonical note identifying the historical reference.** It is therefore not treated as an active component.
 - Deterministic RAG ingest → embed → search coverage is now present, and repeated brain publish is covered for idempotency. An owner-scoped chat transcript export is implemented with deterministic ordering and ownership tests.
-- **CI/CodeQL must re-run for the new migration, durable observability, and publication-gate changes before they become the next fully green baseline.**
+- **CI/CodeQL must re-run for all post-#414 changes before release certification.**
 
 ## 6. IN PROGRESS
 
@@ -128,4 +128,4 @@ Repository CI/CodeQL is green at #406/#153 on `6301df760774a64a7d951ae42d76b9276
 
 ## 13. NEXT ACTION
 
-Continue Phase 7/8 live gates while repository-side Phase 9–11 foundations continue: approval-gated publication, durable RAG observability, and migration lifecycle coverage are now staged. Apply `20261008_0012` to production, then run the manual live gates. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate.
+Continue Phase 7/8 live gates while repository-side Phase 9–11 foundations continue: approval-gated publication, durable RAG observability, and migration lifecycle coverage are now staged. Production migration 0012 is applied. Next: execute remaining manual live gates, recovery drills, SLO/error-budget review, then freeze only with complete evidence. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate.
