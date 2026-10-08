@@ -4,6 +4,7 @@ import logging
 import os
 import threading
 import time
+import json
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
@@ -51,6 +52,7 @@ from ..schemas import (
     RAGABTestConfig,
 )
 from ..security import require_admin, require_admin_or_agent_service
+from ..rag.observability import record_event
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -118,7 +120,7 @@ def _generate_alert_if_needed() -> None:
     _dispatch_alert(alert)
 
 
-def _record_error(operation: str, error_type: str) -> None:
+def _record_error(operation: str, error_type: str, db: Session | None = None) -> None:
     _error_events.append(
         {
             "operation": operation,
@@ -127,6 +129,12 @@ def _record_error(operation: str, error_type: str) -> None:
         }
     )
     del _error_events[:-5000]
+    if db is not None:
+        try:
+            record_event(db, "error", operation, {"error_type": error_type})
+            db.commit()
+        except Exception:
+            db.rollback()
     _generate_alert_if_needed()
 
 
@@ -153,6 +161,7 @@ def _run_ingestion(
     operation: Callable[[], dict],
     *,
     operation_name: str,
+    db: Session | None = None,
 ) -> dict:
     correlation_id = uuid4()
     last_error: Exception | None = None
@@ -170,7 +179,7 @@ def _run_ingestion(
             _error_counts["ingestion"] += 1
             error_type = _classify_ingestion_error(error)
             retryable = error_type == RAGIngestionErrorType.transient and attempt < MAX_INGEST_ATTEMPTS
-            _record_error("ingestion", error_type.value)
+            _record_error("ingestion", error_type.value, db)
             logger.warning(
                 "RAG ingestion failed",
                 extra={
@@ -312,7 +321,7 @@ def _search_results(
     return result
 
 
-def _run_search(operation: Callable[[], dict], *, operation_name: str) -> dict:
+def _run_search(operation: Callable[[], dict], *, operation_name: str, db: Session | None = None) -> dict:
     correlation_id = uuid4()
     last_error: Exception | None = None
     for attempt in range(1, MAX_SEARCH_ATTEMPTS + 1):
@@ -325,7 +334,7 @@ def _run_search(operation: Callable[[], dict], *, operation_name: str) -> dict:
             last_error = error
             error_type = _classify_search_error(error)
             _error_counts["search"] += 1
-            _record_error("search", error_type.value)
+            _record_error("search", error_type.value, db)
             threshold = _current_alert_threshold()
             logger.warning(
                 "RAG search failed",
@@ -604,15 +613,19 @@ def rag_status(
 @router.get("/admin/rag/metrics")
 def rag_metrics(
     hours: int = Query(default=24, ge=1, le=168),
+    db: Session = Depends(get_db),
     _: dict = Depends(require_admin),
 ) -> dict:
     now = datetime.now(UTC)
     cutoff = now - timedelta(hours=hours)
-    events = [
-        event
-        for event in _error_events
-        if datetime.fromisoformat(event["timestamp"]) >= cutoff
-    ]
+    events = [event for event in _error_events if datetime.fromisoformat(event["timestamp"]) >= cutoff]
+    try:
+        rows = db.execute(__import__("sqlalchemy").text("SELECT operation, payload, created_at FROM rag_observability_events WHERE event_type = 'error' AND created_at >= :cutoff ORDER BY created_at ASC"), {"cutoff": cutoff}).mappings().all()
+        for row in rows:
+            payload = json.loads(row["payload"] or "{}")
+            events.append({"operation": row["operation"], "error_type": payload.get("error_type", "unknown"), "timestamp": row["created_at"].isoformat()})
+    except Exception:
+        db.rollback()
     total_errors = len(events)
     by_type_counts: dict[str, int] = {}
     for event in events:
@@ -690,21 +703,32 @@ def rag_performance(_: dict = Depends(require_admin)) -> dict:
 @router.post("/admin/rag/quality/feedback")
 def rag_quality_feedback(
     feedback: RAGFeedback,
+    db: Session = Depends(get_db),
     _: dict = Depends(require_admin),
 ) -> dict:
     with _quality_lock:
         _quality_feedback.append(feedback)
         del _quality_feedback[:-5000]
         count = len(_quality_feedback)
+    try:
+        record_event(db, "quality_feedback", "rag_search", feedback.model_dump(mode="json"))
+        db.commit()
+    except Exception:
+        db.rollback()
     logger.info("RAG quality feedback recorded", extra={"operation": "quality_feedback", "feedback_count": count})
     return {"accepted": True, "feedback_count": count}
 
 
 @router.get("/admin/rag/quality")
-def rag_quality(_: dict = Depends(require_admin)) -> dict:
+def rag_quality(db: Session = Depends(get_db), _: dict = Depends(require_admin)) -> dict:
     with _quality_lock:
         feedback = list(_quality_feedback)
         ab_test = _ab_test
+    try:
+        rows = db.execute(__import__("sqlalchemy").text("SELECT payload FROM rag_observability_events WHERE event_type = 'quality_feedback' ORDER BY created_at ASC")).mappings().all()
+        feedback.extend(RAGFeedback.model_validate(json.loads(row["payload"])) for row in rows)
+    except Exception:
+        db.rollback()
     count = len(feedback)
     average_rating = sum(item.rating for item in feedback) / count if count else 0.0
     helpful_rate = sum(item.helpful for item in feedback) / count if count else 0.0
@@ -737,12 +761,18 @@ def rag_quality_ab_test(_: dict = Depends(require_admin)) -> dict:
 @router.post("/admin/rag/quality/ab-test")
 def rag_quality_ab_test_config(
     config: RAGABTestConfig,
+    db: Session = Depends(get_db),
     _: dict = Depends(require_admin),
 ) -> dict:
     global _ab_test
     with _quality_lock:
         _ab_test = config
-    return {"config": config.model_dump(mode="json"), "persistent": False}
+    try:
+        record_event(db, "ab_test_config", "rag_quality", config.model_dump(mode="json"))
+        db.commit()
+    except Exception:
+        db.rollback()
+    return {"config": config.model_dump(mode="json"), "persistent": True}
 
 
 @router.get("/admin/rag/alerts")
