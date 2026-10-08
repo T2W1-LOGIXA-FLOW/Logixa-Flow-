@@ -40,6 +40,31 @@ async def test_execution_queue_prioritizes_jobs() -> None:
     assert workflow_router._EXECUTION_QUEUE[1]["run_id"] == "run-low"
 
 
+def test_schedule_run_preserves_delay_and_priority_in_local_queue(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeDB:
+        bind = None
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(workflow_router, "SessionLocal", lambda: FakeDB())
+    workflow_router._WORKFLOW_RUNS["scheduled-run"] = WorkflowRunOut(
+        run_id="scheduled-run",
+        workflow_id="scheduled-workflow",
+        state=WorkflowState(status="queued"),
+    )
+
+    before = workflow_router._now()
+    workflow_router._schedule_run("scheduled-run", priority=7, delay_seconds=30)
+
+    assert len(workflow_router._EXECUTION_QUEUE) == 1
+    item = workflow_router._EXECUTION_QUEUE[0]
+    assert item["run_id"] == "scheduled-run"
+    assert item["priority"] == 7
+    assert item["scheduled_for"] >= before
+    assert 29 <= (item["scheduled_for"] - item["queued_at"]).total_seconds() <= 31
+
+
 @pytest.mark.anyio
 async def test_node_dependencies_and_registered_actions() -> None:
     workflow = WorkflowStorageCreate(
@@ -64,8 +89,6 @@ async def test_node_dependencies_and_registered_actions() -> None:
     assert run.state.status == "completed"
     assert run.state.completed_nodes == ["first", "second"]
     assert workflow_router._EXECUTION_METRICS[run.run_id]["metadata"]["attempt"] == 2
-
-
 
 
 @pytest.mark.anyio
@@ -93,6 +116,7 @@ async def test_error_handling_rolls_back_failed_run() -> None:
     assert run.state.status == "failed"
     assert run.state.completed_nodes == []
     assert workflow_router._ERROR_NOTIFICATIONS[-1]["message"]
+
 
 @pytest.mark.anyio
 async def test_approval_node_pauses_and_can_resume_after_admin_approval() -> None:
