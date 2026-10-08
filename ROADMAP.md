@@ -20,8 +20,8 @@ Status: DONE / VERIFIED at repository level. Repository evidence includes the ca
 Objective: close evidence-based release gates without changing the current architecture merely to satisfy documentation.
 
 Current verified baseline:
-- Latest-main CI is green: CI run #397 on commit `c26a8bc3`.
-- Latest-main CodeQL is green: CodeQL run #144 on commit `c26a8bc3`.
+- Latest-main CI is green: CI run #402 on commit `34137b30527bbce0975d78ca4b554cb2291af68c`.
+- Latest-main CodeQL is green: CodeQL run #149 on commit `34137b30527bbce0975d78ca4b554cb2291af68c`.
 
 Remaining acceptance criteria:
 - Supabase Storage, B2, and Google Drive E2E pass with real infrastructure.
@@ -45,7 +45,7 @@ Verification rule: implementation, configuration, or unit tests do not substitut
 ### Phase 7 — Live provider + workflow reliability closure
 Status: ACTIVE.
 - Close Supabase Storage, Backblaze B2, and Google Drive real E2E.
-- Verify retry/recovery, stale-claim reclamation, controlled failure recovery, and duplicate delivery.
+- Verify retry/recovery, live stale-claim reclamation, controlled failure recovery, and duplicate delivery. Deterministic stale-claim reclamation coverage is already green.
 - Keep all live tests opt-in and secret-free in CI.
 - Exit gate: every item has direct production/provider evidence or an explicit documented blocker.
 
@@ -135,39 +135,39 @@ None established by repository evidence. Live tests may remain operationally una
 
 ## Remaining Work — Future Product/Operations
 
-18. Universal source → publish E2E.
-19. Source provenance preservation to file/page/sheet/row/URL.
-20. SEO/news quality validation.
-21. Paginated chat restore.
-22. Transcript export.
-23. Explicit retention controls.
-24. Administrator lookup.
-25. Transfer confirmation.
-26. Role-based transfer permissions.
-27. Reviewable retention policy.
-28. Approved purge workflow.
-29. Session activity search.
-30. Operational audit reporting for sessions.
-31. Persist RAG metrics/alert history.
-32. Real notification adapter.
-33. Rate/window alert policies.
-34. Durable alert retention/pagination/export.
-35. Read-only/configuration role separation for RAG dashboard.
-36. Durable quality feedback.
-37. Experiment assignment/statistical analysis.
-38. Cancellable async search.
-39. Database index telemetry.
-40. Isolated backend test database/fixtures.
-41. Supported notification provider/threat-model decision.
-42. Durable metrics retention + deduplication.
-43. Correlation-ID investigation runbook.
-44. Threshold-tuning runbook.
-45. Future complex AI workflows.
-46. More external integrations.
-47. Stronger durable job execution.
-48. Expanded RAG capabilities.
-49. Advanced analytics/business intelligence.
-50. Broader observability/operational controls.
-51. Broader supply-chain intelligence coverage.
+1. Universal source → publish E2E.
+2. Source provenance preservation to file/page/sheet/row/URL.
+3. SEO/news quality validation.
+4. Paginated chat restore.
+5. Transcript export.
+6. Explicit retention controls.
+7. Administrator lookup.
+8. Transfer confirmation.
+9. Role-based transfer permissions.
+10. Reviewable retention policy.
+11. Approved purge workflow.
+12. Session activity search.
+13. Operational audit reporting for sessions.
+14. Persist RAG metrics/alert history.
+15. Real notification adapter.
+16. Rate/window alert policies.
+17. Durable alert retention/pagination/export.
+18. Read-only/configuration role separation for RAG dashboard.
+19. Durable quality feedback.
+20. Experiment assignment/statistical analysis.
+21. Cancellable async search.
+22. Database index telemetry.
+23. Isolated backend test database/fixtures.
+24. Supported notification provider/threat-model decision.
+25. Durable metrics retention + deduplication.
+26. Correlation-ID investigation runbook.
+27. Threshold-tuning runbook.
+28. Future complex AI workflows.
+29. More external integrations.
+30. Stronger durable job execution.
+31. Expanded RAG capabilities.
+32. Advanced analytics/business intelligence.
+33. Broader observability/operational controls.
+34. Broader supply-chain intelligence coverage.
 
-CI/CodeQL are intentionally not listed as remaining work because the latest validated main runs are green. Cloudinary and the core QStash delivery/completion/idempotency path are also no longer listed as remaining work because they have real evidence.
+CI/CodeQL are intentionally not listed as remaining work because CI #402 and CodeQL #149 are green on `34137b30527bbce0975d78ca4b554cb2291af68c`. Cloudinary and the core QStash delivery/completion/idempotency path are also no longer listed as remaining work because they have real evidence.
