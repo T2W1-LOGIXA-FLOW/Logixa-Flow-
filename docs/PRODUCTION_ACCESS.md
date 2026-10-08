@@ -16,7 +16,7 @@ For the release gate, use a dedicated temporary production test-admin account. D
 2. Set that user's password to a unique temporary value.
 3. Ensure the user's app_metadata contains {"role":"admin"}.
 4. In GitHub → Settings → Environments → production → Secrets, add:
-   - PRODUCTION_TEST_ADMIN_EMAIL
+   - PRODUCTION_ADMIN_EMAIL
    - PRODUCTION_TEST_ADMIN_PASSWORD
    - SUPABASE_PUBLISHABLE_KEY
    - PRODUCTION_API_URL — normally https://logixa-flow.onrender.com
