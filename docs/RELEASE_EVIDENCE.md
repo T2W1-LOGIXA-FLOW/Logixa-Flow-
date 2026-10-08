@@ -7,7 +7,8 @@
 This is the canonical evidence checklist for the Phase 7–13 release candidate. Evidence must identify the exact SHA, environment, timestamp, and observed durable outcome where applicable.
 
 ## Repository
-- [ ] Release SHA fixed.
+- [ ] Vercel integration check is green on the current main head. The current documentation-only head is blocked by the Vercel Hobby build-rate limit; the last READY production deployment remains healthy.- [ ] Release SHA fixed.
+- [x] Repository/infrastructure audit completed 2026-10-09; findings are recorded in `docs/REPO_INFRA_AUDIT.md`.
 - [x] Repository CI green on current hardening SHA `115482a27a9c7d56294c8fe09940190555a8d7a1` (CI #450).
 - [x] CodeQL/security checks green on current hardening SHA `115482a27a9c7d56294c8fe09940190555a8d7a1` (CodeQL #197).
 - [ ] Dependency/license/security refresh reviewed.
