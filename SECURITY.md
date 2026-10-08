@@ -27,7 +27,7 @@ Admin chat sessions are owner-scoped. Foreign, inactive, and ownerless sessions 
 
 The backend owns application database access. The frontend must not receive service-role credentials. RLS is defense-in-depth and does not replace API authorization. Avoid broad grants or permissive policies solely to silence advisor output.
 
-Schema changes use Alembic. Repository migration head is 20261007_0011; live production head is 20261007_0011, verified 2026-10-08 from the connected Supabase migration history.
+Schema changes use Alembic. Repository migration head is 20261008_0012; live production head is 20261008_0012, verified 2026-10-08 from the connected Supabase migration history.
 
 ## Service role and secrets
 
@@ -47,7 +47,7 @@ Sanitize provider/database errors before returning or logging them. Preserve cor
 
 ## Dependency security
 
-Dependabot and CI security checks are part of the repository security process. Major framework upgrades require compatibility review rather than automatic acceptance. Runtime dependencies remain subject to high/critical security gates as configured by CI.
+Dependabot and CI security checks are part of the repository security process. Major framework upgrades require compatibility review rather than automatic acceptance. Next.js is aligned to the patched 15.5.27 line. The latest Vercel production build still reports 9 npm audit findings (2 moderate, 7 high); these remain an open supply-chain gate until package-level root causes are resolved or explicitly accepted.
 
 ## AI safety
 
@@ -61,9 +61,15 @@ Vercel override configuration was intentionally removed. If Vercel is disabled o
 
 Preserve affected run/session identifiers, timestamps, correlation IDs, sanitized logs, and provider response classes. Do not place credentials or raw secrets in incidents. Escalate authorization, secret exposure, data-access, or production integrity issues before applying destructive changes.
 
+## Operational security exceptions
+
+Supabase Auth leaked-password protection is currently unavailable on the project's plan and is treated as an explicit plan limitation rather than a falsely claimed control. Compensating controls are strong admin authorization, dedicated production test accounts for release gates, backend token validation, and short-lived operational test credentials.
+
+Production authenticated access and backup/restore remain manual release gates. Database restore drills must target an isolated environment; never restore over production as part of certification.
+
 ## Deferred risks
 
-Live provider/storage verification, live production migration state, full durable RAG operations, broader retention controls, and other items listed in CURRENT_STATE.md and ROADMAP.md remain explicit verification or future-work areas.
+Live provider/storage verification, full durable RAG operations, broader retention controls, dependency findings noted above, and other items listed in CURRENT_STATE.md and ROADMAP.md remain explicit verification or future-work areas.
 
 ## Verification checklist
 
