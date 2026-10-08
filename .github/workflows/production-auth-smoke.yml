@@ -13,7 +13,7 @@ jobs:
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-      TEST_EMAIL: ${{ secrets.PRODUCTION_TEST_ADMIN_EMAIL }}
+      TEST_EMAIL: ${{ secrets.PRODUCTION_ADMIN_EMAIL }}
       TEST_PASSWORD: ${{ secrets.PRODUCTION_TEST_ADMIN_PASSWORD }}
       PRODUCTION_API_URL: ${{ secrets.PRODUCTION_API_URL }}
     steps:
