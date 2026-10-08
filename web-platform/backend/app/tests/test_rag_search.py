@@ -134,5 +134,6 @@ def test_reingest_replaces_source_chunks_without_duplicates(monkeypatch, db: Ses
     )
 
     assert len(rows) == 1
-    assert rows[0].content == "Reingest source\n\nUpdated source content"
+    assert rows[0].content == "Reingest source Updated source content"
+    assert "Initial source content" not in rows[0].content
     assert rows[0].embedding_model == "test-embedding"
