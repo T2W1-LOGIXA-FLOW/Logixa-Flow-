@@ -63,7 +63,7 @@ Preserve affected run/session identifiers, timestamps, correlation IDs, sanitize
 
 ## Deferred risks
 
-Live provider/storage verification, live production migration state, durable RAG observability/feedback, broader retention controls, and other items listed in CURRENT_STATE.md and ROADMAP.md remain explicit verification or future-work areas.
+Live provider/storage verification, live production migration state, full durable RAG operations, broader retention controls, and other items listed in CURRENT_STATE.md and ROADMAP.md remain explicit verification or future-work areas.
 
 ## Verification checklist
 
