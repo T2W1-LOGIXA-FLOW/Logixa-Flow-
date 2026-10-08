@@ -115,13 +115,13 @@ None established by repository evidence. Live tests may remain operationally una
 5. Stale-claim recovery verification.
 6. Controlled failure/recovery verification.
 7. Production authentication/API smoke tests.
-11. Production monitoring/failure-mode checks.
-12. E2E RAG ingest → embed → search.
-13. Agent → Brain → publish E2E.
-14. Workflow approval → resume → completion.
-15. Scheduled workflow over a real time boundary.
-16. Newsletter delivery E2E.
-17. Controlled external-provider failover test.
+8. Production monitoring/failure-mode checks.
+9. E2E RAG ingest → embed → search.
+10. Agent → Brain → publish E2E.
+11. Workflow approval → resume → completion.
+12. Scheduled workflow over a real time boundary.
+13. Newsletter delivery E2E.
+14. Controlled external-provider failover test.
 
 ## Remaining Work — Future Product/Operations
 
