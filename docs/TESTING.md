@@ -20,7 +20,7 @@ A unit test proves its tested path, not external-provider health. Configured cre
 
 ## Current evidence
 
-Repository migration lifecycle tests identify 20261007_0011 as the current repository head. Live production migration history independently verifies 20261007_0011 on 2026-10-08.
+Repository migration lifecycle tests identify 20261008_0012 as the current repository head. Live production migration history independently verifies 20261007_0011 on 2026-10-08; the new 0012 migration must be applied before production durability claims.
 
 Latest main release validation is green: CI #414 and CodeQL #161 both succeeded on `6301df760774a64a7d951ae42d76b9276cf039de`.
 
@@ -59,3 +59,8 @@ Secrets are consumed only by the workflow environment and are not stored in the 
 ## Phase 9–10 deterministic additions
 
 The repository-side hardening suite now proves that a completed brain item cannot create duplicate posts when publish is repeated, and that chat transcript export is owner-scoped, excludes inactive sessions, and emits messages in stable chronological order. These are implementation invariants; live Agent → Brain → publish and authenticated production session verification remain separate release gates.
+
+
+## Phase 9–11 hardening coverage
+
+Publication now has a deterministic approval/content gate in addition to publish idempotency. RAG observability has a durable event table and migration; deterministic tests cover event persistence. Durable production metrics are not considered live-verified until migration 0012 is applied and production telemetry is observed.
