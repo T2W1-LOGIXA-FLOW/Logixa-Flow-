@@ -97,6 +97,16 @@ Status: PRE-STAGED.
 - Broader supply-chain intelligence coverage.
 - Final release regression, security, dependency, and operational review.
 
+### Phase 13 — Release certification and maintenance
+Status: PRE-STAGED.
+- Formal release-candidate checklist and evidence index.
+- Dependency/license/security refresh after feature closure.
+- Backup/restore drill and data-integrity verification.
+- Disaster-recovery and rollback rehearsal.
+- Production SLO/error-budget review and operational ownership.
+- Documentation freeze/release notes after evidence reconciliation.
+- Exit gate: release candidate is reproducible, rollback-capable, monitored, and fully documented.
+
 ## Deferred Items
 
 - Final AI-agent live verification requiring real provider credentials and authenticated production tests.
