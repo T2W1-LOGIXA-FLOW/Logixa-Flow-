@@ -62,3 +62,32 @@ def test_cleanup_soft_deletes_only_owned_stale_sessions(db):
     result = chat.cleanup_chat_sessions(older_than_days=30, db=db, admin=admin("owner-a"))
     assert result["cleaned"] == 1
     assert db.query(models.ChatSession).one().is_active is False
+
+
+
+def test_transcript_export_is_owner_scoped_and_ordered(db):
+    session = models.ChatSession(
+        session_id="exportable",
+        owner_id="owner-a",
+        title="Exportable",
+        agent_id="default",
+        is_active=True,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    db.add_all([
+        models.ChatMessage(session_id=session.id, role="user", content="first", created_at=datetime.now(timezone.utc)),
+        models.ChatMessage(session_id=session.id, role="agent", content="second", created_at=datetime.now(timezone.utc)),
+    ])
+    db.commit()
+
+    exported = chat.export_chat_session("exportable", db=db, admin=admin("owner-a"))
+    assert exported["session"]["session_id"] == "exportable"
+    assert [item["content"] for item in exported["messages"]] == ["first", "second"]
+
+    with pytest.raises(Exception) as exc_info:
+        chat.export_chat_session("exportable", db=db, admin=admin("owner-b"))
+    assert getattr(exc_info.value, "status_code", None) == 404
