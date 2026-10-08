@@ -17,7 +17,7 @@ Phase 7 — Live provider + workflow reliability closure.
 
 **PENDING** — repository hardening and CI gates are green; release closure still depends on real production/provider evidence.
 
-Repository Alembic head is **20261007_0011**. Live production Alembic head is **VERIFIED as 20261007_0011**.
+Repository Alembic head is **20261008_0012**. Live production Alembic head is **VERIFIED as 20261007_0011**; migration `20261008_0012` is pending production application.
 
 ## 4. COMPLETED
 
@@ -28,8 +28,8 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 - `CELERY_ENABLED=false` is the configured Render Free mode; Celery/Redis remain optional when explicitly enabled.
 - Storage routing code exists for Cloudinary, Supabase Storage, and S3-compatible/B2 paths; Google Drive export/backup code exists.
 - Public AI and admin AI are independently gated; public AI defaults off in the configured production model.
-- RAG ingestion/search/reliability/quality features are implemented, with documented process-local limitations for several observability and feedback features.
-- Alembic migration `20261007_0011` exists and the migration lifecycle test declares it as the repository current head.
+- RAG ingestion/search/reliability/quality features are implemented. Durable RAG observability event storage is now implemented in repository code; production durability is pending migration deployment.
+- Alembic migration `20261008_0012` is now the repository head and adds durable RAG observability events.
 - Documentation audit and Phase 0 ledgers are complete.
 - Latest fully green baseline is CI #414 / CodeQL #161 on `6301df760774a64a7d951ae42d76b9276cf039de`. Scheduled workflow delay semantics were added to deterministic coverage and the complete repository CI/security validation passed.
 
@@ -45,10 +45,10 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 - Frontend declares Next.js `^15.5.24`; **package-lock.json resolves Next.js to `15.5.27`**, verified from the committed lockfile on 2026-10-08.
 - Admin AI defaults are represented as enabled while public AI defaults are represented as disabled.
 - Vercel override configuration was intentionally removed and its re-enable path is operationally locked.
-- RAG alert history, feedback, A/B configuration, and related metrics are process-local rather than durable; this remains a Phase 11 durability gap.
+- Phase 11 foundation is implemented: durable RAG error/quality telemetry storage and migration are present; alert delivery, retention/export, experiment analysis, and production verification remain.
 - **`UnifiedBackground2.tsx` is not present in the current repository tree; repository search on 2026-10-08 found only the archived historical documentation and the canonical note identifying the historical reference.** It is therefore not treated as an active component.
 - Deterministic RAG ingest → embed → search coverage is now present, and repeated brain publish is covered for idempotency. An owner-scoped chat transcript export is implemented with deterministic ordering and ownership tests.
-- **CI #414: success and CodeQL #161: success on `6301df760774a64a7d951ae42d76b9276cf039de`. New hardening commits are awaiting CI/CodeQL before becoming the next fully green baseline.**
+- **CI/CodeQL must re-run for the new migration, durable observability, and publication-gate changes before they become the next fully green baseline.**
 
 ## 6. IN PROGRESS
 
@@ -88,7 +88,7 @@ No repository-level blocker is established. A manual production live-gate workfl
 
 - Universal source → publish E2E until storage/provider, provenance, SEO, fact/source QA, and human-approval evidence exists.
 - Longer-term session retention/purge/search controls; transcript export is now implemented.
-- Durable RAG observability/feedback and experimentation.
+- Remaining Phase 11 RAG operations: durable alert lifecycle, notification adapter, retention/export, experiment statistics, and index telemetry.
 - Broader future AI workflows, integrations, analytics, observability, and supply-chain intelligence expansion.
 
 ## 10. REMAINING RELEASE GATES
@@ -128,4 +128,4 @@ Repository CI/CodeQL is green at #406/#153 on `6301df760774a64a7d951ae42d76b9276
 
 ## 13. NEXT ACTION
 
-Continue Phase 7 closure through the new manual `.github/workflows/live-release-gates.yml`: provider E2E and recovery gates are next; deterministic claim/idempotency/retry, RAG re-ingestion, and scheduled-delay coverage is green, while live stale-claim/retry/failure recovery still requires production evidence. Phase 8–12 are pre-staged in `ROADMAP.md` so the next implementation batch can begin immediately after Phase 7. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate in every update.
+Continue Phase 7/8 live gates while repository-side Phase 9–11 foundations continue: approval-gated publication, durable RAG observability, and migration lifecycle coverage are now staged. Apply `20261008_0012` to production, then run the manual live gates. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate.
