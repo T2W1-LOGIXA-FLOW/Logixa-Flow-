@@ -11,7 +11,7 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 - [x] Repository CI green on current hardening SHA `115482a27a9c7d56294c8fe09940190555a8d7a1` (CI #450).
 - [x] CodeQL/security checks green on current hardening SHA `115482a27a9c7d56294c8fe09940190555a8d7a1` (CodeQL #197).
 - [ ] Dependency/license/security refresh reviewed.
-- [ ] Repository migration head equals intended release migration head.
+- [x] Repository migration head equals intended release migration head: `20261008_0012`.
 
 ## Production database
 - [x] Supabase migration 20261008_0012_rag_observability applied on 2026-10-08.
@@ -40,7 +40,7 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 - [ ] Controlled provider failover evidence.
 
 ## Recovery
-- [ ] Production backup/snapshot identified and restorable.
+- [ ] Production logical backup workflow staged; live backup/restore run still required.
 - [ ] Isolated restore completed and integrity checks passed. Workflow is staged; live run remains required.
 - [ ] Object-storage recovery checked.
 - [ ] Application rollback rehearsal completed.
