@@ -8,8 +8,8 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 
 ## Repository
 - [ ] Release SHA fixed.
-- [x] Repository CI green on current hardening SHA `337cf77b8cc8fe721398e09e58305bd1d1baac8e` (CI #445).
-- [x] CodeQL/security checks green on current hardening SHA `337cf77b8cc8fe721398e09e58305bd1d1baac8e` (CodeQL #192).
+- [x] Repository CI green on current hardening SHA `115482a27a9c7d56294c8fe09940190555a8d7a1` (CI #450).
+- [x] CodeQL/security checks green on current hardening SHA `115482a27a9c7d56294c8fe09940190555a8d7a1` (CodeQL #197).
 - [ ] Dependency/license/security refresh reviewed.
 - [ ] Repository migration head equals intended release migration head.
 
