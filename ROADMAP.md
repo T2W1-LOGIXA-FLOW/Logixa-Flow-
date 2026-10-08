@@ -24,10 +24,11 @@ Current verified baseline:
 - Latest-main CodeQL is green: CodeQL run #144 on commit `c26a8bc3`.
 
 Remaining acceptance criteria:
-- Cloudinary, Supabase Storage, B2, and Google Drive E2E pass with real infrastructure.
-- QStash signature verification and delivery to /api/admin/workflow/qstash-dispatch pass.
-- Canonical workflow completion is persisted in PostgreSQL.
-- Retry, stale-claim recovery, failure recovery, and duplicate-delivery protection are verified.
+- Supabase Storage, B2, and Google Drive E2E pass with real infrastructure.
+- Retry, stale-claim recovery, and failure recovery are verified.
+- Duplicate-delivery protection remains verified.
+- QStash signature verification, delivery, and canonical workflow completion remain verified.
+- Cloudinary E2E remains verified.
 - Production authentication/API smoke tests pass.
 - Monitoring and failure-mode checks pass.
 - RAG ingest → embed → search passes.
@@ -95,16 +96,13 @@ None established by repository evidence. Live tests may remain operationally una
 
 ## Remaining Work — Release Closure
 
-1. Real Cloudinary E2E.
-2. Real Supabase Storage E2E.
-3. Real Backblaze B2 E2E.
-4. Real Google Drive E2E.
-5. Signed QStash delivery verification.
-6. QStash → workflow completion verification.
-7. Workflow retry/recovery verification.
-8. Stale-claim recovery verification.
-9. Duplicate-delivery protection verification.
-10. Production authentication/API smoke tests.
+1. Real Supabase Storage E2E.
+2. Real Backblaze B2 E2E.
+3. Real Google Drive E2E.
+4. Workflow retry/recovery verification.
+5. Stale-claim recovery verification.
+6. Controlled failure/recovery verification.
+7. Production authentication/API smoke tests.
 11. Production monitoring/failure-mode checks.
 12. E2E RAG ingest → embed → search.
 13. Agent → Brain → publish E2E.
@@ -150,5 +148,4 @@ None established by repository evidence. Live tests may remain operationally una
 50. Broader observability/operational controls.
 51. Broader supply-chain intelligence coverage.
 
-CI/CodeQL are intentionally not listed as remaining work because the latest main runs are green.
-
+CI/CodeQL are intentionally not listed as remaining work because the latest validated main runs are green. Cloudinary and the core QStash delivery/completion/idempotency path are also no longer listed as remaining work because they have real evidence.
