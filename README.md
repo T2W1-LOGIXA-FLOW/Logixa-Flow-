@@ -17,7 +17,7 @@ Source / File / User Input → Ingestion → RAG / AI → Review / Decision → 
 
 Next.js / React frontend → FastAPI backend → Supabase PostgreSQL + pgvector, with external AI, storage, QStash, Google Drive, and other integrations.
 
-The canonical workflow implementation is web-platform/backend/app/routers/workflow.py. PostgreSQL is the durable workflow/run source of truth. The current Render Free path uses QStash delivery and in-process canonical execution with CELERY_ENABLED=false.
+The canonical workflow implementation is `web-platform/backend/app/routers/workflow.py`. PostgreSQL is the durable workflow/run source of truth. The current Render Free path uses QStash delivery and in-process canonical execution with `CELERY_ENABLED=false`.
 
 ## Technology stack
 
@@ -31,13 +31,13 @@ AI: Gemini plus a multi-provider router, embeddings, RAG, AI Memory/Brain, agent
 
 Infrastructure: GitHub, Render, optional/locked Vercel frontend deployment, QStash, Cloudinary, Supabase Storage, Backblaze B2/S3-compatible storage, Google Drive.
 
-Frontend dependency declaration currently specifies Next.js ^15.5.24. The exact resolved version is VERIFY.
+Frontend dependency declaration: Next.js `^15.5.24`; committed `package-lock.json` resolves Next.js to **15.5.27** (verified 2026-10-08).
 
 ## Current snapshot
 
 Repository Alembic head: 20261007_0011.
 
-Live production Alembic head: VERIFY.
+Live production Supabase migration head: **20261007_0011** (verified 2026-10-08).
 
 Public AI default: disabled. Admin AI default: enabled in repository configuration. Provider implementation/configuration/live health are tracked separately.
 
