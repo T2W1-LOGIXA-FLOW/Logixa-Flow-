@@ -1,7 +1,6 @@
 name: Production Auth Smoke
 
-on:
-  workflow_dispatch:
+on: [workflow_dispatch]
 
 permissions:
   contents: read
