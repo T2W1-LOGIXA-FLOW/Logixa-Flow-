@@ -11,7 +11,7 @@ Final live-infrastructure verification and release-gate closure.
 
 ## 2. Current Phase
 
-Final live-infrastructure verification and documentation reconciliation.
+Phase 7 — Live provider + workflow reliability closure.
 
 ## 3. Overall Status
 
@@ -31,8 +31,7 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 - RAG ingestion/search/reliability/quality features are implemented, with documented process-local limitations for several observability and feedback features.
 - Alembic migration `20261007_0011` exists and the migration lifecycle test declares it as the repository current head.
 - Documentation audit and Phase 0 ledgers are complete.
-- Latest `main` CI release run is green.
-- Latest `main` CodeQL run is green.
+- Latest `main` CI/CodeQL rerun is in progress on commit `9321ed377c149e31f117935bedaa2918d27c0522`; the prior CI run #400 failed only on the stale durable-QStash test expectation and was corrected in the next commit. The prior CodeQL run #147 was green.
 
 ## 5. VERIFIED
 
@@ -47,8 +46,7 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 - Vercel override configuration was intentionally removed and its re-enable path is operationally locked.
 - RAG alert history, feedback, A/B configuration, and related metrics are process-local rather than durable.
 - **`UnifiedBackground2.tsx` is not present in the current repository tree; repository search on 2026-10-08 found only the archived historical documentation and the canonical note identifying the historical reference.** It is therefore not treated as an active component.
-- **Latest `main` CI run #397 succeeded on commit `c26a8bc3` on 2026-10-07.**
-- **Latest `main` CodeQL run #144 succeeded on commit `c26a8bc3` on 2026-10-07.**
+- **CI run #401 and CodeQL run #148 are currently in progress on commit `9321ed377c149e31f117935bedaa2918d27c0522`.**
 
 ## 6. IN PROGRESS
 
@@ -116,8 +114,7 @@ Repository CI/CodeQL is already green and is no longer a release blocker.
 - Live Supabase migration history latest entry: `20261007153136 / 20261007_0011_agent_step_execution_metadata`.
 - Frontend lockfile resolves Next.js to `15.5.27`.
 - Current repository tree contains no `UnifiedBackground2.tsx`; only archived historical documentation references it.
-- Latest `main` CI run #397: **success**.
-- Latest `main` CodeQL run #144: **success**.
+- CI run #401: **in progress** on `9321ed377c149e31f117935bedaa2918d27c0522`; CodeQL run #148: **in progress** on the same commit. Prior CodeQL #147 was **success**; prior CI #400 failed on an outdated test assertion and was corrected.
 - Cloudinary live E2E passed with real upload/read/delete evidence.
 - QStash signed delivery and canonical workflow completion passed with durable PostgreSQL evidence.
 - Duplicate QStash delivery was acknowledged without re-executing the completed workflow.
@@ -130,4 +127,4 @@ Repository CI/CodeQL is already green and is no longer a release blocker.
 
 ## 13. NEXT ACTION
 
-Execute the remaining live release gates in dependency order, recording real evidence after each successful test. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate in every update.
+Continue Phase 7 closure: re-check CI/CodeQL, then execute provider E2E and recovery gates in dependency order. Phase 8–12 are pre-staged in `ROADMAP.md` so the next implementation batch can begin immediately after Phase 7. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate in every update.
