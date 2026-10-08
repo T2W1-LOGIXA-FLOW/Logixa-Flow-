@@ -40,50 +40,62 @@ Remaining acceptance criteria:
 
 Verification rule: implementation, configuration, or unit tests do not substitute for live evidence.
 
-## Future Phases
+## Pre-staged Phase Plan
 
-### Source-to-content quality
-- Universal source → publish E2E, gated on real storage/provider validation.
-- Preserve provenance to file/page/sheet/row/URL.
-- SEO/news quality validation covering metadata, structured data, freshness, attribution, corroboration, and publication QA.
-- Real production storage/provider validation before universal publishing claims.
+### Phase 7 — Live provider + workflow reliability closure
+Status: ACTIVE.
+- Close Supabase Storage, Backblaze B2, and Google Drive real E2E.
+- Verify retry/recovery, stale-claim reclamation, controlled failure recovery, and duplicate delivery.
+- Keep all live tests opt-in and secret-free in CI.
+- Exit gate: every item has direct production/provider evidence or an explicit documented blocker.
 
-### Chat session operations
-- Paginated chat restore.
-- Transcript export.
-- Explicit retention controls.
-- Administrator lookup.
-- Transfer confirmation.
-- Role-based transfer permissions.
-- Reviewable retention policy.
-- Approved purge workflow.
-- Session activity search.
-- Operational audit reporting for sessions.
+### Phase 8 — Production AI/RAG and workflow journey closure
+Status: PRE-STAGED.
+- Production authentication/API smoke.
+- RAG ingest → embed → search.
+- Agent → Brain → publish.
+- Approval → resume → completion.
+- Scheduled workflow across a real time boundary.
+- Newsletter delivery.
+- Controlled external-provider failover.
+- Exit gate: complete business journeys are observed end-to-end with durable final state.
 
-### RAG observability and quality
-- Persist RAG metrics and alert history.
-- Real notification adapter.
-- Rate/window alert policies.
-- Durable alert retention, pagination, and export.
-- Read-only/configuration role separation for the RAG dashboard.
-- Durable quality feedback.
-- Experiment assignment/statistical analysis.
-- Cancellable async search.
-- Database index telemetry.
+### Phase 9 — Source-to-content quality and publishing controls
+Status: PRE-STAGED.
+- Universal source → publish E2E, gated on Phase 7/8.
+- Provenance to file/page/sheet/row/URL.
+- SEO/news quality validation: metadata, structured data, freshness, attribution, corroboration, publication QA.
+- Human approval and auditable publish decisions.
+- Exit gate: publishing claims are evidence-backed and traceable.
+
+### Phase 10 — Chat/session operations
+Status: PRE-STAGED.
+- Paginated chat restore and transcript export.
+- Explicit retention controls, approved purge, administrator lookup.
+- Transfer confirmation and role-based transfer permissions.
+- Session activity search and operational audit reporting.
+- Exit gate: session lifecycle is durable, permissioned, auditable, and test-covered.
+
+### Phase 11 — RAG observability and quality
+Status: PRE-STAGED.
+- Durable RAG metrics/alert history and notification adapter.
+- Rate/window alert policies, retention, pagination, export, and deduplication.
+- Read-only/configuration role separation.
+- Durable quality feedback and experiment assignment/statistical analysis.
+- Cancellable async search and database index telemetry.
 - Isolated backend test database/fixtures.
-- Supported notification provider/threat-model decision.
-- Durable metrics retention and deduplication.
-- Correlation-ID investigation runbook.
-- Threshold-tuning runbook.
+- Correlation-ID investigation and threshold-tuning runbooks.
+- Exit gate: RAG quality/operations are measurable and recoverable.
 
-### Broader platform evolution
-- Future complex AI workflows.
-- More external integrations.
+### Phase 12 — Platform evolution and release hardening
+Status: PRE-STAGED.
+- Future complex AI workflows and additional integrations.
 - Stronger durable job execution.
 - Expanded RAG capabilities.
 - Advanced analytics/business intelligence.
 - Broader observability/operational controls.
 - Broader supply-chain intelligence coverage.
+- Final release regression, security, dependency, and operational review.
 
 ## Deferred Items
 
