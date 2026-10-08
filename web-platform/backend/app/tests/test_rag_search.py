@@ -96,3 +96,43 @@ def test_build_rag_context_redacts_pii_and_prompt_injection(monkeypatch, db: Ses
     assert "Ignore previous instructions" not in context
     assert "[PII_EMAIL_REDACTED]" in context
     assert "[PROMPT_INSTRUCTION_REDACTED]" in context
+
+
+def test_reingest_replaces_source_chunks_without_duplicates(monkeypatch, db: Session):
+    monkeypatch.setattr(
+        "app.rag.ingest.embed_text",
+        lambda text: ([1.0, 0.0], "test-embedding"),
+    )
+    monkeypatch.setattr(
+        "app.rag.search.embed_text",
+        lambda text: ([1.0, 0.0], "test-embedding"),
+    )
+
+    source = models.IntelligenceSource(
+        title="Reingest source",
+        source_type="manual",
+        category="Supply Chain",
+        trust_level="standard",
+        content_text="Initial source content",
+    )
+    db.add(source)
+    db.commit()
+    db.refresh(source)
+
+    assert ingest_intelligence_source(db, source) == 1
+    source.content_text = "Updated source content"
+    db.commit()
+
+    assert ingest_intelligence_source(db, source) == 1
+    rows = (
+        db.query(models.DocumentEmbedding)
+        .filter(
+            models.DocumentEmbedding.source_type == "intelligence_source",
+            models.DocumentEmbedding.source_id == str(source.id),
+        )
+        .all()
+    )
+
+    assert len(rows) == 1
+    assert rows[0].content == "Reingest source\n\nUpdated source content"
+    assert rows[0].embedding_model == "test-embedding"
