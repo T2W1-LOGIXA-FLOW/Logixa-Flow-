@@ -26,8 +26,9 @@ Current state: production migration `20261008_0012_rag_observability` is applied
 Objective: close evidence-based release gates without changing the current architecture merely to satisfy documentation.
 
 Current verified baseline:
-- Latest-main CI: #406 success on `6301df760774a64a7d951ae42d76b9276cf039de`.
-- Latest-main CodeQL: #153 success on the same commit.
+- Latest confirmed CI: #450 success on `115482a27a9c7d56294c8fe09940190555a8d7a1`.
+- Latest confirmed CodeQL: #197 success on the same commit.
+- Markdown/docs-only commits are intentionally excluded from CI/CodeQL triggers, so documentation commits do not create new red/green runs.
 
 Remaining acceptance criteria:
 - Supabase Storage, B2, and Google Drive E2E pass with real infrastructure.
@@ -191,4 +192,4 @@ Deterministic repository-side coverage has expanded for RAG ingest/search, publi
 33. Broader observability/operational controls.
 34. Broader supply-chain intelligence coverage.
 
-CI #414 / CodeQL #161 remain the last fully green baseline; all post-baseline changes require a fresh green run before certification. Production migration parity is now closed. Live provider and production-path evidence remains separate. Cloudinary and the core QStash delivery/completion/idempotency path are also no longer listed as remaining work because they have real evidence.
+CI #450 / CodeQL #197 are the latest confirmed green validation. Docs-only commits after that SHA do not trigger these workflows by design. Any subsequent code/config change must receive a fresh green CI/CodeQL run before certification. Production migration parity is now closed. Live provider and production-path evidence remains separate. Cloudinary and the core QStash delivery/completion/idempotency path are also no longer listed as remaining work because they have real evidence.
