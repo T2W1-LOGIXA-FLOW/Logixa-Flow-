@@ -31,7 +31,7 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 - RAG ingestion/search/reliability/quality features are implemented, with documented process-local limitations for several observability and feedback features.
 - Alembic migration `20261007_0011` exists and the migration lifecycle test declares it as the repository current head.
 - Documentation audit and Phase 0 ledgers are complete.
-- Latest `main` CI/CodeQL rerun is in progress on commit `9321ed377c149e31f117935bedaa2918d27c0522`; the prior CI run #400 failed only on the stale durable-QStash test expectation and was corrected in the next commit. The prior CodeQL run #147 was green.
+- Latest `main` CI run #401 is green on commit `9321ed377c149e31f117935bedaa2918d27c0522`; CodeQL #148 is also green. The follow-up stale-claim test commit is now under CI #402 / CodeQL #149.
 
 ## 5. VERIFIED
 
@@ -46,7 +46,7 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 - Vercel override configuration was intentionally removed and its re-enable path is operationally locked.
 - RAG alert history, feedback, A/B configuration, and related metrics are process-local rather than durable.
 - **`UnifiedBackground2.tsx` is not present in the current repository tree; repository search on 2026-10-08 found only the archived historical documentation and the canonical note identifying the historical reference.** It is therefore not treated as an active component.
-- **CI run #401 and CodeQL run #148 are currently in progress on commit `9321ed377c149e31f117935bedaa2918d27c0522`.**
+- **CI run #401: success and CodeQL run #148: success on commit `9321ed377c149e31f117935bedaa2918d27c0522`.**
 
 ## 6. IN PROGRESS
 
@@ -114,7 +114,7 @@ Repository CI/CodeQL is already green and is no longer a release blocker.
 - Live Supabase migration history latest entry: `20261007153136 / 20261007_0011_agent_step_execution_metadata`.
 - Frontend lockfile resolves Next.js to `15.5.27`.
 - Current repository tree contains no `UnifiedBackground2.tsx`; only archived historical documentation references it.
-- CI run #401: **in progress** on `9321ed377c149e31f117935bedaa2918d27c0522`; CodeQL run #148: **in progress** on the same commit. Prior CodeQL #147 was **success**; prior CI #400 failed on an outdated test assertion and was corrected.
+- CI run #401: **success** on `9321ed377c149e31f117935bedaa2918d27c0522`; CodeQL #148: **success** on the same commit. CI #400 was superseded after its outdated test assertion was corrected. The next stale-claim coverage commit is `34137b30527bbce0975d78ca4b554cb2291af68c` and is running under CI #402 / CodeQL #149.
 - Cloudinary live E2E passed with real upload/read/delete evidence.
 - QStash signed delivery and canonical workflow completion passed with durable PostgreSQL evidence.
 - Duplicate QStash delivery was acknowledged without re-executing the completed workflow.
