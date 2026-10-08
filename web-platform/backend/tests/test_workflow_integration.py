@@ -200,3 +200,74 @@ async def test_qstash_dispatch_restores_durable_run_before_execution(monkeypatch
     assert result == {"status": "queued", "run_id": "durable-run"}
     assert executed == ["durable-run"]
     assert "durable-run" in workflow._WORKFLOW_RUNS
+
+
+@pytest.mark.anyio
+async def test_qstash_dispatch_acknowledges_terminal_run_without_reexecution(monkeypatch: pytest.MonkeyPatch) -> None:
+    terminal = workflow.WorkflowRunOut(
+        run_id="terminal-run",
+        workflow_id="terminal-workflow",
+        state=workflow.WorkflowState(status="completed", completed_nodes=["first"]),
+    )
+    workflow._WORKFLOW_RUNS[terminal.run_id] = terminal
+    monkeypatch.setenv("QSTASH_CURRENT_SIGNING_KEY", "test-current")
+    monkeypatch.setenv("QSTASH_NEXT_SIGNING_KEY", "test-next")
+    monkeypatch.setenv("QSTASH_DESTINATION_URL", "https://logixa-flow.onrender.com")
+
+    class FakeReceiver:
+        def __init__(self, **_: str) -> None:
+            pass
+        def verify(self, **_: str) -> bool:
+            return True
+
+    class FakeRequest:
+        headers = {"Upstash-Signature": "signed"}
+        async def body(self) -> bytes:
+            return b'{"run_id":"terminal-run"}'
+
+    monkeypatch.setattr("qstash.Receiver", FakeReceiver)
+    executed: list[str] = []
+    async def fake_execute(run_id: str) -> None:
+        executed.append(run_id)
+    monkeypatch.setattr(workflow, "_execute_workflow", fake_execute)
+
+    result = await workflow.qstash_dispatch(FakeRequest())  # type: ignore[arg-type]
+
+    assert result == {"status": "completed", "run_id": "terminal-run"}
+    assert executed == []
+
+
+@pytest.mark.anyio
+async def test_qstash_dispatch_does_not_double_claim_a_fresh_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    queued = workflow.WorkflowRunOut(
+        run_id="claimed-run",
+        workflow_id="claimed-workflow",
+        state=workflow.WorkflowState(status="queued"),
+    )
+    workflow._WORKFLOW_RUNS[queued.run_id] = queued
+    monkeypatch.setenv("QSTASH_CURRENT_SIGNING_KEY", "test-current")
+    monkeypatch.setenv("QSTASH_NEXT_SIGNING_KEY", "test-next")
+    monkeypatch.setenv("QSTASH_DESTINATION_URL", "https://logixa-flow.onrender.com")
+
+    class FakeReceiver:
+        def __init__(self, **_: str) -> None:
+            pass
+        def verify(self, **_: str) -> bool:
+            return True
+
+    class FakeRequest:
+        headers = {"Upstash-Signature": "signed"}
+        async def body(self) -> bytes:
+            return b'{"run_id":"claimed-run"}'
+
+    monkeypatch.setattr("qstash.Receiver", FakeReceiver)
+    monkeypatch.setattr(workflow, "_claim_job", lambda _: False)
+    executed: list[str] = []
+    async def fake_execute(run_id: str) -> None:
+        executed.append(run_id)
+    monkeypatch.setattr(workflow, "_execute_workflow", fake_execute)
+
+    result = await workflow.qstash_dispatch(FakeRequest())  # type: ignore[arg-type]
+
+    assert result == {"status": "already_running", "run_id": "claimed-run"}
+    assert executed == []
