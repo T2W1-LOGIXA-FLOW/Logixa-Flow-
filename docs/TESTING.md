@@ -35,3 +35,10 @@ Set `RUN_LIVE_E2E=1` and provide the required provider environment variables to 
 ## Required live tests
 
 Cloudinary; Supabase Storage; B2; Google Drive; signed QStash delivery; workflow completion; retry/recovery and duplicate-delivery protection; production authentication/API smoke; monitoring/failure-mode behavior; RAG ingest → embed → search; Agent → Brain → publish; approval → resume → completion; scheduled execution across a real time boundary; newsletter delivery; controlled provider failover.
+
+
+## Deterministic release-hardening coverage
+
+The non-live suite now covers workflow node retry recovery and retry exhaustion, stale worker-lease reclamation, terminal/duplicate QStash idempotency, approval pause/resume, and idempotent RAG source re-ingestion. These tests prove local control-flow invariants without treating them as production E2E evidence.
+
+Live verification remains separately gated by `RUN_LIVE_E2E=1`; missing external-provider configuration must remain a skip, never a synthetic pass.
