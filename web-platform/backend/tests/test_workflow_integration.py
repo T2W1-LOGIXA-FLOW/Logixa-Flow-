@@ -271,3 +271,50 @@ async def test_qstash_dispatch_does_not_double_claim_a_fresh_run(monkeypatch: py
 
     assert result == {"status": "already_running", "run_id": "claimed-run"}
     assert executed == []
+
+
+def test_stale_workflow_claim_is_reclaimable(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeInspector:
+        def has_table(self, _: str) -> bool:
+            return True
+
+    class FakeQuery:
+        def __init__(self) -> None:
+            self.filters = 0
+            self.updated: dict | None = None
+        def filter(self, *conditions: object) -> "FakeQuery":
+            self.filters += len(conditions)
+            return self
+        def update(self, values: dict, synchronize_session: bool = False) -> int:
+            self.updated = values
+            assert synchronize_session is False
+            return 1
+
+    class FakeDB:
+        bind = object()
+        def __init__(self) -> None:
+            self.query_obj = FakeQuery()
+            self.committed = False
+            self.rolled_back = False
+        def query(self, _: object) -> FakeQuery:
+            return self.query_obj
+        def commit(self) -> None:
+            self.committed = True
+        def rollback(self) -> None:
+            self.rolled_back = True
+        def close(self) -> None:
+            pass
+
+    db = FakeDB()
+    monkeypatch.setattr(workflow, "SessionLocal", lambda: db)
+    monkeypatch.setattr(workflow, "inspect", lambda _: FakeInspector())
+    monkeypatch.setattr(workflow, "_WORKER_ID", "test-worker")
+    monkeypatch.setenv("WORKFLOW_CLAIM_LEASE_SECONDS", "60")
+
+    assert workflow._claim_job("stale-run") is True
+    assert db.committed is True
+    assert db.rolled_back is False
+    assert db.query_obj.filters >= 1
+    assert db.query_obj.updated is not None
+    assert db.query_obj.updated["status"] == "running"
+    assert db.query_obj.updated["claimed_by"] == "test-worker"
