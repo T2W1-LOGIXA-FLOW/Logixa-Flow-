@@ -126,6 +126,8 @@ def test_schema_reconciliation_follows_rls_and_secures_every_model_table() -> No
     assert "revision = \"20261008_0012\"" in rag_observability_source
     assert "down_revision = \"20261007_0011\"" in rag_observability_source
     assert "rag_observability_events" in rag_observability_source
+    assert "ENABLE ROW LEVEL SECURITY" in rag_observability_source
+    assert "GRANT ALL PRIVILEGES ON TABLE rag_observability_events TO service_role" in rag_observability_source
 
     rls_source = RLS_MIGRATION.read_text(encoding="utf-8")
     assert 'revision = "20261003_0005"' in rls_source
