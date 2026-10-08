@@ -42,7 +42,7 @@ jobs:
         run: |
           set -euo pipefail
           psql "$SUPABASE_RESTORE_DB_URL" -v ON_ERROR_STOP=1 -tAc "select version_num from alembic_version order by version_num desc limit 1"
-          psql "$SUPABASE_RESTORE_DB_URL" -v ON_ERROR_STOP=1 -tAc "select to_regclass('public.workflows'), to_regclass('public.workflow_runs'), to_regclass('public.workflow_jobs'), to_regclass('public.rag_observability_events')"
+          psql "$SUPABASE_RESTORE_DB_URL" -v ON_ERROR_STOP=1 -tAc "select to_regclass('public.workflows'), to_regclass('public.workflow_runs'), to_regclass('public.scheduled_workflow_jobs'), to_regclass('public.rag_observability_events')"
           psql "$SUPABASE_RESTORE_DB_URL" -v ON_ERROR_STOP=1 -tAc "select count(*) from public.rag_observability_events"
       - name: Remove backup material
         if: always()
