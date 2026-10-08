@@ -142,7 +142,7 @@ def test_brain_publish_is_idempotent_for_repeated_publish():
 
         first = publish_memory(memory.id, schemas.BrainPublishRequest(publish_now=True), db=session, admin={"sub": "admin-user", "role": "admin"})
         session.expire_all()
-        second = publish_memory(memory.id, __import__("..schemas", fromlist=["BrainPublishRequest"]).BrainPublishRequest(publish_now=True), db=session, admin={"sub": "admin-user", "role": "admin"})
+        second = publish_memory(memory.id, schemas.BrainPublishRequest(publish_now=True), db=session, admin={"sub": "admin-user", "role": "admin"})
         assert first.id == second.id
         assert session.query(models.Post).count() == 1
         assert session.query(models.AiMemoryBrain).one().status == "published"
