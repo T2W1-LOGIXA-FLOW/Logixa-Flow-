@@ -22,7 +22,7 @@ PostgreSQL is durable workflow/run state. Preserve the local canonical workflow 
 
 ## RAG operations
 
-Current reliability/quality telemetry includes correlation IDs, sanitized errors, aggregate metrics, process-local alerts, process-local feedback, and process-local A/B configuration. Error events, alert history, feedback, cache state, and A/B configuration reset on process restart where implemented as process-local state.
+Current reliability/quality telemetry includes correlation IDs, sanitized errors, aggregate metrics, process-local alert/feedback/A-B state where applicable, and **durable RAG observability events** in PostgreSQL via migration `20261008_0012`. Durable event storage is deployed; alert notification, retention/export, experiment statistics, and live production observation remain separate release gates.
 
 Backlog runbooks: correlation-ID investigation; threshold tuning; durable metrics retention; notification-provider and threat-model decision.
 
