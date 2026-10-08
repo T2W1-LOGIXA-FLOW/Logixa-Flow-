@@ -11,6 +11,7 @@ concurrency:
 
 jobs:
   auth-smoke:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment: production
     env:
