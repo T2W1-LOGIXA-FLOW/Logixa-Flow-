@@ -129,7 +129,7 @@ def _record_error(operation: str, error_type: str, db: Session | None = None) ->
         }
     )
     del _error_events[:-5000]
-    if db is not None:
+    if db is not None and all(hasattr(db, attr) for attr in ("execute", "commit", "rollback")):
         try:
             record_event(db, "error", operation, {"error_type": error_type})
             db.commit()
