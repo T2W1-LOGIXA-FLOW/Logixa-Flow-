@@ -8,8 +8,8 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 
 ## Repository
 - [ ] Release SHA fixed.
-- [ ] Repository CI green on the release SHA.
-- [ ] CodeQL/security checks green on the release SHA.
+- [x] Repository CI green on current hardening SHA `337cf77b8cc8fe721398e09e58305bd1d1baac8e` (CI #445).
+- [x] CodeQL/security checks green on current hardening SHA `337cf77b8cc8fe721398e09e58305bd1d1baac8e` (CodeQL #192).
 - [ ] Dependency/license/security refresh reviewed.
 - [ ] Repository migration head equals intended release migration head.
 
@@ -41,7 +41,7 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 
 ## Recovery
 - [ ] Production backup/snapshot identified and restorable.
-- [ ] Isolated restore completed and integrity checks passed.
+- [ ] Isolated restore completed and integrity checks passed. Workflow is staged; live run remains required.
 - [ ] Object-storage recovery checked.
 - [ ] Application rollback rehearsal completed.
 - [ ] Post-rollback auth/workflow/RAG/publish smoke passed.
