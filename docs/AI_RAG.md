@@ -19,9 +19,9 @@ Always distinguish implemented, configured, enabled/selected, and live-tested st
 
 RAG includes ingestion, chunking, embeddings, PostgreSQL/pgvector storage, source-aware retrieval, search ranking, batch ingestion, retry/error handling, metrics, alerts, and quality feedback.
 
-## Reliability limitations
+## Reliability and observability
 
-Current RAG error/alert/feedback/A-B features include process-local state. They reset on process restart and are not equivalent to durable observability. Search performance reporting is descriptive and does not claim live database index-usage telemetry.
+RAG error events, quality feedback, and A/B configuration now have a durable event-storage foundation via migration `20261008_0012`. The process-local caches remain optimization/UI state and are not authoritative. Alert notification adapters, retention/export, statistical evaluation, and database index telemetry remain future work and must not be described as live-verified.
 
 ## Publication safety
 
