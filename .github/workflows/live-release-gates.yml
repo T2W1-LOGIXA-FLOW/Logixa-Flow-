@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   live-providers:
-    if: inputs.provider != 'auth' && inputs.provider != 'backup-restore'
+    if: ${{ inputs.provider != 'auth' && inputs.provider != 'backup-restore' }}
     runs-on: ubuntu-latest
     environment: production
     env:
@@ -72,7 +72,7 @@ jobs:
             ${{ inputs.provider == 'cloudinary' && 'test_live_release_gates.py::test_live_cloudinary_upload_round_trip' || inputs.provider == 'supabase' && 'test_live_release_gates.py::test_live_supabase_storage_upload_round_trip' || inputs.provider == 'b2' && 'test_live_release_gates.py::test_live_b2_s3_round_trip' || inputs.provider == 'google-drive' && 'test_live_release_gates.py::test_live_google_drive_upload_round_trip' || 'test_live_release_gates.py' }}
         run: python -m pytest -q tests/$PYTEST_ADDOPTS
   production-auth:
-    if: inputs.provider == 'auth'
+    if: ${{ inputs.provider == 'auth' }}
     runs-on: ubuntu-latest
     environment: production
     env:
@@ -129,7 +129,7 @@ PY
         run: rm -f "$RUNNER_TEMP/access_token"
 
   backup-restore:
-    if: inputs.provider == 'backup-restore'
+    if: ${{ inputs.provider == 'backup-restore' }}
     runs-on: ubuntu-latest
     environment: production
     env:
