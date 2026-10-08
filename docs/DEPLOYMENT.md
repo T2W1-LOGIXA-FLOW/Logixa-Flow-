@@ -21,7 +21,7 @@ Render configuration selects USER_AI_ENABLED=false, ADMIN_AI_ENABLED=true, ADMIN
 
 ## Migration state
 
-Repository Alembic head: 20261007_0011. Live production migration head: VERIFY.
+Repository Alembic head: 20261007_0011. Live production migration head: 20261007_0011, verified 2026-10-08.
 
 ## Vercel lock
 
