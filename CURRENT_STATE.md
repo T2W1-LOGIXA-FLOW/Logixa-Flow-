@@ -31,7 +31,7 @@ Repository Alembic head is **20261008_0012**. Live production migration history 
 - RAG ingestion/search/reliability/quality features are implemented. Durable RAG observability event storage is implemented in repository code and deployed in production.
 - Alembic migration `20261008_0012` is now the repository head and adds durable RAG observability events.
 - Documentation audit and Phase 0 ledgers are complete.
-- Latest CI #445 and CodeQL #192 are green on `337cf77b8cc8fe721398e09e58305bd1d1baac8e`; repository-side CI/security validation is current.
+- Latest CI #450 and CodeQL #197 are green on `115482a27a9c7d56294c8fe09940190555a8d7a1`; repository-side CI/security validation is current.
 
 ## 5. VERIFIED
 
@@ -48,7 +48,7 @@ Repository Alembic head is **20261008_0012**. Live production migration history 
 - Phase 11 foundation is implemented: durable RAG error/quality telemetry storage is now deployed in production via migration 0012; alert delivery, retention/export, experiment analysis, and production verification remain.
 - **`UnifiedBackground2.tsx` is not present in the current repository tree; repository search on 2026-10-08 found only the archived historical documentation and the canonical note identifying the historical reference.** It is therefore not treated as an active component.
 - Deterministic RAG ingest → embed → search coverage is now present, and repeated brain publish is covered for idempotency. An owner-scoped chat transcript export is implemented with deterministic ordering and ownership tests.
-- **CI #445 / CodeQL #192 passed on the current hardening commit `337cf77b8cc8fe721398e09e58305bd1d1baac8e`.**
+- **CI #450 / CodeQL #197 passed on the current hardening commit `115482a27a9c7d56294c8fe09940190555a8d7a1`.**
 - Production authentication is staged in `.github/workflows/production-auth-smoke.yml` using `PRODUCTION_ADMIN_EMAIL` / `PRODUCTION_ADMIN_PASSWORD`; isolated backup/restore is staged in `.github/workflows/production-backup-restore.yml` using `SUPABASE_DB_URL` / `SUPABASE_RESTORE_DB_URL`.
 
 ## 6. IN PROGRESS
