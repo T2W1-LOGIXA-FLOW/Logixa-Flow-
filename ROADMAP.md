@@ -66,7 +66,8 @@ Status: PRE-STAGED.
 - Exit gate: complete business journeys are observed end-to-end with durable final state.
 
 ### Phase 9 — Source-to-content quality and publishing controls
-- Pre-stage provenance, citation integrity, quality scoring, approval/audit controls, and publish idempotency as deterministic tests before external-provider certification.
+- Deterministic brain publish idempotency is now covered: repeated publish of the same approved memory reuses the linked post instead of creating a duplicate.
+- Pre-stage provenance, citation integrity, quality scoring, approval/audit controls as deterministic tests before external-provider certification.
 Status: PRE-STAGED.
 - Universal source → publish E2E, gated on Phase 7/8.
 - Provenance to file/page/sheet/row/URL.
@@ -75,7 +76,8 @@ Status: PRE-STAGED.
 - Exit gate: publishing claims are evidence-backed and traceable.
 
 ### Phase 10 — Chat/session operations
-- Pre-stage pagination, transcript export, retention, ownership transfer, and audit-search invariants with deterministic tests.
+- Owner-scoped transcript export is now implemented and test-covered; message ordering is deterministic and deleted/non-owner sessions are not exportable.
+- Existing pagination, retention soft-delete, ownership transfer, and audit invariants remain staged for broader operational controls.
 Status: PRE-STAGED.
 - Paginated chat restore and transcript export.
 - Explicit retention controls, approved purge, administrator lookup.
@@ -127,6 +129,8 @@ Status: PRE-STAGED.
 None established by repository evidence. The live-gate workflow is implemented; execution remains dependent on supplying the required GitHub `production` environment secrets and controlled production access.
 
 ## Remaining Work — Release Closure
+
+Deterministic repository-side coverage has expanded for RAG ingest/search, publish idempotency, and chat transcript export. These are not substitutes for live production evidence.
 
 1. Real Supabase Storage E2E.
 2. Real Backblaze B2 E2E.
