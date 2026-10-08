@@ -31,7 +31,7 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 - RAG ingestion/search/reliability/quality features are implemented, with documented process-local limitations for several observability and feedback features.
 - Alembic migration `20261007_0011` exists and the migration lifecycle test declares it as the repository current head.
 - Documentation audit and Phase 0 ledgers are complete.
-- Latest fully green baseline is CI #405 / CodeQL #152 on `5594052a4b4e5343ec2194b2a293998e93fa78f4`. The RAG re-ingestion assertion was corrected and the complete repository CI/security validation passed.
+- Latest fully green baseline is CI #406 / CodeQL #153 on `9cb6caddce0591aeb63f21656aea6375b3e14d7b`. Scheduled workflow delay semantics were added to deterministic coverage and the complete repository CI/security validation passed.
 
 ## 5. VERIFIED
 
@@ -47,7 +47,7 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 - Vercel override configuration was intentionally removed and its re-enable path is operationally locked.
 - RAG alert history, feedback, A/B configuration, and related metrics are process-local rather than durable.
 - **`UnifiedBackground2.tsx` is not present in the current repository tree; repository search on 2026-10-08 found only the archived historical documentation and the canonical note identifying the historical reference.** It is therefore not treated as an active component.
-- **CI #405: success and CodeQL #152: success on `5594052a4b4e5343ec2194b2a293998e93fa78f4`. This is the latest fully green hardening baseline.**
+- **CI #406: success and CodeQL #153: success on `9cb6caddce0591aeb63f21656aea6375b3e14d7b`. This is the latest fully green hardening baseline.**
 
 ## 6. IN PROGRESS
 
@@ -105,7 +105,7 @@ No repository-level blocker is established. Some live gates require production c
 11. Newsletter delivery is verified.
 12. Controlled external-provider failover is verified.
 
-Repository CI/CodeQL is green at #405/#152 on `5594052a4b4e5343ec2194b2a293998e93fa78f4`.
+Repository CI/CodeQL is green at #406/#153 on `9cb6caddce0591aeb63f21656aea6375b3e14d7b`.
 
 ## 11. LAST VERIFIED
 
@@ -127,4 +127,4 @@ Repository CI/CodeQL is green at #405/#152 on `5594052a4b4e5343ec2194b2a293998e9
 
 ## 13. NEXT ACTION
 
-Continue Phase 7 closure: provider E2E and recovery gates are next; deterministic claim/idempotency/retry and RAG re-ingestion coverage is green, while live stale-claim/retry/failure recovery still requires production evidence. Phase 8–12 are pre-staged in `ROADMAP.md` so the next implementation batch can begin immediately after Phase 7. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate in every update.
+Continue Phase 7 closure: provider E2E and recovery gates are next; deterministic claim/idempotency/retry, RAG re-ingestion, and scheduled-delay coverage is green, while live stale-claim/retry/failure recovery still requires production evidence. Phase 8–12 are pre-staged in `ROADMAP.md` so the next implementation batch can begin immediately after Phase 7. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate in every update.
