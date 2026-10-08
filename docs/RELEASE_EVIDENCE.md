@@ -15,8 +15,9 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 
 ## Production database
 - [x] Supabase migration 20261008_0012_rag_observability applied on 2026-10-08.
-- [ ] Production migration history independently re-read at certification time.
-- [ ] Supabase security/performance advisors reviewed and actionable findings dispositioned.
+- [x] Production migration history independently re-read after apply; latest is 20261008093108 / 20261008_0012_rag_observability.
+- [x] Production RLS/privilege check: RLS enabled; service_role SELECT allowed; anon/authenticated SELECT denied.
+- [x] Supabase security/performance advisors reviewed 2026-10-08. Existing RLS-without-policy INFO findings are consistent with service-role-only internal tables; 96 unused-index INFO findings require workload-based review. One WARN remains: Auth leaked-password protection is disabled and requires dashboard-level action.
 
 ## Provider gates
 - [x] Cloudinary upload/read/delete live evidence.
