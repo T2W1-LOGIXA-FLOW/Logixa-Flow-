@@ -23,8 +23,8 @@ Release certification requires repository CI/security validation, live provider 
 - Production RAG/AI journeys: PENDING.
 - Newsletter/failover: PENDING.
 - Backup/restore drill: PENDING.
-- DR/rollback rehearsal: PENDING.
-- SLO/error-budget review: PENDING; contract is defined in `docs/SLO_ERROR_BUDGET.md`.
+- DR/rollback rehearsal: PENDING — runbook/gate staged; live rehearsal required.
+- SLO/error-budget review: PENDING; contract is defined in `docs/SLO_ERROR_BUDGET.md`, with production observation still required.
 
 ## Current release position
 
