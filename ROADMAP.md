@@ -15,6 +15,12 @@ Status: DONE / VERIFIED at repository level. Repository evidence includes the ca
 
 ## Active Phase
 
+### Phase 13 — Release certification and maintenance
+
+Objective: close the remaining production/provider/recovery evidence gates and freeze only when the release evidence index is complete.
+
+Current state: production migration `20261008_0012_rag_observability` is applied. Repository-side SLO/error-budget and release-evidence artifacts are staged. Live provider, workflow recovery, AI/RAG journey, newsletter/failover, backup/restore, rollback, and monitoring evidence remain.
+
 ### Final live-infrastructure verification
 
 Objective: close evidence-based release gates without changing the current architecture merely to satisfy documentation.
@@ -111,7 +117,7 @@ Status: PRE-STAGED.
 
 ### Phase 13 — Release certification and maintenance
 - Freeze only after live evidence index, security/dependency refresh, backup/restore, DR/rollback, SLO/error-budget review, and documentation reconciliation all pass.
-Status: PRE-STAGED.
+Status: ACTIVE — final evidence closure.
 - Formal release-candidate checklist and evidence index.
 - Dependency/license/security refresh after feature closure.
 - Backup/restore drill and data-integrity verification.
@@ -185,4 +191,4 @@ Deterministic repository-side coverage has expanded for RAG ingest/search, publi
 33. Broader observability/operational controls.
 34. Broader supply-chain intelligence coverage.
 
-CI #406 and CodeQL #153 are green and are the current repository validation baseline. Live provider and production-path evidence remains separate. Cloudinary and the core QStash delivery/completion/idempotency path are also no longer listed as remaining work because they have real evidence.
+CI #414 / CodeQL #161 remain the last fully green baseline; all post-baseline changes require a fresh green run before certification. Production migration parity is now closed. Live provider and production-path evidence remains separate. Cloudinary and the core QStash delivery/completion/idempotency path are also no longer listed as remaining work because they have real evidence.
