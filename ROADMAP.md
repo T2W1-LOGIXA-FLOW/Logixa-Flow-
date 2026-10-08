@@ -11,7 +11,7 @@
 Status: VERIFIED. Evidence: 12 Markdown files were audited and ledgers A–E were built. No orphan file, plan, or decision was identified.
 
 ### Repository hardening and platform foundations
-Status: DONE / VERIFIED at repository level. Repository evidence includes the canonical workflow router, Alembic chain through repository head 20261007_0011, Render Free configuration, QStash integration, storage routing, AI/RAG implementation, and CI controls. Latest main CI and CodeQL are green. Live provider and production-path verification remains separate.
+Status: DONE / VERIFIED at repository level. Repository evidence includes the canonical workflow router, Alembic chain through repository head 20261008_0012, Render Free configuration, QStash integration, storage routing, AI/RAG implementation, and CI controls. Latest main CI and CodeQL are green. Live provider and production-path verification remains separate.
 
 ## Active Phase
 
@@ -66,9 +66,9 @@ Status: PRE-STAGED.
 - Exit gate: complete business journeys are observed end-to-end with durable final state.
 
 ### Phase 9 — Source-to-content quality and publishing controls
-- Deterministic brain publish idempotency is now covered: repeated publish of the same approved memory reuses the linked post instead of creating a duplicate.
-- Pre-stage provenance, citation integrity, quality scoring, approval/audit controls as deterministic tests before external-provider certification.
-Status: PRE-STAGED.
+- Deterministic brain publish idempotency is covered.
+- Publication now rejects `publish_now` for unapproved brain items and rejects empty publishable content.
+Status: PARTIALLY IMPLEMENTED.
 - Universal source → publish E2E, gated on Phase 7/8.
 - Provenance to file/page/sheet/row/URL.
 - SEO/news quality validation: metadata, structured data, freshness, attribution, corroboration, publication QA.
@@ -86,8 +86,9 @@ Status: PRE-STAGED.
 - Exit gate: session lifecycle is durable, permissioned, auditable, and test-covered.
 
 ### Phase 11 — RAG observability and quality
-- Pre-stage durable metric/event schemas, alert deduplication, evaluation fixtures, and quality-feedback persistence tests.
-Status: PRE-STAGED.
+- Durable `rag_observability_events` storage and repository migration `20261008_0012` are implemented.
+- RAG error telemetry, quality feedback, and A/B configuration persistence hooks are staged; full alert lifecycle, retention/export, statistical evaluation, and live operational verification remain.
+Status: PARTIALLY IMPLEMENTED.
 - Durable RAG metrics/alert history and notification adapter.
 - Rate/window alert policies, retention, pagination, export, and deduplication.
 - Read-only/configuration role separation.
@@ -162,7 +163,7 @@ Deterministic repository-side coverage has expanded for RAG ingest/search, publi
 11. Approved purge workflow.
 12. Session activity search.
 13. Operational audit reporting for sessions.
-14. Persist RAG metrics/alert history.
+14. Complete durable RAG metrics/alert history rollout after migration 0012 is applied to production.
 15. Real notification adapter.
 16. Rate/window alert policies.
 17. Durable alert retention/pagination/export.
