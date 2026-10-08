@@ -28,7 +28,7 @@ Repository Alembic head is **20261008_0012**. Live production migration history 
 - `CELERY_ENABLED=false` is the configured Render Free mode; Celery/Redis remain optional when explicitly enabled.
 - Storage routing code exists for Cloudinary, Supabase Storage, and S3-compatible/B2 paths; Google Drive export/backup code exists.
 - Public AI and admin AI are independently gated; public AI defaults off in the configured production model.
-- RAG ingestion/search/reliability/quality features are implemented. Durable RAG observability event storage is now implemented in repository code; production durability is pending migration deployment.
+- RAG ingestion/search/reliability/quality features are implemented. Durable RAG observability event storage is implemented in repository code and deployed in production.
 - Alembic migration `20261008_0012` is now the repository head and adds durable RAG observability events.
 - Documentation audit and Phase 0 ledgers are complete.
 - Latest fully green repository baseline remains CI #414 / CodeQL #161 on `6301df760774a64a7d951ae42d76b9276cf039de`; new post-baseline changes require a fresh green validation before certification.
@@ -38,17 +38,19 @@ Repository Alembic head is **20261008_0012**. Live production migration history 
 - **Cloudinary live E2E passed on 2026-10-08**: a real 1x1 PNG was uploaded to the connected Cloudinary account, retrieved by asset ID, verified for identity/size, and deleted successfully. Test asset: `logixa/release-gate-cloudinary-20261008`.
 - **QStash signed delivery + canonical workflow completion passed on 2026-10-08**: QStash message `msg_7YoJxFpwkEy5zBp2YxbmSsWDsqwAbXM5wtckxoReAkhqA6PJibwLF` reached the Render dispatch endpoint and the durable Supabase workflow run `release-gate-qstash-a1` completed with node `probe`; the scheduled job became `completed`.
 - **QStash duplicate-delivery protection passed on 2026-10-08**: a second direct QStash delivery for the same completed run did not add another execution-log entry; the durable run remained `completed` with exactly one `probe` execution entry. This is backed by the terminal-run guard added in commit `3c3e1ca8b7d8e8c07cc6eb53cfe5640d3cd4163a`.
-- Repository migration file `20261007_0011_agent_step_execution_metadata.py` revises `20261005_0010`.
+- Repository migration head is `20261008_0012_rag_observability`; it follows `20261007_0011_agent_step_execution_metadata`.
 - Deterministic stale-claim reclamation coverage is now present in commit `34137b30527bbce0975d78ca4b554cb2291af68c`; live production stale-claim recovery remains pending.
 - **Live production Supabase migration history contains `20261007_0011` as the latest migration**, verified from the connected Supabase project on 2026-10-08. Evidence: Supabase project `ephrnmigiwjhdjksreos`, migration listing observed 2026-10-08; dashboard: `https://supabase.com/dashboard/project/ephrnmigiwjhdjksreos/database/migrations`.
 - Render configuration contains one Free Web Service and `CELERY_ENABLED=false`.
-- Frontend declares Next.js `^15.5.24`; **package-lock.json resolves Next.js to `15.5.27`**, verified from the committed lockfile on 2026-10-08.
+- Frontend declares Next.js `^15.5.27`; **package-lock.json resolves Next.js to `15.5.27`**, verified from the committed lockfile on 2026-10-08.
 - Admin AI defaults are represented as enabled while public AI defaults are represented as disabled.
 - Vercel override configuration was intentionally removed and its re-enable path is operationally locked.
 - Phase 11 foundation is implemented: durable RAG error/quality telemetry storage is now deployed in production via migration 0012; alert delivery, retention/export, experiment analysis, and production verification remain.
 - **`UnifiedBackground2.tsx` is not present in the current repository tree; repository search on 2026-10-08 found only the archived historical documentation and the canonical note identifying the historical reference.** It is therefore not treated as an active component.
 - Deterministic RAG ingest → embed → search coverage is now present, and repeated brain publish is covered for idempotency. An owner-scoped chat transcript export is implemented with deterministic ordering and ownership tests.
 - **CI/CodeQL must re-run for all post-#414 changes before release certification.**
+- Production authentication workflow is staged in `.github/workflows/production-auth-smoke.yml`.
+- Production isolated backup/restore workflow is staged in `.github/workflows/production-backup-restore.yml`.
 
 ## 6. IN PROGRESS
 
@@ -82,7 +84,7 @@ Current active closure tracks:
 
 ## 8. BLOCKED
 
-No repository-level blocker is established. A manual production live-gate workflow is now prepared; its selected provider secrets and controlled authenticated production access are the remaining operational inputs.
+No repository-level blocker is established. Manual production auth and backup/restore gates are now prepared; their production test-admin secrets and isolated restore target are the remaining operational inputs.
 
 ## 9. DEFERRED
 
@@ -106,14 +108,14 @@ No repository-level blocker is established. A manual production live-gate workfl
 11. Newsletter delivery is verified.
 12. Controlled external-provider failover is verified.
 
-Repository CI/CodeQL is green at #406/#153 on `6301df760774a64a7d951ae42d76b9276cf039de`.
+Latest fully green repository baseline remains CI #414 / CodeQL #161 on `6301df760774a64a7d951ae42d76b9276cf039de`; newer commits require fresh green validation.
 
 ## 11. LAST VERIFIED
 
 2026-10-08 repository and live Supabase inspection:
-- Repository Alembic head: `20261007_0011`.
-- Live Supabase migration history latest entry: `20261007153136 / 20261007_0011_agent_step_execution_metadata`.
-- Frontend lockfile resolves Next.js to `15.5.27`.
+- Repository Alembic head: `20261008_0012`.
+- Live Supabase migration history latest entry: `20261008_0012_rag_observability`, applied and verified on 2026-10-08.
+- Frontend package.json and lockfile both align Next.js to `15.5.27`.
 - Current repository tree contains no `UnifiedBackground2.tsx`; only archived historical documentation references it.
 - CI run #401: **success** on `9321ed377c149e31f117935bedaa2918d27c0522`; CodeQL #148: **success** on the same commit. CI #400 was superseded after its outdated test assertion was corrected. The stale-claim coverage is green in CI #402 / CodeQL #149. Additional deterministic retry and RAG idempotency coverage is now committed; CI #414 / CodeQL #161 are now green on the current hardening head; this is the latest fully green repository baseline.
 - Cloudinary live E2E passed with real upload/read/delete evidence.
@@ -128,4 +130,4 @@ Repository CI/CodeQL is green at #406/#153 on `6301df760774a64a7d951ae42d76b9276
 
 ## 13. NEXT ACTION
 
-Continue Phase 7/8 live gates while repository-side Phase 9–11 foundations continue: approval-gated publication, durable RAG observability, and migration lifecycle coverage are now staged. Production migration 0012 is applied. Next: execute remaining manual live gates, recovery drills, SLO/error-budget review, then freeze only with complete evidence. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate.
+Continue Phase 13 live gates: production auth, provider E2E, workflow recovery, production RAG/AI, backup/restore, monitoring, SLO/error-budget evidence, then final freeze. Production migration 0012 is applied. Next: execute remaining manual live gates, recovery drills, SLO/error-budget review, then freeze only with complete evidence. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate.
