@@ -13,10 +13,10 @@ def test_quality_feedback_and_metrics_are_aggregated(monkeypatch):
     assert result["by_variant"]["treatment"]["helpful_rate"] == 0.0
 
 
-def test_ab_test_configuration_is_explicitly_non_persistent():
+def test_ab_test_configuration_is_persistent():
     result = rag.rag_quality_ab_test_config(
         RAGABTestConfig(name="test", control="a", treatment="b", enabled=True),
         _={"role": "admin"},
     )
-    assert result["persistent"] is False
+    assert result["persistent"] is True
     assert result["config"]["enabled"] is True
