@@ -81,7 +81,7 @@ Current active closure tracks:
 
 ## 8. BLOCKED
 
-No repository-level blocker is established. Some live gates require production credentials, provider access, or controlled authenticated execution before they can be marked verified.
+No repository-level blocker is established. A manual production live-gate workflow is now prepared; its selected provider secrets and controlled authenticated production access are the remaining operational inputs.
 
 ## 9. DEFERRED
 
@@ -127,4 +127,4 @@ Repository CI/CodeQL is green at #406/#153 on `9cb6caddce0591aeb63f21656aea6375b
 
 ## 13. NEXT ACTION
 
-Continue Phase 7 closure: provider E2E and recovery gates are next; deterministic claim/idempotency/retry, RAG re-ingestion, and scheduled-delay coverage is green, while live stale-claim/retry/failure recovery still requires production evidence. Phase 8–12 are pre-staged in `ROADMAP.md` so the next implementation batch can begin immediately after Phase 7. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate in every update.
+Continue Phase 7 closure through the new manual `.github/workflows/live-release-gates.yml`: provider E2E and recovery gates are next; deterministic claim/idempotency/retry, RAG re-ingestion, and scheduled-delay coverage is green, while live stale-claim/retry/failure recovery still requires production evidence. Phase 8–12 are pre-staged in `ROADMAP.md` so the next implementation batch can begin immediately after Phase 7. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate in every update.
