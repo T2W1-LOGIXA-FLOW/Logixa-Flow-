@@ -1,0 +1,36 @@
+name: Production Auth Smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  auth-smoke:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      TEST_EMAIL: ${{ secrets.PRODUCTION_TEST_ADMIN_EMAIL }}
+      TEST_PASSWORD: ${{ secrets.PRODUCTION_TEST_ADMIN_PASSWORD }}
+      PRODUCTION_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+    steps:
+      - name: Validate configuration
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_PUBLISHABLE_KEY"
+          test -n "$TEST_EMAIL"
+          test -n "$TEST_PASSWORD"
+          test -n "$PRODUCTION_API_URL"
+      - name: Authenticate and verify admin API
+        run: |
+          set -euo pipefail
+          token="$(curl -fsS -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password"             -H "apikey: ${SUPABASE_PUBLISHABLE_KEY}"             -H "Content-Type: application/json"             --data "{"email":"${TEST_EMAIL}","password":"${TEST_PASSWORD}"}" | jq -r '.access_token')"
+          test -n "$token"
+          test "$token" != "null"
+          me="$(curl -fsS -H "Authorization: Bearer $token" "${PRODUCTION_API_URL%/}/api/auth/me")"
+          echo "$me" | jq -e '.role == "admin" and (.username | length > 0)' >/dev/null
+          curl -fsS -H "Authorization: Bearer $token" "${PRODUCTION_API_URL%/}/api/admin/rag/metrics?hours=1" >/dev/null
