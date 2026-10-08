@@ -39,8 +39,12 @@ Read-only cross-check of the current main tree, repository CI/security checks, R
 - rag_observability_events and scheduled_workflow_jobs exist.
 - No queued/running/paused workflow runs or non-terminal scheduled jobs were present at audit time.
 - rag_observability_events currently contains zero rows; durable RAG telemetry is deployed but no production RAG event has been observed in the queried database yet.
-- Security advisors show 34 INFO findings for RLS-enabled tables without policies and one WARN for disabled leaked-password protection. The INFO findings are consistent with the current service-role-only database access model where applicable; the password-protection WARN remains a documented platform/plan limitation and is not marked fixed.
+- Security advisors show 34 INFO findings for RLS-enabled tables without policies and one WARN for disabled leaked-password protection. A direct SQL audit confirmed every public table has RLS enabled and no public-table SELECT grant is present for anon/authenticated; service-role-only access is therefore the intended current model. The password-protection WARN remains a documented platform/plan limitation and is not marked fixed.
 - Performance advisors show 96 unused-index INFO findings. These are workload-review candidates, not automatic defects.
+
+## Known intentional incomplete capability
+
+- Newsletter and transactional test-send endpoints intentionally return HTTP 501 until a real transactional email provider is connected. This is a documented release gate, not an unexpected runtime regression.
 
 ## Concrete issues found
 
