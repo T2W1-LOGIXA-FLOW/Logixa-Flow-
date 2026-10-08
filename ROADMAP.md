@@ -20,7 +20,7 @@ Status: DONE / VERIFIED at repository level. Repository evidence includes the ca
 Objective: close evidence-based release gates without changing the current architecture merely to satisfy documentation.
 
 Current verified baseline:
-- Latest-main CI: #406 success on `9cb6caddce0591aeb63f21656aea6375b3e14d7b`.
+- Latest-main CI: #406 success on `6301df760774a64a7d951ae42d76b9276cf039de`.
 - Latest-main CodeQL: #153 success on the same commit.
 
 Remaining acceptance criteria:
