@@ -31,7 +31,7 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 - RAG ingestion/search/reliability/quality features are implemented, with documented process-local limitations for several observability and feedback features.
 - Alembic migration `20261007_0011` exists and the migration lifecycle test declares it as the repository current head.
 - Documentation audit and Phase 0 ledgers are complete.
-- Latest fully green baseline is CI #406 / CodeQL #153 on `9cb6caddce0591aeb63f21656aea6375b3e14d7b`. Scheduled workflow delay semantics were added to deterministic coverage and the complete repository CI/security validation passed.
+- Latest fully green baseline is CI #414 / CodeQL #161 on `6301df760774a64a7d951ae42d76b9276cf039de`. Scheduled workflow delay semantics were added to deterministic coverage and the complete repository CI/security validation passed.
 
 ## 5. VERIFIED
 
@@ -48,7 +48,7 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 - RAG alert history, feedback, A/B configuration, and related metrics are process-local rather than durable; this remains a Phase 11 durability gap.
 - **`UnifiedBackground2.tsx` is not present in the current repository tree; repository search on 2026-10-08 found only the archived historical documentation and the canonical note identifying the historical reference.** It is therefore not treated as an active component.
 - Deterministic RAG ingest → embed → search coverage is now present, and repeated brain publish is covered for idempotency. An owner-scoped chat transcript export is implemented with deterministic ordering and ownership tests.
-- **CI #406: success and CodeQL #153: success on `9cb6caddce0591aeb63f21656aea6375b3e14d7b`. New hardening commits are awaiting CI/CodeQL before becoming the next fully green baseline.**
+- **CI #414: success and CodeQL #161: success on `6301df760774a64a7d951ae42d76b9276cf039de`. New hardening commits are awaiting CI/CodeQL before becoming the next fully green baseline.**
 
 ## 6. IN PROGRESS
 
@@ -106,7 +106,7 @@ No repository-level blocker is established. A manual production live-gate workfl
 11. Newsletter delivery is verified.
 12. Controlled external-provider failover is verified.
 
-Repository CI/CodeQL is green at #406/#153 on `9cb6caddce0591aeb63f21656aea6375b3e14d7b`.
+Repository CI/CodeQL is green at #406/#153 on `6301df760774a64a7d951ae42d76b9276cf039de`.
 
 ## 11. LAST VERIFIED
 
@@ -115,7 +115,7 @@ Repository CI/CodeQL is green at #406/#153 on `9cb6caddce0591aeb63f21656aea6375b
 - Live Supabase migration history latest entry: `20261007153136 / 20261007_0011_agent_step_execution_metadata`.
 - Frontend lockfile resolves Next.js to `15.5.27`.
 - Current repository tree contains no `UnifiedBackground2.tsx`; only archived historical documentation references it.
-- CI run #401: **success** on `9321ed377c149e31f117935bedaa2918d27c0522`; CodeQL #148: **success** on the same commit. CI #400 was superseded after its outdated test assertion was corrected. The stale-claim coverage is green in CI #402 / CodeQL #149. Additional deterministic retry and RAG idempotency coverage is now committed; CI #403/#404 and CodeQL #150/#151 are still pending.
+- CI run #401: **success** on `9321ed377c149e31f117935bedaa2918d27c0522`; CodeQL #148: **success** on the same commit. CI #400 was superseded after its outdated test assertion was corrected. The stale-claim coverage is green in CI #402 / CodeQL #149. Additional deterministic retry and RAG idempotency coverage is now committed; CI #414 / CodeQL #161 are now green on the current hardening head; this is the latest fully green repository baseline.
 - Cloudinary live E2E passed with real upload/read/delete evidence.
 - QStash signed delivery and canonical workflow completion passed with durable PostgreSQL evidence.
 - Duplicate QStash delivery was acknowledged without re-executing the completed workflow.
