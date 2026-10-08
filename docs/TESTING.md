@@ -40,3 +40,18 @@ Cloudinary; Supabase Storage; B2; Google Drive; signed QStash delivery; workflow
 The non-live suite now covers workflow node retry recovery and retry exhaustion, stale worker-lease reclamation, terminal/duplicate QStash idempotency, approval pause/resume, idempotent RAG source re-ingestion, and scheduled-delay semantics. These tests prove local control-flow invariants without treating them as production E2E evidence.
 
 Live verification remains separately gated by `RUN_LIVE_E2E=1`; missing external-provider configuration must remain a skip, never a synthetic pass.
+
+
+## Manual production live-release workflow
+
+The repository now includes `.github/workflows/live-release-gates.yml`. It is a manual `workflow_dispatch` gate and never runs against production credentials on normal pushes.
+
+Use the GitHub Actions **Live Release Gates** workflow with the `production` environment. Select `all` or one provider: Cloudinary, Supabase Storage, B2/S3, or Google Drive. The workflow performs a preflight check for the selected provider's required secrets and **fails** when they are absent; it does not convert missing configuration into a passing skip.
+
+Required production environment secrets:
+- Cloudinary: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+- Supabase Storage: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`
+- B2/S3: `S3_ENDPOINT_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`; `S3_REGION` is optional.
+- Google Drive: `GOOGLE_DRIVE_CREDENTIALS_JSON`; `GOOGLE_DRIVE_EXPORT_FOLDER_ID` is optional.
+
+Secrets are consumed only by the workflow environment and are not stored in the repository. A successful manual run is production/provider evidence; a green repository CI run is not.
