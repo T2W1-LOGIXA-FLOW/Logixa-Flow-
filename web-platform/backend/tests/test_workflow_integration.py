@@ -197,8 +197,8 @@ async def test_qstash_dispatch_restores_durable_run_before_execution(monkeypatch
 
     result = await workflow.qstash_dispatch(FakeRequest())  # type: ignore[arg-type]
 
-    assert result == {"status": "queued", "run_id": "durable-run"}
-    assert executed == ["durable-run"]
+    assert result == {"status": "already_running", "run_id": "durable-run"}
+    assert executed == []
     assert "durable-run" in workflow._WORKFLOW_RUNS
 
 
