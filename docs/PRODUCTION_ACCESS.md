@@ -20,7 +20,7 @@ For the release gate, use a dedicated temporary production test-admin account. D
    - PRODUCTION_TEST_ADMIN_PASSWORD
    - SUPABASE_PUBLISHABLE_KEY
    - PRODUCTION_API_URL — normally https://logixa-flow.onrender.com
-5. Run the repository's manual production-auth workflow from GitHub Actions.
+5. In GitHub Actions, open Live Release Gates and choose provider = auth, then run it manually.
 6. After the release gate is complete, delete or disable the temporary test-admin account and remove the two test-admin secrets.
 
 The workflow performs password login → obtain access token → GET /api/auth/me → assert role=admin → call a protected RAG admin endpoint. It does not print the password or access token.
