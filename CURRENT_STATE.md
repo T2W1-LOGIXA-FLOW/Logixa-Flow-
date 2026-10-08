@@ -107,7 +107,7 @@ No repository-level blocker is established. Manual production auth and backup/re
 11. Newsletter delivery is verified.
 12. Controlled external-provider failover is verified.
 
-Latest fully green repository baseline remains CI #414 / CodeQL #161 on `6301df760774a64a7d951ae42d76b9276cf039de`; newer commits require fresh green validation.
+Latest confirmed green repository validation is CI #450 / CodeQL #197 on `115482a27a9c7d56294c8fe09940190555a8d7a1`. Docs-only commits after that SHA intentionally do not trigger CI/CodeQL because the workflows ignore Markdown-only changes.
 
 ## 11. LAST VERIFIED
 
@@ -116,7 +116,7 @@ Latest fully green repository baseline remains CI #414 / CodeQL #161 on `6301df7
 - Live Supabase migration history latest entry: `20261008_0012_rag_observability`, applied and verified on 2026-10-08.
 - Frontend package.json and lockfile both align Next.js to `15.5.27`.
 - Current repository tree contains no `UnifiedBackground2.tsx`; only archived historical documentation references it.
-- CI run #401: **success** on `9321ed377c149e31f117935bedaa2918d27c0522`; CodeQL #148: **success** on the same commit. CI #400 was superseded after its outdated test assertion was corrected. The stale-claim coverage is green in CI #402 / CodeQL #149. Additional deterministic retry and RAG idempotency coverage is now committed; CI #414 / CodeQL #161 are now green on the current hardening head; this is the latest fully green repository baseline.
+- CI #450: **success** on `115482a27a9c7d56294c8fe09940190555a8d7a1`; CodeQL #197: **success** on the same commit. Earlier CI/CodeQL runs remain historical evidence only.
 - Cloudinary live E2E passed with real upload/read/delete evidence.
 - QStash signed delivery and canonical workflow completion passed with durable PostgreSQL evidence.
 - Duplicate QStash delivery was acknowledged without re-executing the completed workflow.
@@ -129,4 +129,4 @@ Latest fully green repository baseline remains CI #414 / CodeQL #161 on `6301df7
 
 ## 13. NEXT ACTION
 
-Continue Phase 13 live gates: production auth, provider E2E, workflow recovery, production RAG/AI, backup/restore, monitoring, SLO/error-budget evidence, then final freeze. Production migration 0012 is applied. Next: execute remaining manual live gates, recovery drills, SLO/error-budget review, then freeze only with complete evidence. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate.
+Continue Phase 13 live gates: production auth, provider E2E, workflow recovery, production RAG/AI, backup/restore, scheduled workflow, newsletter/failover, rollback/DR, monitoring/SLO, evidence reconciliation, then final freeze. Production migration 0012 is applied. Next: execute remaining manual live gates, recovery drills, SLO/error-budget review, then freeze only with complete evidence. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate.
