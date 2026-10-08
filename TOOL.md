@@ -40,7 +40,7 @@ Work directly on main unless the project owner explicitly authorizes another bra
 | Change type | Canonical update |
 | --- | --- |
 | Project identity/high-level architecture | README.md / PROJECT_OVERVIEW.md |
-| Current status or release gate | CURRENT_STATE.md |
+| Current status, release gate, or live verification result | CURRENT_STATE.md |
 | Planned work or acceptance criteria | ROADMAP.md |
 | UI token/component/accessibility rule | UI_DESIGN_SYSTEM.md |
 | Working process, git, CI, phase, evidence rule | TOOL.md |
@@ -60,7 +60,8 @@ Work directly on main unless the project owner explicitly authorizes another bra
 - Update the owning canonical document.
 - Update CURRENT_STATE.md when status changes.
 - Update ROADMAP.md when a plan/gate changes.
-- Add evidence or a VERIFY label; never imply evidence that does not exist.
+- Add a direct evidence link/log/date for every VERIFIED claim.
+- Keep VERIFY when the required evidence cannot be obtained; record the exact blocker.
 - Remove stale duplicate ownership from source documents before archiving them.
 - Fix links to canonical destinations.
 
@@ -82,7 +83,8 @@ If code/configuration changes invalidate a documentation statement, the document
 | --- | --- |
 | Repository files/history | GitHub |
 | Code/config facts | Repository source/config |
-| Live infrastructure | Appropriate provider/API tooling |
+| Live Supabase database/migration state | Supabase project tooling |
+| Live deployment/runtime | Appropriate provider/API tooling |
 | DNS/email authentication | DNS Doctor |
 | UI design implementation | Figma when explicitly used |
 | Deployment/runtime | Render/Vercel/provider tooling |
@@ -97,6 +99,7 @@ A change is done only when:
 - Diff is clean.
 - Canonical documentation is updated.
 - Status labels reflect evidence.
+- Every VERIFIED claim has direct evidence with date/link/log.
 - No secrets are committed.
 - No duplicate canonical document is created.
 - Remaining work is explicitly recorded.
@@ -112,7 +115,7 @@ Use these distinctions everywhere:
 - NEXT = immediate follow-up action.
 - VERIFY = evidence is required before claiming truth.
 
-Keep repository migration head separate from live production head. Keep implemented separate from configured, enabled, and live-tested. Never claim provider health from credentials alone. Never claim a live integration solely from unit tests.
+Keep repository migration head separate from live production head. Keep implemented separate from configured, enabled, and live-tested. Never claim provider health from credentials alone. Never claim a live integration solely from unit tests. When live infrastructure tooling is available, use it and record the exact observation date and evidence reference.
 
 ## Current deployment architecture
 
