@@ -150,3 +150,31 @@ def test_brain_publish_is_idempotent_for_repeated_publish():
         session.close()
         Base.metadata.drop_all(engine)
         engine.dispose()
+
+
+def test_brain_publish_requires_approval_before_publication():
+    from fastapi import HTTPException
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+    from ..database import Base
+
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    session = sessionmaker(bind=engine)()
+    try:
+        memory = models.AiMemoryBrain(
+            category="Supply Chain", source_title="Pending publish", source_url="https://example.com/source",
+            prompt="test", content="<p>Draft.</p>", summary="Draft.", status="pending", is_public=False,
+        )
+        session.add(memory)
+        session.commit()
+        session.refresh(memory)
+        with pytest.raises(HTTPException) as exc:
+            publish_memory(memory.id, schemas.BrainPublishRequest(publish_now=True), db=session, admin={"sub": "admin-user", "role": "admin"})
+        assert exc.value.status_code == 409
+        assert session.query(models.Post).count() == 0
+    finally:
+        session.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
