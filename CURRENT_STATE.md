@@ -31,7 +31,7 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 - RAG ingestion/search/reliability/quality features are implemented, with documented process-local limitations for several observability and feedback features.
 - Alembic migration `20261007_0011` exists and the migration lifecycle test declares it as the repository current head.
 - Documentation audit and Phase 0 ledgers are complete.
-- Last fully green baseline is CI #402 / CodeQL #149 on `34137b30527bbce0975d78ca4b554cb2291af68c`. New retry/RAG hardening commits are under CI #403/#404 and CodeQL #150/#151; do not treat those pending runs as green yet.
+- Last fully green baseline is CI #402 / CodeQL #149 on `34137b30527bbce0975d78ca4b554cb2291af68c`. The RAG re-ingestion assertion was corrected in `5594052a4b4e5343ec2194b2a293998e93fa78f4`; CI #405 backend/security/agents jobs are green while the full CI run and CodeQL #152 are still in progress.
 
 ## 5. VERIFIED
 
@@ -47,7 +47,7 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 - Vercel override configuration was intentionally removed and its re-enable path is operationally locked.
 - RAG alert history, feedback, A/B configuration, and related metrics are process-local rather than durable.
 - **`UnifiedBackground2.tsx` is not present in the current repository tree; repository search on 2026-10-08 found only the archived historical documentation and the canonical note identifying the historical reference.** It is therefore not treated as an active component.
-- **CI run #402: success and CodeQL run #149: success on commit `34137b30527bbce0975d78ca4b554cb2291af68c`; later hardening runs #403/#404 and CodeQL #150/#151 are pending.**
+- **CI #402: success and CodeQL #149: success on `34137b30527bbce0975d78ca4b554cb2291af68c`. On `5594052a4b4e5343ec2194b2a293998e93fa78f4`, CI #405 backend/security/agents jobs are green; frontend is still building and CodeQL #152 is still running, so the whole commit is not yet a fully green baseline.**
 
 ## 6. IN PROGRESS
 
@@ -105,7 +105,7 @@ No repository-level blocker is established. Some live gates require production c
 11. Newsletter delivery is verified.
 12. Controlled external-provider failover is verified.
 
-Repository CI/CodeQL is already green and is no longer a release blocker.
+Repository CI/CodeQL was green at #402/#149; the current hardening commit is still completing CI #405 / CodeQL #152 and must be rechecked before declaring the new baseline green.
 
 ## 11. LAST VERIFIED
 
