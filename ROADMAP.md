@@ -11,7 +11,7 @@
 Status: VERIFIED. Evidence: 12 Markdown files were audited and ledgers A–E were built. No orphan file, plan, or decision was identified.
 
 ### Repository hardening and platform foundations
-Status: DONE / VERIFIED at repository level. Repository evidence includes the canonical workflow router, Alembic chain through repository head 20261007_0011, Render Free configuration, QStash integration, storage routing, AI/RAG implementation, and CI controls. Live provider and production-path verification remains separate.
+Status: DONE / VERIFIED at repository level. Repository evidence includes the canonical workflow router, Alembic chain through repository head 20261007_0011, Render Free configuration, QStash integration, storage routing, AI/RAG implementation, and CI controls. Latest main CI and CodeQL are green. Live provider and production-path verification remains separate.
 
 ## Active Phase
 
@@ -19,8 +19,11 @@ Status: DONE / VERIFIED at repository level. Repository evidence includes the ca
 
 Objective: close evidence-based release gates without changing the current architecture merely to satisfy documentation.
 
-Acceptance criteria:
-- Latest-main CI is green.
+Current verified baseline:
+- Latest-main CI is green: CI run #397 on commit `c26a8bc3`.
+- Latest-main CodeQL is green: CodeQL run #144 on commit `c26a8bc3`.
+
+Remaining acceptance criteria:
 - Cloudinary, Supabase Storage, B2, and Google Drive E2E pass with real infrastructure.
 - QStash signature verification and delivery to /api/admin/workflow/qstash-dispatch pass.
 - Canonical workflow completion is persisted in PostgreSQL.
@@ -83,68 +86,69 @@ Verification rule: implementation, configuration, or unit tests do not substitut
 
 ## Deferred Items
 
-- Final AI-agent live verification.
-- Real provider credentials plus authenticated production tests where credentials/evidence are not yet available.
+- Final AI-agent live verification requiring real provider credentials and authenticated production tests.
 - Universal one-click source → publish claims until provenance, SEO, fact/source QA, human approval, and provider/storage E2E are jointly verified.
 
 ## Blocked Items
 
-None established by repository evidence.
+None established by repository evidence. Live tests may remain operationally unavailable until the required provider credentials/access are supplied.
 
-## Backlog — Ledger B Closure
+## Remaining Work — Release Closure
 
-1. Main-branch hardening toward final operational closure.
-2. Latest-main CI green.
-3. Real Cloudinary E2E.
-4. Real Supabase Storage E2E.
-5. Real Backblaze B2 E2E.
-6. Real Google Drive E2E.
-7. Signed QStash delivery verification.
-8. QStash → workflow completion verification.
-9. Workflow retry/recovery verification.
-10. Duplicate-delivery protection verification.
-11. Production authentication/API smoke tests.
-12. Production monitoring/failure-mode checks.
-13. E2E RAG ingest → embed → search.
-14. Agent → Brain → publish E2E.
-15. Workflow approval → resume → completion.
-16. Scheduled workflow over a real time boundary.
-17. Newsletter delivery E2E.
-18. External-provider failover test.
-19. Universal source → publish E2E.
-20. Source provenance preservation to file/page/sheet/row/URL.
-21. SEO/news quality validation.
-22. Real production storage/provider validation before universal publishing claim.
-23. Paginated chat restore.
-24. Transcript export.
-25. Explicit retention controls.
-26. Administrator lookup.
-27. Transfer confirmation.
-28. Role-based transfer permissions.
-29. Reviewable retention policy.
-30. Approved purge workflow.
-31. Session activity search.
-32. Operational audit reporting for sessions.
-33. Persist RAG metrics/alert history.
-34. Real notification adapter.
-35. Rate/window alert policies.
-36. Durable alert retention/pagination/export.
-37. Read-only/configuration role separation for RAG dashboard.
-38. Durable quality feedback.
-39. Experiment assignment/statistical analysis.
-40. Cancellable async search.
-41. Database index telemetry.
-42. Isolated backend test database/fixtures.
-43. Supported notification provider/threat model decision.
-44. Durable metrics retention + deduplication.
-45. Correlation-ID investigation runbook.
-46. Threshold-tuning runbook.
-47. Future complex AI workflows.
-48. More external integrations.
-49. Stronger durable job execution.
-50. Expanded RAG capabilities.
-51. Advanced analytics/business intelligence.
-52. Broader observability/operational controls.
-53. Broader supply-chain intelligence coverage.
+1. Real Cloudinary E2E.
+2. Real Supabase Storage E2E.
+3. Real Backblaze B2 E2E.
+4. Real Google Drive E2E.
+5. Signed QStash delivery verification.
+6. QStash → workflow completion verification.
+7. Workflow retry/recovery verification.
+8. Stale-claim recovery verification.
+9. Duplicate-delivery protection verification.
+10. Production authentication/API smoke tests.
+11. Production monitoring/failure-mode checks.
+12. E2E RAG ingest → embed → search.
+13. Agent → Brain → publish E2E.
+14. Workflow approval → resume → completion.
+15. Scheduled workflow over a real time boundary.
+16. Newsletter delivery E2E.
+17. Controlled external-provider failover test.
 
-All Ledger B items have a roadmap home; their status is determined by the sections above rather than by their presence in this closure list.
+## Remaining Work — Future Product/Operations
+
+18. Universal source → publish E2E.
+19. Source provenance preservation to file/page/sheet/row/URL.
+20. SEO/news quality validation.
+21. Paginated chat restore.
+22. Transcript export.
+23. Explicit retention controls.
+24. Administrator lookup.
+25. Transfer confirmation.
+26. Role-based transfer permissions.
+27. Reviewable retention policy.
+28. Approved purge workflow.
+29. Session activity search.
+30. Operational audit reporting for sessions.
+31. Persist RAG metrics/alert history.
+32. Real notification adapter.
+33. Rate/window alert policies.
+34. Durable alert retention/pagination/export.
+35. Read-only/configuration role separation for RAG dashboard.
+36. Durable quality feedback.
+37. Experiment assignment/statistical analysis.
+38. Cancellable async search.
+39. Database index telemetry.
+40. Isolated backend test database/fixtures.
+41. Supported notification provider/threat-model decision.
+42. Durable metrics retention + deduplication.
+43. Correlation-ID investigation runbook.
+44. Threshold-tuning runbook.
+45. Future complex AI workflows.
+46. More external integrations.
+47. Stronger durable job execution.
+48. Expanded RAG capabilities.
+49. Advanced analytics/business intelligence.
+50. Broader observability/operational controls.
+51. Broader supply-chain intelligence coverage.
+
+CI/CodeQL are intentionally not listed as remaining work because the latest main runs are green.
+
