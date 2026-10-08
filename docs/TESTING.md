@@ -22,7 +22,7 @@ A unit test proves its tested path, not external-provider health. Configured cre
 
 Repository migration lifecycle tests identify 20261007_0011 as the current repository head. Live production migration history independently verifies 20261007_0011 on 2026-10-08.
 
-Latest fully green baseline is CI #402 / CodeQL #149 on commit `34137b30527bbce0975d78ca4b554cb2291af68c`. The current RAG assertion fix is under CI #405 / CodeQL #152; backend, security, and agents CI jobs are already green, while the frontend build and CodeQL run are still in progress.
+Latest main release validation is green: CI #405 and CodeQL #152 both succeeded on `5594052a4b4e5343ec2194b2a293998e93fa78f4`.
 
 These results verify repository CI/security automation for that main commit; they do not substitute for production/provider E2E evidence.
 
