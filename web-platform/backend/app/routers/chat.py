@@ -460,6 +460,52 @@ def delete_session(
     return None
 
 
+@router.get("/sessions/{session_id}/export")
+def export_chat_session(
+    session_id: str,
+    db: Session = Depends(get_db),
+    admin: dict = Depends(require_admin),
+) -> dict:
+    """Export an owner-scoped chat transcript without exposing deleted sessions."""
+    owner_id = _admin_owner_id(admin)
+    session = db.query(models.ChatSession).filter(
+        models.ChatSession.session_id == session_id,
+        models.ChatSession.owner_id == owner_id,
+        models.ChatSession.is_active == True,
+    ).first()
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+    messages = (
+        db.query(models.ChatMessage)
+        .filter(models.ChatMessage.session_id == session.id)
+        .order_by(models.ChatMessage.created_at.asc(), models.ChatMessage.id.asc())
+        .all()
+    )
+    return {
+        "session": {
+            "session_id": session.session_id,
+            "title": session.title,
+            "owner_id": session.owner_id,
+            "agent_id": session.agent_id,
+            "created_at": session.created_at.isoformat() if session.created_at else None,
+            "updated_at": session.updated_at.isoformat() if session.updated_at else None,
+        },
+        "messages": [
+            {
+                "id": message.id,
+                "role": message.role,
+                "content": message.content,
+                "agent_id": message.agent_id,
+                "model_used": message.model_used,
+                "tokens_used": message.tokens_used,
+                "created_at": message.created_at.isoformat() if message.created_at else None,
+            }
+            for message in messages
+        ],
+    }
+
+
 @router.get("/stats")
 def get_chat_stats(
     db: Session = Depends(get_db),
