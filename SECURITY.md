@@ -27,7 +27,7 @@ Admin chat sessions are owner-scoped. Foreign, inactive, and ownerless sessions 
 
 The backend owns application database access. The frontend must not receive service-role credentials. RLS is defense-in-depth and does not replace API authorization. Avoid broad grants or permissive policies solely to silence advisor output.
 
-Schema changes use Alembic. Repository migration head is 20261007_0011; live production head is VERIFY.
+Schema changes use Alembic. Repository migration head is 20261007_0011; live production head is 20261007_0011, verified 2026-10-08 from the connected Supabase migration history.
 
 ## Service role and secrets
 
