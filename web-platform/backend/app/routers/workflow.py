@@ -972,6 +972,22 @@ async def qstash_dispatch(request: Request) -> dict[str, str]:
             "approval_node": restored.state.approval_node,
         }
 
+    # QStash can redeliver a message after a successful request. Terminal runs
+    # must be idempotent: acknowledge the delivery without executing the run again.
+    run = _WORKFLOW_RUNS[run_id]
+    if run.state.status in {"completed", "failed"}:
+        return {"status": run.state.status, "run_id": run_id}
+
+    # Claim the durable scheduled job before execution. A fresh claim prevents
+    # concurrent duplicate deliveries; an expired claim is reclaimed by the
+    # same atomic helper used by the local recovery path.
+    if not _claim_job(run_id):
+        current = _load_run_state(run_id)
+        if current is not None and current.state.status in {"completed", "failed"}:
+            _WORKFLOW_RUNS[run_id] = current
+            return {"status": current.state.status, "run_id": run_id}
+        return {"status": "already_running", "run_id": run_id}
+
     if os.getenv("CELERY_ENABLED", "false").lower() == "true":
         from app.workers.tasks import execute_workflow_task
         execute_workflow_task.delay(run_id)
