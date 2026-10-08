@@ -28,6 +28,10 @@ Latest main release validation is green:
 
 These results verify repository CI/security automation for that main commit; they do not substitute for production/provider E2E evidence.
 
+## Opt-in live provider suite
+
+Set `RUN_LIVE_E2E=1` and provide the required provider environment variables to run `web-platform/backend/tests/test_live_release_gates.py`. The suite performs real upload/read/delete round trips for Cloudinary, Supabase Storage, B2/S3-compatible storage, and Google Drive. Missing provider configuration causes that provider test to skip rather than fabricate a pass.
+
 ## Required live tests
 
 Cloudinary; Supabase Storage; B2; Google Drive; signed QStash delivery; workflow completion; retry/recovery and duplicate-delivery protection; production authentication/API smoke; monitoring/failure-mode behavior; RAG ingest → embed → search; Agent → Brain → publish; approval → resume → completion; scheduled execution across a real time boundary; newsletter delivery; controlled provider failover.
