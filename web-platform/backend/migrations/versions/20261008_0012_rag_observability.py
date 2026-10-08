@@ -17,6 +17,12 @@ def upgrade() -> None:
         sa.Column("fingerprint", sa.String(128), nullable=True, index=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
     )
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute("ALTER TABLE rag_observability_events ENABLE ROW LEVEL SECURITY")
+        op.execute("REVOKE ALL PRIVILEGES ON TABLE rag_observability_events FROM PUBLIC")
+        op.execute("REVOKE ALL PRIVILEGES ON TABLE rag_observability_events FROM anon")
+        op.execute("REVOKE ALL PRIVILEGES ON TABLE rag_observability_events FROM authenticated")
+        op.execute("GRANT ALL PRIVILEGES ON TABLE rag_observability_events TO service_role")
 
 
 def downgrade() -> None:
