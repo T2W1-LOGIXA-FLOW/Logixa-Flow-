@@ -37,7 +37,7 @@ Cloudinary; Supabase Storage; B2; Google Drive; signed QStash delivery; workflow
 
 ## Deterministic release-hardening coverage
 
-The non-live suite now covers workflow node retry recovery and retry exhaustion, stale worker-lease reclamation, terminal/duplicate QStash idempotency, approval pause/resume, idempotent RAG source re-ingestion, and scheduled-delay semantics. These tests prove local control-flow invariants without treating them as production E2E evidence.
+The non-live suite now covers workflow node retry recovery and retry exhaustion, stale worker-lease reclamation, terminal/duplicate QStash idempotency, approval pause/resume, idempotent RAG source re-ingestion, deterministic RAG ingest → embed → search, repeated brain publish idempotency, scheduled-delay semantics, and owner-scoped chat transcript export. These tests prove local control-flow invariants without treating them as production E2E evidence.
 
 Live verification remains separately gated by `RUN_LIVE_E2E=1`; missing external-provider configuration must remain a skip, never a synthetic pass.
 
@@ -55,3 +55,7 @@ Required production environment secrets:
 - Google Drive: `GOOGLE_DRIVE_CREDENTIALS_JSON`; `GOOGLE_DRIVE_EXPORT_FOLDER_ID` is optional.
 
 Secrets are consumed only by the workflow environment and are not stored in the repository. A successful manual run is production/provider evidence; a green repository CI run is not.
+
+## Phase 9–10 deterministic additions
+
+The repository-side hardening suite now proves that a completed brain item cannot create duplicate posts when publish is repeated, and that chat transcript export is owner-scoped, excludes inactive sessions, and emits messages in stable chronological order. These are implementation invariants; live Agent → Brain → publish and authenticated production session verification remain separate release gates.
