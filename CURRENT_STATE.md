@@ -130,3 +130,13 @@ Latest confirmed green repository validation is CI #450 / CodeQL #197 on `115482
 ## 13. NEXT ACTION
 
 Continue Phase 13 live gates: production auth, provider E2E, workflow recovery, production RAG/AI, backup/restore, scheduled workflow, newsletter/failover, rollback/DR, monitoring/SLO, evidence reconciliation, then final freeze. Production migration 0012 is applied. Next: execute remaining manual live gates, recovery drills, SLO/error-budget review, then freeze only with complete evidence. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate.
+
+
+## 14. 2026-10-09 AUDIT SNAPSHOT
+
+- Full repository tree and infrastructure cross-check completed; no root-level documentation sprawl or obvious secret material was found.
+- Render latest application deploy remains LIVE at `115482a27a9c7d56294c8fe09940190555a8d7a1`; no current Render application errors were observed in the queried log window.
+- Vercel production currently serves HTTP 200 and has no grouped runtime errors in the last 7 days, but the GitHub Vercel check on the later docs-only main head is failing because of the Hobby build-rate limit. The last READY Vercel deployment is an earlier docs-only commit, so this is an integration-capacity warning rather than a frontend runtime failure.
+- Supabase production remains at migration/alembic head `20261008_0012`; no active workflow/scheduled jobs were present at audit time and durable RAG event count was zero.
+- Stale migration/telemetry statements were found in `docs/DATABASE.md`, `docs/TROUBLESHOOTING.md`, `docs/TESTING.md`, and `docs/OPERATIONS.md` and reconciled during the audit.
+- Detailed evidence is recorded in `docs/REPO_INFRA_AUDIT.md`.
