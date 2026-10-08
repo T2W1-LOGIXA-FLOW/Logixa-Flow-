@@ -20,8 +20,8 @@ Status: DONE / VERIFIED at repository level. Repository evidence includes the ca
 Objective: close evidence-based release gates without changing the current architecture merely to satisfy documentation.
 
 Current verified baseline:
-- Last fully green baseline: CI #402 / CodeQL #149 on `34137b30527bbce0975d78ca4b554cb2291af68c`.
-- Current hardening commit: `5594052a4b4e5343ec2194b2a293998e93fa78f4`; CI #405 backend/security/agents jobs are green, while frontend build and CodeQL #152 are still in progress.
+- Latest-main CI: #405 success on `5594052a4b4e5343ec2194b2a293998e93fa78f4`.
+- Latest-main CodeQL: #152 success on the same commit.
 
 Remaining acceptance criteria:
 - Supabase Storage, B2, and Google Drive E2E pass with real infrastructure.
@@ -179,4 +179,4 @@ None established by repository evidence. Live tests may remain operationally una
 33. Broader observability/operational controls.
 34. Broader supply-chain intelligence coverage.
 
-CI/CodeQL remain release-validation gates for the current hardening commit until CI #405 and CodeQL #152 finish. The prior baseline #402/#149 remains green. Cloudinary and the core QStash delivery/completion/idempotency path are also no longer listed as remaining work because they have real evidence.
+CI #405 and CodeQL #152 are green and are the current repository validation baseline. Live provider and production-path evidence remains separate. Cloudinary and the core QStash delivery/completion/idempotency path are also no longer listed as remaining work because they have real evidence.
