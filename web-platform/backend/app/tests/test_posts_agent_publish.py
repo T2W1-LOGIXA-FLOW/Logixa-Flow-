@@ -9,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 from .. import models, security
 from ..database import Base, get_db
 from ..main import app
+from ..routers.agent import publish_memory
 from ..schemas import PostCreate
 
 
@@ -111,3 +112,41 @@ def test_agent_service_cannot_publish_when_status_is_omitted(posts_client):
         post = session.query(models.Post).filter_by(slug="agent-default-status").one()
         assert post.status == "draft"
         assert post.is_published is False
+
+
+
+def test_brain_publish_is_idempotent_for_repeated_publish(db=None):
+    # Kept as a direct router-level invariant; the fixture below is created locally.
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+    from ..database import Base
+
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    session = sessionmaker(bind=engine)()
+    try:
+        memory = models.AiMemoryBrain(
+            category="Supply Chain",
+            source_title="Idempotent publish",
+            source_url="https://example.com/source",
+            prompt="test",
+            content="<p>Publish once.</p>",
+            summary="Publish once.",
+            status="approved",
+            is_public=False,
+        )
+        session.add(memory)
+        session.commit()
+        session.refresh(memory)
+
+        first = publish_memory(memory.id, __import__("..schemas", fromlist=["BrainPublishRequest"]).BrainPublishRequest(publish_now=True), db=session, admin={"sub": "admin-user", "role": "admin"})
+        session.expire_all()
+        second = publish_memory(memory.id, __import__("..schemas", fromlist=["BrainPublishRequest"]).BrainPublishRequest(publish_now=True), db=session, admin={"sub": "admin-user", "role": "admin"})
+        assert first.id == second.id
+        assert session.query(models.Post).count() == 1
+        assert session.query(models.AiMemoryBrain).one().status == "published"
+    finally:
+        session.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
