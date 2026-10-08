@@ -458,6 +458,10 @@ def publish_memory(
     memory = db.query(models.AiMemoryBrain).filter(models.AiMemoryBrain.id == memory_id).first()
     if not memory:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memory item not found")
+    if payload.publish_now and memory.status not in {"approved", "published"}:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Brain item must be approved before publication")
+    if payload.publish_now and not memory.content.strip():
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Brain item has no publishable content")
     if memory.post_slug:
         post = db.query(models.Post).filter(models.Post.slug == memory.post_slug).first()
         if not post:
