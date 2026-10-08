@@ -7,7 +7,7 @@
 
 ## Database behind repository head
 
-Inspect the live database revision and compare it with repository head 20261007_0011. If behind, follow controlled Alembic deployment. Do not claim live head merely because the repository contains the migration.
+Inspect the live database revision and compare it with repository head **20261008_0012**. As of 2026-10-09, production alembic_version and Supabase migration history both report 20261008_0012. If they diverge again, follow controlled Alembic deployment and verify the live head independently. If behind, follow controlled Alembic deployment. Do not claim live head merely because the repository contains the migration.
 
 ## QStash/workflow failure
 
@@ -27,4 +27,4 @@ Check existing keyboard navigation, focus management, live-region, reduced-motio
 
 ## Vercel
 
-If the operational lock is active, do not restore vercel.json overrides or re-enable Vercel without explicit authorization.
+If the operational lock is active, do not restore vercel.json overrides or re-enable Vercel without explicit authorization. Current Vercel production is serving HTTP 200, but the GitHub Vercel check for later documentation-only commits can fail because the Hobby build rate limit is exhausted; distinguish that integration-check failure from the last READY deployment.
