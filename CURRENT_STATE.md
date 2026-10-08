@@ -45,9 +45,10 @@ Repository Alembic head is **20261007_0011**. Live production Alembic head is **
 - Frontend declares Next.js `^15.5.24`; **package-lock.json resolves Next.js to `15.5.27`**, verified from the committed lockfile on 2026-10-08.
 - Admin AI defaults are represented as enabled while public AI defaults are represented as disabled.
 - Vercel override configuration was intentionally removed and its re-enable path is operationally locked.
-- RAG alert history, feedback, A/B configuration, and related metrics are process-local rather than durable.
+- RAG alert history, feedback, A/B configuration, and related metrics are process-local rather than durable; this remains a Phase 11 durability gap.
 - **`UnifiedBackground2.tsx` is not present in the current repository tree; repository search on 2026-10-08 found only the archived historical documentation and the canonical note identifying the historical reference.** It is therefore not treated as an active component.
-- **CI #406: success and CodeQL #153: success on `9cb6caddce0591aeb63f21656aea6375b3e14d7b`. This is the latest fully green hardening baseline.**
+- Deterministic RAG ingest → embed → search coverage is now present, and repeated brain publish is covered for idempotency. An owner-scoped chat transcript export is implemented with deterministic ordering and ownership tests.
+- **CI #406: success and CodeQL #153: success on `9cb6caddce0591aeb63f21656aea6375b3e14d7b`. New hardening commits are awaiting CI/CodeQL before becoming the next fully green baseline.**
 
 ## 6. IN PROGRESS
 
@@ -86,7 +87,7 @@ No repository-level blocker is established. A manual production live-gate workfl
 ## 9. DEFERRED
 
 - Universal source → publish E2E until storage/provider, provenance, SEO, fact/source QA, and human-approval evidence exists.
-- Longer-term session retention/purge/search controls.
+- Longer-term session retention/purge/search controls; transcript export is now implemented.
 - Durable RAG observability/feedback and experimentation.
 - Broader future AI workflows, integrations, analytics, observability, and supply-chain intelligence expansion.
 
