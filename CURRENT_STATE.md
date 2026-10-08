@@ -31,7 +31,7 @@ Repository Alembic head is **20261008_0012**. Live production migration history 
 - RAG ingestion/search/reliability/quality features are implemented. Durable RAG observability event storage is implemented in repository code and deployed in production.
 - Alembic migration `20261008_0012` is now the repository head and adds durable RAG observability events.
 - Documentation audit and Phase 0 ledgers are complete.
-- Latest fully green repository baseline remains CI #414 / CodeQL #161 on `6301df760774a64a7d951ae42d76b9276cf039de`; new post-baseline changes require a fresh green validation before certification.
+- Latest CI #445 and CodeQL #192 are green on `337cf77b8cc8fe721398e09e58305bd1d1baac8e`; repository-side CI/security validation is current.
 
 ## 5. VERIFIED
 
@@ -40,7 +40,7 @@ Repository Alembic head is **20261008_0012**. Live production migration history 
 - **QStash duplicate-delivery protection passed on 2026-10-08**: a second direct QStash delivery for the same completed run did not add another execution-log entry; the durable run remained `completed` with exactly one `probe` execution entry. This is backed by the terminal-run guard added in commit `3c3e1ca8b7d8e8c07cc6eb53cfe5640d3cd4163a`.
 - Repository migration head is `20261008_0012_rag_observability`; it follows `20261007_0011_agent_step_execution_metadata`.
 - Deterministic stale-claim reclamation coverage is now present in commit `34137b30527bbce0975d78ca4b554cb2291af68c`; live production stale-claim recovery remains pending.
-- **Live production Supabase migration history contains `20261007_0011` as the latest migration**, verified from the connected Supabase project on 2026-10-08. Evidence: Supabase project `ephrnmigiwjhdjksreos`, migration listing observed 2026-10-08; dashboard: `https://supabase.com/dashboard/project/ephrnmigiwjhdjksreos/database/migrations`.
+- **Live production Supabase migration history contains `20261008_0012_rag_observability` as the latest migration**, verified from the connected Supabase project on 2026-10-08. Evidence: Supabase project `ephrnmigiwjhdjksreos`, migration listing observed 2026-10-08; dashboard: `https://supabase.com/dashboard/project/ephrnmigiwjhdjksreos/database/migrations`.
 - Render configuration contains one Free Web Service and `CELERY_ENABLED=false`.
 - Frontend declares Next.js `^15.5.27`; **package-lock.json resolves Next.js to `15.5.27`**, verified from the committed lockfile on 2026-10-08.
 - Admin AI defaults are represented as enabled while public AI defaults are represented as disabled.
@@ -48,8 +48,8 @@ Repository Alembic head is **20261008_0012**. Live production migration history 
 - Phase 11 foundation is implemented: durable RAG error/quality telemetry storage is now deployed in production via migration 0012; alert delivery, retention/export, experiment analysis, and production verification remain.
 - **`UnifiedBackground2.tsx` is not present in the current repository tree; repository search on 2026-10-08 found only the archived historical documentation and the canonical note identifying the historical reference.** It is therefore not treated as an active component.
 - Deterministic RAG ingest → embed → search coverage is now present, and repeated brain publish is covered for idempotency. An owner-scoped chat transcript export is implemented with deterministic ordering and ownership tests.
-- **CI/CodeQL must re-run for all post-#414 changes before release certification.**
-- Production authentication is staged in `.github/workflows/production-auth-smoke.yml`; isolated backup/restore is staged in `.github/workflows/production-backup-restore.yml`.
+- **CI #445 / CodeQL #192 passed on the current hardening commit `337cf77b8cc8fe721398e09e58305bd1d1baac8e`.**
+- Production authentication is staged in `.github/workflows/production-auth-smoke.yml` using `PRODUCTION_ADMIN_EMAIL` / `PRODUCTION_ADMIN_PASSWORD`; isolated backup/restore is staged in `.github/workflows/production-backup-restore.yml` using `SUPABASE_DB_URL` / `SUPABASE_RESTORE_DB_URL`.
 
 ## 6. IN PROGRESS
 
