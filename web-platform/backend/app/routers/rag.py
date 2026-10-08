@@ -424,6 +424,7 @@ def rag_search(
             RAGSearchPagination(page=page, page_size=min(page_size, top_k)),
         ),
         operation_name="search",
+        db=db,
     )
 
 
@@ -473,6 +474,7 @@ def rag_ingest_sources(
     return _run_ingestion(
         lambda: ingest_all_sources(db, limit=limit),
         operation_name="all_sources",
+        db=db,
     )
 
 
@@ -566,6 +568,7 @@ def rag_ingest_one_source(
     return _run_ingestion(
         lambda: {"source_id": source_id, "chunks": ingest_intelligence_source(db, source)},
         operation_name=f"source:{source_id}",
+        db=db,
     )
 
 
@@ -581,6 +584,7 @@ def rag_ingest_one_brain(
     return _run_ingestion(
         lambda: {"memory_id": memory_id, "chunks": ingest_brain_memory(db, memory)},
         operation_name=f"brain:{memory_id}",
+        db=db,
     )
 
 
