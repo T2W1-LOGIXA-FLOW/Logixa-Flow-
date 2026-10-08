@@ -127,3 +127,91 @@ async def test_approval_node_pauses_and_can_resume_after_admin_approval() -> Non
 
     assert run.state.status == "completed"
     assert run.state.completed_nodes == ["prepare", "approve", "publish"]
+
+
+@pytest.mark.anyio
+async def test_node_retry_recovers_after_transient_failure(monkeypatch) -> None:
+    workflow = WorkflowStorageCreate(
+        id="retry-workflow",
+        name="retry workflow",
+        nodes=[
+            WorkflowNode(
+                id="flaky",
+                name="flaky node",
+                retry_count=1,
+                config={"action": "log", "message": "ok"},
+            )
+        ],
+    )
+    workflow_record = WorkflowStorageOut(
+        **workflow.model_dump(),
+        created_at=workflow_router._now(),
+        updated_at=workflow_router._now(),
+    )
+    workflow_router._WORKFLOW_STORAGE[workflow.id] = workflow_record
+    run = WorkflowRunOut(
+        run_id="run-retry",
+        workflow_id=workflow.id,
+        state=WorkflowState(status="queued"),
+    )
+    workflow_router._WORKFLOW_RUNS[run.run_id] = run
+
+    calls = 0
+
+    async def flaky_action(node, run_id):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise RuntimeError("transient failure")
+        return None
+
+    monkeypatch.setattr(workflow_router, "_execute_node_action", flaky_action)
+
+    await workflow_router._execute_workflow(run.run_id)
+
+    assert calls == 2
+    assert run.state.status == "completed"
+    assert run.state.completed_nodes == ["flaky"]
+
+
+@pytest.mark.anyio
+async def test_node_retry_exhaustion_marks_run_failed(monkeypatch) -> None:
+    workflow = WorkflowStorageCreate(
+        id="retry-exhausted-workflow",
+        name="retry exhausted workflow",
+        nodes=[
+            WorkflowNode(
+                id="flaky",
+                name="flaky node",
+                retry_count=1,
+                config={"action": "log", "message": "never completes"},
+            )
+        ],
+    )
+    workflow_record = WorkflowStorageOut(
+        **workflow.model_dump(),
+        created_at=workflow_router._now(),
+        updated_at=workflow_router._now(),
+    )
+    workflow_router._WORKFLOW_STORAGE[workflow.id] = workflow_record
+    run = WorkflowRunOut(
+        run_id="run-retry-exhausted",
+        workflow_id=workflow.id,
+        state=WorkflowState(status="queued"),
+    )
+    workflow_router._WORKFLOW_RUNS[run.run_id] = run
+
+    calls = 0
+
+    async def always_fails(node, run_id):
+        nonlocal calls
+        calls += 1
+        raise RuntimeError("persistent failure")
+
+    monkeypatch.setattr(workflow_router, "_execute_node_action", always_fails)
+
+    await workflow_router._execute_workflow(run.run_id)
+
+    assert calls == 2
+    assert run.state.status == "failed"
+    assert "failed" in (run.state.error or "")
