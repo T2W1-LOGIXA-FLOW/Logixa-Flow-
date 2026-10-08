@@ -11,7 +11,7 @@ Supabase PostgreSQL is the application database and durable source of truth for 
 
 ## Migration policy
 
-Use Alembic from web-platform/backend with python -m alembic upgrade head. Repository head is 20261007_0011. Live production head is VERIFY. Migration 20261007_0011 revises 20261005_0010.
+Use Alembic from web-platform/backend with python -m alembic upgrade head. Repository head is 20261007_0011. Live production head is 20261007_0011, verified 2026-10-08. Migration 20261007_0011 revises 20261005_0010.
 
 Forward corrective migrations are preferred where application data must be preserved. Do not use downgrade as routine data repair. Follow the existing inventory/stamp procedure for an unversioned legacy database; never stamp an RLS/grant migration unless its effects have actually been applied.
 
