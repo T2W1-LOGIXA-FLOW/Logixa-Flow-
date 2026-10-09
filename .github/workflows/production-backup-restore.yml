@@ -95,11 +95,26 @@ jobs:
           psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file "$RUNNER_TEMP/logixa-backup/schema.sql"
           psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --single-transaction --command 'SET session_replication_role = replica' --file "$RUNNER_TEMP/logixa-backup/data.sql"
       - name: Verify restored critical state
+        shell: bash
         run: |
           set -euo pipefail
-          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -tAc "select version_num from alembic_version order by version_num desc limit 1"
-          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -tAc "select to_regclass('public.workflows'), to_regclass('public.workflow_runs'), to_regclass('public.scheduled_workflow_jobs'), to_regclass('public.rag_observability_events')"
-          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -tAc "select count(*) from public.rag_observability_events"
+          expected_head="20261008_0012"
+          restored_head="$(psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -Atc "select version_num from public.alembic_version order by version_num desc limit 1")"
+          if [[ "$restored_head" != "$expected_head" ]]; then
+            echo "::error::Restored Alembic head mismatch: expected $expected_head, got ${restored_head:-<empty>}"
+            exit 1
+          fi
+          restored_tables="$(psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -Atc "select concat_ws(',', to_regclass('public.workflows'), to_regclass('public.workflow_runs'), to_regclass('public.scheduled_workflow_jobs'), to_regclass('public.rag_observability_events'))")"
+          if [[ "$restored_tables" != "workflows,workflow_runs,scheduled_workflow_jobs,rag_observability_events" ]]; then
+            echo "::error::One or more critical tables are missing after restore: ${restored_tables:-<empty>}"
+            exit 1
+          fi
+          rag_event_count="$(psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -Atc "select count(*) from public.rag_observability_events")"
+          if [[ ! "$rag_event_count" =~ ^[0-9]+$ ]]; then
+            echo "::error::Restored RAG observability row count is not numeric"
+            exit 1
+          fi
+          printf 'Restore assertions passed: alembic_head=%s; critical_tables=4/4; rag_observability_events=%s rows.\n' "$restored_head" "$rag_event_count"
       - name: Remove backup material
         if: always()
         run: rm -rf "$RUNNER_TEMP/logixa-backup"
