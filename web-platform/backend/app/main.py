@@ -80,7 +80,7 @@ def seed_app_settings() -> None:
     try:
         # Default LLM model selection (can be changed via admin dashboard)
         default_settings = {
-            "writer_ai_model": "gemini",  # Options: gemini, groq, openrouter-llama, openrouter-deepseek, local
+            "writer_ai_model": "openrouter-free",  # Cost policy: OpenRouter free-model router only
             "integration_rss_feeds": '["https://news.google.com/rss/search?q=supply+chain+management&hl=en-US&gl=US&ceid=US:en"]',
         }
         
