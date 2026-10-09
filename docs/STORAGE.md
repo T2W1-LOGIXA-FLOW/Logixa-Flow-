@@ -14,11 +14,11 @@
 
 ## Configuration
 
-Render configuration identifies Cloudinary as the primary upload backend and Supabase/B2 as fallback backends. B2 uses S3-compatible endpoint/access/bucket/region settings. Google Drive uses credential JSON and an optional export folder ID.
+Render configuration identifies Cloudinary as the primary upload backend and Supabase/B2 as fallback backends. B2 uses S3-compatible endpoint/access/bucket/region settings. `S3_PUBLIC_BASE_URL` must be a public download base, not the S3 API endpoint. For a native Backblaze download host, the storage helper accepts the host root (`https://fXXX.backblazeb2.com`), `/file`, or the full `/file/<bucket>` prefix and ensures the bucket segment is included. Custom domains should point at the bucket and remain unchanged. Google Drive uses credential JSON and an optional export folder ID.
 
 ## Verification
 
-Implementation/configuration is present in the repository. Real Cloudinary, Supabase Storage, B2, and Google Drive E2E remain release gates.
+Implementation/configuration is present in the repository. Cloudinary live E2E is verified; Supabase Storage, B2, and Google Drive remain release gates. The 2026-10-09 B2 run proved S3 API upload/readback works but public download returned HTTP 400; public URL construction was hardened for native Backblaze URL formats and the gate now emits a sanitized diagnostic if public access still fails.
 
 ## Security
 
