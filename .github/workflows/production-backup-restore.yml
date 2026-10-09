@@ -74,12 +74,13 @@ jobs:
           psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --tuples-only --no-align --command 'select current_database(), current_user'
       - name: Create production logical backup
         run: |
+          # Supabase-managed roles/settings are platform-owned; replaying role-only dumps
+          # can fail on restricted ALTER ROLE settings (for example log_min_messages).
+          # Restore application schema/data into the isolated project using its existing roles.
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/logixa-backup"
-          npx --yes supabase@latest db dump --db-url "$SUPABASE_DB_URL" -f "$RUNNER_TEMP/logixa-backup/roles.sql" --role-only
           npx --yes supabase@latest db dump --db-url "$SUPABASE_DB_URL" -f "$RUNNER_TEMP/logixa-backup/schema.sql"
           npx --yes supabase@latest db dump --db-url "$SUPABASE_DB_URL" -f "$RUNNER_TEMP/logixa-backup/data.sql" --use-copy --data-only -x storage.buckets_vectors -x storage.vector_indexes
-          test -s "$RUNNER_TEMP/logixa-backup/roles.sql"
           test -s "$RUNNER_TEMP/logixa-backup/schema.sql"
           test -s "$RUNNER_TEMP/logixa-backup/data.sql"
       - name: Reset isolated restore schema
@@ -91,7 +92,6 @@ jobs:
       - name: Restore into isolated target
         run: |
           set -euo pipefail
-          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file "$RUNNER_TEMP/logixa-backup/roles.sql"
           psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file "$RUNNER_TEMP/logixa-backup/schema.sql"
           psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --single-transaction --command 'SET session_replication_role = replica' --file "$RUNNER_TEMP/logixa-backup/data.sql"
       - name: Verify restored critical state
