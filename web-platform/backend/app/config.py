@@ -71,10 +71,17 @@ def _is_placeholder_secret(value: str | None) -> bool:
 
 
 def ai_provider_configured(role: str | None = None) -> bool:
-    """Return true when a provider key is configured for the given role or globally."""
+    """Return whether the cost-approved OpenRouter free route has a credential."""
     if role:
-        return any(bool(resolve_ai_key_for_role(role, key)) for key in AI_PROVIDER_ENV_KEYS)
-    return any(env_configured(key) or env_configured(f"USER_{key}") or env_configured(f"ADMIN_{key}") for key in AI_PROVIDER_ENV_KEYS)
+        return bool(resolve_ai_key_for_role(role, "OPENROUTER_API_KEY"))
+    return any(
+        env_configured(key)
+        for key in (
+            "OPENROUTER_API_KEY",
+            "USER_OPENROUTER_API_KEY",
+            "ADMIN_OPENROUTER_API_KEY",
+        )
+    )
 
 
 def upload_storage_configured() -> bool:
@@ -98,7 +105,7 @@ def validate_env() -> list[str]:
     
     missing = [key for key in required if not env_configured(key)]
     if os.getenv("REQUIRE_AI_KEY", "false").lower() == "true" and not ai_provider_configured("user") and not ai_provider_configured("admin"):
-        missing.append("one of GEMINI_API_KEY, OPENROUTER_API_KEY, or GROQ_API_KEY, or their USER_/ADMIN_ variants")
+        missing.append("OPENROUTER_API_KEY, USER_OPENROUTER_API_KEY, or ADMIN_OPENROUTER_API_KEY (required by the free-only AI cost policy)")
     
     # Production-specific checks
     is_production = os.getenv("ENVIRONMENT", "development").lower() in {"production", "prod"}
