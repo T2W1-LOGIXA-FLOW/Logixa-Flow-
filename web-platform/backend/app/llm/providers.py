@@ -63,7 +63,15 @@ class GeminiProvider(LLMProvider):
 
 class OpenRouterProvider(LLMProvider):
     def __init__(self, model: str, api_key: Optional[str] = None, role: str = "admin"):
-        self.model = model  # e.g., "meta-llama/llama-3-70b-instruct"
+        requested_model = (model or "").strip()
+        # Never send a paid model ID through this provider. The free router is
+        # always zero-priced and automatically selects a currently available
+        # free chat model; explicit :free variants are also zero-priced.
+        self.model = (
+            requested_model
+            if requested_model == "openrouter/free" or requested_model.endswith(":free")
+            else "openrouter/free"
+        )
         self.api_key = api_key or resolve_provider_key("OPENROUTER_API_KEY", role)
     
     def is_available(self) -> bool:
