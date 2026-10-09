@@ -17,7 +17,9 @@ Images ≤10 MB → Cloudinary. Documents ≤50 MB → Supabase Storage. Files >
 
 ## AI runtime
 
-Render configuration selects USER_AI_ENABLED=false, ADMIN_AI_ENABLED=true, ADMIN_AI_PROVIDER=mistral, and ADMIN_AI_MODEL=mistral-small-latest. Provider support is broader than the selected provider. Implemented/configured/live-tested state must remain distinct.
+Cost policy (2026-10-09): all application LLM generation is restricted in code to OpenRouter's `openrouter/free` router. The backend router no longer falls back to Gemini, Groq, Cerebras, Mistral, Cohere, or NVIDIA; the agent writer uses OpenRouter free only and otherwise falls back locally. The OpenRouter provider normalizes any non-free model ID to `openrouter/free`. Render is configured with USER_AI_PROVIDER/ADMIN_AI_PROVIDER=`openrouter`, USER_AI_MODEL/ADMIN_AI_MODEL=`openrouter/free`, and AI_COST_PER_1K=`0`. Legacy non-OpenRouter environment keys may still exist in Render, but are not used by the normal LLM generation path. Do not infer that the OpenRouter credential is valid merely because it is present; a real request smoke test is still required.
+
+Use `openrouter/free` for general chat/content generation. The user-supplied list contains specialist endpoints (embedding, reranking, content-safety, and structured decision models) that are not interchangeable with the standard chat-completions API. The free router chooses from available free models automatically. Free-model requests have provider rate limits; free tier currently documents a 50-request/day cap. No paid-provider failover is permitted.
 
 ## Migration state
 
