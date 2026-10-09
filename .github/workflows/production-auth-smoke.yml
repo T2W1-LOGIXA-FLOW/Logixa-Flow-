@@ -25,7 +25,7 @@ jobs:
           for name in SUPABASE_URL SUPABASE_PUBLISHABLE_KEY PRODUCTION_ADMIN_EMAIL PRODUCTION_ADMIN_PASSWORD PRODUCTION_API_URL; do
             if [[ -z "${!name:-}" ]]; then missing+=("$name"); fi
           done
-          if (("${#missing[@]}" > 0)); then
+          if (( ${#missing[@]} > 0 )); then
             printf '::error::Missing or empty production environment secrets: %s\n' "${missing[*]}"
             echo "Configure these names under GitHub Settings > Environments > production > Environment secrets."
             exit 1
