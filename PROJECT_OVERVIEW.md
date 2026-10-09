@@ -27,7 +27,7 @@ IntelligenceSource registry, manual/file/URL/RSS sources, source categories/trus
 
 ### RAG knowledge layer
 
-Ingestion under web-platform/backend/app/rag/, chunking, Gemini embeddings, PostgreSQL/pgvector, source-aware retrieval, batch ingestion, error/retry handling, correlation IDs, aggregate metrics, alerts, and quality/evaluation hooks.
+Ingestion under web-platform/backend/app/rag/, chunking, OpenRouter free embeddings with local hash fallback, PostgreSQL/pgvector, source-aware retrieval, batch ingestion, error/retry handling, correlation IDs, aggregate metrics, alerts, and quality/evaluation hooks.
 
 ### AI layer
 
