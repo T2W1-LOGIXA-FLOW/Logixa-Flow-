@@ -23,10 +23,10 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 
 ## Provider gates
 - [x] Cloudinary upload/read/delete live evidence.
-- [ ] Supabase Storage upload/read/delete evidence. **Next live gate:** run Live Release Gates with provider `supabase`; the workflow validates `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `SUPABASE_STORAGE_BUCKET` before the real upload/read/delete test.
+- [x] Supabase Storage upload/read live evidence — Live Release Gates run #15 passed the complete provider suite (4 passed), including `test_live_supabase_storage_upload_round_trip`: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37956262981. The test verified upload and byte-identical readback and sent a cleanup DELETE; its current code does not assert the DELETE response status, so strict deletion confirmation is still a test-assertion gap. Do not rerun this provider just to repeat already-passed upload/read checks; strengthen the assertion first if full delete verification is required.
 - [x] Backblaze B2 authenticated private-bucket upload/read/delete evidence — Live Release Gates run #12 passed on 2026-10-09 (`test_live_b2_s3_round_trip`, SHA `88c6491f0d4bf0c279f73971c8be235113272733`): https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37947429179
 - [ ] Deployed application private-B2 download-proxy E2E evidence.
-- [x] Google Drive live upload/read round-trip evidence — Live Release Gates run #14 passed on 2026-10-09 (`test_live_google_drive_upload_round_trip`, 1 passed in 2.04s), superseding run #13's earlier `invalid_scope` failure: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37953000376. Separate export/delete semantics should only be claimed if directly covered by this test.
+- [x] All-provider live suite passed in Live Release Gates run #15 on 2026-10-09 (4 passed: Cloudinary, Supabase Storage, B2/S3, Google Drive): https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37956262981. The later run #16 was cancelled before test execution and adds no new evidence.\n- [x] Google Drive live upload/read round-trip evidence — Live Release Gates run #14 passed on 2026-10-09 (`test_live_google_drive_upload_round_trip`, 1 passed in 2.04s), superseding run #13's earlier `invalid_scope` failure: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37953000376. Separate export/delete semantics should only be claimed if directly covered by this test.
 
 ## Workflow and AI/RAG
 - [x] QStash signed delivery and durable workflow completion.
