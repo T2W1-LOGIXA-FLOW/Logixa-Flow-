@@ -35,6 +35,7 @@ Repository Alembic head is **20261008_0012**. Live production migration history 
 
 ## 5. VERIFIED
 
+- **Backblaze B2 private S3 API live E2E passed on 2026-10-09**: Live Release Gates run #12 succeeded on `main` at `88c6491f0d4bf0c279f73971c8be235113272733`; `test_live_b2_s3_round_trip` performed authenticated upload, readback/content equality, and delete against the configured B2 bucket. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37947429179. This verifies provider-level private S3 access, not yet the deployed application download proxy.
 - **Cloudinary live E2E passed on 2026-10-08**: a real 1x1 PNG was uploaded to the connected Cloudinary account, retrieved by asset ID, verified for identity/size, and deleted successfully. Test asset: `logixa/release-gate-cloudinary-20261008`.
 - **QStash signed delivery + canonical workflow completion passed on 2026-10-08**: QStash message `msg_7YoJxFpwkEy5zBp2YxbmSsWDsqwAbXM5wtckxoReAkhqA6PJibwLF` reached the Render dispatch endpoint and the durable Supabase workflow run `release-gate-qstash-a1` completed with node `probe`; the scheduled job became `completed`.
 - **QStash duplicate-delivery protection passed on 2026-10-08**: a second direct QStash delivery for the same completed run did not add another execution-log entry; the durable run remained `completed` with exactly one `probe` execution entry. This is backed by the terminal-run guard added in commit `3c3e1ca8b7d8e8c07cc6eb53cfe5640d3cd4163a`.
@@ -67,7 +68,7 @@ Current active closure tracks:
 ## 7. PENDING
 
 - Real Supabase Storage E2E.
-- Real Backblaze B2 E2E.
+- Deployed application private-B2 download-proxy E2E (upload through app, fetch opaque app URL, verify bytes and safe response headers).
 - Real Google Drive E2E.
 - Workflow retry/recovery verification.
 - Stale-claim recovery verification.
