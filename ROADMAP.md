@@ -209,3 +209,16 @@ Deterministic repository-side coverage has expanded for RAG ingest/search, publi
 34. Broader supply-chain intelligence coverage.
 
 CI #452 / CodeQL #199 are the latest confirmed green validation on `e46864fad964e24dc60063fb07f46d2f9524e87f` after the `fflate` patch. Docs-only commits after that SHA do not trigger these workflows by design. Any subsequent code/config change must receive a fresh green CI/CodeQL run before certification. Production migration parity is now closed. Live provider and production-path evidence remains separate. Cloudinary and the core QStash delivery/completion/idempotency path are also no longer listed as remaining work because they have real evidence.
+
+## Release Gate Remediation — 2026-10-09
+
+- [x] Investigated latest manual gate failures using the actual GitHub Actions job logs.
+- [x] Fixed Live Release Gates test selection: removed `PYTEST_ADDOPTS` collision, selected the test path explicitly, and set B2 as the default provider for manual dispatch.
+- [x] Strengthened B2 round-trip to verify the object through the configured public base URL in addition to S3 API upload/read/delete.
+- [x] Fixed backup TLS preflight so a shared Session Pooler URL without a query parameter is normalized to `sslmode=require`; explicit insecure SSL modes are rejected.
+- [x] Fixed backup data restore to set replication role in the same psql session that imports data.
+- [x] Validated shell syntax, embedded Python syntax, test module syntax, target path, and URL normalization using synthetic URLs.
+- [ ] Owner: rerun [Live Release Gates](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/blob/main/.github/workflows/live-release-gates.yml) with provider `b2` and inspect the actual provider result.
+- [ ] Owner: rerun [Production Backup Restore](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/blob/main/.github/workflows/production-backup-restore.yml) and resolve any dump/restore-stage errors.
+- [x] Production Auth Smoke run #11 passed: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474
+- [ ] Do not mark B2 or backup/restore verified until the fresh live runs pass end-to-end.
