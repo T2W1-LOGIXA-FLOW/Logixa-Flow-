@@ -199,3 +199,11 @@ Continue Phase 13 live gates: production auth, provider E2E, workflow recovery, 
 - S3_PUBLIC_BASE_URL is no longer required for B2 configuration or the B2 live gate. B2 uploads return an opaque application path; the backend streams objects through authenticated S3 GET while the Backblaze bucket remains Private.
 - The download proxy forces non-image/non-PDF files to attachment and applies Content-Security-Policy: sandbox; caching is private. Focused local tests passed 17 tests with 4 live-provider tests skipped.
 - Status remains PENDING for live provider verification: a fresh authenticated B2 upload/read/delete gate and a real deployed application download check have not yet been recorded. Do not mark B2 VERIFIED based only on CI/local tests.
+
+
+## Backup/Restore Gate — 2026-10-09 (run #5)
+
+- **Live restore remains FAILED / PENDING.** Run #5 created the production logical backup, reset only the isolated restore project's `public` schema, restored schema objects, then failed on `COPY users` with a duplicate primary key. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37962624876.
+- Read-only live catalog inspection found the `users` table in the managed `auth` schema (owned by `supabase_auth_admin`) in both production and the isolated restore project; no `public.users` table exists. The isolated target's managed Auth schema is not reset by the workflow, so managed Auth rows must not be replayed as part of the application-schema restore.
+- **Remediation committed to the workflow:** both schema and data dumps are explicitly scoped to `--schema public`; a guard rejects schema-qualified Auth/Storage COPY entries in the data dump. This keeps the gate focused on application-schema recovery and avoids modifying managed Auth data.
+- **Not yet verified:** the fix requires a fresh manual run of `Production Backup Restore Gate`. Do not mark backup/restore VERIFIED or release-certified until the run restores data and passes Alembic head `20261008_0012`, four critical-table assertions, and the RAG event-count check.
