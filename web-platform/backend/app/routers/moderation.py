@@ -24,6 +24,7 @@ class CommentUpdate(BaseModel):
 
 HF_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 HF_MODEL = "unitary/toxic-bert"
+HF_MODERATION_ENABLED = os.getenv("HF_MODERATION_ENABLED", "false").lower() == "true"
 
 # ===== POST: Create Comment with Moderation Check =====
 
@@ -38,7 +39,7 @@ def add_comment(
     toxicity_score = 0.0
     status_result = "pending"
     
-    if HF_API_KEY:
+    if HF_MODERATION_ENABLED and HF_API_KEY:
         try:
             headers = {"Authorization": f"Bearer {HF_API_KEY}"}
             response = requests.post(
