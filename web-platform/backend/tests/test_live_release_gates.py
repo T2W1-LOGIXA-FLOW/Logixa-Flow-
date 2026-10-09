@@ -82,6 +82,8 @@ def test_live_supabase_storage_upload_round_trip() -> None:
 
 
 def test_live_b2_s3_round_trip() -> None:
+    from app.storage import _s3_public_base_url
+
     values = _required(
         "S3_ENDPOINT_URL",
         "S3_ACCESS_KEY_ID",
@@ -110,9 +112,14 @@ def test_live_b2_s3_round_trip() -> None:
         )
         response = client.get_object(Bucket=values["S3_BUCKET"], Key=key)
         assert response["Body"].read() == payload
-        public_url = f"{values['S3_PUBLIC_BASE_URL'].rstrip('/')}/{key}"
+        public_url = f"{_s3_public_base_url(values['S3_BUCKET'])}/{key}"
         public_response = requests.get(public_url, timeout=60)
-        public_response.raise_for_status()
+        assert public_response.status_code == 200, (
+            f"B2 public object URL returned HTTP {public_response.status_code}; "
+            f"response={public_response.text[:300]!r}. Check that S3_PUBLIC_BASE_URL "
+            "is a public download base (native B2 format: https://fXXX.backblazeb2.com/file/<bucket>) "
+            "or a correctly configured custom domain, not the S3 API endpoint."
+        )
         assert public_response.content == payload
     finally:
         client.delete_object(Bucket=values["S3_BUCKET"], Key=key)
