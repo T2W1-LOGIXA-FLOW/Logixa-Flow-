@@ -212,8 +212,7 @@ def generate_ai_response(
         response_text, model_used = router.generate_with_provider(prompt)
     except Exception:
         response_text = (
-            "AI provider is not available yet. Add a valid GEMINI_API_KEY, OPENROUTER_API_KEY, "
-            "or GROQ_API_KEY in the backend environment, then redeploy. "
+            "AI provider is not available yet. Configure a valid OPENROUTER_API_KEY for the free-model route, then redeploy. "
             f"Received query: '{query}'."
         )
     
