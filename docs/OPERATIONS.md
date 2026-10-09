@@ -33,3 +33,11 @@ Configured integrations are not live until real E2E evidence exists for Cloudina
 ## Incident handling
 
 Preserve evidence, correlation IDs, sanitized logs, affected run/session IDs, and provider response classes. Do not copy secrets into tickets or documentation.
+
+
+## Production auth and backup gate runbook (2026-10-09)
+
+- Auth smoke requires the GitHub `production` environment secrets `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `PRODUCTION_ADMIN_EMAIL`, `PRODUCTION_ADMIN_PASSWORD`, and `PRODUCTION_API_URL`. A blank secret fails preflight; it is not evidence of an application auth defect.
+- Backup/restore must use Supabase shared Session Pooler URLs (host `*.pooler.supabase.com`, port `5432`, `sslmode=require`) for the IPv4-only GitHub runner. Use the production project `ephrnmigiwjhdjksreos` as source and isolated restore project `bxvykaijlrqjvlhtumpg` as target. Never point the restore URL at production.
+- A successful connectivity preflight is not a successful restore. Require the workflow's post-restore table/migration checks and retain the Actions run link as evidence.
+- B2 configuration is not verified by saving `S3_PUBLIC_BASE_URL` alone; require a clean live `/health` result and a successful real upload/read/delete round trip.
