@@ -14,16 +14,54 @@ jobs:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       SUPABASE_RESTORE_DB_URL: ${{ secrets.SUPABASE_RESTORE_DB_URL }}
     steps:
-      - name: Validate isolated target
+      - name: Validate connection mode and isolated restore target
+        shell: bash
         run: |
           set -euo pipefail
-          test -n "$SUPABASE_DB_URL"
-          test -n "$SUPABASE_RESTORE_DB_URL"
-          test "$SUPABASE_DB_URL" != "$SUPABASE_RESTORE_DB_URL"
+          missing=()
+          for name in SUPABASE_DB_URL SUPABASE_RESTORE_DB_URL; do
+            if [[ -z "${!name:-}" ]]; then missing+=("$name"); fi
+          done
+          if (("${#missing[@]}" > 0)); then
+            printf '::error::Missing or empty production environment secrets: %s\n' "${missing[*]}"
+            echo "Configure them under GitHub Settings > Environments > production > Environment secrets."
+            exit 1
+          fi
+          python - <<'PY'
+          import os
+          from urllib.parse import urlparse, parse_qs
+          production_ref = "ephrnmigiwjhdjksreos"
+          restore_ref = "bxvykaijlrqjvlhtumpg"
+          parsed = {}
+          for name in ("SUPABASE_DB_URL", "SUPABASE_RESTORE_DB_URL"):
+              p = urlparse(os.environ[name])
+              if p.scheme not in ("postgres", "postgresql") or not p.hostname or not p.username or not p.path.strip("/"):
+                  raise SystemExit(f"::error::{name} is not a valid PostgreSQL connection URL")
+              if not p.hostname.endswith(".pooler.supabase.com") or p.port != 5432:
+                  raise SystemExit(f"::error::{name} must use the Supabase shared Session Pooler (pooler.supabase.com:5432), not the direct IPv6 endpoint or transaction pooler")
+              if parse_qs(p.query).get("sslmode", [""])[0] not in ("require", "verify-ca", "verify-full"):
+                  raise SystemExit(f"::error::{name} must require TLS (add sslmode=require)")
+              parsed[name] = p
+          source_user = parsed["SUPABASE_DB_URL"].username
+          restore_user = parsed["SUPABASE_RESTORE_DB_URL"].username
+          if production_ref not in source_user:
+              raise SystemExit("::error::SUPABASE_DB_URL username does not identify the expected production project")
+          if restore_ref not in restore_user:
+              raise SystemExit("::error::SUPABASE_RESTORE_DB_URL must target the dedicated isolated restore project bxvykaijlrqjvlhtumpg")
+          if source_user == restore_user or production_ref in restore_user or restore_ref in source_user:
+              raise SystemExit("::error::Production and isolated restore database identities are not distinct")
+          print("Connection mode, TLS, production identity, and isolated restore target checks passed.")
+          PY
       - name: Install PostgreSQL client
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
+      - name: Preflight database connectivity
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql "$SUPABASE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --tuples-only --no-align --command 'select current_database(), current_user'
+          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --tuples-only --no-align --command 'select current_database(), current_user'
       - name: Create production logical backup
         run: |
           set -euo pipefail
@@ -37,13 +75,15 @@ jobs:
       - name: Restore into isolated target
         run: |
           set -euo pipefail
-          psql "$SUPABASE_RESTORE_DB_URL" --single-transaction --variable ON_ERROR_STOP=1             --file "$RUNNER_TEMP/logixa-backup/roles.sql"             --file "$RUNNER_TEMP/logixa-backup/schema.sql"             --command 'SET session_replication_role = replica'             --file "$RUNNER_TEMP/logixa-backup/data.sql"
+          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file "$RUNNER_TEMP/logixa-backup/roles.sql"
+          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file "$RUNNER_TEMP/logixa-backup/schema.sql"
+          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --command 'SET session_replication_role = replica' --file "$RUNNER_TEMP/logixa-backup/data.sql"
       - name: Verify restored critical state
         run: |
           set -euo pipefail
-          psql "$SUPABASE_RESTORE_DB_URL" -v ON_ERROR_STOP=1 -tAc "select version_num from alembic_version order by version_num desc limit 1"
-          psql "$SUPABASE_RESTORE_DB_URL" -v ON_ERROR_STOP=1 -tAc "select to_regclass('public.workflows'), to_regclass('public.workflow_runs'), to_regclass('public.scheduled_workflow_jobs'), to_regclass('public.rag_observability_events')"
-          psql "$SUPABASE_RESTORE_DB_URL" -v ON_ERROR_STOP=1 -tAc "select count(*) from public.rag_observability_events"
+          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -tAc "select version_num from alembic_version order by version_num desc limit 1"
+          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -tAc "select to_regclass('public.workflows'), to_regclass('public.workflow_runs'), to_regclass('public.scheduled_workflow_jobs'), to_regclass('public.rag_observability_events')"
+          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -tAc "select count(*) from public.rag_observability_events"
       - name: Remove backup material
         if: always()
         run: rm -rf "$RUNNER_TEMP/logixa-backup"
