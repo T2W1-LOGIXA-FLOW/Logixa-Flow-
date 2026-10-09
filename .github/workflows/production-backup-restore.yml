@@ -29,18 +29,25 @@ jobs:
           fi
           python - <<'PY'
           import os
-          from urllib.parse import urlparse, parse_qs
+          from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
           production_ref = "ephrnmigiwjhdjksreos"
           restore_ref = "bxvykaijlrqjvlhtumpg"
           parsed = {}
+          normalized = {}
           for name in ("SUPABASE_DB_URL", "SUPABASE_RESTORE_DB_URL"):
-              p = urlparse(os.environ[name])
+              value = os.environ[name]
+              p = urlparse(value)
               if p.scheme not in ("postgres", "postgresql") or not p.hostname or not p.username or not p.path.strip("/"):
                   raise SystemExit(f"::error::{name} is not a valid PostgreSQL connection URL")
               if not p.hostname.endswith(".pooler.supabase.com") or p.port != 5432:
                   raise SystemExit(f"::error::{name} must use the Supabase shared Session Pooler (pooler.supabase.com:5432), not the direct IPv6 endpoint or transaction pooler")
-              if parse_qs(p.query).get("sslmode", [""])[0] not in ("require", "verify-ca", "verify-full"):
-                  raise SystemExit(f"::error::{name} must require TLS (add sslmode=require)")
+              params = parse_qsl(p.query, keep_blank_values=True)
+              ssl_modes = [v.lower() for k, v in params if k.lower() == "sslmode"]
+              if ssl_modes and any(mode not in ("require", "verify-ca", "verify-full") for mode in ssl_modes):
+                  raise SystemExit(f"::error::{name} has an insecure sslmode; use require, verify-ca, or verify-full")
+              if not ssl_modes:
+                  params.append(("sslmode", "require"))
+              normalized[name] = urlunparse(p._replace(query=urlencode(params)))
               parsed[name] = p
           source_user = parsed["SUPABASE_DB_URL"].username
           restore_user = parsed["SUPABASE_RESTORE_DB_URL"].username
@@ -50,7 +57,10 @@ jobs:
               raise SystemExit("::error::SUPABASE_RESTORE_DB_URL must target the dedicated isolated restore project bxvykaijlrqjvlhtumpg")
           if source_user == restore_user or production_ref in restore_user or restore_ref in source_user:
               raise SystemExit("::error::Production and isolated restore database identities are not distinct")
-          print("Connection mode, TLS, production identity, and isolated restore target checks passed.")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
+              for name, value in normalized.items():
+                  env_file.write(f"{name}={value}\\n")
+          print("Connection mode, TLS, production identity, and isolated restore target checks passed; TLS is enforced in the job environment.")
           PY
       - name: Install PostgreSQL client
         run: |
@@ -83,7 +93,7 @@ jobs:
           set -euo pipefail
           psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file "$RUNNER_TEMP/logixa-backup/roles.sql"
           psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file "$RUNNER_TEMP/logixa-backup/schema.sql"
-          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --command 'SET session_replication_role = replica' --file "$RUNNER_TEMP/logixa-backup/data.sql"
+          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --single-transaction --command 'SET session_replication_role = replica' --file "$RUNNER_TEMP/logixa-backup/data.sql"
       - name: Verify restored critical state
         run: |
           set -euo pipefail
