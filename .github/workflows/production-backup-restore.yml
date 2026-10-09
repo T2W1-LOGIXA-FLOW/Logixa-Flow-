@@ -95,11 +95,29 @@ jobs:
           psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file "$RUNNER_TEMP/logixa-backup/schema.sql"
           psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --single-transaction --command 'SET session_replication_role = replica' --file "$RUNNER_TEMP/logixa-backup/data.sql"
       - name: Verify restored critical state
+        shell: bash
         run: |
           set -euo pipefail
-          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -tAc "select version_num from alembic_version order by version_num desc limit 1"
-          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -tAc "select to_regclass('public.workflows'), to_regclass('public.workflow_runs'), to_regclass('public.scheduled_workflow_jobs'), to_regclass('public.rag_observability_events')"
-          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -tAc "select count(*) from public.rag_observability_events"
+          expected_head="20261008_0012"
+          restored_head="$(psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -tA -c "select version_num from public.alembic_version limit 1")"
+          if [[ "$restored_head" != "$expected_head" ]]; then
+            printf '::error::Restored Alembic head mismatch: expected %s, got %s\n' "$expected_head" "${restored_head:-<empty>}"
+            exit 1
+          fi
+
+          expected_tables="workflows|workflow_runs|scheduled_workflow_jobs|rag_observability_events"
+          restored_tables="$(psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -tA -c "select concat_ws('|', to_regclass('public.workflows'), to_regclass('public.workflow_runs'), to_regclass('public.scheduled_workflow_jobs'), to_regclass('public.rag_observability_events'))")"
+          if [[ "$restored_tables" != "$expected_tables" ]]; then
+            printf '::error::Critical restored tables are missing or mismatched: %s\n' "${restored_tables:-<empty>}"
+            exit 1
+          fi
+
+          rag_count="$(psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -tA -c "select count(*) from public.rag_observability_events")"
+          if [[ ! "$rag_count" =~ ^[0-9]+$ ]]; then
+            printf '::error::Restored RAG observability count is not numeric: %s\n' "${rag_count:-<empty>}"
+            exit 1
+          fi
+          printf 'Restore integrity passed: alembic_head=%s; critical_tables=%s; rag_observability_events=%s\n' "$restored_head" "$restored_tables" "$rag_count"
       - name: Remove backup material
         if: always()
         run: rm -rf "$RUNNER_TEMP/logixa-backup"
