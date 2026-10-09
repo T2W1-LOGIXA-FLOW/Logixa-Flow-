@@ -5,12 +5,32 @@ import json
 import mimetypes
 import os
 from typing import BinaryIO
+from urllib.parse import quote, urlsplit, urlunsplit
 
 import requests
 
 IMAGE_MAX_BYTES = 10 * 1024 * 1024
 DOCUMENT_MAX_BYTES = 50 * 1024 * 1024
 B2_MAX_BYTES = 5 * 1024 * 1024 * 1024
+
+
+def _s3_public_base_url(bucket: str) -> str:
+    """Return a public object URL prefix, including the bucket for native B2 URLs.
+
+    Backblaze's native download URL format is /file/<bucket>/<key>. Allow
+    S3_PUBLIC_BASE_URL to be configured as either the native file host root,
+    the /file prefix, or the full bucket prefix. Custom domains are unchanged.
+    """
+    raw = os.getenv("S3_PUBLIC_BASE_URL", "").strip().rstrip("/")
+    if not raw:
+        raise RuntimeError("S3_PUBLIC_BASE_URL is required for B2 storage")
+    parsed = urlsplit(raw)
+    host = (parsed.hostname or "").lower()
+    path = parsed.path.rstrip("/")
+    if host.endswith(".backblazeb2.com") and not host.startswith("s3.") and path in ("", "/file"):
+        path = f"/file/{quote(bucket, safe='')}"
+        return urlunsplit((parsed.scheme, parsed.netloc, path, parsed.query, parsed.fragment)).rstrip("/")
+    return raw
 
 IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 DOCUMENT_TYPES = {
@@ -120,9 +140,7 @@ def _upload_s3(file_obj: BinaryIO, filename: str, content_type: str) -> str:
     except (BotoCoreError, ClientError) as exc:
         raise RuntimeError("S3-compatible storage rejected the upload") from exc
 
-    public_base = os.getenv("S3_PUBLIC_BASE_URL", "").strip().rstrip("/")
-    if not public_base:
-        raise RuntimeError("S3_PUBLIC_BASE_URL is required for B2 storage")
+    public_base = _s3_public_base_url(required["S3_BUCKET"])
     return f"{public_base}/{filename}"
 
 
