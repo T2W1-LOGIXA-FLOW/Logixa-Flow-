@@ -59,7 +59,7 @@ jobs:
               raise SystemExit("::error::Production and isolated restore database identities are not distinct")
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
               for name, value in normalized.items():
-                  env_file.write(f"{name}={value}\\n")
+                  env_file.write(f"{name}={value}\n")
           print("Connection mode, TLS, production identity, and isolated restore target checks passed; TLS is enforced in the job environment.")
           PY
       - name: Install PostgreSQL client
