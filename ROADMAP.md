@@ -134,17 +134,17 @@ Status: ACTIVE — final evidence closure.
 
 ## Blocked Items
 
-- Vercel's fresh deployment check is constrained by the Hobby build-rate limit. Existing production serves HTTP 200; no deployment should be forced just to refresh a docs-only commit.
+- **PAUSED at owner direction (2026-10-09): Vercel deployment/check remediation.** Leave build quota, deployment refresh, and Vercel integration work untouched until explicitly resumed.
 - Live-gate workflows are implemented, but production evidence depends on the user running manual GitHub Actions workflows with production environment secrets configured. Secret values must not be shared in chat or committed to the repository.
 
 ## Remaining Work — Release Closure
 
 ### Audit follow-up (2026-10-09)
+- [x] Vercel work explicitly paused by owner; no Vercel build/deploy action is part of the active release-closure sequence.
 - [x] Cross-check repository, Render, Vercel, and Supabase live state; see `docs/REPO_INFRA_AUDIT.md`.
 - [x] Reconcile stale migration-head and RAG telemetry statements in canonical docs.
-- [ ] Vercel Hobby build-rate-limit warning: wait for quota reset or review Vercel plan/build usage before expecting a fresh deployment check. Do not repeatedly trigger builds or change application code solely to clear a docs-only check.
-- [ ] Confirm the latest production deployment and current production-domain HTTP 200 after the Vercel build quota recovers.
 - [ ] Run the manual production-auth smoke and isolated backup/restore workflow; record run links and results.
+- [ ] **Render production blocker found 2026-10-09:** configure the correct `S3_PUBLIC_BASE_URL` for the existing B2 bucket/CDN in Render, then confirm `/health` no longer lists it under `missing_env` and `upload_storage_configured` becomes `true`. Do not guess the URL; use the actual bucket/public endpoint.
 - [ ] Run provider live-release gates (Supabase Storage, B2 with `S3_PUBLIC_BASE_URL`, Google Drive) only after confirming the production environment secrets are configured.
 - [ ] Perform production workflow/RAG/publish/scheduler and failure-recovery journeys; no mock-only evidence counts as production verification.
 - [ ] Complete rollback rehearsal, post-rollback data-integrity checks, and SLO/error-budget review before release freeze.
