@@ -18,13 +18,28 @@ jobs:
       PRODUCTION_API_URL: ${{ secrets.PRODUCTION_API_URL }}
     steps:
       - name: Validate configuration
+        shell: bash
         run: |
           set -euo pipefail
-          test -n "$SUPABASE_URL"
-          test -n "$SUPABASE_PUBLISHABLE_KEY"
-          test -n "$PRODUCTION_ADMIN_EMAIL"
-          test -n "$PRODUCTION_ADMIN_PASSWORD"
-          test -n "$PRODUCTION_API_URL"
+          missing=()
+          for name in SUPABASE_URL SUPABASE_PUBLISHABLE_KEY PRODUCTION_ADMIN_EMAIL PRODUCTION_ADMIN_PASSWORD PRODUCTION_API_URL; do
+            if [[ -z "${!name:-}" ]]; then missing+=("$name"); fi
+          done
+          if (("${#missing[@]}" > 0)); then
+            printf '::error::Missing or empty production environment secrets: %s\n' "${missing[*]}"
+            echo "Configure these names under GitHub Settings > Environments > production > Environment secrets."
+            exit 1
+          fi
+          python - <<'PY'
+          import os
+          from urllib.parse import urlparse
+          for name in ("SUPABASE_URL", "PRODUCTION_API_URL"):
+              value = os.environ[name]
+              parsed = urlparse(value)
+              if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password:
+                  raise SystemExit(f"::error::${name} must be an HTTPS base URL without embedded credentials")
+          PY
+          echo "Required production auth configuration is present."
       - name: Authenticate and verify admin API
         run: |
           set -euo pipefail
