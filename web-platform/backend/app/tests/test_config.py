@@ -62,3 +62,35 @@ def test_ai_feature_gates_are_independently_configurable(monkeypatch):
 
     assert ai_enabled_for_role("user") is True
     assert ai_enabled_for_role("admin") is False
+
+
+def test_ai_provider_configured_only_accepts_openrouter_free_route(monkeypatch):
+    from ..config import ai_provider_configured
+
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("USER_OPENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("ADMIN_OPENROUTER_API_KEY", raising=False)
+    monkeypatch.setenv("GEMINI_API_KEY", "legacy-gemini-key")
+    monkeypatch.setenv("ADMIN_MISTRAL_API_KEY", "legacy-mistral-key")
+
+    assert ai_provider_configured() is False
+    assert ai_provider_configured("admin") is False
+
+    monkeypatch.setenv("ADMIN_OPENROUTER_API_KEY", "openrouter-key")
+    assert ai_provider_configured() is True
+    assert ai_provider_configured("admin") is True
+    assert ai_provider_configured("user") is False
+
+
+def test_require_ai_key_requires_openrouter_not_legacy_paid_provider(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "development")
+    monkeypatch.setenv("REQUIRE_AI_KEY", "true")
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("USER_OPENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("ADMIN_OPENROUTER_API_KEY", raising=False)
+    monkeypatch.setenv("GEMINI_API_KEY", "legacy-gemini-key")
+    monkeypatch.setenv("JWT_SECRET", "valid-test-jwt-secret")
+
+    missing = validate_env()
+
+    assert any("OPENROUTER_API_KEY" in item for item in missing)
