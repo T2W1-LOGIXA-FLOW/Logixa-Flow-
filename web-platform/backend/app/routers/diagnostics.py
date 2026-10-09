@@ -36,7 +36,7 @@ def admin_diagnostics(
         "environment": {
             "missing_env": validate_env(),
             "database_profile": database_profile(),
-            "ai_key_configured": bool(os.getenv("GEMINI_API_KEY")),
+            "ai_key_configured": bool(os.getenv("OPENROUTER_API_KEY") or os.getenv("USER_OPENROUTER_API_KEY") or os.getenv("ADMIN_OPENROUTER_API_KEY")),
             "scheduler": scheduler,
             "cache_backend": cache_client.backend,
             "rate_limit_backend": rate_limiter.backend,
