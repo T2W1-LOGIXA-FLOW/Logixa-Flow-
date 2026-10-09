@@ -159,3 +159,10 @@ Continue Phase 13 live gates: production auth, provider E2E, workflow recovery, 
 - CI #462 passed on `cd68f57a0d0c7cee88ab3b3dfc276474e996fa22`: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37901339183
 - CodeQL #209 passed on the same commit: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37901339148
 - These checks validate repository CI/security after the B2 live-test fix. They do not replace the pending real B2 provider round-trip or the pending backup/restore drill.
+
+
+## Live Gate Failure Review — 2026-10-09 (runs #9 / #3)
+
+- **Live Release Gates run #9 reached the real B2 E2E**: S3 API upload and readback succeeded, but the HTTP GET through `S3_PUBLIC_BASE_URL` returned HTTP 400. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37902011746/job/113726523053. The storage URL helper now normalizes native Backblaze download-host roots and `/file` prefixes to `/file/<bucket>`, while preserving custom domains. The test emits a sanitized response excerpt on further public-URL failures. B2 is not marked VERIFIED until a full public readback and cleanup pass.
+- **Production Backup Restore run #3 passed connectivity and backup creation, then failed during role replay**: Supabase rejected `ALTER ROLE ... SET log_min_messages` with `permission denied for parameter log_min_messages`. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37902042481. Supabase-managed role settings are platform-owned; the workflow no longer replays the role-only dump and restores application schema/data using roles already provisioned in the isolated restore project. The complete restore and critical-state assertions remain PENDING until a new run passes.
+- Do not use production as the restore target. The isolated target remains `bxvykaijlrqjvlhtumpg`; its public schema was reset only after production backup and connectivity checks succeeded.
