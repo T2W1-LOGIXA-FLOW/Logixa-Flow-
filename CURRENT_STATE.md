@@ -69,7 +69,7 @@ Current active closure tracks:
 
 - Real Supabase Storage E2E.
 - Deployed application private-B2 download-proxy E2E (upload through app, fetch opaque app URL, verify bytes and safe response headers).
-- Real Google Drive E2E. Latest run #13 failed before upload with OAuth `invalid_scope`; code-side scope handling and diagnostics are being hardened, but live verification remains blocked until the production environment credential is confirmed and the gate passes. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37951151765.
+- **Google Drive live E2E VERIFIED on 2026-10-09**: Live Release Gates run #14 passed `tests/test_live_release_gates.py::test_live_google_drive_upload_round_trip` (`1 passed in 2.04s`), confirming the configured production OAuth credential can complete the upload/read round-trip after the scope-handling fix. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37953000376. This does not close the separate Supabase Storage or app-level B2 download-proxy gates.
 - Workflow retry/recovery verification.
 - Stale-claim recovery verification.
 - Controlled failure/recovery verification.
@@ -95,7 +95,7 @@ No repository-level blocker is established. Manual production auth and backup/re
 
 ## 10. REMAINING RELEASE GATES
 
-1. Real Supabase Storage, B2, and Google Drive provider E2E passes.
+1. Real Supabase Storage and deployed application private-B2 download-proxy E2E pass. Cloudinary, B2 provider-level round-trip, and Google Drive upload/read round-trip have separate live evidence.
 2. Retry, stale-claim recovery, and failure recovery are verified.
 3. Duplicate-delivery protection is verified.
 4. QStash signing, delivery, and canonical workflow completion are verified.
@@ -111,6 +111,8 @@ No repository-level blocker is established. Manual production auth and backup/re
 Latest confirmed green repository validation is CI #450 / CodeQL #197 on `115482a27a9c7d56294c8fe09940190555a8d7a1`. Docs-only commits after that SHA intentionally do not trigger CI/CodeQL because the workflows ignore Markdown-only changes.
 
 ## 11. LAST VERIFIED
+
+- **Google Drive live upload/read round-trip passed on 2026-10-09**: Live Release Gates run #14, job test result `1 passed in 2.04s`. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37953000376. This supersedes the earlier run #13 `invalid_scope` failure; do not continue describing Google Drive as blocked.
 
 2026-10-08 repository and live Supabase inspection:
 - Repository Alembic head: `20261008_0012`.
