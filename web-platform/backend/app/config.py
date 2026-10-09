@@ -12,7 +12,7 @@ AI_PROVIDER_ENV_KEYS = (
     "COHERE_API_KEY",
     "NVIDIA_NIM_API_KEY",
 )
-S3_ENV_KEYS = ("S3_ENDPOINT_URL", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_BUCKET", "S3_PUBLIC_BASE_URL")
+S3_ENV_KEYS = ("S3_ENDPOINT_URL", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_BUCKET")
 
 # Server-side AI safety controls. These default to enabled so production does not
 # require a deployment-time opt-in to protect provider-bound prompts and outputs.

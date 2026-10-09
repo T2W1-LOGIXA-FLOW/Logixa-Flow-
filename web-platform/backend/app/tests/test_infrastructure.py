@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from io import BytesIO
+from types import SimpleNamespace
+import asyncio
 
 import pytest
 
 from app import config, qstash, storage
+from app.routers import uploads
 
 
 def test_qstash_requires_token_and_destination(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -84,6 +87,7 @@ def test_production_env_requires_celery_redis_and_storage(monkeypatch: pytest.Mo
     assert any(item.startswith("CLOUDINARY_CLOUD_NAME") for item in missing)
     assert any(item.startswith("SUPABASE_URL") for item in missing)
     assert any(item.startswith("S3_ENDPOINT_URL") for item in missing)
+    assert not any(item.startswith("S3_PUBLIC_BASE_URL") for item in missing)
 
 
 def test_qstash_publish_targets_dispatch_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -175,7 +179,7 @@ def test_storage_routing_falls_back_from_supabase_to_b2(monkeypatch: pytest.Monk
     assert calls == ["supabase", "b2"]
 
 
-def test_storage_routing_requires_b2_public_base_url(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_private_b2_upload_does_not_require_public_base_url(monkeypatch: pytest.MonkeyPatch) -> None:
     for key, value in {
         "S3_ENDPOINT_URL": "https://s3.example.com",
         "S3_ACCESS_KEY_ID": "key",
@@ -198,5 +202,83 @@ def test_storage_routing_requires_b2_public_base_url(monkeypatch: pytest.MonkeyP
         types.SimpleNamespace(client=lambda *args, **kwargs: FakeClient()),
     )
 
-    with pytest.raises(RuntimeError, match="S3_PUBLIC_BASE_URL"):
-        storage._upload_s3(BytesIO(b"payload"), "file.txt", "text/plain")
+    assert storage._upload_s3(BytesIO(b"payload"), "file.txt", "text/plain") == ""
+
+
+def test_private_b2_download_streams_object_without_public_bucket(monkeypatch: pytest.MonkeyPatch) -> None:
+    record = SimpleNamespace(
+        id="opaque-file-id",
+        storage_backend="b2",
+        is_export=False,
+        object_key="random-key/large-file.bin",
+        content_type="application/octet-stream",
+    )
+
+    class FakeQuery:
+        def filter(self, *_):
+            return self
+
+        def first(self):
+            return record
+
+    class FakeDB:
+        def query(self, *_):
+            return FakeQuery()
+
+        def close(self):
+            return None
+
+    class FakeBody:
+        closed = False
+
+        def iter_chunks(self, chunk_size):
+            assert chunk_size == 64 * 1024
+            yield b"private "
+            yield b"object"
+
+        def close(self):
+            self.closed = True
+
+    body = FakeBody()
+    monkeypatch.setattr(uploads, "SessionLocal", FakeDB)
+    monkeypatch.setattr(
+        uploads,
+        "download_s3_object",
+        lambda key: {"Body": body, "ContentLength": 14},
+    )
+
+    response = uploads.download_stored_file("opaque-file-id")
+
+    async def collect() -> bytes:
+        chunks = []
+        async for chunk in response.body_iterator:
+            chunks.append(chunk)
+        return b"".join(chunks)
+
+    assert asyncio.run(collect()) == b"private object"
+    assert response.media_type == "application/octet-stream"
+    assert response.headers["content-length"] == "14"
+    assert body.closed is True
+
+
+def test_private_b2_download_does_not_expose_non_b2_records(monkeypatch: pytest.MonkeyPatch) -> None:
+    record = SimpleNamespace(storage_backend="supabase", is_export=False)
+
+    class FakeQuery:
+        def filter(self, *_):
+            return self
+
+        def first(self):
+            return record
+
+    class FakeDB:
+        def query(self, *_):
+            return FakeQuery()
+
+        def close(self):
+            return None
+
+    monkeypatch.setattr(uploads, "SessionLocal", FakeDB)
+    with pytest.raises(uploads.HTTPException) as exc:
+        uploads.download_stored_file("not-a-b2-file")
+    assert exc.value.status_code == 404

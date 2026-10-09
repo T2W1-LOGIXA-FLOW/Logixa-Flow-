@@ -51,7 +51,7 @@ Use the GitHub Actions **Live Release Gates** workflow with the `production` env
 Required production environment secrets:
 - Cloudinary: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
 - Supabase Storage: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`
-- B2/S3: `S3_ENDPOINT_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, and application-routing `S3_PUBLIC_BASE_URL`; `S3_REGION` is optional.
+- B2/S3: S3_ENDPOINT_URL, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, and S3_BUCKET; S3_REGION is optional. S3_PUBLIC_BASE_URL is optional and only used for public bucket/custom-domain delivery.
 - Google Drive: `GOOGLE_DRIVE_CREDENTIALS_JSON`; `GOOGLE_DRIVE_EXPORT_FOLDER_ID` is optional.
 
 Secrets are consumed only by the workflow environment and are not stored in the repository. A successful manual run is production/provider evidence; a green repository CI run is not.
@@ -71,11 +71,11 @@ Publication now has a deterministic approval/content gate in addition to publish
 - **Production Auth Smoke:** the failed run stopped at configuration preflight because `SUPABASE_PUBLISHABLE_KEY`, `PRODUCTION_ADMIN_EMAIL`, `PRODUCTION_ADMIN_PASSWORD`, and `PRODUCTION_API_URL` were empty in the selected GitHub `production` environment. Set the environment secrets by name; do not paste their values into issues or chat. The workflow now prints missing secret names and checks that the two base URLs are HTTPS URLs.
 - **Production Backup Restore:** the failed run attempted the direct `db.<project>.supabase.co:5432` endpoint and hit an IPv6-unreachable error. For this dump/restore workflow, use the shared **Session Pooler** connection strings from Supabase Dashboard → Connect → Session pooler, on port `5432`, with `sslmode=require`. Do not use the direct endpoint or the transaction pooler for `pg_dump`/restore. Production must identify project `ephrnmigiwjhdjksreos`; the isolated restore target must identify `bxvykaijlrqjvlhtumpg`. The workflow preflights both connections before running the dump.
 - The workflow changes prevent known missing-secret and wrong-connection-mode failures; they do not prove that a new backup/restore succeeds. Record a fresh run URL and investigate any restore-stage schema/data conflict rather than marking the gate green by assumption.
-- **B2:** the owner reports `S3_PUBLIC_BASE_URL` has been added in Render. Verify the live health endpoint and run the B2 real upload/read/delete gate before treating it as complete.
+- **B2:** keep the bucket Private; deploy the private-download proxy and run the B2 authenticated upload/read/delete gate before treating the provider as verified.
 
 ## Live gate failure fixes (2026-10-09)
 
 - Live Release Gates run #8 never reached provider code: pytest was given both a selected path and a conflicting `PYTEST_ADDOPTS` argument. The workflow now uses an explicit quoted target and defaults to the B2-only test.
-- The B2 test now verifies API upload/read and HTTP read through `S3_PUBLIC_BASE_URL`, then deletes the temporary object.
+- The B2 test verifies authenticated S3 API upload/read/delete. Application download proxy behavior is covered by backend unit tests; live verification requires deploying the change and testing the returned application URL.
 - Backup/restore now automatically adds `sslmode=require` to a shared Session Pooler URL when it is absent, rejects explicitly insecure modes, and keeps `session_replication_role=replica` active in the same psql session as the data import.
 - Local syntax/path checks passed. These checks do not count as live provider or restore success; rerun both manual workflows and retain their run links.

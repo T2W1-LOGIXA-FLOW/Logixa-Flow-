@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse, Response
 from .cache import rate_limiter
 
 
-PUBLIC_PATH_PREFIXES = ("/health", "/api/posts", "/api/metrics", "/api/contacts", "/api/subscribers", "/uploads")
+PUBLIC_PATH_PREFIXES = ("/health", "/api/posts", "/api/metrics", "/api/contacts", "/api/subscribers", "/api/uploads/files/", "/uploads")
 
 
 async def security_headers_middleware(request: Request, call_next):
