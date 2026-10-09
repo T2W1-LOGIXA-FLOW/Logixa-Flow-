@@ -136,6 +136,7 @@ Continue Phase 13 live gates: production auth, provider E2E, workflow recovery, 
 
 - Full repository tree and infrastructure cross-check completed; no root-level documentation sprawl or obvious secret material was found.
 - Render latest application deploy remains LIVE at `115482a27a9c7d56294c8fe09940190555a8d7a1`; no current Render application errors were observed in the queried log window.
+- **Fresh live health check on 2026-10-09 returned HTTP 200 and `status=ok`, with database connectivity `ok`; however, health explicitly reports missing `S3_PUBLIC_BASE_URL` and `upload_storage_configured=false` while the selected upload backend is `b2`. B2 storage is therefore not production-ready until the correct public base URL is configured in Render and health confirms the missing-env list is clear.**
 - Vercel production currently serves HTTP 200 and has no grouped runtime errors in the last 7 days, but the GitHub Vercel check on the later docs-only main head is failing because of the Hobby build-rate limit. The last READY Vercel deployment is an earlier docs-only commit, so this is an integration-capacity warning rather than a frontend runtime failure.
 - Supabase production remains at migration/alembic head `20261008_0012`; no active workflow/scheduled jobs were present at audit time and durable RAG event count was zero.
 - Stale migration/telemetry statements were found in `docs/DATABASE.md`, `docs/TROUBLESHOOTING.md`, `docs/TESTING.md`, and `docs/OPERATIONS.md` and reconciled during the audit.
