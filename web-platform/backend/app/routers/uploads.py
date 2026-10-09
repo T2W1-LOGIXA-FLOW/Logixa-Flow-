@@ -92,7 +92,7 @@ def upload_file(request: Request, file: UploadFile = File(...), _admin=Depends(r
         if backend == "b2":
             # Keep B2 private. The opaque app URL streams from B2 using
             # server-side credentials instead of a public URL or expiring link.
-            url = str(request.url_for("download_stored_file", file_id=record_id))
+            url = str(request.app.url_path_for("download_stored_file", file_id=record_id))
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
@@ -150,7 +150,16 @@ def download_stored_file(file_id: str):
         finally:
             body.close()
 
-    headers = {"Cache-Control": "public, max-age=300", "X-Content-Type-Options": "nosniff"}
+    headers = {
+        "Cache-Control": "private, max-age=300",
+        "X-Content-Type-Options": "nosniff",
+    }
+    # Only known passive media types may render inline on the API origin.
+    # Documents/text/XML are forced to download and sandboxed to prevent
+    # uploaded active content from executing with the API origin's privileges.
+    if content_type not in IMAGE_TYPES and content_type != "application/pdf":
+        headers["Content-Disposition"] = "attachment"
+        headers["Content-Security-Policy"] = "sandbox"
     if result.get("ContentLength") is not None:
         headers["Content-Length"] = str(result["ContentLength"])
     return StreamingResponse(chunks(), media_type=content_type, headers=headers)

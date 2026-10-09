@@ -257,6 +257,8 @@ def test_private_b2_download_streams_object_without_public_bucket(monkeypatch: p
 
     assert asyncio.run(collect()) == b"private object"
     assert response.media_type == "application/octet-stream"
+    assert response.headers["content-disposition"] == "attachment"
+    assert response.headers["content-security-policy"] == "sandbox"
     assert response.headers["content-length"] == "14"
     assert body.closed is True
 
