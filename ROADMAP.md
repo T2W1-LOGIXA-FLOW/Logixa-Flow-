@@ -222,3 +222,9 @@ CI #452 / CodeQL #199 are the latest confirmed green validation on `e46864fad964
 - [ ] Owner: rerun [Production Backup Restore](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/blob/main/.github/workflows/production-backup-restore.yml) and resolve any dump/restore-stage errors.
 - [x] Production Auth Smoke run #11 passed: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474
 - [ ] Do not mark B2 or backup/restore verified until the fresh live runs pass end-to-end.
+
+
+### 2026-10-09 live gate follow-up
+
+- B2 live gate now reaches real upload/readback; public URL returned HTTP 400. Normalize native Backblaze download URLs to include `/file/<bucket>` and rerun until public fetch and cleanup pass.
+- Backup/restore run #3 completed connectivity, production logical backup, and isolated schema reset, but Supabase rejected role-only replay (`log_min_messages` permission). Workflow now skips replay of Supabase-managed roles and must be rerun to verify schema/data restoration.
