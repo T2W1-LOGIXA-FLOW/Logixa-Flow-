@@ -153,3 +153,9 @@ Continue Phase 13 live gates: production auth, provider E2E, workflow recovery, 
 - **Still requires owner action:** rerun Live Release Gates with provider `b2`; rerun Production Backup Restore after the workflow fixes. The backup workflow must still use the shared Session Pooler host on port 5432 and the dedicated isolated restore project. Do not expose secret values in logs or chat.
 - **Current validation:** local syntax checks passed for all shell blocks in the auth, backup/restore, and live release workflows; embedded Python and the live-test module compile; the selected live test path exists. This is syntax evidence only, not a replacement for the real provider/restore runs.
 - **B2 health configuration:** live Render health returned `status=ok`, `database=ok`, `upload_storage_configured=true`, and `missing_env=[]`. Public object access is not verified until the new B2 E2E passes.
+
+## Post-Fix Repository CI Evidence — 2026-10-09
+
+- CI #462 passed on `cd68f57a0d0c7cee88ab3b3dfc276474e996fa22`: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37901339183
+- CodeQL #209 passed on the same commit: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37901339148
+- These checks validate repository CI/security after the B2 live-test fix. They do not replace the pending real B2 provider round-trip or the pending backup/restore drill.
