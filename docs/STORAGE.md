@@ -2,7 +2,7 @@
 
 > Owner: Backend / Operations
 > Update when: storage routing, provider selection, size limits, or live verification changes
-> Last Updated: 2026-10-08
+> Last Updated: 2026-10-09
 > Do NOT put here: credentials.
 
 ## Routing policy
@@ -18,7 +18,7 @@ Render configuration identifies Cloudinary as the primary upload backend and Sup
 
 ## Verification
 
-Implementation/configuration is present in the repository. Cloudinary live E2E is verified; Supabase Storage, B2, and Google Drive remain release gates. Earlier B2 runs proved S3 API upload/readback works but public GET returned HTTP 400. The B2 gate now verifies authenticated upload/read/delete for a private bucket; application-level proxy streaming is covered by repository tests and must be deployed before it is considered live-verified.
+Implementation/configuration is present in the repository. Cloudinary live E2E and private B2 authenticated S3 upload/read/delete are verified. B2 evidence: Live Release Gates run #12 on 2026-10-09, https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37947429179. The deployed application download-proxy path (/api/uploads/files/<id>) still needs a production E2E check that uploads through the application, fetches the opaque URL, and verifies content plus safe response headers. Supabase Storage and Google Drive live E2E remain release gates. Earlier B2 public-GET failures relate to the superseded public-URL design and are not the target behavior for a Private bucket.
 
 ## Security
 
