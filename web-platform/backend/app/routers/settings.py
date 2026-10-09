@@ -24,7 +24,7 @@ def get_setting(db: Session, key: str, default: str) -> str:
 
 @router.get("/settings/ai", response_model=schemas.AISettingOut)
 def get_ai_setting(db: Session = Depends(get_db)):
-    return schemas.AISettingOut(selected_model=get_setting(db, AI_MODEL_KEY, "gemini"))
+    return schemas.AISettingOut(selected_model="openrouter-free")
 
 
 @router.patch("/settings/ai", response_model=schemas.AISettingOut)
@@ -33,11 +33,14 @@ def update_ai_setting(
     db: Session = Depends(get_db),
     _=Depends(require_admin),
 ):
+    if payload.selected_model != "openrouter-free":
+        from fastapi import HTTPException
+        raise HTTPException(status_code=422, detail="Only the OpenRouter free-model route is enabled by the cost policy.")
     setting = db.query(models.AppSetting).filter(models.AppSetting.key == AI_MODEL_KEY).first()
     if not setting:
-        setting = models.AppSetting(key=AI_MODEL_KEY, value=payload.selected_model)
+        setting = models.AppSetting(key=AI_MODEL_KEY, value="openrouter-free")
         db.add(setting)
     else:
-        setting.value = payload.selected_model
+        setting.value = "openrouter-free"
     db.commit()
-    return schemas.AISettingOut(selected_model=payload.selected_model)
+    return schemas.AISettingOut(selected_model="openrouter-free")
