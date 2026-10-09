@@ -6,14 +6,8 @@ from decimal import Decimal, InvalidOperation
 from sqlalchemy.orm import Session
 from .providers import (
     FallbackLocalProvider,
-    GeminiProvider,
-    GroqProvider,
     LLMProvider,
     OpenRouterProvider,
-    CerebrasProvider,   
-    MistralProvider,   
-    CohereProvider,    
-    NvidiaNimProvider,
     clean_env_value,
 )
 from .. import models
@@ -54,69 +48,31 @@ class LLMRouter:
     def __init__(self, db: Session, role: str = "admin"):
         self.db = db
         self.role = (role or "admin").strip().lower()
-        # Every role gets the full provider set. Provider credentials are still
-        # role-isolated because each provider resolves ROLE_PROVIDER_API_KEY first.
+        # Cost policy: production AI generation uses only OpenRouter's free-model
+        # router. No paid-provider fallback is allowed, even if other API keys exist.
         self.providers = {
-            "gemini": GeminiProvider(role=self.role),
-            "openrouter-llama": OpenRouterProvider(
-                model=clean_env_value("OPENROUTER_LLAMA_MODEL") or "meta-llama/llama-3.3-70b-instruct:free",
-                role=self.role,
-            ),
-            "openrouter-deepseek": OpenRouterProvider(
-                model=clean_env_value("OPENROUTER_DEEPSEEK_MODEL") or "deepseek/deepseek-r1:free",
-                role=self.role,
-            ),
-            "groq": GroqProvider(role=self.role),
-            "cerebras": CerebrasProvider(role=self.role),
-            "mistral": MistralProvider(role=self.role),
-            "cohere": CohereProvider(role=self.role),
-            "nvidia": NvidiaNimProvider(role=self.role),
+            "openrouter-free": OpenRouterProvider(model="openrouter/free", role=self.role),
             "local": FallbackLocalProvider(),
         }
 
     def _selected_provider_name(self, task: str | None = None) -> str:
-        setting = self.db.query(models.AppSetting).filter(
-            models.AppSetting.key == "writer_ai_model"
-        ).first()
-        role_provider = clean_env_value(f"{self.role.upper()}_AI_PROVIDER")
-        task_name = re.sub(r"[^a-z0-9]+", "_", (task or "").strip().lower()).strip("_")
-        task_provider = clean_env_value(f"AI_TASK_PROVIDER_{task_name.upper()}") if task_name else ""
-        selected = task_provider or role_provider or (setting.value if setting else "gemini")
-        aliases = {
-            "llama3": "openrouter-llama",
-            "openrouter": "openrouter-llama",
-            "deepseek": "openrouter-deepseek",
-            "nvidia-nim": "nvidia",
-        }
-        return aliases.get(selected.lower(), selected.lower())
+        # Ignore legacy database/task provider selections: they may point to
+        # paid providers. OpenRouter's free router is the sole remote provider.
+        return "openrouter-free" if self.providers["openrouter-free"].is_available() else "local"
 
     def _provider_order(self, task: str | None = None) -> list[tuple[str, LLMProvider]]:
-        selected = self._selected_provider_name(task)
-        names = [selected, "gemini", "groq", "cerebras", "mistral", "cohere", "nvidia", "openrouter-llama", "openrouter-deepseek"]
-
-        # Generic role model applies only to the selected provider. Fallback
-        # providers retain their own provider-specific model configuration.
-        task_name = re.sub(r"[^a-z0-9]+", "_", (task or "").strip().lower()).strip("_")
-        task_model = clean_env_value(f"AI_TASK_MODEL_{task_name.upper()}") if task_name else ""
-        selected_model = task_model or ("" if task_name and clean_env_value(f"AI_TASK_PROVIDER_{task_name.upper()}") else clean_env_value(f"{self.role.upper()}_AI_MODEL"))
-        if selected_model and selected in self.providers:
-            provider = self.providers[selected]
-            if hasattr(provider, "model"):
-                provider.model = selected_model
+        names = ["openrouter-free", "local"]
         allow_local_fallback = os.getenv(
             "ALLOW_LOCAL_LLM_FALLBACK",
             "true" if os.getenv("ENVIRONMENT", "development").lower() not in {"production", "prod"} else "false",
         ).lower() == "true"
-        if allow_local_fallback:
-            names.append("local")
         ordered: list[tuple[str, LLMProvider]] = []
-        seen: set[str] = set()
         for name in names:
-            provider = self.providers.get(name)
-            if provider is None or name in seen or not provider.is_available():
+            if name == "local" and not allow_local_fallback:
                 continue
-            ordered.append((name, provider))
-            seen.add(name)
+            provider = self.providers[name]
+            if provider.is_available():
+                ordered.append((name, provider))
         return ordered
 
     def diagnostics(self, task: str | None = None) -> dict[str, object]:
