@@ -191,7 +191,8 @@ Continue Phase 13 live gates: production auth, provider E2E, workflow recovery, 
 
 ## 2026-10-09 — Private B2 Bucket Compatibility Follow-up
 
-- Implementation is prepared on branch fix/b2-private-bucket-support: S3_PUBLIC_BASE_URL is no longer required for B2 configuration or the B2 live gate.
-- B2 uploads return a stable opaque application URL; the backend streams the object through authenticated S3 GET while the Backblaze bucket remains Private. This avoids permanent links to private objects and avoids expiring presigned URLs being stored in content.
-- The B2 live gate now checks authenticated upload/read/delete only. A focused local test run passed 17 tests with 4 live-provider tests skipped. The full backend suite was also attempted; 160 passed, 4 skipped, while unrelated workflow/database tests failed because the temporary test environment had no migrated Alembic/SQLite schema and existing workflow expectations differed.
-- Status remains PENDING: the change has not yet been merged/deployed, and a fresh live B2 gate plus deployed application-download check are still required. Do not mark B2 VERIFIED based on local tests alone.
+- Merged PR #57 into main. Merge commit: 3f33841133e4d8cbfab88be9a7eb42186fa8e775.
+- Render deployment for that commit completed successfully (deploy ID dep-db4foi740ujc73eg764g). CI, CodeQL, and Vercel checks passed on the final PR head.
+- S3_PUBLIC_BASE_URL is no longer required for B2 configuration or the B2 live gate. B2 uploads return an opaque application path; the backend streams objects through authenticated S3 GET while the Backblaze bucket remains Private.
+- The download proxy forces non-image/non-PDF files to attachment and applies Content-Security-Policy: sandbox; caching is private. Focused local tests passed 17 tests with 4 live-provider tests skipped.
+- Status remains PENDING for live provider verification: a fresh authenticated B2 upload/read/delete gate and a real deployed application download check have not yet been recorded. Do not mark B2 VERIFIED based only on CI/local tests.
