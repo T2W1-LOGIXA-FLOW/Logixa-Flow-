@@ -4,12 +4,13 @@ import os
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi.responses import StreamingResponse
 
 from .. import models, schemas
 from ..database import SessionLocal
 from ..security import require_admin
-from ..storage import B2_MAX_BYTES, IMAGE_TYPES, classify_storage, upload_routed
+from ..storage import B2_MAX_BYTES, IMAGE_TYPES, classify_storage, download_s3_object, upload_routed
 
 router = APIRouter()
 ALLOWED_IMAGE_TYPES = IMAGE_TYPES
@@ -60,7 +61,7 @@ def _owner_id(admin: object) -> str | None:
 
 
 @router.post("/uploads", response_model=schemas.UploadOut, status_code=status.HTTP_201_CREATED)
-def upload_file(file: UploadFile = File(...), _admin=Depends(require_admin)):
+def upload_file(request: Request, file: UploadFile = File(...), _admin=Depends(require_admin)):
     content_type = (file.content_type or "").split(";", 1)[0].strip().lower()
     if content_type not in ALLOWED_IMAGE_TYPES | ALLOWED_DOCUMENT_TYPES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported file type")
@@ -85,8 +86,13 @@ def upload_file(file: UploadFile = File(...), _admin=Depends(require_admin)):
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)) from exc
 
     filename = f"{uuid4().hex}-{Path(file.filename or 'upload').name}"
+    record_id = uuid4().hex
     try:
         backend, storage_class, url = upload_routed(file.file, filename, content_type, size_bytes)
+        if backend == "b2":
+            # Keep B2 private. The opaque app URL streams from B2 using
+            # server-side credentials instead of a public URL or expiring link.
+            url = str(request.app.url_path_for("download_stored_file", file_id=record_id))
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
@@ -94,7 +100,7 @@ def upload_file(file: UploadFile = File(...), _admin=Depends(require_admin)):
         ) from exc
 
     record = models.StoredFile(
-        id=uuid4().hex,
+        id=record_id,
         original_filename=Path(file.filename or "upload").name[:500],
         storage_backend=backend,
         storage_class=storage_class,
@@ -116,6 +122,47 @@ def upload_file(file: UploadFile = File(...), _admin=Depends(require_admin)):
         db.close()
 
     return schemas.UploadOut(url=url)
+
+
+@router.get("/uploads/files/{file_id}", name="download_stored_file")
+def download_stored_file(file_id: str):
+    """Serve an opaque-link B2 object without making the B2 bucket public."""
+    db = SessionLocal()
+    try:
+        record = db.query(models.StoredFile).filter(models.StoredFile.id == file_id).first()
+        if record is None or record.storage_backend != "b2" or record.is_export:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
+        object_key = record.object_key
+        content_type = record.content_type or "application/octet-stream"
+    finally:
+        db.close()
+
+    try:
+        result = download_s3_object(object_key)
+        body = result["Body"]
+    except Exception as exc:
+        # Do not leak provider credentials, bucket details, or raw provider errors.
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Stored file could not be retrieved") from exc
+
+    def chunks():
+        try:
+            yield from body.iter_chunks(chunk_size=64 * 1024)
+        finally:
+            body.close()
+
+    headers = {
+        "Cache-Control": "private, max-age=300",
+        "X-Content-Type-Options": "nosniff",
+    }
+    # Only known passive media types may render inline on the API origin.
+    # Documents/text/XML are forced to download and sandboxed to prevent
+    # uploaded active content from executing with the API origin's privileges.
+    if content_type not in IMAGE_TYPES and content_type != "application/pdf":
+        headers["Content-Disposition"] = "attachment"
+        headers["Content-Security-Policy"] = "sandbox"
+    if result.get("ContentLength") is not None:
+        headers["Content-Length"] = str(result["ContentLength"])
+    return StreamingResponse(chunks(), media_type=content_type, headers=headers)
 
 
 @router.post("/uploads/drive-export", response_model=schemas.UploadOut, status_code=status.HTTP_201_CREATED)

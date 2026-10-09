@@ -123,9 +123,9 @@ def _upload_supabase(file_obj: BinaryIO, filename: str, content_type: str) -> st
     return f"{base}/storage/v1/object/public/{bucket}/{filename}"
 
 
-def _upload_s3(file_obj: BinaryIO, filename: str, content_type: str) -> str:
+def _s3_client():
+    """Create an authenticated S3-compatible client for a private B2 bucket."""
     import boto3
-    from botocore.exceptions import BotoCoreError, ClientError
 
     required = {
         "S3_ENDPOINT_URL": os.getenv("S3_ENDPOINT_URL"),
@@ -135,7 +135,6 @@ def _upload_s3(file_obj: BinaryIO, filename: str, content_type: str) -> str:
     }
     if missing := [key for key, value in required.items() if not value]:
         raise RuntimeError(f"missing S3 variables: {', '.join(missing)}")
-
     client = boto3.client(
         "s3",
         endpoint_url=required["S3_ENDPOINT_URL"],
@@ -143,18 +142,34 @@ def _upload_s3(file_obj: BinaryIO, filename: str, content_type: str) -> str:
         aws_secret_access_key=required["S3_SECRET_ACCESS_KEY"],
         region_name=os.getenv("S3_REGION", "auto"),
     )
+    return client, required["S3_BUCKET"]
+
+
+def download_s3_object(key: str):
+    """Open a private S3/B2 object using server-side credentials."""
+    client, bucket = _s3_client()
+    return client.get_object(Bucket=bucket, Key=key)
+
+
+def _upload_s3(file_obj: BinaryIO, filename: str, content_type: str) -> str:
+    from botocore.exceptions import BotoCoreError, ClientError
+
+    client, bucket = _s3_client()
     file_obj.seek(0)
     try:
         client.upload_fileobj(
             file_obj,
-            required["S3_BUCKET"],
+            bucket,
             filename,
             ExtraArgs={"ContentType": content_type or "application/octet-stream"},
         )
     except (BotoCoreError, ClientError) as exc:
         raise RuntimeError("S3-compatible storage rejected the upload") from exc
 
-    public_base = _s3_public_base_url(required["S3_BUCKET"])
+    raw_public_base = os.getenv("S3_PUBLIC_BASE_URL", "").strip().rstrip("/")
+    if not raw_public_base:
+        return ""
+    public_base = _s3_public_base_url(bucket)
     return f"{public_base}/{filename}"
 
 
@@ -168,7 +183,7 @@ def upload_routed(file_obj: BinaryIO, filename: str, content_type: str, size_byt
     configured = {
         "cloudinary": ("CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"),
         "supabase": ("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_STORAGE_BUCKET"),
-        "b2": ("S3_ENDPOINT_URL", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_BUCKET", "S3_PUBLIC_BASE_URL"),
+        "b2": ("S3_ENDPOINT_URL", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_BUCKET"),
     }
     preferred = {
         "cloudinary": ["cloudinary", "supabase", "b2"],

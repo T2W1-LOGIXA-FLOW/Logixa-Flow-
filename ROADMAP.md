@@ -147,9 +147,9 @@ Status: ACTIVE — final evidence closure.
 - [ ] Review remaining **dev-only** npm audit findings in the Tailwind 3 toolchain (`braces` and `postcss-selector-parser`). Production-only npm audit is clean; `npm audit --force` proposes a Tailwind 4 major upgrade, so do not force-upgrade without a separate compatibility/test pass.
 - [ ] Configure the missing GitHub `production` environment auth secrets identified by the failed preflight (`SUPABASE_PUBLISHABLE_KEY`, `PRODUCTION_ADMIN_EMAIL`, `PRODUCTION_ADMIN_PASSWORD`, `PRODUCTION_API_URL`), then rerun the auth smoke.
 - [ ] Set backup source/restore URLs to TLS-enabled shared Session Pooler URLs on port 5432; validate production identity `ephrnmigiwjhdjksreos` and isolated restore identity `bxvykaijlrqjvlhtumpg`; rerun the backup/restore gate.
-- [x] Confirmed live `/health` reports `upload_storage_configured=true` and `missing_env=[]` after `S3_PUBLIC_BASE_URL` was added in Render.
+- [x] Historical configuration check: live health reported upload_storage_configured=true and missing_env=[] after the prior public-base setting; this did not prove B2 file delivery.
 - [ ] Run and record the real B2 upload/read/delete provider gate; health configuration is not E2E proof.
-- [ ] Run provider live-release gates (Supabase Storage, B2 with `S3_PUBLIC_BASE_URL`, Google Drive) only after confirming the production environment secrets are configured.
+- [ ] After deploying private B2 download support, run provider live-release gates (Supabase Storage, B2 authenticated upload/read/delete, Google Drive) with the required provider credentials; S3_PUBLIC_BASE_URL is optional.
 - [ ] Perform production workflow/RAG/publish/scheduler and failure-recovery journeys; no mock-only evidence counts as production verification.
 - [ ] Complete rollback rehearsal, post-rollback data-integrity checks, and SLO/error-budget review before release freeze.
 
@@ -214,7 +214,7 @@ CI #452 / CodeQL #199 are the latest confirmed green validation on `e46864fad964
 
 - [x] Investigated latest manual gate failures using the actual GitHub Actions job logs.
 - [x] Fixed Live Release Gates test selection: removed `PYTEST_ADDOPTS` collision, selected the test path explicitly, and set B2 as the default provider for manual dispatch.
-- [x] Strengthened B2 round-trip to verify the object through the configured public base URL in addition to S3 API upload/read/delete.
+- [x] Historical B2 test strengthening verified public GET in addition to S3 API operations; this was superseded because the owner needs a Private bucket.
 - [x] Fixed backup TLS preflight so a shared Session Pooler URL without a query parameter is normalized to `sslmode=require`; explicit insecure SSL modes are rejected.
 - [x] Fixed backup data restore to set replication role in the same psql session that imports data.
 - [x] Validated shell syntax, embedded Python syntax, test module syntax, target path, and URL normalization using synthetic URLs.
@@ -226,5 +226,5 @@ CI #452 / CodeQL #199 are the latest confirmed green validation on `e46864fad964
 
 ### 2026-10-09 live gate follow-up
 
-- B2 live gate now reaches real upload/readback; public URL returned HTTP 400. Normalize native Backblaze download URLs to include `/file/<bucket>` and rerun until public fetch and cleanup pass.
+- Historical B2 public-GET failure is documented above. Follow-up implementation now supports a Private bucket through an application download proxy; deploy and run the authenticated B2 gate plus application URL verification before closing this item.
 - Backup/restore run #3 completed connectivity, production logical backup, and isolated schema reset, but Supabase rejected role-only replay (`log_min_messages` permission). Workflow now skips replay of Supabase-managed roles and must be rerun to verify schema/data restoration.

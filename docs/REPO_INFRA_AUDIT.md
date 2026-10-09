@@ -24,6 +24,7 @@ Read-only cross-check of the current main tree, repository CI/security checks, R
 - The latest application deploy is LIVE; older failed deploys are deactivated history, not the active release.
 - Render metrics currently show no HTTP request series in the available window and no current application log errors were observed in the queried interval. CPU/memory telemetry exists. This is an observation-window limitation, not proof of a 30-day SLO.
 - Fresh `/health` request on 2026-10-09 returned HTTP 200 with `status=ok` and database `ok`, but reported `missing_env=["S3_PUBLIC_BASE_URL (required for S3-compatible storage fallback)"]` and `upload_storage_configured=false` while `upload_storage_backend=b2`. This is a confirmed production configuration blocker for B2 uploads; set the correct bucket/CDN public base URL in Render before the B2 live gate.
+- Follow-up note: the public-base requirement was subsequently removed on branch fix/b2-private-bucket-support. The original observation is retained as historical evidence; verify the health endpoint again after deployment to confirm the new private-bucket configuration contract.
 - Render production remains configured for CELERY_ENABLED=false; QStash is the external delivery mechanism for the current Free workflow path.
 
 ### Vercel

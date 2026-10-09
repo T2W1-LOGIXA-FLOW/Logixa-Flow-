@@ -53,6 +53,7 @@ Preserve evidence, correlation IDs, sanitized logs, affected run/session IDs, an
 ## Live release gate follow-up — 2026-10-09 (runs #9 / #3)
 
 - Live Release Gates run #9 reached the real B2 test: S3 API upload and authenticated readback passed, but the public GET returned HTTP 400. This is now treated as a public URL-format/configuration issue, not as an S3 upload failure. The storage helper builds native Backblaze URLs as `/file/<bucket>/<key>` when `S3_PUBLIC_BASE_URL` is a native download host root or `/file` prefix. Custom domains are left unchanged. If the gate still fails, its error includes the HTTP status and a short response-body excerpt; inspect that sanitized response and ensure the secret is a public download URL base, not the S3 API endpoint.
+- Follow-up: private-bucket support is being implemented so B2 objects are served through an opaque application URL using authenticated S3 GET. The historical public-GET failures above remain valid evidence for the old implementation, but are no longer the target behavior after this change is deployed.
 - Production Backup Restore run #3 connected to both databases, created all three logical dump files, and reset only the dedicated isolated restore project's public schema. Restore then failed replaying `roles.sql` with `permission denied for parameter log_min_messages`. Supabase-managed roles/settings are platform-owned, so the workflow no longer replays the role-only dump; it restores application schema/data into the existing managed roles instead. This fix requires another isolated restore run to verify schema/data restore and post-restore assertions.
 - Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37902011746 and https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37902042481.
 
@@ -65,6 +66,7 @@ Preserve evidence, correlation IDs, sanitized logs, affected run/session IDs, an
 - OpenRouter's Free plan has request limits (pricing page currently lists 50 requests/day). Free model endpoints have low rate limits; request failures/429s must not trigger paid fallback. Reference: https://openrouter.ai/pricing/ and https://openrouter.ai/support/.
 - Credential values are masked by Render and must never be copied into chat/logs. Presence can be reported without exposing the secret, but validity is **PENDING** until a real authenticated request through the deployed app succeeds.
 - B2 live gate run #10: S3 API upload/readback passed; public GET returned HTTP 400 with `Unable to obtain accountId for request`. The helper now converts a supplied `s3.<region>.backblazeb2.com` endpoint into the bucket-specific virtual-hosted public URL `<bucket>.s3.<region>.backblazeb2.com`; native `fNNN.backblazeb2.com` URLs retain `/file/<bucket>`. This needs a new live B2 gate to verify.
+- Follow-up: the private-bucket implementation removes S3_PUBLIC_BASE_URL from required configuration and changes the live gate to authenticated S3 upload/read/delete. This is not live-verified until the code is merged/deployed and a fresh provider run passes.
 - Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37908171471/job/113746607733.
 
 

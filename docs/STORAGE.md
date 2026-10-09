@@ -14,11 +14,11 @@
 
 ## Configuration
 
-Render configuration identifies Cloudinary as the primary upload backend and Supabase/B2 as fallback backends. B2 uses S3-compatible endpoint/access/bucket/region settings. `S3_PUBLIC_BASE_URL` must be a public download base, not the S3 API endpoint. For a native Backblaze download host, the storage helper accepts the host root (`https://fXXX.backblazeb2.com`), `/file`, or the full `/file/<bucket>` prefix and ensures the bucket segment is included. Custom domains should point at the bucket and remain unchanged. Google Drive uses credential JSON and an optional export folder ID.
+Render configuration identifies Cloudinary as the primary upload backend and Supabase/B2 as fallback backends. B2 uses the S3-compatible endpoint, application key ID/secret, bucket name, and region. The bucket may remain Private: S3_PUBLIC_BASE_URL is optional, and B2 files are returned through an opaque application URL (/api/uploads/files/<id>) that streams the object using server-side S3 authentication. Do not make the bucket public or add a payment method just to satisfy the B2 release gate. If an explicitly public bucket or custom CDN is used, S3_PUBLIC_BASE_URL remains an optional delivery override. Google Drive uses credential JSON and an optional export folder ID.
 
 ## Verification
 
-Implementation/configuration is present in the repository. Cloudinary live E2E is verified; Supabase Storage, B2, and Google Drive remain release gates. The 2026-10-09 B2 run proved S3 API upload/readback works but public download returned HTTP 400; public URL construction was hardened for native Backblaze URL formats and the gate now emits a sanitized diagnostic if public access still fails.
+Implementation/configuration is present in the repository. Cloudinary live E2E is verified; Supabase Storage, B2, and Google Drive remain release gates. Earlier B2 runs proved S3 API upload/readback works but public GET returned HTTP 400. The B2 gate now verifies authenticated upload/read/delete for a private bucket; application-level proxy streaming is covered by repository tests and must be deployed before it is considered live-verified.
 
 ## Security
 

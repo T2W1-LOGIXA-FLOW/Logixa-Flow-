@@ -187,3 +187,11 @@ Continue Phase 13 live gates: production auth, provider E2E, workflow recovery, 
 - Provider diagnostics now identify legacy Gemini/Groq/Cerebras/Mistral/Cohere/NVIDIA credentials as inactive by cost policy rather than implying they are active routes. Hugging Face moderation is opt-in only.
 - Local targeted tests on the latest code: 26 passed across LLM routing, key policy, embedding fallback, and B2 URL normalization. CI #502 passed (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37914672598) and CodeQL #249 passed (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37914672600) on commit 40aa0b29514c868a15add1c758d864c6e5087d66.
 - Privacy caveat: OpenRouter's Liquid free embedding model page says requests/embeddings may be retained and used to train Liquid models. Do not send confidential documents to this remote embedding endpoint unless that retention policy is acceptable; the local hash fallback avoids external transmission but has lower semantic quality. Source: https://openrouter.ai/liquid/lfm-2.5-embedding-350m:free/providers.
+
+
+## 2026-10-09 — Private B2 Bucket Compatibility Follow-up
+
+- Implementation is prepared on branch fix/b2-private-bucket-support: S3_PUBLIC_BASE_URL is no longer required for B2 configuration or the B2 live gate.
+- B2 uploads return a stable opaque application URL; the backend streams the object through authenticated S3 GET while the Backblaze bucket remains Private. This avoids permanent links to private objects and avoids expiring presigned URLs being stored in content.
+- The B2 live gate now checks authenticated upload/read/delete only. A focused local test run passed 17 tests with 4 live-provider tests skipped. The full backend suite was also attempted; 160 passed, 4 skipped, while unrelated workflow/database tests failed because the temporary test environment had no migrated Alembic/SQLite schema and existing workflow expectations differed.
+- Status remains PENDING: the change has not yet been merged/deployed, and a fresh live B2 gate plus deployed application-download check are still required. Do not mark B2 VERIFIED based on local tests alone.
