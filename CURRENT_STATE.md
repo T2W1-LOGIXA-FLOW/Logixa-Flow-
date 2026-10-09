@@ -2,7 +2,7 @@
 
 > Owner: Project / Engineering
 > Update when: release state, verification evidence, blockers, or next actions change
-> Last Updated: 2026-10-08
+> Last Updated: 2026-10-09
 > Do NOT put here: detailed architecture, implementation reference, or step-by-step runbooks; use `PROJECT_OVERVIEW.md` and `docs/*`.
 
 ## 1. Current Release
@@ -69,7 +69,7 @@ Current active closure tracks:
 
 - Real Supabase Storage E2E.
 - Deployed application private-B2 download-proxy E2E (upload through app, fetch opaque app URL, verify bytes and safe response headers).
-- Real Google Drive E2E.
+- Real Google Drive E2E. Latest run #13 failed before upload with OAuth `invalid_scope`; code-side scope handling and diagnostics are being hardened, but live verification remains blocked until the production environment credential is confirmed and the gate passes. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37951151765.
 - Workflow retry/recovery verification.
 - Stale-claim recovery verification.
 - Controlled failure/recovery verification.
