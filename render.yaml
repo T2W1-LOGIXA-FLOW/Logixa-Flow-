@@ -122,6 +122,8 @@ services:
         value: meta/llama-3.1-8b-instruct
       - key: HUGGINGFACE_API_KEY
         sync: false
+      - key: HF_MODERATION_ENABLED
+        value: false
       - key: REDIS_URL
         sync: false
       - key: ENABLE_SCHEDULER
