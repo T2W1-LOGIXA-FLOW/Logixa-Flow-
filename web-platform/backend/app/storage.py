@@ -209,16 +209,50 @@ def upload_routed(file_obj: BinaryIO, filename: str, content_type: str, size_byt
 
 
 def _google_drive_credentials():
+    """Load OAuth credentials without overriding the scopes already granted.
+
+    Google refresh tokens can reject a newly requested scope with
+    `invalid_scope`. Preserve the granted scopes embedded in the authorized-user
+    JSON when present; use the least-privilege drive.file scope only when the
+    credential file does not record its scopes.
+    """
     from google.oauth2.credentials import Credentials
 
     raw = os.getenv("GOOGLE_DRIVE_CREDENTIALS_JSON", "").strip()
     if not raw:
         raise RuntimeError("GOOGLE_DRIVE_CREDENTIALS_JSON is required for Google Drive exports")
-    data = json.loads(raw)
-    return Credentials.from_authorized_user_info(
-        data,
-        scopes=["https://www.googleapis.com/auth/drive.file"],
-    )
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("GOOGLE_DRIVE_CREDENTIALS_JSON must contain valid authorized-user OAuth JSON") from exc
+    if not isinstance(data, dict):
+        raise RuntimeError("GOOGLE_DRIVE_CREDENTIALS_JSON must be a JSON object")
+
+    granted_scopes = data.get("scopes")
+    if isinstance(granted_scopes, str):
+        granted_scopes = granted_scopes.split()
+    if granted_scopes is not None and not isinstance(granted_scopes, list):
+        raise RuntimeError("Google Drive OAuth 'scopes' must be a list or whitespace-separated string")
+    scopes = [str(scope).strip() for scope in (granted_scopes or []) if str(scope).strip()]
+    if not scopes:
+        scopes = ["https://www.googleapis.com/auth/drive.file"]
+    writable_scopes = {
+        "https://www.googleapis.com/auth/drive.file",
+        "https://www.googleapis.com/auth/drive",
+    }
+    if not writable_scopes.intersection(scopes):
+        raise RuntimeError(
+            "Google Drive OAuth credentials lack a supported write scope. "
+            "Re-authorize the account with drive.file or drive access and update "
+            "GOOGLE_DRIVE_CREDENTIALS_JSON."
+        )
+    try:
+        return Credentials.from_authorized_user_info(data, scopes=scopes)
+    except (KeyError, ValueError, TypeError) as exc:
+        raise RuntimeError(
+            "GOOGLE_DRIVE_CREDENTIALS_JSON is not a valid authorized-user OAuth credential. "
+            "Use OAuth client credentials with refresh_token, client_id, client_secret, and token_uri."
+        ) from exc
 
 
 def export_to_google_drive(file_obj: BinaryIO, filename: str, content_type: str) -> str:
