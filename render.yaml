@@ -29,9 +29,9 @@ services:
       - key: ADMIN_AI_ENABLED
         value: true
       - key: USER_AI_PROVIDER
-        value: gemini
+        value: openrouter
       - key: USER_AI_MODEL
-        value: gemini-2.5-flash
+        value: openrouter/free
       - key: USER_GEMINI_API_KEY
         sync: false
       - key: USER_OPENROUTER_API_KEY
@@ -47,9 +47,9 @@ services:
       - key: USER_NVIDIA_NIM_API_KEY
         sync: false
       - key: ADMIN_AI_PROVIDER
-        value: mistral
+        value: openrouter
       - key: ADMIN_AI_MODEL
-        value: mistral-small-latest
+        value: openrouter/free
       - key: ADMIN_GEMINI_API_KEY
         sync: false
       - key: ADMIN_OPENROUTER_API_KEY
@@ -91,7 +91,7 @@ services:
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_LLAMA_MODEL
-        value: meta-llama/llama-3.3-70b-instruct:free
+        value: openrouter/free
       - key: GROQ_API_KEY
         sync: false
       - key: GROQ_MODEL
