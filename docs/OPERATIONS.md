@@ -75,3 +75,11 @@ Preserve evidence, correlation IDs, sanitized logs, affected run/session IDs, an
 - RAG previously used Gemini Embeddings when `GEMINI_API_KEY` existed. This path is removed. Embeddings now use only `liquid/lfm-2.5-embedding-350m:free` through OpenRouter with a 768-D compatibility request; invalid/unavailable responses fall back to local 768-D hash vectors. No Gemini embedding fallback remains.
 - Hugging Face toxicity moderation is a separate inference call and could use credits. It now requires explicit `HF_MODERATION_ENABLED=true`; production Render is configured false. The key may remain stored but is not called by default.
 - OpenRouter's Liquid free embedding endpoint warns that requests and embeddings may be retained for model training. Treat this as a data-sharing decision; use local hash fallback for confidential text if that retention is not acceptable.
+
+
+## Backup/restore duplicate-key follow-up — 2026-10-09
+
+- Production Backup Restore run #5 (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37962624876) failed during data replay with a duplicate key on `users_pkey`.
+- Live read-only catalog checks show `users` exists in the managed `auth` schema in both projects and does not exist in `public`. The workflow resets only `public`; it must not replay managed Auth rows into the existing isolated project's Auth schema.
+- The workflow now explicitly scopes both logical dumps to `--schema public` and rejects unexpected schema-qualified Auth/Storage COPY entries. This is an application-schema restore gate; it does not claim to back up or restore Supabase-managed Auth/Storage data.
+- Re-run the workflow manually and require all post-restore assertions to pass before treating this gate as verified. Production remains source-only; never use it as the restore target.
