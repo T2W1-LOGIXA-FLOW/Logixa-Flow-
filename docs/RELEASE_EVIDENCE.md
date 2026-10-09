@@ -42,8 +42,8 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 - [ ] Controlled provider failover evidence.
 
 ## Recovery
-- [ ] Production logical backup workflow staged; live backup/restore run still required. Run #5 (2026-10-09) created the dump and restored schema, then failed during data replay on duplicate `users_pkey`: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37962624876. Remediation committed in `.github/workflows/production-backup-restore.yml`: both dumps are scoped to `--schema public` so managed Supabase Auth data is not replayed.
-- [ ] Isolated restore completed and integrity checks passed. **Still pending:** manually rerun `Production Backup Restore Gate` after the schema-scope fix; require Alembic head `20261008_0012`, all four critical tables, and the RAG event-count assertion to pass.
+- [x] Production logical backup/restore passed on 2026-10-09. Run #6 restored application `public` schema into isolated project and passed Alembic head `20261008_0012`, critical tables 4/4, and numeric RAG observability row-count assertion (0 rows): https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37964429760. This gate intentionally excludes Supabase-managed Auth/Storage schemas.
+- [x] Isolated application-schema restore and integrity assertions passed after run #5's duplicate `users_pkey` failure; fix scopes schema and data dumps to `--schema public`. Historical failure: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37962624876.
 - [ ] Object-storage recovery checked.
 - [ ] Application rollback rehearsal completed.
 - [ ] Post-rollback auth/workflow/RAG/publish smoke passed.
