@@ -48,3 +48,10 @@ Preserve evidence, correlation IDs, sanitized logs, affected run/session IDs, an
 - For B2, run Live Release Gates with provider `b2`; the workflow now tests both S3 API readback and the configured public URL.
 - For backup/restore, use the production Session Pooler and the dedicated isolated restore project. The workflow adds `sslmode=require` if absent and rejects an explicitly insecure SSL mode. The restore target's public schema is intentionally reset after backup and connection checks pass; never point it at production.
 - Keep secrets in GitHub Environment Secrets. Share run URLs and redacted error messages, not credentials.
+
+
+## Live release gate follow-up — 2026-10-09 (runs #9 / #3)
+
+- Live Release Gates run #9 reached the real B2 test: S3 API upload and authenticated readback passed, but the public GET returned HTTP 400. This is now treated as a public URL-format/configuration issue, not as an S3 upload failure. The storage helper builds native Backblaze URLs as `/file/<bucket>/<key>` when `S3_PUBLIC_BASE_URL` is a native download host root or `/file` prefix. Custom domains are left unchanged. If the gate still fails, its error includes the HTTP status and a short response-body excerpt; inspect that sanitized response and ensure the secret is a public download URL base, not the S3 API endpoint.
+- Production Backup Restore run #3 connected to both databases, created all three logical dump files, and reset only the dedicated isolated restore project's public schema. Restore then failed replaying `roles.sql` with `permission denied for parameter log_min_messages`. Supabase-managed roles/settings are platform-owned, so the workflow no longer replays the role-only dump; it restores application schema/data into the existing managed roles instead. This fix requires another isolated restore run to verify schema/data restore and post-restore assertions.
+- Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37902011746 and https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37902042481.
