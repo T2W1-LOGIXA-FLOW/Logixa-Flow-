@@ -147,7 +147,8 @@ Status: ACTIVE — final evidence closure.
 - [ ] Review remaining **dev-only** npm audit findings in the Tailwind 3 toolchain (`braces` and `postcss-selector-parser`). Production-only npm audit is clean; `npm audit --force` proposes a Tailwind 4 major upgrade, so do not force-upgrade without a separate compatibility/test pass.
 - [ ] Configure the missing GitHub `production` environment auth secrets identified by the failed preflight (`SUPABASE_PUBLISHABLE_KEY`, `PRODUCTION_ADMIN_EMAIL`, `PRODUCTION_ADMIN_PASSWORD`, `PRODUCTION_API_URL`), then rerun the auth smoke.
 - [ ] Set backup source/restore URLs to TLS-enabled shared Session Pooler URLs on port 5432; validate production identity `ephrnmigiwjhdjksreos` and isolated restore identity `bxvykaijlrqjvlhtumpg`; rerun the backup/restore gate.
-- [ ] **B2 follow-up:** owner reports `S3_PUBLIC_BASE_URL` was added in Render; confirm live `/health` clears the missing-env warning and the B2 upload/read/delete gate passes before marking it verified.
+- [x] Confirmed live `/health` reports `upload_storage_configured=true` and `missing_env=[]` after `S3_PUBLIC_BASE_URL` was added in Render.
+- [ ] Run and record the real B2 upload/read/delete provider gate; health configuration is not E2E proof.
 - [ ] Run provider live-release gates (Supabase Storage, B2 with `S3_PUBLIC_BASE_URL`, Google Drive) only after confirming the production environment secrets are configured.
 - [ ] Perform production workflow/RAG/publish/scheduler and failure-recovery journeys; no mock-only evidence counts as production verification.
 - [ ] Complete rollback rehearsal, post-rollback data-integrity checks, and SLO/error-budget review before release freeze.
