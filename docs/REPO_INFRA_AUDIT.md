@@ -23,6 +23,7 @@ Read-only cross-check of the current main tree, repository CI/security checks, R
 - Latest live deploy is dep-db3svg2vcj2c73fo003g at commit 115482a27a9c7d56294c8fe09940190555a8d7a1.
 - The latest application deploy is LIVE; older failed deploys are deactivated history, not the active release.
 - Render metrics currently show no HTTP request series in the available window and no current application log errors were observed in the queried interval. CPU/memory telemetry exists. This is an observation-window limitation, not proof of a 30-day SLO.
+- Fresh `/health` request on 2026-10-09 returned HTTP 200 with `status=ok` and database `ok`, but reported `missing_env=["S3_PUBLIC_BASE_URL (required for S3-compatible storage fallback)"]` and `upload_storage_configured=false` while `upload_storage_backend=b2`. This is a confirmed production configuration blocker for B2 uploads; set the correct bucket/CDN public base URL in Render before the B2 live gate.
 - Render production remains configured for CELERY_ENABLED=false; QStash is the external delivery mechanism for the current Free workflow path.
 
 ### Vercel
@@ -51,6 +52,11 @@ Read-only cross-check of the current main tree, repository CI/security checks, R
 1. Vercel integration check is red on the current docs-only head because of Hobby build-rate limiting.
 2. Several canonical docs had stale migration/telemetry statements; those were reconciled during this audit pass.
 3. Live release evidence remains incomplete for provider E2E, authenticated production smoke, workflow recovery, RAG/AI publishing, scheduled execution, newsletter, backup/restore, rollback/DR, and SLO/error-budget observation.
+
+## Follow-up ownership
+
+- On 2026-10-09 the owner explicitly paused Vercel remediation. Its rate-limit/deployment observations above are historical context only; do not trigger builds, change settings, or spend further effort on Vercel until the owner resumes that track.
+- Active release work continues on production auth, isolated backup/restore, storage providers, workflow recovery, RAG/AI publishing, scheduler, rollback/DR, and SLO evidence.
 
 ## Evidence boundary
 
