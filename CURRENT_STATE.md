@@ -69,6 +69,7 @@ Current active closure tracks:
 
 - Real Supabase Storage E2E.
 - Deployed application private-B2 download-proxy E2E (upload through app, fetch opaque app URL, verify bytes and safe response headers).
+- **Production backup/restore VERIFIED on 2026-10-09**: run #6 succeeded on isolated restore project `bxvykaijlrqjvlhtumpg`; restored Alembic head `20261008_0012`, all four critical tables, and numeric RAG observability count (0 rows). Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37964429760. This verifies the `public` application-schema logical restore only, not managed Supabase Auth/Storage or object-storage recovery.
 - **Google Drive live E2E VERIFIED on 2026-10-09**: Live Release Gates run #14 passed `tests/test_live_release_gates.py::test_live_google_drive_upload_round_trip` (`1 passed in 2.04s`), confirming the configured production OAuth credential can complete the upload/read round-trip after the scope-handling fix. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37953000376. This does not close the separate Supabase Storage or app-level B2 download-proxy gates.
 - Workflow retry/recovery verification.
 - Stale-claim recovery verification.
@@ -94,7 +95,7 @@ No repository-level blocker is established. Manual production auth and backup/re
 
 ## 10. REMAINING RELEASE GATES
 
-1. Real Supabase Storage and deployed application private-B2 download-proxy E2E pass. Cloudinary, B2 provider-level round-trip, and Google Drive upload/read round-trip have separate live evidence.
+1. Real Supabase Storage and deployed application private-B2 download-proxy E2E pass. Backup/restore is now separately verified for the `public` application schema in run #6. Cloudinary, B2 provider-level round-trip, and Google Drive upload/read round-trip have separate live evidence.
 2. Retry, stale-claim recovery, and failure recovery are verified.
 3. Duplicate-delivery protection is verified.
 4. QStash signing, delivery, and canonical workflow completion are verified.
@@ -110,6 +111,8 @@ No repository-level blocker is established. Manual production auth and backup/re
 Latest confirmed green repository validation is CI #450 / CodeQL #197 on `115482a27a9c7d56294c8fe09940190555a8d7a1`. Docs-only commits after that SHA intentionally do not trigger CI/CodeQL because the workflows ignore Markdown-only changes.
 
 ## 11. LAST VERIFIED
+
+- **Production logical backup/restore passed on 2026-10-09**: run #6 succeeded, restoring isolated `public` schema, Alembic head `20261008_0012`, critical tables 4/4, and RAG observability row-count assertion (0 rows). Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37964429760. This is not a managed Auth/Storage or object-storage recovery test.
 
 - **Google Drive live upload/read round-trip passed on 2026-10-09**: Live Release Gates run #14, job test result `1 passed in 2.04s`. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37953000376. This supersedes the earlier run #13 `invalid_scope` failure; do not continue describing Google Drive as blocked.
 
