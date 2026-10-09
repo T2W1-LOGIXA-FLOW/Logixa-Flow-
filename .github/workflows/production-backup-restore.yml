@@ -79,10 +79,17 @@ jobs:
           # Restore application schema/data into the isolated project using its existing roles.
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/logixa-backup"
-          npx --yes supabase@latest db dump --db-url "$SUPABASE_DB_URL" -f "$RUNNER_TEMP/logixa-backup/schema.sql"
-          npx --yes supabase@latest db dump --db-url "$SUPABASE_DB_URL" -f "$RUNNER_TEMP/logixa-backup/data.sql" --use-copy --data-only -x storage.buckets_vectors -x storage.vector_indexes
+          # This gate verifies application-schema recovery, not Supabase-managed Auth/Storage.
+          # Explicitly scope BOTH dumps to public so auth.users (which already exists in the
+          # isolated Supabase project) is never replayed into its managed Auth schema.
+          npx --yes supabase@latest db dump --db-url "$SUPABASE_DB_URL" --schema public -f "$RUNNER_TEMP/logixa-backup/schema.sql"
+          npx --yes supabase@latest db dump --db-url "$SUPABASE_DB_URL" --schema public -f "$RUNNER_TEMP/logixa-backup/data.sql" --use-copy --data-only -x storage.buckets_vectors -x storage.vector_indexes
           test -s "$RUNNER_TEMP/logixa-backup/schema.sql"
           test -s "$RUNNER_TEMP/logixa-backup/data.sql"
+          if grep -Eq '^COPY (auth|storage)\.' "$RUNNER_TEMP/logixa-backup/data.sql"; then
+            echo "::error::Application data dump unexpectedly includes a Supabase-managed schema"
+            exit 1
+          fi
       - name: Reset isolated restore schema
         shell: bash
         run: |
