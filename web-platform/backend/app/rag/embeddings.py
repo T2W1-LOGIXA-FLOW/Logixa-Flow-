@@ -6,7 +6,10 @@ import math
 import os
 from collections import Counter
 
+import requests
+
 EMBEDDING_DIMENSIONS = int(os.getenv("EMBEDDING_DIMENSIONS", "768"))
+FREE_EMBEDDING_MODEL = "liquid/lfm-2.5-embedding-350m:free"
 
 
 def _hash_embedding(text: str, dimensions: int | None = None) -> list[float]:
@@ -21,44 +24,48 @@ def _hash_embedding(text: str, dimensions: int | None = None) -> list[float]:
     return [round(value / norm, 8) for value in buckets]
 
 
+def _openrouter_key() -> str:
+    return (
+        os.getenv("OPENROUTER_API_KEY", "").strip()
+        or os.getenv("ADMIN_OPENROUTER_API_KEY", "").strip()
+        or os.getenv("USER_OPENROUTER_API_KEY", "").strip()
+    )
+
+
 def embed_text(text: str) -> tuple[list[float], str]:
-    api_key = os.getenv("GEMINI_API_KEY")
-    model_name = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001").removeprefix("models/")
-    if model_name == "text-embedding-004":
-        model_name = "gemini-embedding-001"
+    """Embed with a zero-priced OpenRouter model; never call paid embedding APIs.
+
+    The free Liquid model's documented default vector size is 1,024. We request
+    the repository's configured size for compatibility with the existing 768-D
+    pgvector column, and verify the returned shape. If the endpoint/key rejects
+    that dimension or is unavailable, use the deterministic local hash embedding.
+    """
+    api_key = _openrouter_key()
     if api_key:
         try:
-            from google import genai
-            from google.genai import types
-
-            client = genai.Client(api_key=api_key)
-            response = client.models.embed_content(
-                model=model_name,
-                contents=text[:12000],
-                config=types.EmbedContentConfig(output_dimensionality=EMBEDDING_DIMENSIONS),
+            response = requests.post(
+                "https://openrouter.ai/api/v1/embeddings",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://logixa-flow.onrender.com",
+                    "X-Title": "Logixa Flow",
+                },
+                json={
+                    "model": FREE_EMBEDDING_MODEL,
+                    "input": (text or "")[:1500],
+                    "dimensions": EMBEDDING_DIMENSIONS,
+                    "encoding_format": "float",
+                },
+                timeout=30,
             )
-            embeddings = getattr(response, "embeddings", None) or []
-            values = getattr(embeddings[0], "values", None) if embeddings else None
-            if values:
-                # attempt to record a small estimated cost for embeddings
-                try:
-                    from ..database import SessionLocal
-                    from ..analytics import log_analytics_event
-
-                    char_count = len(text)
-                    tokens = max(1, int(char_count / 4))
-                    cost_per_1k = float(os.getenv("EMBEDDING_COST_PER_1K", "0.0004"))
-                    amount = round((tokens / 1000.0) * cost_per_1k, 8)
-                    db = SessionLocal()
-                    try:
-                        log_analytics_event(db, "api_cost", {"service": "gemini_embeddings", "amount": amount, "tokens": tokens, "model": model_name})
-                    finally:
-                        db.close()
-                except Exception:
-                    # non-fatal, continue
-                    pass
-                return [float(value) for value in values], model_name
+            response.raise_for_status()
+            data = response.json().get("data") or []
+            values = data[0].get("embedding") if data else None
+            if isinstance(values, list) and len(values) == EMBEDDING_DIMENSIONS:
+                return [float(value) for value in values], FREE_EMBEDDING_MODEL
         except Exception:
+            # Never switch to Gemini or another paid embedding API on failure.
             pass
     return _hash_embedding(text), "hash:fallback"
 
