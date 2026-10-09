@@ -153,7 +153,7 @@ async def generate_agent_brief(
             char_count = len(text)
             tokens = max(1, int(char_count / 4))
             try:
-                cost_per_1k = Decimal(os.getenv("AI_COST_PER_1K", "0.002"))
+                cost_per_1k = Decimal(os.getenv("AI_COST_PER_1K", "0"))
             except (InvalidOperation, ValueError):
                 cost_per_1k = Decimal("0")
             amount = (Decimal(tokens) / Decimal("1000")) * cost_per_1k
