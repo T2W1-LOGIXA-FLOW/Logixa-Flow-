@@ -6,6 +6,8 @@ import json
 import os
 import uuid
 
+from google.auth.exceptions import RefreshError
+
 import pytest
 
 
@@ -116,15 +118,12 @@ def test_live_b2_s3_round_trip() -> None:
 
 
 def test_live_google_drive_upload_round_trip() -> None:
-    values = _required("GOOGLE_DRIVE_CREDENTIALS_JSON")
-    from google.oauth2.credentials import Credentials
+    _required("GOOGLE_DRIVE_CREDENTIALS_JSON")
+    from app.storage import _google_drive_credentials
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaIoBaseUpload
 
-    credentials = Credentials.from_authorized_user_info(
-        json.loads(values["GOOGLE_DRIVE_CREDENTIALS_JSON"]),
-        scopes=["https://www.googleapis.com/auth/drive.file"],
-    )
+    credentials = _google_drive_credentials()
     service = build("drive", "v3", credentials=credentials, cache_discovery=False)
     filename = f"logixa-live-e2e-{uuid.uuid4().hex}.txt"
     payload = b"logixa-live-google-drive-e2e"
@@ -133,14 +132,27 @@ def test_live_google_drive_upload_round_trip() -> None:
     if folder_id:
         metadata["parents"] = [folder_id]
 
-    created = service.files().create(
-        body=metadata,
-        media_body=MediaIoBaseUpload(io.BytesIO(payload), mimetype="text/plain", resumable=True),
-        fields="id,name",
-    ).execute()
+    # Create can fail during OAuth refresh before a file ID exists. Report the
+    # configuration problem directly instead of exposing a long auth traceback.
+    try:
+        created = service.files().create(
+            body=metadata,
+            media_body=MediaIoBaseUpload(io.BytesIO(payload), mimetype="text/plain", resumable=True),
+            fields="id,name",
+        ).execute()
+    except RefreshError as exc:
+        pytest.fail(
+            "Google Drive OAuth refresh failed. Check that GOOGLE_DRIVE_CREDENTIALS_JSON "
+            "contains a valid refresh token and its recorded scopes include drive.file or drive; "
+            "re-authorize the account and replace the GitHub production-environment secret. "
+            f"Provider error: {exc}",
+            pytrace=False,
+        )
+
     file_id = str(created["id"])
     try:
         downloaded = service.files().get_media(fileId=file_id).execute()
         assert downloaded == payload
     finally:
+        # Delete the test artifact even when download or content verification fails.
         service.files().delete(fileId=file_id).execute()
