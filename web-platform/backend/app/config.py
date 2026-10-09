@@ -152,49 +152,57 @@ def provider_env_status() -> list[dict[str, str | bool]]:
     providers = [
         {
             "key": "gemini",
-            "label": "Gemini AI",
+            "label": "Gemini AI (inactive by cost policy)",
+            "active": False,
             "env": "GEMINI_API_KEY",
             "required": os.getenv("REQUIRE_AI_KEY", "false").lower() == "true",
         },
         {
             "key": "openrouter",
-            "label": "OpenRouter AI",
+            "label": "OpenRouter Free AI",
+            "active": True,
             "env": "OPENROUTER_API_KEY",
             "required": False,
         },
         {
             "key": "groq",
-            "label": "Groq AI",
+            "label": "Groq AI (inactive by cost policy)",
+            "active": False,
             "env": "GROQ_API_KEY",
             "required": False,
         },
         {
             "key": "cerebras",
-            "label": "Cerebras AI",
+            "label": "Cerebras AI (inactive by cost policy)",
+            "active": False,
             "env": "CEREBRAS_API_KEY",
             "required": False,
         },
         {
             "key": "mistral",
-            "label": "Mistral AI",
+            "label": "Mistral AI (inactive by cost policy)",
+            "active": False,
             "env": "MISTRAL_API_KEY",
             "required": False,
         },
         {
             "key": "cohere",
-            "label": "Cohere AI",
+            "label": "Cohere AI (inactive by cost policy)",
+            "active": False,
             "env": "COHERE_API_KEY",
             "required": False,
         },
         {
             "key": "nvidia",
-            "label": "NVIDIA NIM",
+            "label": "NVIDIA NIM (inactive by cost policy)",
+            "active": False,
             "env": "NVIDIA_NIM_API_KEY",
             "required": False,
         },
         {
             "key": "huggingface",
-            "label": "Hugging Face Moderation",
+            "label": "Hugging Face Moderation (opt-in only)",
+            "active": os.getenv("HF_MODERATION_ENABLED", "false").lower() == "true",
             "env": "HUGGINGFACE_API_KEY",
             "required": False,
         },
@@ -229,14 +237,16 @@ def provider_env_status() -> list[dict[str, str | bool]]:
     for provider in providers:
         env_name = str(provider["env"])
         configured = bool(provider.get("configured_override", env_configured(env_name) or env_configured(f"USER_{env_name}") or env_configured(f"ADMIN_{env_name}")))
+        active = bool(provider.get("active", True))
         status.append(
             {
                 "key": str(provider["key"]),
                 "label": str(provider["label"]),
                 "env": env_name,
                 "configured": configured,
+                "active": active,
                 "required": bool(provider["required"]),
-                "state": "ready" if configured else ("missing" if provider["required"] else "fallback"),
+                "state": "inactive" if not active else ("ready" if configured else ("missing" if provider["required"] else "fallback")),
             }
         )
     return status
