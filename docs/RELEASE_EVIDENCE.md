@@ -23,7 +23,8 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 ## Provider gates
 - [x] Cloudinary upload/read/delete live evidence.
 - [ ] Supabase Storage upload/read/delete evidence.
-- [ ] Backblaze B2 upload/read/delete evidence.
+- [x] Backblaze B2 authenticated private-bucket upload/read/delete evidence — Live Release Gates run #12 passed on 2026-10-09 (`test_live_b2_s3_round_trip`, SHA `88c6491f0d4bf0c279f73971c8be235113272733`): https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37947429179
+- [ ] Deployed application private-B2 download-proxy E2E evidence.
 - [ ] Google Drive upload/read/delete/export evidence.
 
 ## Workflow and AI/RAG
