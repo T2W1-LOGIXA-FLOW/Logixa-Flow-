@@ -31,7 +31,7 @@ Repository Alembic head is **20261008_0012**. Live production migration history 
 - RAG ingestion/search/reliability/quality features are implemented. Durable RAG observability event storage is implemented in repository code and deployed in production.
 - Alembic migration `20261008_0012` is now the repository head and adds durable RAG observability events.
 - Documentation audit and Phase 0 ledgers are complete.
-- Latest CI #450 and CodeQL #197 are green on `115482a27a9c7d56294c8fe09940190555a8d7a1`; repository-side CI/security validation is current.
+- Latest CI #452 and CodeQL #199 are green on `e46864fad964e24dc60063fb07f46d2f9524e87f` after the transitive `fflate` security patch; repository-side CI/security validation is current.
 
 ## 5. VERIFIED
 
@@ -48,7 +48,7 @@ Repository Alembic head is **20261008_0012**. Live production migration history 
 - Phase 11 foundation is implemented: durable RAG error/quality telemetry storage is now deployed in production via migration 0012; alert delivery, retention/export, experiment analysis, and production verification remain.
 - **`UnifiedBackground2.tsx` is not present in the current repository tree; repository search on 2026-10-08 found only the archived historical documentation and the canonical note identifying the historical reference.** It is therefore not treated as an active component.
 - Deterministic RAG ingest → embed → search coverage is now present, and repeated brain publish is covered for idempotency. An owner-scoped chat transcript export is implemented with deterministic ordering and ownership tests.
-- **CI #450 / CodeQL #197 passed on the current hardening commit `115482a27a9c7d56294c8fe09940190555a8d7a1`.**
+- **CI #452 / CodeQL #199 passed on `e46864fad964e24dc60063fb07f46d2f9524e87f` after the dependency-lock security patch.**
 - Production authentication is staged in `.github/workflows/production-auth-smoke.yml` using `PRODUCTION_ADMIN_EMAIL` / `PRODUCTION_ADMIN_PASSWORD`; isolated backup/restore is staged in `.github/workflows/production-backup-restore.yml` using `SUPABASE_DB_URL` / `SUPABASE_RESTORE_DB_URL`. The restore gate now checks the actual `scheduled_workflow_jobs` table.
 
 ## 6. IN PROGRESS
@@ -116,7 +116,7 @@ Latest confirmed green repository validation is CI #450 / CodeQL #197 on `115482
 - Live Supabase migration history latest entry: `20261008_0012_rag_observability`, applied and verified on 2026-10-08.
 - Frontend package.json and lockfile both align Next.js to `15.5.27`.
 - Current repository tree contains no `UnifiedBackground2.tsx`; only archived historical documentation references it.
-- CI #450: **success** on `115482a27a9c7d56294c8fe09940190555a8d7a1`; CodeQL #197: **success** on the same commit. Earlier CI/CodeQL runs remain historical evidence only.
+- CI #452: **success** on `e46864fad964e24dc60063fb07f46d2f9524e87f`; CodeQL #199: **success** on the same commit. Earlier CI/CodeQL runs remain historical evidence only.
 - Cloudinary live E2E passed with real upload/read/delete evidence.
 - QStash signed delivery and canonical workflow completion passed with durable PostgreSQL evidence.
 - Duplicate QStash delivery was acknowledged without re-executing the completed workflow.
@@ -137,6 +137,7 @@ Continue Phase 13 live gates: production auth, provider E2E, workflow recovery, 
 - Full repository tree and infrastructure cross-check completed; no root-level documentation sprawl or obvious secret material was found.
 - Render latest application deploy remains LIVE at `115482a27a9c7d56294c8fe09940190555a8d7a1`; no current Render application errors were observed in the queried log window.
 - **Fresh live health check on 2026-10-09 returned HTTP 200 and `status=ok`, with database connectivity `ok`; however, health explicitly reports missing `S3_PUBLIC_BASE_URL` and `upload_storage_configured=false` while the selected upload backend is `b2`. B2 storage is therefore not production-ready until the correct public base URL is configured in Render and health confirms the missing-env list is clear.**
+- Dependency hardening on 2026-10-09 updated nested `three-stdlib` `fflate` from `0.6.10` to patched `0.6.11`; production-only `npm audit` reports zero findings, backend `pip-audit` reports no known vulnerabilities, and CI #452 plus CodeQL #199 passed. Local tests: backend 176 passed / 4 skipped, agents 4 passed, frontend 83 passed; production frontend build completed. A non-blocking React Hook dependency warning remains in `src/app/admin/rag/page.tsx:35`.
 - Vercel production currently serves HTTP 200 and has no grouped runtime errors in the last 7 days, but the GitHub Vercel check on the later docs-only main head is failing because of the Hobby build-rate limit. The last READY Vercel deployment is an earlier docs-only commit, so this is an integration-capacity warning rather than a frontend runtime failure.
 - Supabase production remains at migration/alembic head `20261008_0012`; no active workflow/scheduled jobs were present at audit time and durable RAG event count was zero.
 - Stale migration/telemetry statements were found in `docs/DATABASE.md`, `docs/TROUBLESHOOTING.md`, `docs/TESTING.md`, and `docs/OPERATIONS.md` and reconciled during the audit.
