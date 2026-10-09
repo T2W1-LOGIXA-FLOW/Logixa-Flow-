@@ -87,8 +87,10 @@ def test_live_b2_s3_round_trip() -> None:
         "S3_ACCESS_KEY_ID",
         "S3_SECRET_ACCESS_KEY",
         "S3_BUCKET",
+        "S3_PUBLIC_BASE_URL",
     )
     import boto3
+    import requests
 
     key = f"logixa-live-e2e/{uuid.uuid4().hex}.txt"
     payload = b"logixa-live-b2-e2e"
@@ -108,6 +110,10 @@ def test_live_b2_s3_round_trip() -> None:
         )
         response = client.get_object(Bucket=values["S3_BUCKET"], Key=key)
         assert response["Body"].read() == payload
+        public_url = f"{values['S3_PUBLIC_BASE_URL'].rstrip('/')}/{key}"
+        public_response = requests.get(public_url, timeout=60)
+        public_response.raise_for_status()
+        assert public_response.content == payload
     finally:
         client.delete_object(Bucket=values["S3_BUCKET"], Key=key)
 
