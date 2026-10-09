@@ -181,20 +181,8 @@ def generate_with_openai(article: dict, style_hint: str = "") -> tuple[str, str]
 
 
 def provider_chain() -> list[str]:
-    preferred = selected_provider()
-    aliases = {
-        "llama3": "openrouter_llama",
-        "llama": "openrouter_llama",
-        "deepseek": "openrouter_deepseek",
-        "groq": "groq",
-        "hf": "huggingface",
-        "huggingface": "huggingface",
-        "gemini": "gemini",
-        "openai": "openai",
-    }
-    first = aliases.get(preferred, preferred)
-    chain = [first, "gemini", "openrouter_llama", "openrouter_deepseek", "groq", "huggingface", "openai"]
-    return list(dict.fromkeys(chain))
+    """Return only the OpenRouter free-model route; never fall back to paid APIs."""
+    return ["openrouter_llama"] if OPENROUTER_API_KEY else []
 
 
 def selected_provider() -> str:
@@ -232,7 +220,7 @@ def generate_post_with_model(article: dict, memory: MemoryAnalytics | None = Non
                     article,
                     OPENROUTER_API_KEY,
                     "https://openrouter.ai/api/v1",
-                    OPENROUTER_MODEL_NAME,
+                    "openrouter/free",
                     "openrouter",
                     style_hint,
                 )
@@ -241,7 +229,7 @@ def generate_post_with_model(article: dict, memory: MemoryAnalytics | None = Non
                     article,
                     OPENROUTER_API_KEY,
                     "https://openrouter.ai/api/v1",
-                    OPENROUTER_FALLBACK_MODEL_NAME,
+                    "openrouter/free",
                     "openrouter",
                     style_hint,
                 )
