@@ -37,7 +37,7 @@ jobs:
               value = os.environ[name]
               parsed = urlparse(value)
               if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password:
-                  raise SystemExit(f"::error::${name} must be an HTTPS base URL without embedded credentials")
+                  raise SystemExit(f"::error::{name} must be an HTTPS base URL without embedded credentials")
           PY
           echo "Required production auth configuration is present."
       - name: Authenticate and verify admin API
