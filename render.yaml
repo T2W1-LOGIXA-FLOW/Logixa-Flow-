@@ -24,6 +24,8 @@ services:
         sync: false
       - key: REQUIRE_AI_KEY
         value: false
+      - key: AI_COST_PER_1K
+        value: "0"
       - key: USER_AI_ENABLED
         value: false
       - key: ADMIN_AI_ENABLED
