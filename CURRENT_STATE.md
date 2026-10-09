@@ -73,7 +73,6 @@ Current active closure tracks:
 - Workflow retry/recovery verification.
 - Stale-claim recovery verification.
 - Controlled failure/recovery verification.
-- Production authentication/API smoke tests.
 - Production monitoring/failure-mode checks.
 - End-to-end RAG ingest → embed → search.
 - Agent → Brain → publish E2E.
@@ -99,7 +98,7 @@ No repository-level blocker is established. Manual production auth and backup/re
 2. Retry, stale-claim recovery, and failure recovery are verified.
 3. Duplicate-delivery protection is verified.
 4. QStash signing, delivery, and canonical workflow completion are verified.
-5. Production authentication/API smoke tests pass.
+5. Production authentication/API smoke tests pass. **VERIFIED** by Production Auth Smoke run #11 on 2026-10-09: password-grant authentication, `/api/auth/me` admin-role assertion, and admin RAG metrics request passed. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474.
 6. Monitoring and failure-mode checks pass.
 7. Production RAG ingest → embed → search is verified.
 8. Agent → Brain → publish is verified.
