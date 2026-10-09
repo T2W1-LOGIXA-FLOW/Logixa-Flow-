@@ -327,7 +327,7 @@ class DashboardMetricUpdate(BaseModel):
 
 
 class AISettingOut(BaseModel):
-    selected_model: Literal["gemini", "llama3", "deepseek", "groq"]
+    selected_model: Literal["openrouter-free"]
 
 
 class AISettingUpdate(BaseModel):
