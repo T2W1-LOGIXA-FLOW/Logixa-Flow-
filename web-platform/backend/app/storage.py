@@ -234,20 +234,21 @@ def _google_drive_credentials():
     if granted_scopes is not None and not isinstance(granted_scopes, list):
         raise RuntimeError("Google Drive OAuth 'scopes' must be a list or whitespace-separated string")
     scopes = [str(scope).strip() for scope in (granted_scopes or []) if str(scope).strip()]
-    if not scopes:
-        scopes = ["https://www.googleapis.com/auth/drive.file"]
+    # If the token JSON omits scopes, leave them unspecified. Passing a new
+    # scope during refresh can make Google reject an otherwise valid refresh
+    # token with invalid_scope.
     writable_scopes = {
         "https://www.googleapis.com/auth/drive.file",
         "https://www.googleapis.com/auth/drive",
     }
-    if not writable_scopes.intersection(scopes):
+    if scopes and not writable_scopes.intersection(scopes):
         raise RuntimeError(
             "Google Drive OAuth credentials lack a supported write scope. "
             "Re-authorize the account with drive.file or drive access and update "
             "GOOGLE_DRIVE_CREDENTIALS_JSON."
         )
     try:
-        return Credentials.from_authorized_user_info(data, scopes=scopes)
+        return Credentials.from_authorized_user_info(data, scopes=scopes or None)
     except (KeyError, ValueError, TypeError) as exc:
         raise RuntimeError(
             "GOOGLE_DRIVE_CREDENTIALS_JSON is not a valid authorized-user OAuth credential. "
