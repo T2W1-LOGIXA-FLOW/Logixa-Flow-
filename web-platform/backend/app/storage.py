@@ -15,11 +15,10 @@ B2_MAX_BYTES = 5 * 1024 * 1024 * 1024
 
 
 def _s3_public_base_url(bucket: str) -> str:
-    """Return a public object URL prefix, including the bucket for native B2 URLs.
+    """Build a public B2 URL from a native download host, S3 endpoint, or custom base.
 
-    Backblaze's native download URL format is /file/<bucket>/<key>. Allow
-    S3_PUBLIC_BASE_URL to be configured as either the native file host root,
-    the /file prefix, or the full bucket prefix. Custom domains are unchanged.
+    Backblaze supports native URLs at /file/<bucket>/<key> and virtual-hosted
+    S3 URLs at https://<bucket>.s3.<region>.backblazeb2.com/<key>.
     """
     raw = os.getenv("S3_PUBLIC_BASE_URL", "").strip().rstrip("/")
     if not raw:
@@ -27,9 +26,24 @@ def _s3_public_base_url(bucket: str) -> str:
     parsed = urlsplit(raw)
     host = (parsed.hostname or "").lower()
     path = parsed.path.rstrip("/")
-    if host.endswith(".backblazeb2.com") and not host.startswith("s3.") and path in ("", "/file"):
-        path = f"/file/{quote(bucket, safe='')}"
-        return urlunsplit((parsed.scheme, parsed.netloc, path, parsed.query, parsed.fragment)).rstrip("/")
+    bucket_host = quote(bucket, safe="")
+
+    # S3 API endpoint accidentally supplied as the public base: switch to the
+    # supported virtual-hosted public object URL and remove a duplicate bucket path.
+    if host.startswith("s3.") and host.endswith(".backblazeb2.com") and path in ("", f"/{bucket}"):
+        netloc = f"{bucket_host}.{parsed.netloc}"
+        return urlunsplit((parsed.scheme, netloc, "", "", "")).rstrip("/")
+
+    # A bucket-specific S3 public host is already correct.
+    if host.startswith(f"{bucket.lower()}.s3.") and host.endswith(".backblazeb2.com"):
+        return raw
+
+    # Native B2 download host requires /file/<bucket> before the object key.
+    if host.startswith("f") and host.endswith(".backblazeb2.com") and path in ("", "/file"):
+        path = f"/file/{bucket_host}"
+        return urlunsplit((parsed.scheme, parsed.netloc, path, "", "")).rstrip("/")
+
+    # A custom CDN/domain is treated as an already configured public prefix.
     return raw
 
 IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
