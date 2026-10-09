@@ -143,6 +143,7 @@ Status: ACTIVE — final evidence closure.
 - [x] Vercel work explicitly paused by owner; no Vercel build/deploy action is part of the active release-closure sequence.
 - [x] Cross-check repository, Render, Vercel, and Supabase live state; see `docs/REPO_INFRA_AUDIT.md`.
 - [x] Reconcile stale migration-head and RAG telemetry statements in canonical docs.
+- [x] Patch production dependency `fflate` 0.6.10 → 0.6.11; production npm audit and backend pip-audit are clean, and CI #452 / CodeQL #199 passed.
 - [ ] Run the manual production-auth smoke and isolated backup/restore workflow; record run links and results.
 - [ ] **Render production blocker found 2026-10-09:** configure the correct `S3_PUBLIC_BASE_URL` for the existing B2 bucket/CDN in Render, then confirm `/health` no longer lists it under `missing_env` and `upload_storage_configured` becomes `true`. Do not guess the URL; use the actual bucket/public endpoint.
 - [ ] Run provider live-release gates (Supabase Storage, B2 with `S3_PUBLIC_BASE_URL`, Google Drive) only after confirming the production environment secrets are configured.
@@ -204,4 +205,4 @@ Deterministic repository-side coverage has expanded for RAG ingest/search, publi
 33. Broader observability/operational controls.
 34. Broader supply-chain intelligence coverage.
 
-CI #450 / CodeQL #197 are the latest confirmed green validation. Docs-only commits after that SHA do not trigger these workflows by design. Any subsequent code/config change must receive a fresh green CI/CodeQL run before certification. Production migration parity is now closed. Live provider and production-path evidence remains separate. Cloudinary and the core QStash delivery/completion/idempotency path are also no longer listed as remaining work because they have real evidence.
+CI #452 / CodeQL #199 are the latest confirmed green validation on `e46864fad964e24dc60063fb07f46d2f9524e87f` after the `fflate` patch. Docs-only commits after that SHA do not trigger these workflows by design. Any subsequent code/config change must receive a fresh green CI/CodeQL run before certification. Production migration parity is now closed. Live provider and production-path evidence remains separate. Cloudinary and the core QStash delivery/completion/idempotency path are also no longer listed as remaining work because they have real evidence.
