@@ -26,6 +26,12 @@ services:
         value: false
       - key: AI_COST_PER_1K
         value: "0"
+      - key: EMBEDDING_MODEL
+        value: liquid/lfm-2.5-embedding-350m:free
+      - key: EMBEDDING_DIMENSIONS
+        value: "768"
+      - key: EMBEDDING_COST_PER_1K
+        value: "0"
       - key: USER_AI_ENABLED
         value: false
       - key: ADMIN_AI_ENABLED
