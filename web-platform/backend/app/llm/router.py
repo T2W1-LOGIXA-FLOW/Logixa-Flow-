@@ -102,7 +102,8 @@ class LLMRouter:
         return FallbackLocalProvider()
 
     def generate_with_provider(self, prompt: str, task: str | None = None, **kwargs) -> tuple[str, str]:
-        safe_prompt = f"{_PROMPT_SAFETY_GUARD}\n\n{sanitize_for_llm(prompt, log_redactions=True, operation="llm_prompt")}"
+        sanitized_prompt = sanitize_for_llm(prompt, log_redactions=True, operation="llm_prompt")
+        safe_prompt = f"{_PROMPT_SAFETY_GUARD}\n\n{sanitized_prompt}"
         provider_errors: list[str] = []
         for name, provider in self._provider_order(task):
             try:
