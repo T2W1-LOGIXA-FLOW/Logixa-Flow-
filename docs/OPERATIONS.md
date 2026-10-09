@@ -66,3 +66,10 @@ Preserve evidence, correlation IDs, sanitized logs, affected run/session IDs, an
 - Credential values are masked by Render and must never be copied into chat/logs. Presence can be reported without exposing the secret, but validity is **PENDING** until a real authenticated request through the deployed app succeeds.
 - B2 live gate run #10: S3 API upload/readback passed; public GET returned HTTP 400 with `Unable to obtain accountId for request`. The helper now converts a supplied `s3.<region>.backblazeb2.com` endpoint into the bucket-specific virtual-hosted public URL `<bucket>.s3.<region>.backblazeb2.com`; native `fNNN.backblazeb2.com` URLs retain `/file/<bucket>`. This needs a new live B2 gate to verify.
 - Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37908171471/job/113746607733.
+
+
+## Additional AI billing surfaces — 2026-10-09
+
+- RAG previously used Gemini Embeddings when `GEMINI_API_KEY` existed. This path is removed. Embeddings now use only `liquid/lfm-2.5-embedding-350m:free` through OpenRouter with a 768-D compatibility request; invalid/unavailable responses fall back to local 768-D hash vectors. No Gemini embedding fallback remains.
+- Hugging Face toxicity moderation is a separate inference call and could use credits. It now requires explicit `HF_MODERATION_ENABLED=true`; production Render is configured false. The key may remain stored but is not called by default.
+- OpenRouter's Liquid free embedding endpoint warns that requests and embeddings may be retained for model training. Treat this as a data-sharing decision; use local hash fallback for confidential text if that retention is not acceptable.
