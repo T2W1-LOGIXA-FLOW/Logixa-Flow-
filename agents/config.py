@@ -27,15 +27,13 @@ RSS_FEEDS: Final[list[str]] = [
 OPENAI_API_KEY: Final[str | None] = os.getenv("OPENAI_API_KEY")
 GEMINI_API_KEY: Final[str | None] = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
 OPENROUTER_API_KEY: Final[str | None] = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_MODEL_NAME: Final[str] = os.getenv("OPENROUTER_MODEL_NAME", "meta-llama/llama-3-8b-instruct:free")
-OPENROUTER_FALLBACK_MODEL_NAME: Final[str] = os.getenv(
-    "OPENROUTER_FALLBACK_MODEL_NAME", "deepseek/deepseek-r1:free"
-)
+OPENROUTER_MODEL_NAME: Final[str] = "openrouter/free"
+OPENROUTER_FALLBACK_MODEL_NAME: Final[str] = "openrouter/free"
 GROQ_API_KEY: Final[str | None] = os.getenv("GROQ_API_KEY")
 GROQ_MODEL_NAME: Final[str] = os.getenv("GROQ_MODEL_NAME", "llama-3.1-8b-instant")
 HUGGINGFACE_API_KEY: Final[str | None] = os.getenv("HUGGINGFACE_API_KEY") or os.getenv("HF_TOKEN")
 HUGGINGFACE_MODEL_NAME: Final[str] = os.getenv("HUGGINGFACE_MODEL_NAME", "")
-LLM_PROVIDER: Final[str] = os.getenv("LLM_PROVIDER", "gemini").lower()
+LLM_PROVIDER: Final[str] = "openrouter"
 MODEL_NAME: Final[str] = os.getenv("MODEL_NAME", "gpt-4o-mini")
 GEMINI_MODEL_NAME: Final[str] = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash")
 TEMPERATURE: Final[float] = float(os.getenv("TEMPERATURE", "0.55"))
