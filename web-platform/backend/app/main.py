@@ -299,7 +299,7 @@ def health() -> dict[str, object]:
         "scheduler_interval_hours": sched["interval_hours"],
         "ai_key_configured": ai_provider_configured(),
         "ai_feature_status": ai_feature_status(),
-        "embedding_model": os.getenv("EMBEDDING_MODEL", "models/text-embedding-004"),
+        "embedding_model": os.getenv("EMBEDDING_MODEL", "liquid/lfm-2.5-embedding-350m:free"),
         "pgvector_enabled": pgvector_status.get("enabled", False),
         "pgvector_reason": pgvector_status.get("reason"),
         "rag_chunks": embedding_count,
