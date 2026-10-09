@@ -213,8 +213,8 @@ def _google_drive_credentials():
 
     Google refresh tokens can reject a newly requested scope with
     `invalid_scope`. Preserve the granted scopes embedded in the authorized-user
-    JSON when present; use the least-privilege drive.file scope only when the
-    credential file does not record its scopes.
+    JSON when present; do not inject a new scope when the credential file
+    does not record its scopes.
     """
     from google.oauth2.credentials import Credentials
 
