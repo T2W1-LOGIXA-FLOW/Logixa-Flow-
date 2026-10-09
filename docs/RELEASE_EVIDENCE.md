@@ -33,7 +33,7 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 - [ ] Live retry/recovery evidence.
 - [ ] Live stale-claim reclamation evidence.
 - [ ] Controlled live failure/recovery evidence.
-- [ ] Production authenticated/API smoke evidence.
+- [x] Production Auth Smoke run #11 passed on 2026-10-09: password-grant authentication, `/api/auth/me` admin-role assertion, and admin RAG metrics request succeeded. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474.
 - [ ] RAG ingest → embed → search production evidence.
 - [ ] Agent → Brain → publish production evidence.
 - [ ] Approval → resume → completion production evidence.
