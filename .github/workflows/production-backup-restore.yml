@@ -62,6 +62,12 @@ jobs:
           set -euo pipefail
           psql "$SUPABASE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --tuples-only --no-align --command 'select current_database(), current_user'
           psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --tuples-only --no-align --command 'select current_database(), current_user'
+      - name: Reset isolated restore schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "::warning::This intentionally replaces the public schema in the validated isolated restore project bxvykaijlrqjvlhtumpg. Never change the target guard to production."
+          psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc --set ON_ERROR_STOP=1 --command 'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public AUTHORIZATION postgres; GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role; GRANT ALL ON SCHEMA public TO postgres, service_role;'
       - name: Create production logical backup
         run: |
           set -euo pipefail
