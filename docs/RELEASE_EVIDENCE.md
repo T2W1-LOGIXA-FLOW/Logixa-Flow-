@@ -7,7 +7,7 @@
 This is the canonical evidence checklist for the Phase 7–13 release candidate. Evidence must identify the exact SHA, environment, timestamp, and observed durable outcome where applicable.
 
 ## Repository
-- [ ] Vercel integration check is green on the current main head. The current documentation-only head is blocked by the Vercel Hobby build-rate limit; the last READY production deployment remains healthy.- [ ] Release SHA fixed.
+- [ ] Vercel integration check is green on the current main head. The latest main integration check is failing due to the Vercel Hobby build-rate limit; the last READY production deployment remains healthy, but this does not count as a green check on the current head.- [ ] Release SHA fixed.
 - [x] Repository/infrastructure audit completed 2026-10-09; findings are recorded in `docs/REPO_INFRA_AUDIT.md`.
 - [x] Repository CI green on current hardening SHA `115482a27a9c7d56294c8fe09940190555a8d7a1` (CI #450).
 - [x] CodeQL/security checks green on current hardening SHA `115482a27a9c7d56294c8fe09940190555a8d7a1` (CodeQL #197).
@@ -42,8 +42,8 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 - [ ] Controlled provider failover evidence.
 
 ## Recovery
-- [ ] Production logical backup workflow staged; live backup/restore run still required.
-- [ ] Isolated restore completed and integrity checks passed. Workflow is staged; live run remains required.
+- [ ] Production logical backup workflow staged; live backup/restore run still required. Run #5 (2026-10-09) created the dump and restored schema, then failed during data replay on duplicate `users_pkey`: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37962624876. Remediation committed in `.github/workflows/production-backup-restore.yml`: both dumps are scoped to `--schema public` so managed Supabase Auth data is not replayed.
+- [ ] Isolated restore completed and integrity checks passed. **Still pending:** manually rerun `Production Backup Restore Gate` after the schema-scope fix; require Alembic head `20261008_0012`, all four critical tables, and the RAG event-count assertion to pass.
 - [ ] Object-storage recovery checked.
 - [ ] Application rollback rehearsal completed.
 - [ ] Post-rollback auth/workflow/RAG/publish smoke passed.
