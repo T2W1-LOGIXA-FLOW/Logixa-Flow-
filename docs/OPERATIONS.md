@@ -83,3 +83,10 @@ Preserve evidence, correlation IDs, sanitized logs, affected run/session IDs, an
 - Live read-only catalog checks show `users` exists in the managed `auth` schema in both projects and does not exist in `public`. The workflow resets only `public`; it must not replay managed Auth rows into the existing isolated project's Auth schema.
 - The workflow now explicitly scopes both logical dumps to `--schema public` and rejects unexpected schema-qualified Auth/Storage COPY entries. This is an application-schema restore gate; it does not claim to back up or restore Supabase-managed Auth/Storage data.
 - Re-run the workflow manually and require all post-restore assertions to pass before treating this gate as verified. Production remains source-only; never use it as the restore target.
+
+
+## Backup/restore gate passed — 2026-10-09
+
+- Production Backup Restore Gate run #6 passed: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37964429760.
+- The workflow created a production logical backup, restored the `public` application schema into isolated project `bxvykaijlrqjvlhtumpg`, and verified Alembic head `20261008_0012`, four critical tables, and a numeric `rag_observability_events` row count (0).
+- Scope is deliberately limited to the application `public` schema. This does not verify managed Supabase Auth/Storage restoration, object-storage recovery, rollback, or post-rollback smoke checks.
