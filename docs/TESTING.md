@@ -64,3 +64,11 @@ The repository-side hardening suite now proves that a completed brain item canno
 ## Phase 9–11 hardening coverage
 
 Publication now has a deterministic approval/content gate in addition to publish idempotency. RAG observability has a durable event table and migration; deterministic tests cover event persistence. Durable production metrics are not considered live-verified until migration 0012 is applied and production telemetry is observed.
+
+
+## Failed live gate remediation (2026-10-09)
+
+- **Production Auth Smoke:** the failed run stopped at configuration preflight because `SUPABASE_PUBLISHABLE_KEY`, `PRODUCTION_ADMIN_EMAIL`, `PRODUCTION_ADMIN_PASSWORD`, and `PRODUCTION_API_URL` were empty in the selected GitHub `production` environment. Set the environment secrets by name; do not paste their values into issues or chat. The workflow now prints missing secret names and checks that the two base URLs are HTTPS URLs.
+- **Production Backup Restore:** the failed run attempted the direct `db.<project>.supabase.co:5432` endpoint and hit an IPv6-unreachable error. For this dump/restore workflow, use the shared **Session Pooler** connection strings from Supabase Dashboard → Connect → Session pooler, on port `5432`, with `sslmode=require`. Do not use the direct endpoint or the transaction pooler for `pg_dump`/restore. Production must identify project `ephrnmigiwjhdjksreos`; the isolated restore target must identify `bxvykaijlrqjvlhtumpg`. The workflow preflights both connections before running the dump.
+- The workflow changes prevent known missing-secret and wrong-connection-mode failures; they do not prove that a new backup/restore succeeds. Record a fresh run URL and investigate any restore-stage schema/data conflict rather than marking the gate green by assumption.
+- **B2:** the owner reports `S3_PUBLIC_BASE_URL` has been added in Render. Verify the live health endpoint and run the B2 real upload/read/delete gate before treating it as complete.
