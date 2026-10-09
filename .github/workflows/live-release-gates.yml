@@ -6,7 +6,7 @@ on:
       provider:
         description: "Provider gate to run"
         required: false
-        default: "all"
+        default: "b2"
         type: choice
         options:
           - all
@@ -65,7 +65,15 @@ jobs:
             all) require CLOUDINARY_CLOUD_NAME; require CLOUDINARY_API_KEY; require CLOUDINARY_API_SECRET; require SUPABASE_URL; require SUPABASE_SERVICE_ROLE_KEY; require SUPABASE_STORAGE_BUCKET; require S3_ENDPOINT_URL; require S3_ACCESS_KEY_ID; require S3_SECRET_ACCESS_KEY; require S3_BUCKET; require S3_PUBLIC_BASE_URL; require GOOGLE_DRIVE_CREDENTIALS_JSON ;;
           esac
       - name: Run selected live release gate
-        env:
-          PYTEST_ADDOPTS: >-
-            ${{ inputs.provider == 'cloudinary' && 'test_live_release_gates.py::test_live_cloudinary_upload_round_trip' || inputs.provider == 'supabase' && 'test_live_release_gates.py::test_live_supabase_storage_upload_round_trip' || inputs.provider == 'b2' && 'test_live_release_gates.py::test_live_b2_s3_round_trip' || inputs.provider == 'google-drive' && 'test_live_release_gates.py::test_live_google_drive_upload_round_trip' || 'test_live_release_gates.py' }}
-        run: python -m pytest -q tests/$PYTEST_ADDOPTS
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${{ inputs.provider }}" in
+            cloudinary) target="tests/test_live_release_gates.py::test_live_cloudinary_upload_round_trip" ;;
+            supabase) target="tests/test_live_release_gates.py::test_live_supabase_storage_upload_round_trip" ;;
+            b2) target="tests/test_live_release_gates.py::test_live_b2_s3_round_trip" ;;
+            google-drive) target="tests/test_live_release_gates.py::test_live_google_drive_upload_round_trip" ;;
+            all) target="tests/test_live_release_gates.py" ;;
+            *) echo "::error::Unsupported provider selection"; exit 2 ;;
+          esac
+          python -m pytest -q "$target"
