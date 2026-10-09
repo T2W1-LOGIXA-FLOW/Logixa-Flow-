@@ -16,13 +16,13 @@ Release certification requires repository CI/security validation, live provider 
 - Cloudinary live E2E: VERIFIED 2026-10-08.
 - QStash signed delivery/completion/duplicate protection: VERIFIED 2026-10-08.
 - Supabase Storage: PENDING.
-- Backblaze B2: PENDING.
-- Google Drive: PENDING.
+- Backblaze B2 provider-level authenticated upload/read/delete: VERIFIED by run #12; deployed application download-proxy remains PENDING.
+- Google Drive upload/read round-trip: VERIFIED by run #14; broader export semantics only if directly covered by a dedicated test.
 - Live workflow retry/stale-claim/failure recovery: PENDING.
 - Production authentication/API smoke: PENDING.
 - Production RAG/AI journeys: PENDING.
 - Newsletter/failover: PENDING.
-- Backup/restore drill: PENDING.
+- Application-schema backup/restore drill: VERIFIED on 2026-10-09 (run #6); managed Auth/Storage and object-storage recovery remain separate pending gates.
 - DR/rollback rehearsal: PENDING — runbook/gate staged; live rehearsal required.
 - SLO/error-budget review: PENDING; contract is defined in `docs/SLO_ERROR_BUDGET.md`, with production observation still required.
 
