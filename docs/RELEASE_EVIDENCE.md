@@ -7,7 +7,7 @@
 This is the canonical evidence checklist for the Phase 7–13 release candidate. Evidence must identify the exact SHA, environment, timestamp, and observed durable outcome where applicable.
 
 ## Repository
-- [ ] Vercel integration check is green on the current main head. The latest main integration check is failing due to the Vercel Hobby build-rate limit; the last READY production deployment remains healthy, but this does not count as a green check on the current head.
+- [ ] Vercel integration check is green on the current main head. **Paused by owner direction on 2026-10-09**: do not attempt build-quota, deployment-refresh, or Vercel-integration remediation until the owner explicitly resumes it. This is an open release exception/gate, not authorization to make Vercel changes.
 - [ ] Release SHA fixed.
 - [x] Latest merged application-code SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` passed CI #535 and CodeQL #282 (CI: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420417; CodeQL: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420358). Render deploy `dep-db4t0iavcj2c73e3snu0` was confirmed live for this SHA. The subsequent one-time B2 verification synced the known-good B2 settings into Render and completed successfully: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602.
 - [x] Repository/infrastructure audit completed 2026-10-09; findings are recorded in `docs/REPO_INFRA_AUDIT.md`.
@@ -48,7 +48,7 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 ## Recovery
 - [x] Production logical backup/restore passed on 2026-10-09. Run #6 restored application `public` schema into isolated project and passed Alembic head `20261008_0012`, critical tables 4/4, and numeric RAG observability row-count assertion (0 rows): https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37964429760. This gate intentionally excludes Supabase-managed Auth/Storage schemas.
 - [x] Isolated application-schema restore and integrity assertions passed after run #5's duplicate `users_pkey` failure; fix scopes schema and data dumps to `--schema public`. Historical failure: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37962624876.
-- [ ] Object-storage recovery checked.
+- [ ] Object-storage recovery checked, including an isolated restore/readback and integrity check.
 - [ ] Application rollback rehearsal completed.
 - [ ] Post-rollback auth/workflow/RAG/publish smoke passed.
 - [ ] Data-integrity reconciliation completed.
