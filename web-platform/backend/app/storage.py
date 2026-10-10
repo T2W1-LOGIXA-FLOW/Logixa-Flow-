@@ -182,8 +182,20 @@ def _upload_s3(file_obj: BinaryIO, filename: str, content_type: str) -> str:
             ExtraArgs={"ContentType": content_type or "application/octet-stream"},
             Config=transfer_config,
         )
-    except (BotoCoreError, ClientError) as exc:
-        raise RuntimeError("S3-compatible storage rejected the upload") from exc
+    except ClientError as exc:
+        error = exc.response.get("Error", {})
+        metadata = exc.response.get("ResponseMetadata", {})
+        # Surface provider status/code without logging credentials, object keys, or
+        # the raw provider message. The upload route includes this in its safe error log.
+        code = str(error.get("Code", "Unknown"))[:64]
+        http_status = metadata.get("HTTPStatusCode")
+        raise RuntimeError(
+            f"S3-compatible storage rejected the upload (code={code}, http_status={http_status})"
+        ) from exc
+    except BotoCoreError as exc:
+        raise RuntimeError(
+            f"S3-compatible storage request failed ({type(exc).__name__})"
+        ) from exc
 
     raw_public_base = os.getenv("S3_PUBLIC_BASE_URL", "").strip().rstrip("/")
     if not raw_public_base:
@@ -223,7 +235,12 @@ def upload_routed(file_obj: BinaryIO, filename: str, content_type: str, size_byt
                 url = _upload_s3(file_obj, filename, content_type)
             return backend, storage_class, url
         except Exception as exc:
-            errors.append(f"{backend}: {exc.__class__.__name__}")
+            if backend == "b2" and isinstance(exc, RuntimeError):
+                # Preserve the safe provider status/code emitted by _upload_s3.
+                # Other backends retain class-only errors to avoid exposing provider data.
+                errors.append(f"{backend}: {str(exc)[:160]}")
+            else:
+                errors.append(f"{backend}: {exc.__class__.__name__}")
     raise RuntimeError("storage routing failed: " + ", ".join(errors))
 
 
