@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import io
+
+import pytest
+
+from app import storage
 from app.storage import _s3_public_base_url
 
 
@@ -36,3 +41,25 @@ def test_existing_bucket_specific_s3_host_is_preserved(monkeypatch) -> None:
 def test_custom_public_domain_is_preserved(monkeypatch) -> None:
     monkeypatch.setenv("S3_PUBLIC_BASE_URL", "https://cdn.example.com/uploads")
     assert _s3_public_base_url("my-bucket") == "https://cdn.example.com/uploads"
+
+
+
+def test_b2_upload_failure_preserves_safe_provider_diagnostic(monkeypatch) -> None:
+    monkeypatch.setenv("S3_ENDPOINT_URL", "https://s3.us-west-004.backblazeb2.com")
+    monkeypatch.setenv("S3_ACCESS_KEY_ID", "test-key")
+    monkeypatch.setenv("S3_SECRET_ACCESS_KEY", "test-secret")
+    monkeypatch.setenv("S3_BUCKET", "my-bucket")
+
+    def fail_upload(*args, **kwargs):
+        raise RuntimeError(
+            "S3-compatible storage rejected the upload (code=AccessDenied, http_status=403)"
+        )
+
+    monkeypatch.setattr(storage, "_upload_s3", fail_upload)
+    with pytest.raises(RuntimeError, match=r"code=AccessDenied, http_status=403"):
+        storage.upload_routed(
+            io.BytesIO(b"test"),
+            "large-image.png",
+            "image/png",
+            10 * 1024 * 1024 + 1,
+        )
