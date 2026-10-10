@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Sparkles } from "lucide-react";
+import { Menu } from "lucide-react";
 import AdminStatusBadge from "./AdminStatusBadge";
 import styles from "@/app/admin/admin-theme.module.css";
 
@@ -17,13 +17,8 @@ export default function AdminTopbar({ onOpenSidebar }: { onOpenSidebar: () => vo
           <span className="truncate">Admin command center</span>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <AdminStatusBadge label="Ops online" tone="success" />
-          <span className="hidden sm:inline-flex"><AdminStatusBadge label="User AI" tone="cyan" /></span>
-          <span className="hidden md:inline-flex"><AdminStatusBadge label="Admin AI" tone="violet" /></span>
-          <span className="hidden items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900/80 px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-slate-300 lg:inline-flex">
-            <Sparkles className="h-3.5 w-3.5 text-cyan-300" aria-hidden="true" />
-            Status stable
-          </span>
+          <AdminStatusBadge label="Admin workspace" tone="cyan" />
+        </div>
         </div>
       </div>
     </header>
