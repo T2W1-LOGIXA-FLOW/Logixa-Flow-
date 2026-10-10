@@ -4,6 +4,7 @@ import base64
 import io
 import json
 import os
+import sys
 import uuid
 
 from google.auth.exceptions import RefreshError
@@ -73,14 +74,21 @@ def test_live_supabase_storage_upload_round_trip() -> None:
         "x-upsert": "false",
     }
     object_url = f"{base}/storage/v1/object/{values['SUPABASE_STORAGE_BUCKET']}/{filename}"
+    uploaded = False
     try:
         response = requests.post(object_url, headers=headers, data=payload, timeout=60)
+        uploaded = True
         response.raise_for_status()
         read = requests.get(object_url, headers=headers, timeout=60)
         read.raise_for_status()
         assert read.content == payload
     finally:
-        requests.delete(object_url, headers=headers, timeout=60)
+        # Do not hide the original upload/read failure if cleanup also fails.
+        # On an otherwise successful round-trip, cleanup must itself be 2xx.
+        if uploaded:
+            cleanup = requests.delete(object_url, headers=headers, timeout=60)
+            if sys.exc_info()[0] is None:
+                cleanup.raise_for_status()
 
 
 def test_live_b2_s3_round_trip() -> None:
