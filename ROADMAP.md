@@ -19,19 +19,20 @@ Status: DONE / VERIFIED at repository level. Repository evidence includes the ca
 
 Objective: close the remaining production/provider/recovery evidence gates and freeze only when the release evidence index is complete.
 
-Current state: production migration `20261008_0012_rag_observability` is applied. Repository-side SLO/error-budget and release-evidence artifacts are staged. Live provider, workflow recovery, AI/RAG journey, newsletter/failover, backup/restore, rollback, and monitoring evidence remain.
+Current state: production migration `20261008_0012_rag_observability` is applied. Cloudinary, Supabase Storage upload/read/cleanup, private B2/S3 provider and deployed application proxy, Google Drive upload/read, QStash core delivery/completion, production auth smoke, and public-schema logical backup/restore have live evidence. Remaining gates are workflow recovery, RAG/AI business journeys, newsletter/failover, object-storage/managed Auth-Storage recovery, rollback, monitoring/SLO, and full authenticated Admin UI verification.
 
 ### Final live-infrastructure verification
 
 Objective: close evidence-based release gates without changing the current architecture merely to satisfy documentation.
 
 Current verified baseline:
-- Latest confirmed CI: #535 success on merged diagnostics code SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420417).
+- Latest confirmed application-code CI: #535 success on merged diagnostics code SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420417).
 - Latest confirmed CodeQL: #282 success on the same code SHA (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420358).
+- The deployed application private-B2 proxy E2E passed in production verification run #38049146602 (`2 passed in 12.32s`), including authenticated upload, private download/readback, and cleanup.
 - Markdown/docs-only commits are intentionally excluded from CI/CodeQL triggers, so documentation commits do not create new red/green runs.
 
 Remaining acceptance criteria:
-- Provider-level Supabase Storage, private B2/S3, and Google Drive E2E are verified; deployed application private-B2 proxy E2E remains pending.
+- Provider-level Supabase Storage, private B2/S3, Google Drive E2E, and deployed application private-B2 proxy E2E are verified. B2 application proxy evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602.
 - Retry, stale-claim recovery, and failure recovery are verified.
 - Duplicate-delivery protection remains verified.
 - QStash signature verification, delivery, and canonical workflow completion remain verified.
@@ -53,7 +54,7 @@ Verification rule: implementation, configuration, or unit tests do not substitut
 - Deterministic retry-recovery/exhaustion and scheduled-delay semantics are now staged and green in the non-live suite.
 - Deterministic stale-claim, terminal-idempotency, duplicate-delivery, and approval-resume coverage is also staged/green; live evidence remains the release gate.
 Status: ACTIVE.
-- Provider-level Supabase Storage, private B2/S3, and Google Drive E2E are verified; close the deployed application private-B2 proxy gate.
+- Provider-level Supabase Storage, private B2/S3, Google Drive E2E, and deployed application private-B2 proxy E2E are verified; do not rerun absent regression or relevant code/config changes.
 - Verify retry/recovery, live stale-claim reclamation, controlled failure recovery, and duplicate delivery. Deterministic stale-claim reclamation coverage is already green.
 - Keep all live tests opt-in and secret-free in normal CI.
 - A manual `.github/workflows/live-release-gates.yml` workflow now consumes GitHub `production` environment secrets, validates required configuration, and runs the selected real-provider E2E without exposing credentials to the repository.
