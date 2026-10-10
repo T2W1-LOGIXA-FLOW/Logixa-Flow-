@@ -95,7 +95,7 @@ No repository-level blocker is established. Production Auth/API smoke and isolat
 
 ## 10. REMAINING RELEASE GATES
 
-1. Supabase Storage upload/read/cleanup E2E passed in targeted Live Release Gates run #17 (`1 passed in 3.24s`); full provider suite passed in run #15. The deployed application private-B2 download-proxy E2E remains pending. Backup/restore is separately verified for the `public` application schema in run #6. Cloudinary, B2 provider-level round-trip, and Google Drive upload/read round-trip also have live evidence.
+1. Supabase Storage upload/read/cleanup E2E is verified by run #17; the deployed application private-B2 download-proxy E2E is verified by run #38049146602 (`2 passed in 12.32s`). Backup/restore is separately verified for the `public` application schema in run #6. Cloudinary, B2 provider-level round-trip, and Google Drive upload/read round-trip also have live evidence.
 2. Retry, stale-claim recovery, and controlled failure/recovery live verification remain pending.
 3. Duplicate-delivery protection is verified.
 4. QStash signing, delivery, and canonical workflow completion are verified.
@@ -141,7 +141,7 @@ Continue Phase 13 only on genuinely open gates; do not rerun provider checks alr
 
 - Full repository tree and infrastructure cross-check completed; no root-level documentation sprawl or obvious secret material was found.
 - Render latest application deploy was observed LIVE at `115482a27a9c7d56294c8fe09940190555a8d7a1`; no current Render application errors were observed in the queried log window. Re-check deploy SHA after the current workflow/documentation commits.
-- **B2 configuration health check passed on 2026-10-09:** a fresh live `https://logixa-flow.onrender.com/health` returned `status=ok`, `database=ok`, `upload_storage_backend=b2`, `upload_storage_configured=true`, and `missing_env=[]` after the owner added `S3_PUBLIC_BASE_URL`. This verifies configuration health only; the real B2 upload/read/delete E2E gate remains pending.
+- **B2 configuration and live E2E are verified:** the 2026-10-09 health check returned `status=ok`, `database=ok`, `upload_storage_backend=b2`, `upload_storage_configured=true`, and `missing_env=[]`. On 2026-10-10, production verification run #38049146602 passed direct B2 upload/read/delete and authenticated application upload/private-download/readback/cleanup (`2 passed in 12.32s`). Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602.
 - Dependency hardening on 2026-10-09 updated nested `three-stdlib` `fflate` from `0.6.10` to patched `0.6.11`; production-only `npm audit` reports zero findings, backend `pip-audit` reports no known vulnerabilities, and CI #452 plus CodeQL #199 passed. Local tests: backend 187 passed / 4 skipped in CI #514, agents 4 passed, frontend CI passed; production frontend build completed. A non-blocking React Hook dependency warning remains in `src/app/admin/rag/page.tsx:35`.
 - Full npm audit still reports dev-toolchain-only findings involving `braces` and `postcss-selector-parser` under the current Tailwind 3 toolchain. The suggested automatic `--force` path is a Tailwind 4 major upgrade and has not been applied; track a dedicated compatibility review before changing it.
 - Vercel production currently serves HTTP 200 and has no grouped runtime errors in the last 7 days, but the GitHub Vercel check on the later docs-only main head is failing because of the Hobby build-rate limit. The last READY Vercel deployment is an earlier docs-only commit, so this is an integration-capacity warning rather than a frontend runtime failure.
@@ -163,7 +163,7 @@ Continue Phase 13 only on genuinely open gates; do not rerun provider checks alr
 
 - CI #462 passed on `cd68f57a0d0c7cee88ab3b3dfc276474e996fa22`: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37901339183
 - CodeQL #209 passed on the same commit: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37901339148
-- These checks validate repository CI/security after the B2 live-test fix. They do not replace the pending real B2 provider round-trip or the pending backup/restore drill.
+- These checks validate repository CI/security after the B2 live-test fix. B2 provider round-trip and public-schema backup/restore are verified by their respective live runs; managed Supabase Auth/Storage recovery and object-storage disaster recovery remain separate gates.
 
 
 ## Live Gate Failure Review — 2026-10-09 (runs #9 / #3)
@@ -180,7 +180,7 @@ Continue Phase 13 only on genuinely open gates; do not rerun provider checks alr
 - **Implemented (configuration):** Render service env set to OpenRouter free model values and `AI_COST_PER_1K=0`; deployment was requested. Confirm live deployment and actual key validity before marking VERIFIED.
 - **Implemented (settings contract):** AI setting API only accepts/reports `openrouter-free`; legacy stored settings are ignored by the runtime router.
 - **Implemented (B2):** public URL helper now recognizes native Backblaze download hosts and S3-compatible endpoints; unit tests cover both formats and custom domains.
-- **Verified failure evidence:** Live Release Gates run #10 at https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37908171471/job/113746607733 shows S3 upload and authenticated readback succeeded, but public GET returned HTTP 400 `Unable to obtain accountId for request`. **B2 remains PENDING** until a fresh live run passes public readback and cleanup.
+- **Historical failure evidence (superseded):** Live Release Gates run #10 at https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37908171471/job/113746607733 showed public GET returning HTTP 400 `Unable to obtain accountId for request`. The configuration was corrected afterward; the successful production B2 verification is recorded in run #38049146602.
 - **Cost policy detail:** `openrouter/free` is the only configured remote model route. The listed free endpoints include specialized embedding/reranking/decision/safety/audio models; these are not all general chat models, so the free router is the safe general-generation choice. OpenRouter Free plan currently lists a 50 requests/day limit: https://openrouter.ai/pricing/.
 - **Key audit limitation:** Render masks secret values. We have not exposed or copied key values. OpenRouter key presence is reported in admin diagnostics, but validity remains **PENDING** until a real deployed AI request succeeds. Do not claim other legacy provider keys are validated or actively used.
 
