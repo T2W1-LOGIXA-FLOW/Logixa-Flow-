@@ -146,7 +146,7 @@ def _s3_client():
         # storage error instead of holding the synchronous API request for minutes.
         config=Config(
             connect_timeout=10,
-            read_timeout=60,
+            read_timeout=30,
             retries={"mode": "standard", "max_attempts": 2},
         ),
     )
