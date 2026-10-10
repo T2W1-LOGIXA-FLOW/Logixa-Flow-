@@ -151,6 +151,12 @@ def test_live_b2_application_download_proxy_round_trip() -> None:
         + b"\x00" * (10 * 1024 * 1024 + 1)
     )
     session = requests.Session()
+    # Render Free services may sleep between test runs. Wake the deployed API and
+    # wait for its startup before beginning the upload timing window, so cold-start
+    # latency is not misdiagnosed as a storage-provider failure.
+    health = session.get(f"{api_base}/health", timeout=(10, 90))
+    health.raise_for_status()
+
     token_response = session.post(
         f"{supabase_base}/auth/v1/token?grant_type=password",
         headers={"apikey": values["SUPABASE_PUBLISHABLE_KEY"], "Content-Type": "application/json"},
@@ -171,7 +177,7 @@ def test_live_b2_application_download_proxy_round_trip() -> None:
             f"{api_base}/api/uploads",
             headers=auth_headers,
             files={"file": (f"logixa-live-b2-proxy-{uuid.uuid4().hex}.png", payload, "image/png")},
-            timeout=180,
+            timeout=(10, 180),
         )
         uploaded.raise_for_status()
         opaque_url = uploaded.json().get("url")
