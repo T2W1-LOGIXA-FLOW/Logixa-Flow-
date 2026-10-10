@@ -12,7 +12,7 @@ Release certification requires repository CI/security validation, live provider 
 
 - Repository head: 20261008_0012.
 - Live production migration head: `20261008_0012_rag_observability`, applied and verified on 2026-10-08.
-- The current B2 proxy gate code at `33d07518d99572e9746cdd8d27ebcb2fb28ece74` passed CI #517 (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38021522642) and CodeQL #264 (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38021522610). The targeted live Supabase run #17 passed (`1 passed in 3.24s`); the B2 app-level proxy production gate remains pending.
+- The prior B2 proxy gate SHA `33d07518d99572e9746cdd8d27ebcb2fb28ece74` passed CI #517 and CodeQL #264, but production run #19 failed at upload with a 180-second `ReadTimeout` before proxy download verification: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38024411790. Follow-up commits `6a5fb2f91efc270686d87d900993b26fdeb333e2` and `9134d17ba8792a09ae010e0820289c3df695fbe7` add bounded S3 transfer behavior and Render API cold-start preflight. Current-head CI #519, CodeQL #266, Render deployment, and a successful production rerun remain pending. The targeted live Supabase run #17 passed (`1 passed in 3.24s`).
 - Cloudinary live E2E: VERIFIED 2026-10-08.
 - QStash signed delivery/completion/duplicate protection: VERIFIED 2026-10-08.
 - Supabase Storage upload/read: VERIFIED by all-provider Live Release Gates run #15 (4 passed); strict cleanup DELETE response assertion was added on 2026-10-10; the targeted live Supabase rerun passed in run #17 (`1 passed in 3.24s`), completing the upload/read/cleanup gate.
@@ -28,7 +28,7 @@ Release certification requires repository CI/security validation, live provider 
 
 ## Current release position
 
-Production database migration parity is closed. Cloudinary, Supabase Storage upload/read, private B2/S3 provider round-trip, Google Drive upload/read, and QStash core evidence have live evidence (all-provider run #15: 4 tests passed). Run #16 was cancelled before tests ran and is not a failure of those gates. The Supabase cleanup assertion was verified by targeted run #17. A targeted B2 application download-proxy gate was added in commit `5db3ca2e13411bec3a94ed248672b787b0c6d886`, with cleanup failure handling refined in `33d07518d99572e9746cdd8d27ebcb2fb28ece74`. Current-head CI #517 and CodeQL #264 passed; the live production run remains pending. All remaining PENDING items require real production/provider/operations evidence and cannot be inferred from repository tests.
+Production database migration parity is closed. Cloudinary, Supabase Storage upload/read, private B2/S3 provider round-trip, Google Drive upload/read, and QStash core evidence have live evidence (all-provider run #15: 4 tests passed). Run #16 was cancelled before tests ran and is not a failure of those gates. The Supabase cleanup assertion was verified by targeted run #17. The targeted B2 application download-proxy gate remains pending: production run #19 timed out during upload. Current-head CI #519, CodeQL #266, Render deployment, and a successful production rerun remain pending. All remaining PENDING items require real production/provider/operations evidence and cannot be inferred from repository tests.
 
 See `docs/RELEASE_EVIDENCE.md` for the canonical checklist.
 
