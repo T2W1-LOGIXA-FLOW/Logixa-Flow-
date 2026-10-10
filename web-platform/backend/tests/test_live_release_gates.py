@@ -164,6 +164,10 @@ def test_live_b2_application_download_proxy_round_trip() -> None:
                 health.raise_for_status()
                 break
             health_error = f"health endpoint returned HTTP {health.status_code}"
+        except requests.HTTPError:
+            # A deterministic client error (for example, a wrong health path)
+            # is not a cold-start condition and should fail immediately.
+            raise
         except requests.RequestException as exc:
             health_error = exc
         time.sleep(3)
