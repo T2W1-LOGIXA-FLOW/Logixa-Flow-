@@ -196,11 +196,22 @@ def test_private_b2_upload_does_not_require_public_base_url(monkeypatch: pytest.
     import sys
     import types
 
-    monkeypatch.setitem(
-        sys.modules,
-        "boto3",
-        types.SimpleNamespace(client=lambda *args, **kwargs: FakeClient()),
-    )
+    # Model the boto3 package and transfer submodule without requiring live AWS/B2.
+    fake_boto3 = types.ModuleType("boto3")
+    fake_boto3.__path__ = []
+    fake_boto3.client = lambda *args, **kwargs: FakeClient()
+    fake_s3 = types.ModuleType("boto3.s3")
+    fake_s3.__path__ = []
+    fake_transfer = types.ModuleType("boto3.s3.transfer")
+
+    class FakeTransferConfig:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    fake_transfer.TransferConfig = FakeTransferConfig
+    monkeypatch.setitem(sys.modules, "boto3", fake_boto3)
+    monkeypatch.setitem(sys.modules, "boto3.s3", fake_s3)
+    monkeypatch.setitem(sys.modules, "boto3.s3.transfer", fake_transfer)
 
     assert storage._upload_s3(BytesIO(b"payload"), "file.txt", "text/plain") == ""
 
