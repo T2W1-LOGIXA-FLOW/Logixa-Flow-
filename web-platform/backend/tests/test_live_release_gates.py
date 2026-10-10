@@ -177,6 +177,8 @@ def test_live_b2_application_download_proxy_round_trip() -> None:
             pytrace=False,
         )
 
+    auth_started = time.monotonic()
+    print("B2 proxy gate: production admin authentication starting", flush=True)
     token_response = session.post(
         f"{supabase_base}/auth/v1/token?grant_type=password",
         headers={"apikey": values["SUPABASE_PUBLISHABLE_KEY"], "Content-Type": "application/json"},
@@ -186,6 +188,11 @@ def test_live_b2_application_download_proxy_round_trip() -> None:
         },
         timeout=30,
     )
+    print(
+        f"B2 proxy gate: authentication response status={token_response.status_code} "
+        f"elapsed_seconds={time.monotonic() - auth_started:.1f}",
+        flush=True,
+    )
     token_response.raise_for_status()
     access_token = token_response.json().get("access_token")
     assert isinstance(access_token, str) and access_token
@@ -193,11 +200,27 @@ def test_live_b2_application_download_proxy_round_trip() -> None:
 
     file_id: str | None = None
     try:
-        uploaded = session.post(
-            f"{api_base}/api/uploads",
-            headers=auth_headers,
-            files={"file": (f"logixa-live-b2-proxy-{uuid.uuid4().hex}.png", payload, "image/png")},
-            timeout=(10, 180),
+        upload_started = time.monotonic()
+        print(f"B2 proxy gate: upload starting payload_bytes={len(payload)}", flush=True)
+        try:
+            uploaded = session.post(
+                f"{api_base}/api/uploads",
+                headers=auth_headers,
+                files={"file": (f"logixa-live-b2-proxy-{uuid.uuid4().hex}.png", payload, "image/png")},
+                timeout=(10, 180),
+            )
+        except requests.RequestException as exc:
+            print(
+                "B2 proxy gate: upload request failed "
+                f"elapsed_seconds={time.monotonic() - upload_started:.1f} "
+                f"error_type={type(exc).__name__} error={exc}",
+                flush=True,
+            )
+            raise
+        print(
+            f"B2 proxy gate: upload response status={uploaded.status_code} "
+            f"elapsed_seconds={time.monotonic() - upload_started:.1f}",
+            flush=True,
         )
         uploaded.raise_for_status()
         opaque_url = uploaded.json().get("url")
@@ -205,7 +228,23 @@ def test_live_b2_application_download_proxy_round_trip() -> None:
         file_id = opaque_url.rstrip("/").split("/")[-1]
         assert file_id
 
-        downloaded = session.get(f"{api_base}{opaque_url}", timeout=180)
+        download_started = time.monotonic()
+        print("B2 proxy gate: opaque URL download starting", flush=True)
+        try:
+            downloaded = session.get(f"{api_base}{opaque_url}", timeout=180)
+        except requests.RequestException as exc:
+            print(
+                "B2 proxy gate: download request failed "
+                f"elapsed_seconds={time.monotonic() - download_started:.1f} "
+                f"error_type={type(exc).__name__} error={exc}",
+                flush=True,
+            )
+            raise
+        print(
+            f"B2 proxy gate: download response status={downloaded.status_code} "
+            f"elapsed_seconds={time.monotonic() - download_started:.1f}",
+            flush=True,
+        )
         downloaded.raise_for_status()
         assert downloaded.content == payload
         assert downloaded.headers.get("X-Content-Type-Options", "").lower() == "nosniff"
