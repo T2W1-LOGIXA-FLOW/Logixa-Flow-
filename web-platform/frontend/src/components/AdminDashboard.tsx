@@ -548,7 +548,6 @@ export default function AdminDashboard() {
                   <p className="mt-1 text-sm text-slate-500">Configuration readiness from the system-status endpoint.</p>
                 </Link>
               </div>
-              </div>
             </div>
           </section>
 
@@ -697,7 +696,6 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               )}
-              </div>
             </div>
           </section>
         </div>
