@@ -177,6 +177,8 @@ def test_live_b2_application_download_proxy_round_trip() -> None:
             pytrace=False,
         )
 
+    auth_started = time.monotonic()
+    print("B2 proxy gate: production admin authentication starting", flush=True)
     token_response = session.post(
         f"{supabase_base}/auth/v1/token?grant_type=password",
         headers={"apikey": values["SUPABASE_PUBLISHABLE_KEY"], "Content-Type": "application/json"},
@@ -185,6 +187,11 @@ def test_live_b2_application_download_proxy_round_trip() -> None:
             "password": values["PRODUCTION_ADMIN_PASSWORD"],
         },
         timeout=30,
+    )
+    print(
+        f"B2 proxy gate: authentication response status={token_response.status_code} "
+        f"elapsed_seconds={time.monotonic() - auth_started:.1f}",
+        flush=True,
     )
     token_response.raise_for_status()
     access_token = token_response.json().get("access_token")
