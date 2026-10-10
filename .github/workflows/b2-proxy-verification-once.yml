@@ -1,0 +1,47 @@
+name: One-time B2 Proxy Production Verification
+
+on:
+  push:
+    branches:
+      - b2-proxy-verification-once
+
+permissions:
+  contents: read
+
+jobs:
+  verify-b2-proxy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: production
+    env:
+      RUN_LIVE_E2E: "1"
+      PRODUCTION_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      PRODUCTION_ADMIN_EMAIL: ${{ secrets.PRODUCTION_ADMIN_EMAIL }}
+      PRODUCTION_ADMIN_PASSWORD: ${{ secrets.PRODUCTION_ADMIN_PASSWORD }}
+      S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
+      S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+      S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+      S3_REGION: ${{ secrets.S3_REGION }}
+    defaults:
+      run:
+        working-directory: web-platform/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend dependencies
+        run: pip install -r requirements.txt pytest httpx
+      - name: Validate production secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in PRODUCTION_API_URL SUPABASE_URL SUPABASE_PUBLISHABLE_KEY SUPABASE_SERVICE_ROLE_KEY PRODUCTION_ADMIN_EMAIL PRODUCTION_ADMIN_PASSWORD S3_ENDPOINT_URL S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY S3_BUCKET; do
+            test -n "${!key:-}" || { echo "::error::Missing production secret: $key"; exit 1; }
+          done
+      - name: Run authenticated B2 upload/download/delete round trip
+        run: python -m pytest -q tests/test_live_release_gates.py::test_live_b2_application_download_proxy_round_trip
