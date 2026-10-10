@@ -548,7 +548,7 @@ export default function AdminDashboard() {
                   <p className="mt-1 text-sm text-slate-500">Pending review items reported by the backend.</p>
                 </Link>
                 <Link href="/admin/drafts" className="block rounded-2xl border border-slate-800 bg-slate-950/60 p-4 transition hover:border-cyan-400/30">
-                  <div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-white">Draft queue</p><strong className="text-lg text-cyan-200">{draftsError ? "—" : drafts.length}</strong></div>
+                  <div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-white">Draft queue</p><strong className="text-lg text-cyan-200">{draftsError || draftsLoading ? "—" : drafts.length >= 5 ? "5+" : drafts.length}</strong></div>
                   <p className="mt-1 text-sm text-slate-500">Draft posts returned by the authenticated admin API.</p>
                 </Link>
                 <Link href="/admin/system" className="block rounded-2xl border border-slate-800 bg-slate-950/60 p-4 transition hover:border-cyan-400/30">
