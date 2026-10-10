@@ -159,11 +159,19 @@ def download_s3_object(key: str):
     return client.get_object(Bucket=bucket, Key=key)
 
 
-def _upload_s3(file_obj: BinaryIO, filename: str, content_type: str, size_bytes: int) -> str:
+def _upload_s3(
+    file_obj: BinaryIO,
+    filename: str,
+    content_type: str,
+    size_bytes: int | None = None,
+) -> str:
     from boto3.s3.transfer import TransferConfig
     from botocore.exceptions import BotoCoreError, ClientError
 
     client, bucket = _s3_client()
+    if size_bytes is None:
+        file_obj.seek(0, 2)
+        size_bytes = file_obj.tell()
     file_obj.seek(0)
     # B2's S3-compatible API is more reliable for ordinary objects when the
     # request carries an explicit Content-Length. TransferManager can otherwise
