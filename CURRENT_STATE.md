@@ -59,28 +59,27 @@ The remaining work is now limited to live release evidence and explicitly deferr
 
 Current active closure tracks:
 
-1. Deployed application private-B2 download-proxy E2E verification.
-2. Workflow retry/recovery and live stale-claim/failure-recovery verification.
-3. Production monitoring, SLO/error-budget, and failure-mode verification.
-4. Production RAG and AI publishing E2E verification.
-5. Scheduled workflow, newsletter, and controlled provider-failover verification.
-6. Object-storage recovery, rollback rehearsal, and post-rollback smoke verification.
+1. Workflow retry/recovery and live stale-claim/failure-recovery verification.
+2. Production monitoring, SLO/error-budget, and failure-mode verification.
+3. Production RAG and AI publishing E2E verification.
+4. Scheduled workflow, newsletter, and controlled provider-failover verification.
+5. Object-storage recovery, rollback rehearsal, and post-rollback smoke verification.
+6. Full authenticated Admin UI browser verification.
 
 ## 7. PENDING
 
-- **Deployed application private-B2 download-proxy E2E VERIFIED on 2026-10-10**: One-time production verification run #38049146602 succeeded after syncing the known-good GitHub B2 settings into Render and waiting for the deployment to become live. Both `test_live_b2_s3_round_trip` and `test_live_b2_application_download_proxy_round_trip` passed (`2 passed in 12.32s`), covering direct B2 upload/read/delete and authenticated application upload → private download/readback → cleanup. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602. The earlier run #19 timeout and subsequent diagnostics/deployment history are retained as historical failures, not the current status.
-- **Production backup/restore VERIFIED on 2026-10-09**: run #6 succeeded on isolated restore project `bxvykaijlrqjvlhtumpg`; restored Alembic head `20261008_0012`, all four critical tables, and numeric RAG observability count (0 rows). Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37964429760. This verifies the `public` application-schema logical restore only, not managed Supabase Auth/Storage or object-storage recovery.
-- **Google Drive live E2E VERIFIED on 2026-10-09**: Live Release Gates run #14 passed `tests/test_live_release_gates.py::test_live_google_drive_upload_round_trip` (`1 passed in 2.04s`), confirming the configured production OAuth credential can complete the upload/read round-trip after the scope-handling fix. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37953000376. This does not close the separate Supabase Storage or app-level B2 download-proxy gates.
-- Workflow retry/recovery verification.
-- Stale-claim recovery verification.
-- Controlled failure/recovery verification.
-- Production monitoring/failure-mode checks.
-- End-to-end RAG ingest → embed → search.
+- Workflow retry/recovery verification under live production conditions.
+- Stale-claim recovery verification with a durable before/after state and execution evidence.
+- Controlled failure/recovery verification, including sanitized logs/metrics.
+- Production monitoring, alert delivery, SLO observation window, and error-budget review.
+- End-to-end RAG ingest → embed → search in production; resolve the observed OpenRouter free-tier HTTP 429 without enabling paid-provider fallback absent owner approval.
 - Agent → Brain → publish E2E.
 - Workflow approval → resume → completion.
 - Scheduled workflow over a real time boundary.
-- Newsletter delivery E2E.
+- Newsletter delivery E2E; current newsletter endpoints return HTTP 501 until a transactional email provider is connected.
 - Controlled external-provider failover test.
+- Object-storage recovery, rollback rehearsal, data-integrity reconciliation, and post-rollback smoke.
+- Full authenticated Admin UI browser verification; login route and unauthenticated protection are verified, but authenticated dashboard rendering/navigation/responsive behavior are not.
 
 ## 8. BLOCKED
 
@@ -95,7 +94,7 @@ No repository-level blocker is established. Production Auth/API smoke and isolat
 
 ## 10. REMAINING RELEASE GATES
 
-1. Supabase Storage upload/read/cleanup E2E is verified by run #17; the deployed application private-B2 download-proxy E2E is verified by run #38049146602 (`2 passed in 12.32s`). Backup/restore is separately verified for the `public` application schema in run #6. Cloudinary, B2 provider-level round-trip, and Google Drive upload/read round-trip also have live evidence.
+1. Supabase Storage upload/read/cleanup E2E is verified by run #17; the deployed application private-B2 download-proxy E2E is verified by run #38049146602 (`2 passed in 12.32s`). Backup/restore is separately verified for the `public` application schema in run #6. Cloudinary and Google Drive upload/read round-trip also have live evidence.
 2. Retry, stale-claim recovery, and controlled failure/recovery live verification remain pending.
 3. Duplicate-delivery protection is verified.
 4. QStash signing, delivery, and canonical workflow completion are verified.
@@ -108,7 +107,7 @@ No repository-level blocker is established. Production Auth/API smoke and isolat
 11. Newsletter delivery remains pending; endpoints currently return HTTP 501 until a transactional email provider is connected.
 12. Controlled external-provider failover remains pending.
 
-Latest confirmed green repository validation is CI #450 / CodeQL #197 on `115482a27a9c7d56294c8fe09940190555a8d7a1`. Docs-only commits after that SHA intentionally do not trigger CI/CodeQL because the workflows ignore Markdown-only changes.
+Latest confirmed application-code validation remains CI #535 and CodeQL #282 on `896c3d0b1086799883b4128bb5ed3d088c5965d3` (see the linked runs above). Subsequent documentation-only commits do not trigger CI/CodeQL by design; Vercel deployment remediation remains paused at owner direction.
 
 ## 11. LAST VERIFIED
 
@@ -134,7 +133,7 @@ Latest confirmed green repository validation is CI #450 / CodeQL #197 on `115482
 
 ## 13. NEXT ACTION
 
-Continue Phase 13 only on genuinely open gates; do not rerun provider checks already covered by Live Release Gates run #15 (4 passed). Supabase upload/read/cleanup is now verified by targeted run #17. The deployed application private-B2 download-proxy E2E is now verified by run #38049146602; do not rerun it absent a relevant code/config change or regression. Render startup logs on 2026-10-10 also show the scheduled AI preview failed because OpenRouter returned HTTP 429; this is an observed provider rate-limit/quota blocker, not a B2 failure. Do not enable paid-provider fallback without owner approval; continue workflow recovery, production RAG/AI, scheduled workflow/newsletter/failover, rollback/DR, monitoring/SLO, evidence reconciliation, and final freeze. See docs/TOOLS_AND_LLM_INVENTORY.md for the tools and LLM inventory. Production migration 0012 is applied. Next: execute remaining manual live gates, recovery drills, SLO/error-budget review, then freeze only with complete evidence. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate.
+Continue Phase 13 only on genuinely open gates; do not rerun provider checks already covered unless code/config changes or a regression occurs. Supabase upload/read/cleanup is verified by run #17 and deployed application private-B2 proxy E2E by run #38049146602. Render logs on 2026-10-10 recorded OpenRouter HTTP 429 for the scheduled AI preview; this is an AI quota/rate-limit blocker, not a B2 failure. Do not enable paid-provider fallback without owner approval. Prioritize workflow recovery, production RAG/AI, scheduled workflow/newsletter/failover, rollback/DR, monitoring/SLO, full authenticated Admin UI verification, and evidence reconciliation. See docs/TOOLS_AND_LLM_INVENTORY.md for the tools and LLM inventory. Production migration 0012 is applied. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate.
 
 
 ## 14. 2026-10-09 AUDIT SNAPSHOT
