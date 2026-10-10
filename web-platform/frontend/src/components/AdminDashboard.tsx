@@ -251,6 +251,18 @@ export default function AdminDashboard() {
     { title: "Scheduler", detail: systemStatus ? (systemStatus.scheduler_enabled ? "Scheduler is enabled according to the backend." : "Scheduler is disabled according to the backend.") : "Scheduler state has not been verified.", tone: systemStatus?.scheduler_enabled ? "cyan" : "amber" },
   ];
   const recentActivityCards = activityFeed;
+  const usageSummary = useMemo(
+    () => usageTrend.reduce(
+      (total, row) => ({
+        tokens: total.tokens + Number(row.tokens || 0),
+        calls: total.calls + Number(row.calls || 0),
+        cost: total.cost + Number(row.cost || 0),
+      }),
+      { tokens: 0, calls: 0, cost: 0 },
+    ),
+    [usageTrend],
+  );
+
   if (!token) {
     return (
       <div className="space-y-4">
@@ -394,7 +406,7 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#22D3EE]">API Usage</p>
-                  <h2 className="mt-2 text-xl font-bold text-white">Requests over time</h2>
+                  <h2 className="mt-2 text-xl font-bold text-white">Token volume over time</h2>
                 </div>
               </div>
               <div style={{ width: '100%', height: 240 }} className="mt-4">
@@ -410,10 +422,25 @@ export default function AdminDashboard() {
                       <YAxis tick={{ fill: '#94A3B8' }} />
                       <Tooltip />
                       <Line type="monotone" dataKey="tokens" stroke="#22D3EE" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="cost" stroke="#F59E0B" strokeWidth={2} dot={false} />
+
                     </LineChart>
                   </ResponsiveContainer>
                 )}
+              </div>
+
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Tokens</p>
+                  <p className="mt-1 text-base font-bold text-white">{usageSummary.tokens.toLocaleString()}</p>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">API calls</p>
+                  <p className="mt-1 text-base font-bold text-white">{usageSummary.calls.toLocaleString()}</p>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Recorded cost</p>
+                  <p className="mt-1 text-base font-bold text-white">{usageSummary.cost.toLocaleString(undefined, { maximumFractionDigits: 4 })}</p>
+                </div>
               </div>
 
               {/* Donut chart: API key usage share */}
