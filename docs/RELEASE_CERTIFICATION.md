@@ -12,7 +12,7 @@ Release certification requires repository CI/security validation, live provider 
 
 - Repository head: 20261008_0012.
 - Live production migration head: `20261008_0012_rag_observability`, applied and verified on 2026-10-08.
-- Latest confirmed green repository validation: CI #450 / CodeQL #197 on `115482a27a9c7d56294c8fe09940190555a8d7a1`. Docs-only commits after this SHA do not trigger these workflows by design.
+- The Supabase cleanup assertion change passed CI #514 and CodeQL #261 on `b0af10c9208a10c4de794a0ee41d6a82b896d22e` (all CI jobs and both CodeQL language jobs succeeded). Subsequent commits are documentation-only. The targeted live Supabase run remains pending.
 - Cloudinary live E2E: VERIFIED 2026-10-08.
 - QStash signed delivery/completion/duplicate protection: VERIFIED 2026-10-08.
 - Supabase Storage upload/read: VERIFIED by all-provider Live Release Gates run #15 (4 passed); strict cleanup DELETE response assertion was added on 2026-10-10; the targeted live Supabase rerun is pending before claiming full delete verification.
