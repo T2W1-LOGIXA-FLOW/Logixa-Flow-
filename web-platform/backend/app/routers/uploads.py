@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import logging
 import os
+import time
 from pathlib import Path
 from uuid import uuid4
 
@@ -13,6 +15,7 @@ from ..security import require_admin
 from ..storage import B2_MAX_BYTES, IMAGE_TYPES, classify_storage, download_s3_object, upload_routed
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 ALLOWED_IMAGE_TYPES = IMAGE_TYPES
 ALLOWED_DOCUMENT_TYPES = {
     "application/pdf",
@@ -87,13 +90,27 @@ def upload_file(request: Request, file: UploadFile = File(...), _admin=Depends(r
 
     filename = f"{uuid4().hex}-{Path(file.filename or 'upload').name}"
     record_id = uuid4().hex
+    storage_started = time.perf_counter()
     try:
         backend, storage_class, url = upload_routed(file.file, filename, content_type, size_bytes)
+        logger.info(
+            "Upload storage stage completed backend=%s storage_class=%s size_bytes=%d elapsed_ms=%d",
+            backend,
+            storage_class,
+            size_bytes,
+            round((time.perf_counter() - storage_started) * 1000),
+        )
         if backend == "b2":
             # Keep B2 private. The opaque app URL streams from B2 using
             # server-side credentials instead of a public URL or expiring link.
             url = str(request.app.url_path_for("download_stored_file", file_id=record_id))
     except Exception as exc:
+        logger.exception(
+            "Upload storage stage failed storage_class=%s size_bytes=%d elapsed_ms=%d",
+            classify_storage(file.filename or "upload", content_type, size_bytes),
+            size_bytes,
+            round((time.perf_counter() - storage_started) * 1000),
+        )
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Upload storage rejected the file",
@@ -112,11 +129,24 @@ def upload_file(request: Request, file: UploadFile = File(...), _admin=Depends(r
         is_export=False,
     )
     db = SessionLocal()
+    metadata_started = time.perf_counter()
     try:
         db.add(record)
         db.commit()
+        logger.info(
+            "Upload metadata stage completed backend=%s size_bytes=%d elapsed_ms=%d",
+            backend,
+            size_bytes,
+            round((time.perf_counter() - metadata_started) * 1000),
+        )
     except Exception as exc:
         db.rollback()
+        logger.exception(
+            "Upload metadata stage failed backend=%s size_bytes=%d elapsed_ms=%d",
+            backend,
+            size_bytes,
+            round((time.perf_counter() - metadata_started) * 1000),
+        )
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="File metadata could not be persisted") from exc
     finally:
         db.close()
@@ -137,10 +167,20 @@ def download_stored_file(file_id: str):
     finally:
         db.close()
 
+    download_started = time.perf_counter()
     try:
         result = download_s3_object(object_key)
         body = result["Body"]
+        logger.info(
+            "Private B2 object open completed size_bytes=%s elapsed_ms=%d",
+            result.get("ContentLength"),
+            round((time.perf_counter() - download_started) * 1000),
+        )
     except Exception as exc:
+        logger.exception(
+            "Private B2 object open failed elapsed_ms=%d",
+            round((time.perf_counter() - download_started) * 1000),
+        )
         # Do not leak provider credentials, bucket details, or raw provider errors.
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Stored file could not be retrieved") from exc
 
