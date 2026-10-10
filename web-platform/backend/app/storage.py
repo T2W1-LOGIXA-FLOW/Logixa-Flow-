@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import mimetypes
 import os
 import re
@@ -151,15 +152,22 @@ def _s3_client():
     }
     if missing := [key for key, value in required.items() if not value]:
         raise RuntimeError(f"missing S3 variables: {', '.join(missing)}")
+    endpoint_url = required["S3_ENDPOINT_URL"]
+    signing_region = _s3_signing_region(endpoint_url, os.getenv("S3_REGION"))
+    endpoint_host = urlsplit(endpoint_url).hostname or "unknown"
+    # Host and region are operational diagnostics, not credentials. Avoid logging
+    # the endpoint path, bucket, access key, secret key, or signed request headers.
+    logging.getLogger(__name__).info(
+        "S3-compatible storage configured endpoint_host=%s signing_region=%s",
+        endpoint_host,
+        signing_region,
+    )
     client = boto3.client(
         "s3",
-        endpoint_url=required["S3_ENDPOINT_URL"],
+        endpoint_url=endpoint_url,
         aws_access_key_id=required["S3_ACCESS_KEY_ID"],
         aws_secret_access_key=required["S3_SECRET_ACCESS_KEY"],
-        region_name=_s3_signing_region(
-            required["S3_ENDPOINT_URL"],
-            os.getenv("S3_REGION"),
-        ),
+        region_name=signing_region,
         # Bound network waits so a stalled provider request fails with an actionable
         # storage error instead of holding the synchronous API request for minutes.
         config=Config(
