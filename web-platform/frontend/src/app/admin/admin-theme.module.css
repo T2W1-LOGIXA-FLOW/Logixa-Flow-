@@ -1,24 +1,25 @@
 .shell {
-  --admin-bg: #020617;
-  --admin-surface: #0a0f1e;
-  --admin-surface-raised: #101728;
-  --admin-border: #1e293b;
-  --admin-text: #f8fafc;
-  --admin-muted: #94a3b8;
-  --admin-cyan: #22d3ee;
-  --admin-blue: #2563eb;
-  --admin-orange: #f59e0b;
-  --admin-violet: #8b5cf6;
-  --admin-success: #10b981;
-  --admin-warning: #f59e0b;
-  --admin-danger: #ef4444;
+  --admin-bg: #080d18;
+  --admin-surface: #0d1422;
+  --admin-surface-raised: #121c2c;
+  --admin-border: #253247;
+  --admin-text: #f1f5f9;
+  --admin-muted: #91a0b5;
+  --admin-cyan: #67e8f9;
+  --admin-blue: #60a5fa;
+  --admin-orange: #fbbf24;
+  --admin-violet: #c4b5fd;
+  --admin-success: #6ee7b7;
+  --admin-warning: #fbbf24;
+  --admin-danger: #fca5a5;
   background: var(--admin-bg);
   color: var(--admin-text);
 }
 
 .sidebar {
-  background: color-mix(in srgb, var(--admin-surface) 94%, transparent);
+  background: rgb(10 16 28 / 96%);
   border-color: var(--admin-border);
+  box-shadow: 16px 0 48px rgb(0 0 0 / 14%);
 }
 
 .navLink {
@@ -28,9 +29,9 @@
 
 .navLink:hover,
 .navLink:focus-visible {
-  background: color-mix(in srgb, var(--admin-surface-raised) 88%, transparent);
-  border-color: color-mix(in srgb, var(--admin-cyan) 24%, transparent);
-  color: var(--admin-cyan);
+  background: rgb(148 163 184 / 7%);
+  border-color: rgb(148 163 184 / 12%);
+  color: var(--admin-text);
 }
 
 .navLink:focus-visible,
@@ -42,20 +43,21 @@
 }
 
 .navLinkActive {
-  background: color-mix(in srgb, var(--admin-cyan) 10%, transparent);
+  background: rgb(103 232 249 / 9%);
+  border-color: rgb(103 232 249 / 18%);
   border-left: 2px solid var(--admin-cyan);
   color: var(--admin-cyan);
 }
 
 .topbar {
-  background: color-mix(in srgb, var(--admin-bg) 88%, transparent);
-  border-color: color-mix(in srgb, var(--admin-border) 80%, transparent);
+  background: rgb(8 13 24 / 86%);
+  border-color: rgb(37 50 71 / 82%);
 }
 
 .statusBadge,
 .action {
   border: 1px solid var(--admin-border);
-  background: color-mix(in srgb, var(--admin-surface-raised) 82%, transparent);
+  background: rgb(18 28 44 / 78%);
   color: var(--admin-text);
 }
 
@@ -64,10 +66,10 @@
   align-items: center;
   gap: 0.45rem;
   border-radius: 999px;
-  padding: 0.35rem 0.65rem;
+  padding: 0.4rem 0.7rem;
   font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   line-height: 1;
   text-transform: uppercase;
 }
@@ -104,44 +106,51 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  border-radius: 0.75rem;
-  padding: 0.5rem 0.75rem;
+  border-radius: 0.7rem;
+  padding: 0.55rem 0.8rem;
   font-size: 0.75rem;
   font-weight: 600;
-  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
 .action:hover {
-  border-color: color-mix(in srgb, var(--admin-cyan) 50%, transparent);
-  background: color-mix(in srgb, var(--admin-cyan) 10%, var(--admin-surface-raised));
+  border-color: rgb(103 232 249 / 35%);
+  background: rgb(103 232 249 / 7%);
 }
 
 .card {
-  border: 1px solid color-mix(in srgb, var(--admin-border) 90%, transparent);
+  border: 1px solid var(--admin-border);
   border-radius: 1rem;
-  background: color-mix(in srgb, var(--admin-surface-raised) 80%, transparent);
-  box-shadow: 0 16px 40px rgb(0 0 0 / 0.16);
+  background: rgb(18 28 44 / 76%);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 12%);
 }
 
 .metricCard {
   min-width: 0;
-  padding: 1rem;
+  padding: 1.1rem;
 }
 
 .metricLabel {
   color: var(--admin-muted);
   font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .metricValue {
   display: block;
-  margin-top: 0.4rem;
+  margin-top: 0.45rem;
   color: var(--admin-text);
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+@media (max-width: 1023px) {
+  .sidebar {
+    width: min(18rem, calc(100vw - 2rem));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
