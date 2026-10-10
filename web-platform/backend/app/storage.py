@@ -205,11 +205,20 @@ def _upload_s3(
     # Reserve multipart transfers for objects larger than 64 MiB.
     try:
         if size_bytes <= 64 * 1024 * 1024:
+            # Boto3's direct B2 gate succeeds with a byte payload, while the
+            # Render UploadFile spool (often disk-backed above 1 MiB) was being
+            # closed by the endpoint mid-request. Buffer only bounded objects so
+            # the S3 request body matches the proven direct-provider path.
+            payload = file_obj.read()
+            if len(payload) != size_bytes:
+                raise RuntimeError(
+                    f"upload stream size mismatch (expected={size_bytes}, actual={len(payload)})"
+                )
             client.put_object(
                 Bucket=bucket,
                 Key=filename,
-                Body=file_obj,
-                ContentLength=size_bytes,
+                Body=payload,
+                ContentLength=len(payload),
                 ContentType=content_type or "application/octet-stream",
             )
         else:
