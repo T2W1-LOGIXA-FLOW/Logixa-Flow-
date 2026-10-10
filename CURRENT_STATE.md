@@ -227,3 +227,19 @@ Continue Phase 13 only on genuinely open gates; do not rerun provider checks alr
 - Post-deploy live tests passed: `test_live_b2_s3_round_trip` and `test_live_b2_application_download_proxy_round_trip` — **2 passed in 12.32s**. This confirms direct S3 upload/read/delete and the authenticated production application upload/private-download/cleanup flow for the tested payload.
 - Previous failures were caused by Render-side B2 settings differing from the working CI credentials/configuration; the post-sync live gate now passes. Do not expose credential values in logs or documentation.
 - Re-run the live gate after any future B2 credential, bucket, endpoint, signing-region, or storage-routing change.
+
+
+## Backup/Restore Gate — 2026-10-09 (run #5)
+
+- **Live restore remains FAILED / PENDING.** Run #5 created the production logical backup, reset only the isolated restore project's `public` schema, restored schema objects, then failed on `COPY users` with a duplicate primary key. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37962624876.
+- Read-only live catalog inspection found the `users` table in the managed `auth` schema (owned by `supabase_auth_admin`) in both production and the isolated restore project; no `public.users` table exists. The isolated target's managed Auth schema is not reset by the workflow, so managed Auth rows must not be replayed as part of the application-schema restore.
+- Remediation committed to the workflow: both schema and data dumps are explicitly scoped to `--schema public`; a guard rejects schema-qualified Auth/Storage COPY entries in the data dump. This keeps the gate focused on application-schema recovery and avoids modifying managed Auth data.
+- **Not yet verified:** the fix requires a fresh manual run of `Production Backup Restore Gate`. Do not mark backup/restore VERIFIED or release-certified until the run restores data and passes Alembic head `20261008_0012`, four critical-table assertions, and the RAG event-count check.
+
+
+## Admin UI Production Verification — 2026-10-10
+
+- Admin command-center code was merged through PR #66 at commit `a68cfd0031fdef4ba7665a6d3df5367d9df7dafe`: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/66. The dashboard correction commit `214f1fea82279433ff1b56d98e0bbf79db50ae5d` makes the draft queue summary show an em dash while loading/errors and `5+` when the five-row preview limit is reached.
+- Vercel production deployment `dpl_5wycNFm291dS8nWZJmfEsfTjC2pw` is READY. Production alias: https://logixa-flow.vercel.app.
+- Production login page renders and unauthenticated `/admin` redirects to login. Auth Smoke run #11 passed password-grant login, `/api/auth/me` admin-role assertion, and admin RAG metrics request: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474.
+- **Partially verified:** login/protected-route behavior and production deployment are verified, but an authenticated browser session was not available to verify the full dashboard rendering, navigation, and responsive behavior with a real admin session. Do not claim full browser UI verification.
