@@ -1,0 +1,62 @@
+from __future__ import annotations
+
+import io
+
+from app import storage
+
+
+class FakeS3Client:
+    def __init__(self) -> None:
+        self.put_kwargs = None
+        self.transfer_args = None
+
+    def put_object(self, **kwargs):
+        self.put_kwargs = kwargs
+        return {}
+
+    def upload_fileobj(self, *args, **kwargs):
+        self.transfer_args = (args, kwargs)
+
+
+def test_small_b2_upload_uses_put_object_with_explicit_content_length(monkeypatch):
+    payload = b"small private B2 upload"
+    file_obj = io.BytesIO(payload)
+    client = FakeS3Client()
+    monkeypatch.setattr(storage, "_s3_client", lambda: (client, "private-bucket"))
+    monkeypatch.delenv("S3_PUBLIC_BASE_URL", raising=False)
+
+    result = storage._upload_s3(file_obj, "sample.png", "image/png", len(payload))
+
+    assert result == ""
+    assert client.put_kwargs is not None
+    assert client.put_kwargs["Bucket"] == "private-bucket"
+    assert client.put_kwargs["Key"] == "sample.png"
+    assert client.put_kwargs["ContentLength"] == len(payload)
+    assert client.put_kwargs["ContentType"] == "image/png"
+    assert client.put_kwargs["Body"].read() == payload
+    assert client.transfer_args is None
+
+
+def test_large_b2_upload_keeps_bounded_multipart_transfer(monkeypatch):
+    file_obj = io.BytesIO(b"x")
+    client = FakeS3Client()
+    monkeypatch.setattr(storage, "_s3_client", lambda: (client, "private-bucket"))
+    monkeypatch.delenv("S3_PUBLIC_BASE_URL", raising=False)
+
+    result = storage._upload_s3(
+        file_obj,
+        "large.bin",
+        "application/octet-stream",
+        64 * 1024 * 1024 + 1,
+    )
+
+    assert result == ""
+    assert client.put_kwargs is None
+    assert client.transfer_args is not None
+    args, kwargs = client.transfer_args
+    assert args[0] is file_obj
+    assert args[1:] == ("private-bucket", "large.bin")
+    assert kwargs["ExtraArgs"]["ContentType"] == "application/octet-stream"
+    assert kwargs["Config"].multipart_threshold == 64 * 1024 * 1024
+    assert kwargs["Config"].multipart_chunksize == 16 * 1024 * 1024
+    assert kwargs["Config"].use_threads is False

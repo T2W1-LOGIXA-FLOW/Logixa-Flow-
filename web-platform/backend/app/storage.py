@@ -159,29 +159,47 @@ def download_s3_object(key: str):
     return client.get_object(Bucket=bucket, Key=key)
 
 
-def _upload_s3(file_obj: BinaryIO, filename: str, content_type: str) -> str:
+def _upload_s3(
+    file_obj: BinaryIO,
+    filename: str,
+    content_type: str,
+    size_bytes: int | None = None,
+) -> str:
     from boto3.s3.transfer import TransferConfig
     from botocore.exceptions import BotoCoreError, ClientError
 
     client, bucket = _s3_client()
+    if size_bytes is None:
+        file_obj.seek(0, 2)
+        size_bytes = file_obj.tell()
     file_obj.seek(0)
-    # B2 supports PutObject for files up to 5 GB. Avoid creating multipart
-    # uploads for ordinary large images/documents; use bounded multipart
-    # transfers only for genuinely large objects.
-    transfer_config = TransferConfig(
-        multipart_threshold=64 * 1024 * 1024,
-        multipart_chunksize=16 * 1024 * 1024,
-        max_concurrency=2,
-        use_threads=False,
-    )
+    # B2's S3-compatible API is more reliable for ordinary objects when the
+    # request carries an explicit Content-Length. TransferManager can otherwise
+    # use a streaming upload path that some S3-compatible endpoints close early.
+    # Reserve multipart transfers for objects larger than 64 MiB.
     try:
-        client.upload_fileobj(
-            file_obj,
-            bucket,
-            filename,
-            ExtraArgs={"ContentType": content_type or "application/octet-stream"},
-            Config=transfer_config,
-        )
+        if size_bytes <= 64 * 1024 * 1024:
+            client.put_object(
+                Bucket=bucket,
+                Key=filename,
+                Body=file_obj,
+                ContentLength=size_bytes,
+                ContentType=content_type or "application/octet-stream",
+            )
+        else:
+            transfer_config = TransferConfig(
+                multipart_threshold=64 * 1024 * 1024,
+                multipart_chunksize=16 * 1024 * 1024,
+                max_concurrency=2,
+                use_threads=False,
+            )
+            client.upload_fileobj(
+                file_obj,
+                bucket,
+                filename,
+                ExtraArgs={"ContentType": content_type or "application/octet-stream"},
+                Config=transfer_config,
+            )
     except ClientError as exc:
         error = exc.response.get("Error", {})
         metadata = exc.response.get("ResponseMetadata", {})
@@ -232,7 +250,7 @@ def upload_routed(file_obj: BinaryIO, filename: str, content_type: str, size_byt
             elif backend == "supabase":
                 url = _upload_supabase(file_obj, filename, content_type)
             else:
-                url = _upload_s3(file_obj, filename, content_type)
+                url = _upload_s3(file_obj, filename, content_type, size_bytes)
             return backend, storage_class, url
         except Exception as exc:
             if backend == "b2" and isinstance(exc, RuntimeError):
