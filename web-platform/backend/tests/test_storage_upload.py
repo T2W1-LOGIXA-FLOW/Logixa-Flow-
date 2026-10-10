@@ -60,3 +60,22 @@ def test_large_b2_upload_keeps_bounded_multipart_transfer(monkeypatch):
     assert kwargs["Config"].multipart_threshold == 64 * 1024 * 1024
     assert kwargs["Config"].multipart_chunksize == 16 * 1024 * 1024
     assert kwargs["Config"].use_threads is False
+
+
+
+def test_b2_signing_region_is_derived_from_regional_endpoint():
+    assert storage._s3_signing_region(
+        "https://s3.us-west-004.backblazeb2.com",
+        "auto",
+    ) == "us-west-004"
+
+
+def test_non_b2_s3_endpoint_keeps_explicit_region():
+    assert storage._s3_signing_region(
+        "https://s3.example.com",
+        "eu-central-1",
+    ) == "eu-central-1"
+
+
+def test_non_b2_s3_endpoint_defaults_to_auto_region():
+    assert storage._s3_signing_region("https://s3.example.com", None) == "auto"

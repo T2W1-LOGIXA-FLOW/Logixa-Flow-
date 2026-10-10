@@ -4,6 +4,7 @@ import io
 import json
 import mimetypes
 import os
+import re
 from typing import BinaryIO
 from urllib.parse import quote, urlsplit, urlunsplit
 
@@ -123,6 +124,20 @@ def _upload_supabase(file_obj: BinaryIO, filename: str, content_type: str) -> st
     return f"{base}/storage/v1/object/public/{bucket}/{filename}"
 
 
+def _s3_signing_region(endpoint_url: str, configured_region: str | None = None) -> str:
+    """Use the region embedded in a regional Backblaze S3 endpoint for SigV4.
+
+    B2 endpoints are region-specific; signing with the generic "auto" default
+    can make requests fail even when the endpoint and credentials are otherwise
+    valid. Keep the explicit region setting for non-Backblaze S3-compatible hosts.
+    """
+    host = (urlsplit(endpoint_url).hostname or "").lower()
+    match = re.fullmatch(r"s3\.([a-z0-9-]+)\.backblazeb2\.com", host)
+    if match:
+        return match.group(1)
+    return (configured_region or "").strip() or "auto"
+
+
 def _s3_client():
     """Create an authenticated S3-compatible client for a private B2 bucket."""
     import boto3
@@ -141,7 +156,10 @@ def _s3_client():
         endpoint_url=required["S3_ENDPOINT_URL"],
         aws_access_key_id=required["S3_ACCESS_KEY_ID"],
         aws_secret_access_key=required["S3_SECRET_ACCESS_KEY"],
-        region_name=os.getenv("S3_REGION", "auto"),
+        region_name=_s3_signing_region(
+            required["S3_ENDPOINT_URL"],
+            os.getenv("S3_REGION"),
+        ),
         # Bound network waits so a stalled provider request fails with an actionable
         # storage error instead of holding the synchronous API request for minutes.
         config=Config(
