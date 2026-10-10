@@ -2,7 +2,7 @@
 
 > Owner: Engineering / Release
 > Status: PENDING FINAL EVIDENCE
-> Last Updated: 2026-10-08
+> Last Updated: 2026-10-10
 
 ## Certification rule
 
@@ -28,7 +28,7 @@ Release certification requires repository CI/security validation, live provider 
 
 ## Current release position
 
-Production database migration parity is closed. Cloudinary, Supabase Storage upload/read, private B2/S3 provider round-trip, Google Drive upload/read, and QStash core evidence have live evidence (all-provider run #15: 4 tests passed). Run #16 was cancelled before tests ran and is not a failure of those gates. The Supabase cleanup assertion changed after run #15 and needs one targeted live run. All remaining PENDING items require real production/provider/operations evidence and cannot be inferred from repository tests.
+Production database migration parity is closed. Cloudinary, Supabase Storage upload/read, private B2/S3 provider round-trip, Google Drive upload/read, and QStash core evidence have live evidence (all-provider run #15: 4 tests passed). Run #16 was cancelled before tests ran and is not a failure of those gates. The Supabase cleanup assertion was verified by targeted run #17. A targeted B2 application download-proxy gate was added in commit `5db3ca2e13411bec3a94ed248672b787b0c6d886`; CI #516 and CodeQL #263 plus the production run remain pending. All remaining PENDING items require real production/provider/operations evidence and cannot be inferred from repository tests.
 
 See `docs/RELEASE_EVIDENCE.md` for the canonical checklist.
 
