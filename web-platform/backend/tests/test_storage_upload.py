@@ -33,7 +33,7 @@ def test_small_b2_upload_uses_put_object_with_explicit_content_length(monkeypatc
     assert client.put_kwargs["Key"] == "sample.png"
     assert client.put_kwargs["ContentLength"] == len(payload)
     assert client.put_kwargs["ContentType"] == "image/png"
-    assert client.put_kwargs["Body"].read() == payload
+    assert client.put_kwargs["Body"] == payload
     assert client.transfer_args is None
 
 
