@@ -20,11 +20,13 @@ Release certification requires repository CI/security validation, live provider 
 - Google Drive upload/read round-trip: VERIFIED by run #14 and included in all-provider run #15; broader export semantics only if directly covered by a dedicated test.
 - Live workflow retry/stale-claim/failure recovery: PENDING.
 - Production authentication/API smoke: VERIFIED by Production Auth Smoke run #11 on 2026-10-09; password-grant authentication, `/api/auth/me` admin-role assertion, and admin RAG metrics request passed. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474.
+- Full authenticated Admin UI browser verification: PENDING. Existing checks prove login page rendering, unauthenticated protection, and API auth, but do not prove the authenticated dashboard renders and navigates correctly.
 - Production RAG/AI journeys: PENDING.
 - Newsletter/failover: PENDING.
 - Application-schema backup/restore drill: VERIFIED on 2026-10-09 (run #6); managed Auth/Storage and object-storage recovery remain separate pending gates.
 - DR/rollback rehearsal: PENDING — runbook/gate staged; live rehearsal required.
-- SLO/error-budget review: PENDING; contract is defined in `docs/SLO_ERROR_BUDGET.md`, with production observation still required.
+- SLO/error-budget review: PENDING; contract is defined in `docs/SLO_ERROR_BUDGET.md`, with a bounded production observation window, alert-path test, and error-budget calculation still required.
+- Vercel deployment/check remediation remains paused by owner direction; do not resume without explicit approval. This does not authorize changing Vercel build quota or deployment settings.
 
 ## Current release position
 
