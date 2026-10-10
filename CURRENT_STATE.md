@@ -36,7 +36,7 @@ Repository Alembic head is **20261008_0012**. Live production migration history 
 ## 5. VERIFIED
 
 - **Backblaze B2 private S3 API live E2E passed on 2026-10-09**: Live Release Gates run #12 succeeded on `main` at `88c6491f0d4bf0c279f73971c8be235113272733`; `test_live_b2_s3_round_trip` performed authenticated upload, readback/content equality, and delete against the configured B2 bucket. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37947429179. This verifies provider-level private S3 access, not yet the deployed application download proxy.
-- **All live storage-provider tests passed in Live Release Gates run #15 on 2026-10-09** (4 passed): Cloudinary, Supabase Storage, private B2/S3, and Google Drive. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37956262981. Supabase Storage upload/read matched bytes in run #15. The cleanup DELETE assertion was strengthened on 2026-10-10 to require a 2xx response after a successful round-trip; the targeted live Supabase rerun is now pending. Do not rerun the full provider suite just for this change.
+- **All live storage-provider tests passed in Live Release Gates run #15 on 2026-10-09** (4 passed): Cloudinary, Supabase Storage, private B2/S3, and Google Drive. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37956262981. Supabase Storage upload/read matched bytes in run #15. The cleanup DELETE assertion was strengthened on 2026-10-10 and passed the targeted production gate in Live Release Gates run #17 (`1 passed in 3.24s`): https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38021152054. Supabase Storage upload/read/cleanup is now VERIFIED. Do not rerun the full provider suite without a code change or new failure.
 - **Cloudinary live E2E passed on 2026-10-08**: a real 1x1 PNG was uploaded to the connected Cloudinary account, retrieved by asset ID, verified for identity/size, and deleted successfully. Test asset: `logixa/release-gate-cloudinary-20261008`.
 - **QStash signed delivery + canonical workflow completion passed on 2026-10-08**: QStash message `msg_7YoJxFpwkEy5zBp2YxbmSsWDsqwAbXM5wtckxoReAkhqA6PJibwLF` reached the Render dispatch endpoint and the durable Supabase workflow run `release-gate-qstash-a1` completed with node `probe`; the scheduled job became `completed`.
 - **QStash duplicate-delivery protection passed on 2026-10-08**: a second direct QStash delivery for the same completed run did not add another execution-log entry; the durable run remained `completed` with exactly one `probe` execution entry. This is backed by the terminal-run guard added in commit `3c3e1ca8b7d8e8c07cc6eb53cfe5640d3cd4163a`.
@@ -68,7 +68,7 @@ Current active closure tracks:
 
 ## 7. PENDING
 
-- Supabase Storage strict cleanup-response assertion: targeted live rerun pending after test change.
+- Supabase Storage upload/read/cleanup: VERIFIED by targeted Live Release Gates run #17 (`1 passed in 3.24s`): https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38021152054.
 - Deployed application private-B2 download-proxy E2E (upload through app, fetch opaque app URL, verify bytes and safe response headers).
 - **Production backup/restore VERIFIED on 2026-10-09**: run #6 succeeded on isolated restore project `bxvykaijlrqjvlhtumpg`; restored Alembic head `20261008_0012`, all four critical tables, and numeric RAG observability count (0 rows). Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37964429760. This verifies the `public` application-schema logical restore only, not managed Supabase Auth/Storage or object-storage recovery.
 - **Google Drive live E2E VERIFIED on 2026-10-09**: Live Release Gates run #14 passed `tests/test_live_release_gates.py::test_live_google_drive_upload_round_trip` (`1 passed in 2.04s`), confirming the configured production OAuth credential can complete the upload/read round-trip after the scope-handling fix. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37953000376. This does not close the separate Supabase Storage or app-level B2 download-proxy gates.
@@ -96,7 +96,7 @@ No repository-level blocker is established. Production Auth/API smoke and isolat
 
 ## 10. REMAINING RELEASE GATES
 
-1. Supabase Storage upload/read E2E passed in Live Release Gates run #15 (4 provider tests passed); the cleanup DELETE response assertion is now implemented, and its targeted live verification remains pending. The deployed application private-B2 download-proxy E2E remains pending. Backup/restore is separately verified for the `public` application schema in run #6. Cloudinary, B2 provider-level round-trip, and Google Drive upload/read round-trip also have live evidence.
+1. Supabase Storage upload/read/cleanup E2E passed in targeted Live Release Gates run #17 (`1 passed in 3.24s`); full provider suite passed in run #15. The deployed application private-B2 download-proxy E2E remains pending. Backup/restore is separately verified for the `public` application schema in run #6. Cloudinary, B2 provider-level round-trip, and Google Drive upload/read round-trip also have live evidence.
 2. Retry, stale-claim recovery, and controlled failure/recovery live verification remain pending.
 3. Duplicate-delivery protection is verified.
 4. QStash signing, delivery, and canonical workflow completion are verified.
@@ -135,7 +135,7 @@ Latest confirmed green repository validation is CI #450 / CodeQL #197 on `115482
 
 ## 13. NEXT ACTION
 
-Continue Phase 13 only on genuinely open gates; do not rerun provider checks already covered by Live Release Gates run #15 (4 passed). Next focus: run the targeted Supabase cleanup assertion, then design a safe B2 opaque-download proxy E2E with artifact cleanup; continue workflow recovery, production RAG/AI, scheduled workflow/newsletter/failover, rollback/DR, monitoring/SLO, evidence reconciliation, and final freeze. See docs/TOOLS_AND_LLM_INVENTORY.md for the tools and LLM inventory. Production migration 0012 is applied. Next: execute remaining manual live gates, recovery drills, SLO/error-budget review, then freeze only with complete evidence. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate.
+Continue Phase 13 only on genuinely open gates; do not rerun provider checks already covered by Live Release Gates run #15 (4 passed). Next focus: implement and run a safe B2 opaque-download proxy E2E with artifact cleanup; continue workflow recovery, production RAG/AI, scheduled workflow/newsletter/failover, rollback/DR, monitoring/SLO, evidence reconciliation, and final freeze. See docs/TOOLS_AND_LLM_INVENTORY.md for the tools and LLM inventory. Production migration 0012 is applied. Next: execute remaining manual live gates, recovery drills, SLO/error-budget review, then freeze only with complete evidence. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate.
 
 
 ## 14. 2026-10-09 AUDIT SNAPSHOT
