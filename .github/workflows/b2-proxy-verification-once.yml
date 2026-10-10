@@ -43,5 +43,15 @@ jobs:
           for key in PRODUCTION_API_URL SUPABASE_URL SUPABASE_PUBLISHABLE_KEY SUPABASE_SERVICE_ROLE_KEY PRODUCTION_ADMIN_EMAIL PRODUCTION_ADMIN_PASSWORD S3_ENDPOINT_URL S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY S3_BUCKET; do
             test -n "${!key:-}" || { echo "::error::Missing production secret: $key"; exit 1; }
           done
+      - name: Log safe direct-provider endpoint details
+        run: |
+          python - <<'PY'
+          import os, re
+          from urllib.parse import urlsplit
+          host = (urlsplit(os.environ["S3_ENDPOINT_URL"]).hostname or "unknown").lower()
+          match = re.fullmatch(r"s3\.([a-z0-9-]+)\.backblazeb2\.com", host)
+          print(f"GitHub direct-test endpoint_host={host}")
+          print(f"GitHub direct-test endpoint_region={match.group(1) if match else 'not-derived'}")
+          PY
       - name: Run direct B2 and authenticated application proxy round trips
         run: python -m pytest -q tests/test_live_release_gates.py::test_live_b2_s3_round_trip tests/test_live_release_gates.py::test_live_b2_application_download_proxy_round_trip
