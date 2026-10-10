@@ -246,8 +246,28 @@ def _upload_s3(
             f"S3-compatible storage rejected the upload (code={code}, http_status={http_status})"
         ) from exc
     except BotoCoreError as exc:
+        endpoint_url = os.getenv("S3_ENDPOINT_URL", "")
+        endpoint_host = urlsplit(endpoint_url).hostname or "unknown"
+        signing_region = _s3_signing_region(endpoint_url, os.getenv("S3_REGION"))
+        connectivity_probe = "not-run"
+        if type(exc).__name__ == "ConnectionClosedError":
+            try:
+                client.head_bucket(Bucket=bucket)
+                connectivity_probe = "head_bucket_ok"
+            except ClientError as probe_exc:
+                probe_error = probe_exc.response.get("Error", {})
+                probe_metadata = probe_exc.response.get("ResponseMetadata", {})
+                probe_code = str(probe_error.get("Code", "Unknown"))[:64]
+                probe_status = probe_metadata.get("HTTPStatusCode")
+                connectivity_probe = (
+                    f"head_bucket_client_error(code={probe_code},http_status={probe_status})"
+                )
+            except BotoCoreError as probe_exc:
+                connectivity_probe = f"head_bucket_failed({type(probe_exc).__name__})"
         raise RuntimeError(
-            f"S3-compatible storage request failed ({type(exc).__name__})"
+            "S3-compatible storage request failed "
+            f"({type(exc).__name__}, endpoint_host={endpoint_host}, "
+            f"signing_region={signing_region}, connectivity_probe={connectivity_probe})"
         ) from exc
 
     raw_public_base = os.getenv("S3_PUBLIC_BASE_URL", "").strip().rstrip("/")
