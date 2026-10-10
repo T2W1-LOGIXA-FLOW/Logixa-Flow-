@@ -64,5 +64,6 @@ Certification is NOT CERTIFIED while any required production gate remains unchec
 
 
 ## Production observations (2026-10-10)
-- Production verification run #38049146602 confirms the deployed application proxy path is now passing. The earlier empty-log observation predates the successful gate and is retained only as historical context.
+- Production verification run #38049146602 confirms the deployed application proxy path is passing. Render event history for 2026-10-09 16:45Z through 2026-10-10 16:50Z shows successful builds/deploys in the returned window and no matching `server_failed`, `build_ended`-failure, or `image_pull_failed` event. This is a bounded event-history observation, not a full availability/SLO certification.
+- Render metrics returned no HTTP request-count or latency datapoints for the queried window; only a few CPU/memory datapoints were available. Therefore a defensible SLO/error-budget calculation and alert-path verification are still pending; do not infer healthy request latency from missing metrics.
 - Startup logs recorded `openrouter-free` HTTP 429 and a failed scheduled daily preview. This is a separate AI provider rate-limit/quota issue; the production router intentionally avoids paid-provider fallback. Keep RAG/AI E2E pending until provider capacity/retry behavior is verified under the intended cost policy.
