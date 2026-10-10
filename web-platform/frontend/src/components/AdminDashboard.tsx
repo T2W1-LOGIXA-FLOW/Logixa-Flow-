@@ -374,7 +374,13 @@ export default function AdminDashboard() {
               <article key={item.label} className="rounded-2xl border border-slate-800 bg-slate-900/75 p-4 shadow-xl shadow-black/10">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
-                  <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-200">
+                  <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ${
+                    item.tone === "amber"
+                      ? "border-amber-400/20 bg-amber-500/10 text-amber-200"
+                      : item.tone === "violet"
+                        ? "border-violet-400/20 bg-violet-500/10 text-violet-200"
+                        : "border-cyan-400/20 bg-cyan-500/10 text-cyan-100"
+                  }`}>
                     {item.value}
                   </span>
                 </div>
@@ -526,7 +532,7 @@ export default function AdminDashboard() {
                 <h2 className="mt-2 text-xl font-bold text-white">System timeline</h2>
               </div>
               <span className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300">
-                Live feed
+                Persisted events
               </span>
             </div>
             {activityError && (
