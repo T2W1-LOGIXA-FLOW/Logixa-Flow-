@@ -266,8 +266,8 @@ def _upload_s3(
                 connectivity_probe = f"head_bucket_failed({type(probe_exc).__name__})"
         raise RuntimeError(
             "S3-compatible storage request failed "
-            f"({type(exc).__name__}, endpoint_host={endpoint_host}, "
-            f"signing_region={signing_region}, connectivity_probe={connectivity_probe})"
+            f"({type(exc).__name__}, probe={connectivity_probe}, "
+            f"host={endpoint_host}, region={signing_region})"
         ) from exc
 
     raw_public_base = os.getenv("S3_PUBLIC_BASE_URL", "").strip().rstrip("/")
