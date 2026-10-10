@@ -69,7 +69,7 @@ def test_b2_upload_failure_preserves_safe_provider_diagnostic(monkeypatch) -> No
 
 def test_b2_client_error_is_reduced_to_safe_code_and_status(monkeypatch) -> None:
     class FailingS3Client:
-        def upload_fileobj(self, *args, **kwargs):
+        def put_object(self, **kwargs):
             raise ClientError(
                 {
                     "Error": {"Code": "AccessDenied", "Message": "sensitive provider detail"},
