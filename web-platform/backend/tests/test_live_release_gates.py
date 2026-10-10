@@ -129,6 +129,7 @@ def test_live_b2_application_download_proxy_round_trip() -> None:
     """Upload through the deployed app, download via its opaque URL, and clean up."""
     import boto3
     import requests
+    import time
 
     values = _required(
         "PRODUCTION_API_URL",
@@ -151,11 +152,26 @@ def test_live_b2_application_download_proxy_round_trip() -> None:
         + b"\x00" * (10 * 1024 * 1024 + 1)
     )
     session = requests.Session()
-    # Render Free services may sleep between test runs. Wake the deployed API and
-    # wait for its startup before beginning the upload timing window, so cold-start
-    # latency is not misdiagnosed as a storage-provider failure.
-    health = session.get(f"{api_base}/health", timeout=(10, 90))
-    health.raise_for_status()
+    # Render Free services may sleep between test runs. Retry transient gateway
+    # responses while the instance starts, then require a successful health check
+    # before attempting the upload. This isolates cold-start latency from storage.
+    health_deadline = time.monotonic() + 120
+    health_error: Exception | str | None = None
+    while time.monotonic() < health_deadline:
+        try:
+            health = session.get(f"{api_base}/health", timeout=(5, 15))
+            if health.status_code < 500:
+                health.raise_for_status()
+                break
+            health_error = f"health endpoint returned HTTP {health.status_code}"
+        except requests.RequestException as exc:
+            health_error = exc
+        time.sleep(3)
+    else:
+        pytest.fail(
+            f"Production API did not become healthy within 120 seconds: {health_error}",
+            pytrace=False,
+        )
 
     token_response = session.post(
         f"{supabase_base}/auth/v1/token?grant_type=password",
