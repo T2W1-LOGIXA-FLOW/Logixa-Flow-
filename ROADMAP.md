@@ -26,8 +26,8 @@ Current state: production migration `20261008_0012_rag_observability` is applied
 Objective: close evidence-based release gates without changing the current architecture merely to satisfy documentation.
 
 Current verified baseline:
-- Latest confirmed CI: #523 success on deployed application code SHA `471bbdac7cbf8648ec421d3174090a7d7fd04a90` (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38025445390).
-- Latest confirmed CodeQL: #270 success on the same code SHA (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38025445501).
+- Latest confirmed CI: #535 success on merged diagnostics code SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420417).
+- Latest confirmed CodeQL: #282 success on the same code SHA (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420358).
 - Markdown/docs-only commits are intentionally excluded from CI/CodeQL triggers, so documentation commits do not create new red/green runs.
 
 Remaining acceptance criteria:
