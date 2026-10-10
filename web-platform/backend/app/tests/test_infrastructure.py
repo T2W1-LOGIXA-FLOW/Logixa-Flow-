@@ -192,7 +192,7 @@ def test_private_b2_upload_does_not_require_public_base_url(monkeypatch: pytest.
     class FakeClient:
         def put_object(self, **kwargs):
             assert kwargs["ContentLength"] == len(b"payload")
-            assert kwargs["Body"].read() == b"payload"
+            assert kwargs["Body"] == b"payload"
             return None
 
     import sys
