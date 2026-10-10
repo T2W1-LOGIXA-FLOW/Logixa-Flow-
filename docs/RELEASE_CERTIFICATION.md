@@ -19,7 +19,7 @@ Release certification requires repository CI/security validation, live provider 
 - Backblaze B2 provider-level authenticated upload/read/delete: VERIFIED by run #12; deployed application download-proxy remains PENDING.
 - Google Drive upload/read round-trip: VERIFIED by run #14 and included in all-provider run #15; broader export semantics only if directly covered by a dedicated test.
 - Live workflow retry/stale-claim/failure recovery: PENDING.
-- Production authentication/API smoke: PENDING.
+- Production authentication/API smoke: VERIFIED by Production Auth Smoke run #11 on 2026-10-09; password-grant authentication, `/api/auth/me` admin-role assertion, and admin RAG metrics request passed. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474.
 - Production RAG/AI journeys: PENDING.
 - Newsletter/failover: PENDING.
 - Application-schema backup/restore drill: VERIFIED on 2026-10-09 (run #6); managed Auth/Storage and object-storage recovery remain separate pending gates.
