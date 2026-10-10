@@ -88,6 +88,7 @@ If code/configuration changes invalidate a documentation statement, the document
 | DNS/email authentication | DNS Doctor |
 | UI design implementation | Figma when explicitly used |
 | Deployment/runtime | Render/Vercel/provider tooling |
+| Tools and AI provider inventory | docs/TOOLS_AND_LLM_INVENTORY.md |
 
 Never use a secondary document as proof against current code/configuration when direct repository evidence is available.
 
