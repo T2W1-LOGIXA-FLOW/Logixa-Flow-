@@ -69,7 +69,7 @@ Current active closure tracks:
 ## 7. PENDING
 
 - Supabase Storage upload/read/cleanup: VERIFIED by targeted Live Release Gates run #17 (`1 passed in 3.24s`): https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38021152054.
-- Deployed application private-B2 download-proxy E2E (upload through app, fetch opaque app URL, verify bytes and safe response headers).
+- Deployed application private-B2 download-proxy E2E is implemented as a targeted `b2-proxy` live gate in commit `5db3ca2e13411bec3a94ed248672b787b0c6d886`. It authenticates using production admin credentials, uploads a unique >10 MiB image-signature artifact through `/api/uploads`, fetches the opaque URL, verifies bytes and safe headers, and cleans up B2 object plus metadata. CI #516 and CodeQL #263 are in progress; production run remains pending.
 - **Production backup/restore VERIFIED on 2026-10-09**: run #6 succeeded on isolated restore project `bxvykaijlrqjvlhtumpg`; restored Alembic head `20261008_0012`, all four critical tables, and numeric RAG observability count (0 rows). Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37964429760. This verifies the `public` application-schema logical restore only, not managed Supabase Auth/Storage or object-storage recovery.
 - **Google Drive live E2E VERIFIED on 2026-10-09**: Live Release Gates run #14 passed `tests/test_live_release_gates.py::test_live_google_drive_upload_round_trip` (`1 passed in 2.04s`), confirming the configured production OAuth credential can complete the upload/read round-trip after the scope-handling fix. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37953000376. This does not close the separate Supabase Storage or app-level B2 download-proxy gates.
 - Workflow retry/recovery verification.
@@ -135,7 +135,7 @@ Latest confirmed green repository validation is CI #450 / CodeQL #197 on `115482
 
 ## 13. NEXT ACTION
 
-Continue Phase 13 only on genuinely open gates; do not rerun provider checks already covered by Live Release Gates run #15 (4 passed). Next focus: implement and run a safe B2 opaque-download proxy E2E with artifact cleanup; continue workflow recovery, production RAG/AI, scheduled workflow/newsletter/failover, rollback/DR, monitoring/SLO, evidence reconciliation, and final freeze. See docs/TOOLS_AND_LLM_INVENTORY.md for the tools and LLM inventory. Production migration 0012 is applied. Next: execute remaining manual live gates, recovery drills, SLO/error-budget review, then freeze only with complete evidence. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate.
+Continue Phase 13 only on genuinely open gates; do not rerun provider checks already covered by Live Release Gates run #15 (4 passed). Supabase upload/read/cleanup is now verified by targeted run #17. Next focus: finish CI/CodeQL for the new B2 proxy gate and run the targeted `b2-proxy` production E2E; continue workflow recovery, production RAG/AI, scheduled workflow/newsletter/failover, rollback/DR, monitoring/SLO, evidence reconciliation, and final freeze. See docs/TOOLS_AND_LLM_INVENTORY.md for the tools and LLM inventory. Production migration 0012 is applied. Next: execute remaining manual live gates, recovery drills, SLO/error-budget review, then freeze only with complete evidence. Keep repository-head, live-head, implemented, configured, enabled, and live-tested states separate.
 
 
 ## 14. 2026-10-09 AUDIT SNAPSHOT
