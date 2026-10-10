@@ -190,7 +190,9 @@ def test_private_b2_upload_does_not_require_public_base_url(monkeypatch: pytest.
     monkeypatch.delenv("S3_PUBLIC_BASE_URL", raising=False)
 
     class FakeClient:
-        def upload_fileobj(self, *args, **kwargs):
+        def put_object(self, **kwargs):
+            assert kwargs["ContentLength"] == len(b"payload")
+            assert kwargs["Body"].read() == b"payload"
             return None
 
     import sys
