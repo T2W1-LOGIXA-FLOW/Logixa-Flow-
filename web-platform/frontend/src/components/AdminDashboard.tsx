@@ -252,7 +252,7 @@ export default function AdminDashboard() {
   ];
   const recentActivityCards = activityFeed;
   const usageSummary = useMemo(
-    () => usageTrend.reduce(
+    () => usageTrend.reduce<{ tokens: number; calls: number; cost: number }>(
       (total, row) => ({
         tokens: total.tokens + Number(row.tokens || 0),
         calls: total.calls + Number(row.calls || 0),
