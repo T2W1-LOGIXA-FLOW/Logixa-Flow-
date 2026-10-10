@@ -2,7 +2,7 @@
 
 > Owner: Backend / Operations
 > Update when: storage routing, provider selection, size limits, or live verification changes
-> Last Updated: 2026-10-09
+> Last Updated: 2026-10-10
 > Do NOT put here: credentials.
 
 ## Routing policy
