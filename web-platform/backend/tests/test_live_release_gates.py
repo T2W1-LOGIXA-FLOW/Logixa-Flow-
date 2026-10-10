@@ -125,6 +125,108 @@ def test_live_b2_s3_round_trip() -> None:
         client.delete_object(Bucket=values["S3_BUCKET"], Key=key)
 
 
+def test_live_b2_application_download_proxy_round_trip() -> None:
+    """Upload through the deployed app, download via its opaque URL, and clean up."""
+    import boto3
+    import requests
+
+    values = _required(
+        "PRODUCTION_API_URL",
+        "SUPABASE_URL",
+        "SUPABASE_PUBLISHABLE_KEY",
+        "PRODUCTION_ADMIN_EMAIL",
+        "PRODUCTION_ADMIN_PASSWORD",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "S3_ENDPOINT_URL",
+        "S3_ACCESS_KEY_ID",
+        "S3_SECRET_ACCESS_KEY",
+        "S3_BUCKET",
+    )
+    api_base = values["PRODUCTION_API_URL"].rstrip("/")
+    supabase_base = values["SUPABASE_URL"].rstrip("/")
+    payload = (
+        b"\x89PNG\r\n\x1a\n"
+        + b"logixa-live-b2-proxy-e2e:"
+        + uuid.uuid4().hex.encode("ascii")
+        + b"\x00" * (10 * 1024 * 1024 + 1)
+    )
+    session = requests.Session()
+    token_response = session.post(
+        f"{supabase_base}/auth/v1/token?grant_type=password",
+        headers={"apikey": values["SUPABASE_PUBLISHABLE_KEY"], "Content-Type": "application/json"},
+        json={
+            "email": values["PRODUCTION_ADMIN_EMAIL"],
+            "password": values["PRODUCTION_ADMIN_PASSWORD"],
+        },
+        timeout=30,
+    )
+    token_response.raise_for_status()
+    access_token = token_response.json().get("access_token")
+    assert isinstance(access_token, str) and access_token
+    auth_headers = {"Authorization": f"Bearer {access_token}"}
+
+    file_id: str | None = None
+    try:
+        uploaded = session.post(
+            f"{api_base}/api/uploads",
+            headers=auth_headers,
+            files={"file": (f"logixa-live-b2-proxy-{uuid.uuid4().hex}.png", payload, "image/png")},
+            timeout=180,
+        )
+        uploaded.raise_for_status()
+        opaque_url = uploaded.json().get("url")
+        assert isinstance(opaque_url, str) and opaque_url.startswith("/api/uploads/files/")
+        file_id = opaque_url.rstrip("/").split("/")[-1]
+        assert file_id
+
+        downloaded = session.get(f"{api_base}{opaque_url}", timeout=180)
+        downloaded.raise_for_status()
+        assert downloaded.content == payload
+        assert downloaded.headers.get("X-Content-Type-Options", "").lower() == "nosniff"
+        assert downloaded.headers.get("Cache-Control", "").lower().startswith("private")
+        assert downloaded.headers.get("Content-Type", "").split(";", 1)[0].lower() == "image/png"
+        assert int(downloaded.headers.get("Content-Length", "-1")) == len(payload)
+    finally:
+        if file_id:
+            service_headers = {
+                "Authorization": f"Bearer {values['SUPABASE_SERVICE_ROLE_KEY']}",
+                "apikey": values["SUPABASE_SERVICE_ROLE_KEY"],
+            }
+            # Query metadata before deleting it so the matching private B2 object can be removed.
+            metadata = requests.get(
+                f"{supabase_base}/rest/v1/stored_files",
+                params={"select": "id,object_key", "id": f"eq.{file_id}"},
+                headers=service_headers,
+                timeout=30,
+            )
+            cleanup_error: Exception | None = None
+            try:
+                metadata.raise_for_status()
+                rows = metadata.json()
+                assert isinstance(rows, list) and len(rows) == 1, "uploaded file metadata was not found for cleanup"
+                object_key = rows[0].get("object_key")
+                assert isinstance(object_key, str) and object_key
+                client = boto3.client(
+                    "s3",
+                    endpoint_url=values["S3_ENDPOINT_URL"],
+                    aws_access_key_id=values["S3_ACCESS_KEY_ID"],
+                    aws_secret_access_key=values["S3_SECRET_ACCESS_KEY"],
+                    region_name=os.getenv("S3_REGION", "auto"),
+                )
+                client.delete_object(Bucket=values["S3_BUCKET"], Key=object_key)
+                removed = requests.delete(
+                    f"{supabase_base}/rest/v1/stored_files",
+                    params={"id": f"eq.{file_id}"},
+                    headers={**service_headers, "Prefer": "return=minimal"},
+                    timeout=30,
+                )
+                removed.raise_for_status()
+            except Exception as exc:
+                cleanup_error = exc
+            if cleanup_error is not None and sys.exc_info()[0] is None:
+                raise AssertionError("B2 proxy E2E cleanup failed") from cleanup_error
+
+
 def test_live_google_drive_upload_round_trip() -> None:
     _required("GOOGLE_DRIVE_CREDENTIALS_JSON")
     from app.storage import _google_drive_credentials
