@@ -95,7 +95,7 @@ No repository-level blocker is established. Production Auth/API smoke and isolat
 
 ## 10. REMAINING RELEASE GATES
 
-1. Supabase Storage upload/read E2E passed in Live Release Gates run #15 (4 provider tests passed); add an assertion for the cleanup DELETE response before claiming delete is fully verified. The deployed application private-B2 download-proxy E2E remains pending. Backup/restore is separately verified for the `public` application schema in run #6. Cloudinary, B2 provider-level round-trip, and Google Drive upload/read round-trip also have live evidence.
+1. Supabase Storage upload/read E2E passed in Live Release Gates run #15 (4 provider tests passed); the cleanup DELETE response assertion is now implemented, and its targeted live verification remains pending. The deployed application private-B2 download-proxy E2E remains pending. Backup/restore is separately verified for the `public` application schema in run #6. Cloudinary, B2 provider-level round-trip, and Google Drive upload/read round-trip also have live evidence.
 2. Retry, stale-claim recovery, and controlled failure/recovery live verification remain pending.
 3. Duplicate-delivery protection is verified.
 4. QStash signing, delivery, and canonical workflow completion are verified.
