@@ -391,7 +391,9 @@ export default function AdminDashboard() {
                       ? "border-amber-400/20 bg-amber-500/10 text-amber-200"
                       : item.tone === "violet"
                         ? "border-violet-400/20 bg-violet-500/10 text-violet-200"
-                        : "border-cyan-400/20 bg-cyan-500/10 text-cyan-100"
+                        : item.tone === "emerald"
+                          ? "border-emerald-400/20 bg-emerald-500/10 text-emerald-200"
+                          : "border-cyan-400/20 bg-cyan-500/10 text-cyan-100"
                   }`}>
                     {item.value}
                   </span>
