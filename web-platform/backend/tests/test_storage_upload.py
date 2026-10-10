@@ -79,3 +79,31 @@ def test_non_b2_s3_endpoint_keeps_explicit_region():
 
 def test_non_b2_s3_endpoint_defaults_to_auto_region():
     assert storage._s3_signing_region("https://s3.example.com", None) == "auto"
+
+
+
+def test_closed_b2_upload_reports_safe_connectivity_probe(monkeypatch):
+    import pytest
+    from botocore.exceptions import ConnectionClosedError
+
+    class ClosedUploadClient(FakeS3Client):
+        def put_object(self, **kwargs):
+            raise ConnectionClosedError(endpoint_url="https://s3.example.invalid")
+
+        def head_bucket(self, **kwargs):
+            return {}
+
+    client = ClosedUploadClient()
+    monkeypatch.setattr(storage, "_s3_client", lambda: (client, "private-bucket"))
+    monkeypatch.setenv("S3_ENDPOINT_URL", "https://s3.us-west-004.backblazeb2.com")
+    monkeypatch.setenv("S3_REGION", "auto")
+    monkeypatch.delenv("S3_PUBLIC_BASE_URL", raising=False)
+
+    with pytest.raises(RuntimeError) as error:
+        storage._upload_s3(io.BytesIO(b"payload"), "sample.png", "image/png", 7)
+
+    message = str(error.value)
+    assert "ConnectionClosedError" in message
+    assert "endpoint_host=s3.us-west-004.backblazeb2.com" in message
+    assert "signing_region=us-west-004" in message
+    assert "connectivity_probe=head_bucket_ok" in message
