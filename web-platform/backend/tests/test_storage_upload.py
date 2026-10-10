@@ -104,6 +104,6 @@ def test_closed_b2_upload_reports_safe_connectivity_probe(monkeypatch):
 
     message = str(error.value)
     assert "ConnectionClosedError" in message
-    assert "endpoint_host=s3.us-west-004.backblazeb2.com" in message
-    assert "signing_region=us-west-004" in message
+    assert "host=s3.us-west-004.backblazeb2.com" in message
+    assert "region=us-west-004" in message
     assert "connectivity_probe=head_bucket_ok" in message
