@@ -50,25 +50,25 @@ export default function AdminSidebar({
 }: { open: boolean; onClose: () => void; onLogout: () => void }) {
   const pathname = usePathname();
   return (
-    <aside className={`${styles.sidebar} fixed inset-y-0 left-0 z-50 flex h-screen w-72 flex-col border-r shadow-2xl shadow-black/40 backdrop-blur-xl transition-transform duration-300 ease-in-out lg:sticky lg:top-0 ${open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`} aria-label="Admin navigation">
-      <div className="border-b border-slate-800/80 p-5">
+    <aside className={`${styles.sidebar} fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-col border-r shadow-2xl shadow-black/40 backdrop-blur-xl transition-transform duration-300 ease-in-out lg:sticky lg:top-0 ${open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`} aria-label="Admin navigation">
+      <div className="border-b border-slate-800/80 px-4 py-4">
         <div className="flex items-center justify-between gap-3">
           <Link href="/admin" className="flex items-center gap-3" onClick={onClose}>
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-amber-400 to-cyan-400 text-sm font-black text-white shadow-lg shadow-cyan-400/20">LF</span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 text-sm font-black text-cyan-100">LF</span>
             <span><span className="block text-base font-bold text-white">Logixa Flow</span><span className="text-xs text-slate-500">Admin command center</span></span>
           </Link>
           <button type="button" onClick={onClose} className={`${styles.closeButton} text-slate-400 hover:text-white lg:hidden`} aria-label="Close sidebar"><X className="h-5 w-5" /></button>
         </div>
       </div>
-      <nav className="flex-1 space-y-5 overflow-y-auto p-4" aria-label="Admin sections">
+      <nav className="flex-1 space-y-4 overflow-y-auto p-3" aria-label="Admin sections">
         {navigationItems.map((section) => (
           <div key={section.category}>
-            <h2 className="mb-2 px-3 text-[0.65rem] font-bold uppercase tracking-[0.2em] text-slate-500">{section.category}</h2>
-            <div className="space-y-1">
+            <h2 className="mb-2 px-3 text-[0.62rem] font-bold uppercase tracking-[0.16em] text-slate-500">{section.category}</h2>
+            <div className="space-y-0.5">
               {section.items.map((item) => {
                 const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
                 const Icon = item.icon;
-                return <Link key={item.href} href={item.href} onClick={onClose} aria-current={active ? "page" : undefined} className={`${styles.navLink} ${active ? styles.navLinkActive : ""} flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors`}><Icon className="h-4 w-4" aria-hidden="true" />{item.label}</Link>;
+                return <Link key={item.href} href={item.href} onClick={onClose} aria-current={active ? "page" : undefined} className={`${styles.navLink} ${active ? styles.navLinkActive : ""} flex items-center gap-3 rounded-lg px-3 py-2 text-[0.82rem] transition-colors`}><Icon className="h-4 w-4" aria-hidden="true" />{item.label}</Link>;
               })}
             </div>
           </div>

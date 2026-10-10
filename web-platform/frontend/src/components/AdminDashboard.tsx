@@ -8,7 +8,6 @@ import {
   Bot,
   Brain,
   CalendarDays,
-  CheckCircle2,
   DollarSign,
   FileText,
   Gauge,
@@ -20,7 +19,7 @@ import Skeleton from "./shadcn/Skeleton";
 import EmptyState from "./EmptyState";
 import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import ErrorState from "./ErrorState";
-import { AdminActivityEntry, DashboardMetric, Post, SystemStatus, adminFetch, getMetrics } from "./api";
+import { AdminActivityEntry, DashboardMetric, Post, SystemStatus, adminFetch } from "./api";
 import ImportCalendar from "./ImportCalendar";
 import InsightForm from "./InsightForm";
 import { getAdminSessionToken } from "@/lib/adminSession";
@@ -85,65 +84,8 @@ const commandModules = [
   },
 ];
 
-const readiness = [
-  { label: "Public site", value: "Stable", detail: "Keep user pages clean and fast." },
-  { label: "Backend API", value: "Connected", detail: "Render service is the runtime source." },
-  { label: "User AI", value: "Public", detail: "Customer-facing assistant path enabled." },
-  { label: "Admin AI", value: "Internal", detail: "Ops automation and agent orchestration split." },
-  { label: "Costs", value: "Planning", detail: "Track free tiers before paid scale." },
-  { label: "Estimator", value: "Ready", detail: "Vehicle fit and capacity checks on standby." },
-];
-
-const aiLayerStatus = [
-  { label: "User AI", value: "Ready", detail: "Public assistant lane" },
-  { label: "Admin AI", value: "Ready", detail: "Internal workflow automation" },
-  { label: "Cost guardrail", value: "Active", detail: "Free-tier tracking enabled" },
-  { label: "Estimator", value: "Live", detail: "Capacity checks ready" },
-];
-
-const liveAlerts = [
-  {
-    title: "Public assistant",
-    detail: "Customer-facing AI remains isolated from internal workflows.",
-    tone: "cyan",
-  },
-  {
-    title: "Admin automation",
-    detail: "Ops workflows are routed with internal-only provider access.",
-    tone: "violet",
-  },
-  {
-    title: "Operational guardrails",
-    detail: "Cost and estimator checks remain visible on the command center.",
-    tone: "amber",
-  },
-];
-
-const recentActivity = [
-  {
-    time: "2 min ago",
-    title: "AI split verified",
-    detail: "Public user assistant stayed separate from admin automation credentials.",
-    tone: "cyan",
-  },
-  {
-    time: "11 min ago",
-    title: "Cost guardrail refreshed",
-    detail: "Free-tier usage and spend thresholds stayed in view for the operations team.",
-    tone: "amber",
-  },
-  {
-    time: "24 min ago",
-    title: "Estimator processed",
-    detail: "Capacity-check workflow remained available for route planning and dispatch tasks.",
-    tone: "violet",
-  },
-] as const;
-
-const recentActivityFallback = [...recentActivity];
-
-function metricValue(metrics: DashboardMetric[], key: string, fallback: string) {
-  return metrics.find((metric) => metric.key === key)?.value || fallback;
+function metricValue(metrics: DashboardMetric[], key: string) {
+  return metrics.find((metric) => metric.key === key)?.value || "—";
 }
 
 export default function AdminDashboard() {
@@ -170,22 +112,22 @@ export default function AdminDashboard() {
     () => [
       {
         label: "Disruption Risk",
-        value: metricValue(metrics, "disruption-risk", "Low"),
+        value: metricValue(metrics, "disruption-risk"),
         detail: "Public signal card",
       },
       {
         label: "Demand Shift",
-        value: metricValue(metrics, "market-demand", "+12%"),
+        value: metricValue(metrics, "market-demand"),
         detail: "Market movement",
       },
       {
         label: "Port Congestion",
-        value: metricValue(metrics, "port-congestion", "2.1d"),
+        value: metricValue(metrics, "port-congestion"),
         detail: "Logistics delay index",
       },
       {
         label: "Inventory Cover",
-        value: metricValue(metrics, "inventory-cover", "38d"),
+        value: metricValue(metrics, "inventory-cover"),
         detail: "Planning window",
       },
     ],
@@ -198,8 +140,8 @@ export default function AdminDashboard() {
     setSystemStatusError(null);
     setActivityError(null);
     try {
-      const loadedMetrics = await getMetrics();
-      setMetrics(loadedMetrics);
+      const metricResponse = await adminFetch("/api/metrics", authToken);
+      setMetrics((await metricResponse.json()) as DashboardMetric[]);
     } catch (error) {
       console.error("Dashboard metrics error:", error);
       setMetricsError("Could not load dashboard metrics.");
@@ -267,11 +209,12 @@ export default function AdminDashboard() {
     try {
       const activityResponse = await adminFetch("/api/admin/activity", authToken);
       const activityData = (await activityResponse.json()) as AdminActivityEntry[];
-      setActivityFeed(activityData.length > 0 ? activityData : recentActivityFallback);
+      // Ignore timestamp-free placeholder rows and show persisted events only.
+      setActivityFeed(activityData.filter((entry) => Boolean(entry.time)));
     } catch (error) {
       console.error("Admin activity error:", error);
       setActivityError("Could not load activity feed.");
-      setActivityFeed(recentActivityFallback);
+      setActivityFeed([]);
     }
   };
 
@@ -293,56 +236,32 @@ export default function AdminDashboard() {
     };
   }, [router]);
 
-  const readinessCards = useMemo(() => {
-    if (!systemStatus) return readiness;
-    const userProvider = systemStatus.user_active_provider || systemStatus.active_provider || "Gemini";
-    const adminProvider = systemStatus.admin_active_provider || systemStatus.active_provider || "Mistral";
-    return [
-      { label: "Public site", value: "Stable", detail: "Keep user pages clean and fast." },
-      { label: "Backend API", value: "Connected", detail: "Render service is the runtime source." },
-      { label: "User AI", value: userProvider, detail: `${userProvider} is serving the public assistant lane.` },
-      { label: "Admin AI", value: adminProvider, detail: `${adminProvider} is serving internal automation and workflows.` },
-      { label: "Costs", value: "Planning", detail: "Track free tiers before paid scale." },
-      { label: "Estimator", value: "Ready", detail: "Vehicle fit and capacity checks on standby." },
-    ];
-  }, [systemStatus]);
-
-  const aiLayerCards = useMemo(() => {
-    if (!systemStatus) return aiLayerStatus;
-    const userProvider = systemStatus.user_active_provider || systemStatus.active_provider || "Gemini";
-    const adminProvider = systemStatus.admin_active_provider || systemStatus.active_provider || "Mistral";
-    return [
-      { label: "User AI", value: userProvider, detail: "Public assistant lane" },
-      { label: "Admin AI", value: adminProvider, detail: "Internal workflow automation" },
-      { label: "Cost guardrail", value: "Active", detail: "Free-tier tracking enabled" },
-      { label: "Estimator", value: systemStatus.scheduler_enabled ? "Live" : "Standby", detail: "Capacity checks ready" },
-    ];
-  }, [systemStatus]);
-
-  const liveAlertCards = useMemo(() => {
-    if (!systemStatus) return liveAlerts;
-    return [
-      {
-        title: "Public assistant",
-        detail: `User routing is active on ${systemStatus.user_active_provider || "Gemini"}.`,
-        tone: "cyan",
-      },
-      {
-        title: "Admin automation",
-        detail: `Admin routing is active on ${systemStatus.admin_active_provider || "Mistral"}.`,
-        tone: "violet",
-      },
-      {
-        title: "Operational guardrails",
-        detail: systemStatus.scheduler_enabled ? "Scheduler is enabled and operational." : "Scheduler is currently disabled.",
-        tone: "amber",
-      },
-    ];
-  }, [systemStatus]);
-
-  const recentActivityCards = useMemo(() => {
-    return activityFeed.length > 0 ? activityFeed : recentActivityFallback;
-  }, [activityFeed]);
+  const providerReadyCount = systemStatus?.providers.filter((provider) => provider.state === "ready").length ?? 0;
+  const providerCount = systemStatus?.providers.length ?? 0;
+  const missingEnvironment = systemStatus?.missing_env ?? [];
+  const aiLayerCards = [
+    { label: "User AI", value: systemStatus?.user_active_provider || "Unavailable", detail: systemStatus?.user_active_model || "Active model not reported by backend", tone: "cyan" },
+    { label: "Admin AI", value: systemStatus?.admin_active_provider || "Unavailable", detail: systemStatus?.admin_active_model || "Active model not reported by backend", tone: "violet" },
+    { label: "Scheduler", value: systemStatus ? (systemStatus.scheduler_enabled ? "Enabled" : "Disabled") : "Unavailable", detail: systemStatus?.scheduler_status ? `Interval: ${systemStatus.scheduler_status.interval_hours} hour(s)` : "Scheduler status not available", tone: systemStatus?.scheduler_enabled ? "emerald" : "amber" },
+    { label: "Provider readiness", value: systemStatus ? `${providerReadyCount}/${providerCount} ready` : "Unavailable", detail: systemStatus ? `${missingEnvironment.length} missing environment variable(s)` : "Waiting for backend status", tone: missingEnvironment.length ? "amber" : "cyan" },
+  ];
+  const liveAlertCards = [
+    { title: "AI credentials", detail: systemStatus ? (systemStatus.ai_key_configured ? "The backend reports at least one AI provider credential is configured." : "The backend reports no AI provider credential is configured.") : "Backend system status has not loaded.", tone: systemStatus?.ai_key_configured ? "cyan" : "amber" },
+    { title: "Environment configuration", detail: systemStatus ? (missingEnvironment.length ? `Missing: ${missingEnvironment.slice(0, 4).join(", ")}${missingEnvironment.length > 4 ? ", …" : ""}` : "The backend reports no required environment variables missing.") : "Environment status unavailable until the backend responds.", tone: missingEnvironment.length ? "amber" : "violet" },
+    { title: "Scheduler", detail: systemStatus ? (systemStatus.scheduler_enabled ? "Scheduler is enabled according to the backend." : "Scheduler is disabled according to the backend.") : "Scheduler state has not been verified.", tone: systemStatus?.scheduler_enabled ? "cyan" : "amber" },
+  ];
+  const recentActivityCards = activityFeed;
+  const usageSummary = useMemo(
+    () => usageTrend.reduce<{ tokens: number; calls: number; cost: number }>(
+      (total, row) => ({
+        tokens: total.tokens + Number(row.tokens || 0),
+        calls: total.calls + Number(row.calls || 0),
+        cost: total.cost + Number(row.cost || 0),
+      }),
+      { tokens: 0, calls: 0, cost: 0 },
+    ),
+    [usageTrend],
+  );
 
   if (!token) {
     return (
@@ -371,13 +290,13 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-500/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-100">
+          <span className="inline-flex items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-500/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-cyan-100">
             <span className="h-2 w-2 rounded-full bg-cyan-400" />
-            User AI
+            User AI · {systemStatus?.user_active_provider || "—"}
           </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-violet-100">
+          <span className="inline-flex items-center gap-2 rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-violet-100">
             <span className="h-2 w-2 rounded-full bg-violet-400" />
-            Admin AI
+            Admin AI · {systemStatus?.admin_active_provider || "—"}
           </span>
           <Link className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/20" href="/admin/system">
             System Status
@@ -421,9 +340,9 @@ export default function AdminDashboard() {
                   Core controls stay here. Detailed tools live under their module pages so the admin area stays fast and readable on desktop and mobile.
                 </p>
               </div>
-              <div className="flex items-center gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
-                <CheckCircle2 className="h-5 w-5" />
-                System online
+              <div className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-slate-200">
+                <span className={`h-2.5 w-2.5 rounded-full ${systemStatus ? "bg-emerald-400" : "bg-amber-400"}`} />
+                {systemStatus ? "Backend status received" : "Checking backend status"}
               </div>
             </div>
           </section>
@@ -467,7 +386,15 @@ export default function AdminDashboard() {
               <article key={item.label} className="rounded-2xl border border-slate-800 bg-slate-900/75 p-4 shadow-xl shadow-black/10">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
-                  <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-200">
+                  <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ${
+                    item.tone === "amber"
+                      ? "border-amber-400/20 bg-amber-500/10 text-amber-200"
+                      : item.tone === "violet"
+                        ? "border-violet-400/20 bg-violet-500/10 text-violet-200"
+                        : item.tone === "emerald"
+                          ? "border-emerald-400/20 bg-emerald-500/10 text-emerald-200"
+                          : "border-cyan-400/20 bg-cyan-500/10 text-cyan-100"
+                  }`}>
                     {item.value}
                   </span>
                 </div>
@@ -481,12 +408,14 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#22D3EE]">API Usage</p>
-                  <h2 className="mt-2 text-xl font-bold text-white">Requests over time</h2>
+                  <h2 className="mt-2 text-xl font-bold text-white">Token volume over time</h2>
                 </div>
               </div>
               <div style={{ width: '100%', height: 240 }} className="mt-4">
                 {usageError ? (
                   <div className="text-sm text-red-300">{usageError}</div>
+                ) : usageTrend.length === 0 ? (
+                  <div className="flex h-[240px] items-center justify-center rounded-2xl border border-dashed border-slate-700 text-sm text-slate-500">No persisted API usage data yet.</div>
                 ) : (
                   <ResponsiveContainer width="100%" height={240}>
                     <LineChart data={usageTrend} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -495,10 +424,25 @@ export default function AdminDashboard() {
                       <YAxis tick={{ fill: '#94A3B8' }} />
                       <Tooltip />
                       <Line type="monotone" dataKey="tokens" stroke="#22D3EE" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="cost" stroke="#F59E0B" strokeWidth={2} dot={false} />
+
                     </LineChart>
                   </ResponsiveContainer>
                 )}
+              </div>
+
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Tokens</p>
+                  <p className="mt-1 text-base font-bold text-white">{usageSummary.tokens.toLocaleString()}</p>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">API calls</p>
+                  <p className="mt-1 text-base font-bold text-white">{usageSummary.calls.toLocaleString()}</p>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Recorded cost</p>
+                  <p className="mt-1 text-base font-bold text-white">{usageSummary.cost.toLocaleString(undefined, { maximumFractionDigits: 4 })}</p>
+                </div>
               </div>
 
               {/* Donut chart: API key usage share */}
@@ -561,8 +505,14 @@ export default function AdminDashboard() {
                   <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">Live ops</p>
                   <h2 className="mt-2 text-xl font-bold text-white">Operations pulse</h2>
                 </div>
-                <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-200">
-                  Stable
+                <span className={`rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${
+                  !systemStatus
+                    ? "border-slate-700 bg-slate-950/60 text-slate-300"
+                    : missingEnvironment.length || !systemStatus.ai_key_configured
+                      ? "border-amber-400/20 bg-amber-500/10 text-amber-200"
+                      : "border-cyan-400/20 bg-cyan-500/10 text-cyan-100"
+                }`}>
+                  {!systemStatus ? "Status unavailable" : missingEnvironment.length || !systemStatus.ai_key_configured ? "Needs review" : "Configuration checked"}
                 </span>
               </div>
               {systemStatusError && (
@@ -593,18 +543,18 @@ export default function AdminDashboard() {
               <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">Quick focus</p>
               <h2 className="mt-2 text-xl font-bold text-white">Priority queue</h2>
               <div className="mt-5 space-y-3">
-                <div className="rounded-2xl border border-cyan-400/20 bg-cyan-500/5 p-3">
-                  <p className="text-sm font-semibold text-white">Review AI policy split</p>
-                  <p className="mt-1 text-sm text-slate-400">Verify public and admin AI lanes remain correctly isolated.</p>
-                </div>
-                <div className="rounded-2xl border border-violet-400/20 bg-violet-500/5 p-3">
-                  <p className="text-sm font-semibold text-white">Monitor cost drift</p>
-                  <p className="mt-1 text-sm text-slate-400">Keep free-tier usage visible before it moves to paid scale.</p>
-                </div>
-                <div className="rounded-2xl border border-amber-400/20 bg-amber-500/5 p-3">
-                  <p className="text-sm font-semibold text-white">Estimator readiness</p>
-                  <p className="mt-1 text-sm text-slate-400">Vehicle-fit checks should stay available to ops and dispatch teams.</p>
-                </div>
+                <Link href="/admin/brain" className="block rounded-2xl border border-slate-800 bg-slate-950/60 p-4 transition hover:border-cyan-400/30">
+                  <div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-white">Pending AI review</p><strong className="text-lg text-cyan-200">{systemStatus?.counts.pending_brain ?? "—"}</strong></div>
+                  <p className="mt-1 text-sm text-slate-500">Pending review items reported by the backend.</p>
+                </Link>
+                <Link href="/admin/drafts" className="block rounded-2xl border border-slate-800 bg-slate-950/60 p-4 transition hover:border-cyan-400/30">
+                  <div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-white">Draft queue</p><strong className="text-lg text-cyan-200">{draftsError ? "—" : drafts.length}</strong></div>
+                  <p className="mt-1 text-sm text-slate-500">Draft posts returned by the authenticated admin API.</p>
+                </Link>
+                <Link href="/admin/system" className="block rounded-2xl border border-slate-800 bg-slate-950/60 p-4 transition hover:border-cyan-400/30">
+                  <div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-white">Missing environment variables</p><strong className={`text-lg ${missingEnvironment.length ? "text-amber-200" : "text-cyan-200"}`}>{systemStatus ? missingEnvironment.length : "—"}</strong></div>
+                  <p className="mt-1 text-sm text-slate-500">Configuration readiness from the system-status endpoint.</p>
+                </Link>
               </div>
             </div>
           </section>
@@ -616,7 +566,7 @@ export default function AdminDashboard() {
                 <h2 className="mt-2 text-xl font-bold text-white">System timeline</h2>
               </div>
               <span className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300">
-                Live feed
+                Persisted events
               </span>
             </div>
             {activityError && (
@@ -625,8 +575,12 @@ export default function AdminDashboard() {
               </div>
             )}
             <div className="mt-5 space-y-3">
-              {recentActivityCards.map((entry) => (
-                <div key={entry.title} className="flex gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 p-3">
+              {recentActivityCards.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-8 text-center text-sm text-slate-500">
+                  {activityError ? "Activity could not be loaded." : "No persisted activity events yet."}
+                </div>
+              ) : recentActivityCards.map((entry, index) => (
+                <div key={`${entry.time || "event"}-${entry.title}-${index}`} className="flex gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 p-3">
                   <div
                     className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${
                       entry.tone === "cyan"
@@ -639,7 +593,7 @@ export default function AdminDashboard() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-sm font-semibold text-white">{entry.title}</p>
-                      <span className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{entry.time}</span>
+                      <span className="text-[11px] text-slate-500">{entry.time ? new Date(entry.time).toLocaleString() : "Time unavailable"}</span>
                     </div>
                     <p className="mt-1 text-sm leading-6 text-slate-400">{entry.detail}</p>
                   </div>
@@ -730,21 +684,26 @@ export default function AdminDashboard() {
             </div>
 
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 sm:p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">Readiness</p>
-              <h2 className="mt-2 text-xl font-bold text-white">Beta operating checks</h2>
-              <div className="mt-5 space-y-3">
-                {readinessCards.map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-semibold text-slate-300">{item.label}</span>
-                      <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-200">
-                        {item.value}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm text-slate-500">{item.detail}</p>
-                  </div>
-                ))}
-              </div>
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">Backend inventory</p>
+              <h2 className="mt-2 text-xl font-bold text-white">Live system counts</h2>
+              {systemStatusError ? (
+                <p className="mt-4 rounded-xl border border-amber-400/20 bg-amber-500/5 p-3 text-sm text-amber-100">{systemStatusError}</p>
+              ) : !systemStatus ? (
+                <p className="mt-4 text-sm text-slate-500">Waiting for authenticated system status.</p>
+              ) : (
+                <div className="mt-5 space-y-3">
+                  {[
+                    { label: "Published posts", value: systemStatus.counts.published_posts, href: "/admin/articles" },
+                    { label: "Knowledge sources", value: systemStatus.counts.sources, href: "/admin/feeds" },
+                    { label: "Agent runs", value: systemStatus.counts.agent_runs, href: "/admin/agents" },
+                    { label: "Analytics events", value: systemStatus.counts.analytics_events, href: "/admin/analytics" },
+                  ].map((item) => (
+                    <Link key={item.label} href={item.href} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 p-4 transition hover:border-cyan-400/30">
+                      <span className="text-sm font-semibold text-slate-300">{item.label}</span><strong className="text-lg font-bold text-white">{item.value}</strong>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
         </div>
