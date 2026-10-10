@@ -503,8 +503,14 @@ export default function AdminDashboard() {
                   <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-300">Live ops</p>
                   <h2 className="mt-2 text-xl font-bold text-white">Operations pulse</h2>
                 </div>
-                <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-200">
-                  Stable
+                <span className={`rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${
+                  !systemStatus
+                    ? "border-slate-700 bg-slate-950/60 text-slate-300"
+                    : missingEnvironment.length || !systemStatus.ai_key_configured
+                      ? "border-amber-400/20 bg-amber-500/10 text-amber-200"
+                      : "border-cyan-400/20 bg-cyan-500/10 text-cyan-100"
+                }`}>
+                  {!systemStatus ? "Status unavailable" : missingEnvironment.length || !systemStatus.ai_key_configured ? "Needs review" : "Configuration checked"}
                 </span>
               </div>
               {systemStatusError && (
