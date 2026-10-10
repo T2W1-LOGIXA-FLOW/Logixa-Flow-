@@ -1,5 +1,5 @@
 name: One-time B2 Proxy Production Verification
-# Re-run after the latest Render storage fix is live.
+# Re-run after the latest Render connectivity probe is live.
 
 on:
   push:
