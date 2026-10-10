@@ -62,6 +62,7 @@ Release closure still requires the manual production gates documented in `docs/R
 - docs/API.md — API contracts and route boundaries.
 - docs/AI_RAG.md — AI providers, gates, RAG behavior, and publication safety.
 - docs/STORAGE.md — storage routing and provider verification.
+- docs/TOOLS_AND_LLM_INVENTORY.md — platform tools, external services, LLM adapters, and active-provider status.
 - docs/TROUBLESHOOTING.md — diagnostics and recovery guidance.
 
 ## Quick start
