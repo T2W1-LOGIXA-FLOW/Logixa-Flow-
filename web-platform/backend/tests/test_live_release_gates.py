@@ -193,14 +193,14 @@ def test_live_b2_application_download_proxy_round_trip() -> None:
                 "apikey": values["SUPABASE_SERVICE_ROLE_KEY"],
             }
             # Query metadata before deleting it so the matching private B2 object can be removed.
-            metadata = requests.get(
-                f"{supabase_base}/rest/v1/stored_files",
-                params={"select": "id,object_key", "id": f"eq.{file_id}"},
-                headers=service_headers,
-                timeout=30,
-            )
             cleanup_error: Exception | None = None
             try:
+                metadata = requests.get(
+                    f"{supabase_base}/rest/v1/stored_files",
+                    params={"select": "id,object_key", "id": f"eq.{file_id}"},
+                    headers=service_headers,
+                    timeout=30,
+                )
                 metadata.raise_for_status()
                 rows = metadata.json()
                 assert isinstance(rows, list) and len(rows) == 1, "uploaded file metadata was not found for cleanup"
