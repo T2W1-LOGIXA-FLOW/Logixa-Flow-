@@ -126,6 +126,7 @@ def _upload_supabase(file_obj: BinaryIO, filename: str, content_type: str) -> st
 def _s3_client():
     """Create an authenticated S3-compatible client for a private B2 bucket."""
     import boto3
+    from botocore.config import Config
 
     required = {
         "S3_ENDPOINT_URL": os.getenv("S3_ENDPOINT_URL"),
@@ -141,6 +142,13 @@ def _s3_client():
         aws_access_key_id=required["S3_ACCESS_KEY_ID"],
         aws_secret_access_key=required["S3_SECRET_ACCESS_KEY"],
         region_name=os.getenv("S3_REGION", "auto"),
+        # Bound network waits so a stalled provider request fails with an actionable
+        # storage error instead of holding the synchronous API request for minutes.
+        config=Config(
+            connect_timeout=10,
+            read_timeout=60,
+            retries={"mode": "standard", "max_attempts": 2},
+        ),
     )
     return client, required["S3_BUCKET"]
 
@@ -152,16 +160,27 @@ def download_s3_object(key: str):
 
 
 def _upload_s3(file_obj: BinaryIO, filename: str, content_type: str) -> str:
+    from boto3.s3.transfer import TransferConfig
     from botocore.exceptions import BotoCoreError, ClientError
 
     client, bucket = _s3_client()
     file_obj.seek(0)
+    # B2 supports PutObject for files up to 5 GB. Avoid creating multipart
+    # uploads for ordinary large images/documents; use bounded multipart
+    # transfers only for genuinely large objects.
+    transfer_config = TransferConfig(
+        multipart_threshold=64 * 1024 * 1024,
+        multipart_chunksize=16 * 1024 * 1024,
+        max_concurrency=2,
+        use_threads=False,
+    )
     try:
         client.upload_fileobj(
             file_obj,
             bucket,
             filename,
             ExtraArgs={"ContentType": content_type or "application/octet-stream"},
+            Config=transfer_config,
         )
     except (BotoCoreError, ClientError) as exc:
         raise RuntimeError("S3-compatible storage rejected the upload") from exc
