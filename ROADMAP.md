@@ -26,17 +26,17 @@ Current state: production migration `20261008_0012_rag_observability` is applied
 Objective: close evidence-based release gates without changing the current architecture merely to satisfy documentation.
 
 Current verified baseline:
-- Latest confirmed CI: #450 success on `115482a27a9c7d56294c8fe09940190555a8d7a1`.
-- Latest confirmed CodeQL: #197 success on the same commit.
+- Latest confirmed CI: #523 success on deployed application code SHA `471bbdac7cbf8648ec421d3174090a7d7fd04a90` (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38025445390).
+- Latest confirmed CodeQL: #270 success on the same code SHA (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38025445501).
 - Markdown/docs-only commits are intentionally excluded from CI/CodeQL triggers, so documentation commits do not create new red/green runs.
 
 Remaining acceptance criteria:
-- Supabase Storage, B2, and Google Drive E2E pass with real infrastructure.
+- Provider-level Supabase Storage, private B2/S3, and Google Drive E2E are verified; deployed application private-B2 proxy E2E remains pending.
 - Retry, stale-claim recovery, and failure recovery are verified.
 - Duplicate-delivery protection remains verified.
 - QStash signature verification, delivery, and canonical workflow completion remain verified.
 - Cloudinary E2E remains verified.
-- Production authentication/API smoke tests pass.
+- Production authentication/API smoke is VERIFIED by run #11: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474.
 - Monitoring and failure-mode checks pass.
 - RAG ingest → embed → search passes.
 - Agent → Brain → publish passes.
@@ -53,7 +53,7 @@ Verification rule: implementation, configuration, or unit tests do not substitut
 - Deterministic retry-recovery/exhaustion and scheduled-delay semantics are now staged and green in the non-live suite.
 - Deterministic stale-claim, terminal-idempotency, duplicate-delivery, and approval-resume coverage is also staged/green; live evidence remains the release gate.
 Status: ACTIVE.
-- Close Supabase Storage, Backblaze B2, and Google Drive real E2E.
+- Provider-level Supabase Storage, private B2/S3, and Google Drive E2E are verified; close the deployed application private-B2 proxy gate.
 - Verify retry/recovery, live stale-claim reclamation, controlled failure recovery, and duplicate delivery. Deterministic stale-claim reclamation coverage is already green.
 - Keep all live tests opt-in and secret-free in normal CI.
 - A manual `.github/workflows/live-release-gates.yml` workflow now consumes GitHub `production` environment secrets, validates required configuration, and runs the selected real-provider E2E without exposing credentials to the repository.
@@ -63,7 +63,7 @@ Status: ACTIVE.
 - RAG source re-ingestion now has deterministic idempotency coverage.
 - Next live gates: RAG ingest→embed→search, Agent→Brain→publish, approval→resume→completion, and scheduled time-boundary execution.
 Status: PRE-STAGED.
-- Production authentication/API smoke.
+- Production Auth Smoke run #11 is verified; rerun only if credentials/config change or a new failure occurs.
 - RAG ingest → embed → search.
 - Agent → Brain → publish.
 - Approval → resume → completion.
@@ -156,20 +156,17 @@ Status: ACTIVE — final evidence closure.
 
 Deterministic repository-side coverage has expanded for RAG ingest/search, publish idempotency, and chat transcript export. These are not substitutes for live production evidence.
 
-1. Real Supabase Storage E2E.
-2. Real Backblaze B2 E2E.
-3. Real Google Drive E2E.
-4. Workflow retry/recovery verification.
-5. Stale-claim recovery verification.
-6. Controlled failure/recovery verification.
-7. Production authentication/API smoke tests.
-8. Production monitoring/failure-mode checks.
-9. E2E RAG ingest → embed → search.
-10. Agent → Brain → publish E2E.
-11. Workflow approval → resume → completion.
-12. Scheduled workflow over a real time boundary.
-13. Newsletter delivery E2E.
-14. Controlled external-provider failover test.
+1. Deployed application private-B2 proxy E2E.
+2. Workflow retry/recovery verification.
+3. Stale-claim recovery verification.
+4. Controlled failure/recovery verification.
+5. Production monitoring/failure-mode checks.
+6. E2E RAG ingest → embed → search.
+7. Agent → Brain → publish E2E.
+8. Workflow approval → resume → completion.
+9. Scheduled workflow over a real time boundary.
+10. Newsletter delivery E2E.
+11. Controlled external-provider failover test.
 
 ## Remaining Work — Future Product/Operations
 
