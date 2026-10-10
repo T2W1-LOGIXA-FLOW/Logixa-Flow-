@@ -222,9 +222,8 @@ Continue Phase 13 only on genuinely open gates; do not rerun provider checks alr
 
 ### Private B2 upload/download proxy
 
-- **Status: VERIFY / BLOCKED — do not mark VERIFIED.**
-- Live gate run `38049039736`: direct B2 S3 round-trip passed using GitHub Actions secrets, but the authenticated application proxy upload failed with HTTP 502 for a 10,485,826-byte PNG. Admin authentication succeeded (HTTP 200), so this is not an admin-login failure.
-- Render logs show the endpoint host is `s3.us-west-004.backblazeb2.com` and signing region is `us-west-004`. After the upload failed, the diagnostic `HeadBucket` probe returned HTTP 403. This points to a Render-side B2 bucket/credential access mismatch relative to the working GitHub Actions B2 credentials.
-- PRs #67 and #70 changed the small-object upload request body; PR #68 derives the Backblaze signing region from the endpoint; PRs #69, #71, and #72 added safe diagnostics. These changes have **not** made the live proxy gate pass. Do not claim the upload fix is verified.
-- A one-time remediation workflow exists on branch `b2-proxy-verification-once`. It can sync the known-good GitHub B2 settings into Render and redeploy if one of the following GitHub Actions secrets is configured: `RENDER_API_KEY`, `RENDER_API_TOKEN`, or `RENDER_TOKEN`. The latest run confirmed none is available, so Render environment values were not changed.
-- **Required unblock:** either add a least-privilege Render API key as GitHub Actions secret `RENDER_API_KEY` and rerun the remediation workflow, or manually make Render's `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, and `S3_BUCKET` match the known-good GitHub Actions B2 settings. Then rerun the authenticated upload/download/delete gate. Keep the B2 status at VERIFY until that complete round-trip passes.
+- **Status: VERIFIED for the live S3 round-trip and authenticated application proxy gate on 2026-10-10.**
+- Evidence: [B2 proxy verification run #38049146602](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602). The workflow updated Render's `S3_ENDPOINT_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, and `S3_REGION` using the repository's known-good GitHub Actions secrets; Render deployment `dep-db53vf0473hc739ptscg` reached `live`.
+- Post-deploy live tests passed: `test_live_b2_s3_round_trip` and `test_live_b2_application_download_proxy_round_trip` — **2 passed in 12.32s**. This confirms direct S3 upload/read/delete and the authenticated production application upload/private-download/cleanup flow for the tested payload.
+- Previous failures were caused by Render-side B2 settings differing from the working CI credentials/configuration; the post-sync live gate now passes. Do not expose credential values in logs or documentation.
+- Re-run the live gate after any future B2 credential, bucket, endpoint, signing-region, or storage-routing change.
