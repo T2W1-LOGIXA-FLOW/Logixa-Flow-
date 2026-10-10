@@ -10,8 +10,8 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 - [ ] Vercel integration check is green on the current main head. The latest main integration check is failing due to the Vercel Hobby build-rate limit; the last READY production deployment remains healthy, but this does not count as a green check on the current head.
 - [ ] Release SHA fixed.
 - [x] Repository/infrastructure audit completed 2026-10-09; findings are recorded in `docs/REPO_INFRA_AUDIT.md`.
-- [x] Repository CI green on current hardening SHA `115482a27a9c7d56294c8fe09940190555a8d7a1` (CI #450).
-- [x] CodeQL/security checks green on current hardening SHA `115482a27a9c7d56294c8fe09940190555a8d7a1` (CodeQL #197).
+- [x] Repository CI green for the Supabase cleanup-assertion code change at `b0af10c9208a10c4de794a0ee41d6a82b896d22e` (CI #514; backend 187 passed / 4 skipped; agents, frontend, and security jobs passed).
+- [x] CodeQL/security checks green for the same code change (CodeQL #261; Python and JavaScript/TypeScript analyses passed).
 - [ ] Dependency/license/security refresh reviewed.
 - [x] Repository migration head equals intended release migration head: `20261008_0012`.
 
