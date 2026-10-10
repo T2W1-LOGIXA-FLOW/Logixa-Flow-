@@ -2,7 +2,7 @@
 
 > Owner: Project / Engineering
 > Update when: release state, verification evidence, blockers, or next actions change
-> Last Updated: 2026-10-09
+> Last Updated: 2026-10-10
 > Do NOT put here: detailed architecture, implementation reference, or step-by-step runbooks; use `PROJECT_OVERVIEW.md` and `docs/*`.
 
 ## 1. Current Release
@@ -31,7 +31,7 @@ Repository Alembic head is **20261008_0012**. Live production migration history 
 - RAG ingestion/search/reliability/quality features are implemented. Durable RAG observability event storage is implemented in repository code and deployed in production.
 - Alembic migration `20261008_0012` is now the repository head and adds durable RAG observability events.
 - Documentation audit and Phase 0 ledgers are complete.
-- Latest CI #452 and CodeQL #199 are green on `e46864fad964e24dc60063fb07f46d2f9524e87f` after the transitive `fflate` security patch; repository-side CI/security validation is current.
+- Latest confirmed CI #523 and CodeQL #270 passed on deployed application code SHA `471bbdac7cbf8648ec421d3174090a7d7fd04a90` (CI: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38025445390; CodeQL: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38025445501). The current `main` head also contains later documentation-only commits; release certification still requires live production gates.
 
 ## 5. VERIFIED
 
@@ -68,7 +68,6 @@ Current active closure tracks:
 
 ## 7. PENDING
 
-- Supabase Storage upload/read/cleanup: VERIFIED by targeted Live Release Gates run #17 (`1 passed in 3.24s`): https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38021152054.
 - A targeted `b2-proxy` gate was added in commit `5db3ca2e13411bec3a94ed248672b787b0c6d886`, with cleanup handling refined in `33d07518d99572e9746cdd8d27ebcb2fb28ece74`. Production run #19 failed at `POST /api/uploads` with a 180-second `ReadTimeout` before a download URL was returned; it did not verify proxy download behavior: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38024411790. Render logs show a new application instance starting during the run; the logs available through the connector do not establish the exact backend stall. Follow-up commits `6a5fb2f91efc270686d87d900993b26fdeb333e2` bound S3 connection/read/retry behavior and avoid multipart transfers for objects under 64 MiB; `9134d17ba8792a09ae010e0820289c3df695fbe7` adds an API health preflight to separate Render cold-start latency from upload latency. CI #523 and CodeQL #270 passed on code SHA `471bbdac7cbf8648ec421d3174090a7d7fd04a90` (CI: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38025445390; CodeQL: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38025445501); Render reports that same SHA live. The production gate must be rerun on this deployment.
 - **Production backup/restore VERIFIED on 2026-10-09**: run #6 succeeded on isolated restore project `bxvykaijlrqjvlhtumpg`; restored Alembic head `20261008_0012`, all four critical tables, and numeric RAG observability count (0 rows). Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37964429760. This verifies the `public` application-schema logical restore only, not managed Supabase Auth/Storage or object-storage recovery.
 - **Google Drive live E2E VERIFIED on 2026-10-09**: Live Release Gates run #14 passed `tests/test_live_release_gates.py::test_live_google_drive_upload_round_trip` (`1 passed in 2.04s`), confirming the configured production OAuth credential can complete the upload/read round-trip after the scope-handling fix. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37953000376. This does not close the separate Supabase Storage or app-level B2 download-proxy gates.
