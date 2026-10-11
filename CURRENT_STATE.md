@@ -272,3 +272,10 @@ Render deploy dep-db5ie03hu5js73drbig0 reached live for code commit 4f530837fc14
 Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114461 · https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114411
 
 These are code, regression-test, CI, security-scan, and deployment results. They do not constitute live workflow recovery or production RAG/Agent/Brain/Publish evidence; those gates remain PENDING.
+
+## 2026-10-11 — RAG fallback visibility and provider evidence boundary
+
+- Commit `4746ffc0b89aee5581e6c74308a9e1db46e7dbe0` logs a safe reason when RAG embedding falls back to deterministic hash vectors (missing key, HTTP failure, invalid response, or dimension mismatch). Regression assertions were added in commit `35793c2d29dbc9b1814e030cd03ebea6610a8720`.
+- Owner-supplied smoke notes report Gemini/Groq/Mistral/Cohere/Cloudflare endpoints responding, while OpenRouter returned 429/empty replies and Cerebras/Hugging Face returned 402. These are not independently linked and do not prove application-level failover. Free-only production routing remains unchanged pending explicit cost/terms approval.
+- RAG dimension blocker remains: configured/stored shape is 768; Voyage 512 and Cloudflare BGE-M3 1024 are incompatible without a planned migration and re-embedding. Do not change the dimension in place.
+- RAG ingest→search, provider failover, publishing, approval/resume, workflow recovery, authenticated Admin UI, SLO telemetry, email, managed Auth/Storage recovery, and rollback rehearsal remain PENDING. Release certification remains PENDING.
