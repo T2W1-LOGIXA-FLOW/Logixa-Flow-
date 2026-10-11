@@ -22,18 +22,27 @@ def upgrade() -> None:
     if bind.dialect.name == "postgresql":
         op.execute("CREATE EXTENSION IF NOT EXISTS vector")
         op.execute("ALTER TABLE document_embeddings ADD COLUMN embedding_v2 vector(512)")
-        op.execute(
-            """
-            CREATE INDEX IF NOT EXISTS ix_document_embeddings_embedding_v2_hnsw
-            ON document_embeddings USING hnsw (embedding_v2 vector_cosine_ops)
-            """
-        )
+        try:
+            op.execute(
+                """
+                CREATE INDEX IF NOT EXISTS ix_document_embeddings_embedding_v2_hnsw
+                ON document_embeddings USING hnsw (embedding_v2 vector_cosine_ops)
+                """
+            )
+        except Exception:
+            op.execute(
+                """
+                CREATE INDEX IF NOT EXISTS ix_document_embeddings_embedding_v2_ivfflat
+                ON document_embeddings USING ivfflat (embedding_v2 vector_cosine_ops)
+                """
+            )
 
 
 def downgrade() -> None:
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
         op.execute("DROP INDEX IF EXISTS ix_document_embeddings_embedding_v2_hnsw")
+        op.execute("DROP INDEX IF EXISTS ix_document_embeddings_embedding_v2_ivfflat")
         op.execute("ALTER TABLE document_embeddings DROP COLUMN IF EXISTS embedding_v2")
     op.drop_column("document_embeddings", "embedding_v2_model")
     op.drop_column("document_embeddings", "embedding_v2_json")
