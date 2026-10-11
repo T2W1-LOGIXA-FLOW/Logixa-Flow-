@@ -298,3 +298,11 @@ These are code, regression-test, CI, security-scan, and deployment results. They
 - RAG_EMBEDDING_VERSION=1 remains active. Voyage backfill has not been run/verified, zero pending rows are not established, and production ingest→search is still PENDING.
 - Provider audit: app/llm/providers.py implements multiple provider adapters, but app/llm/router.py currently wires only OpenRouter openrouter/free plus local fallback. Production local fallback defaults off, so other provider keys and endpoint smoke tests do not establish live application failover. OpenRouter HTTP 429 remains an AI availability risk.
 - Release certification remains PENDING.
+
+
+## Production verification update (2026-10-11)
+
+- Render deploy `dep-db5rei779l7c73frthcg` for commit `318114adfd60b4d0a6289f03b7bd6c1f0fe365a7` is live. Logs show `Application startup complete`; startup/schema inspection now uses PostgreSQL `information_schema` for column names instead of SQLAlchemy reflection of pgvector types. No matching pgvector-reflection warning was found in the log window after this deploy became live; retain monitoring until an explicit health request confirms runtime status.
+- Direct read-only inspection of the production Supabase project `ephrnmigiwjhdjksreos` confirms Alembic revision `20261011_0013`, the legacy `embedding` vector column, Voyage v2 JSON/model/vector columns, and the `ix_document_embeddings_embedding_v2_hnsw` index.
+- Production counts: `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, `ai_memory_brain=122`, `posts=8`. Voyage backfill pending count is zero only because the embedding table is empty; this is not proof of RAG readiness. The next blocker is authenticated ingestion of existing Brain records, then a real ingest→search/citation E2E test.
+- Recent Render startup logs also show OpenRouter HTTP 429 and a failed scheduled daily preview. Do not enable paid provider routing without owner approval. Release certification remains PENDING; `/health` was not independently confirmed by an HTTP response in this verification pass.
