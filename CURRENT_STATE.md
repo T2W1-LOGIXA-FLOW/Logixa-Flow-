@@ -2,7 +2,7 @@
 
 > Owner: Project / Engineering
 > Update when: release state, verification evidence, blockers, or next actions change
-> Last Updated: 2026-10-10
+> Last Updated: 2026-10-11
 > Do NOT put here: detailed architecture, implementation reference, or step-by-step runbooks; use `PROJECT_OVERVIEW.md` and `docs/*`.
 
 ## 1. Current Release
@@ -242,3 +242,12 @@ Continue Phase 13 only on genuinely open gates; do not rerun provider checks alr
 - Vercel production deployment `dpl_5wycNFm291dS8nWZJmfEsfTjC2pw` is READY. Production alias: https://logixa-flow.vercel.app.
 - Production login page renders and unauthenticated `/admin` redirects to login. Auth Smoke run #11 passed password-grant login, `/api/auth/me` admin-role assertion, and admin RAG metrics request: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474.
 - **Partially verified:** login/protected-route behavior and production deployment are verified, but an authenticated browser session was not available to verify the full dashboard rendering, navigation, and responsive behavior with a real admin session. Do not claim full browser UI verification.
+
+
+## 2026-10-11 Documentation and release-gate reconciliation
+
+The production B2 application proxy remains VERIFIED by run #38049146602; do not rerun without a relevant code/config change or regression. The isolated public-schema database restore is VERIFIED, but this is not managed Supabase Auth/Storage or object-storage disaster recovery. Release status remains **PENDING**.
+
+Remaining engineering work: live retry/stale-claim/failure recovery; RAG ingest→embed→search and Agent→Brain→publish journeys; approval→resume and scheduled time-boundary tests; newsletter delivery and controlled provider failover; full authenticated Admin UI browser verification; managed Auth/Storage and object-storage recovery; application rollback rehearsal; measurable production SLO/error-budget and alert-path evidence; dependency/license/security review. OpenRouter free-tier HTTP 429 remains an observed AI quota blocker; paid fallback is not authorized. Vercel remediation remains paused by owner direction.
+
+Evidence limitation: Render event inspection showed no matching failure events in the bounded returned event set, but HTTP request-count/latency datapoints were unavailable. Do not interpret this as an SLO pass. Each live gate needs an evidence link or a clearly documented owner-controlled blocker.
