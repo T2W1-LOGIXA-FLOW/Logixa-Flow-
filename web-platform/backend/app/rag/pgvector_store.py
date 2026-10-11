@@ -91,3 +91,47 @@ def similarity_search_pgvector(
             }
         )
     return output
+
+
+def store_embedding_vector_v2(db: Session, row_id: int, vector: list[float]) -> None:
+    """Persist the 512-D versioned vector while preserving the legacy 768-D column."""
+    if not is_postgres(db):
+        return
+    payload = embedding_to_json(vector)
+    db.execute(
+        text("UPDATE document_embeddings SET embedding_v2 = CAST(:payload AS vector) WHERE id = :row_id"),
+        {"payload": payload, "row_id": row_id},
+    )
+
+
+def similarity_search_pgvector_v2(
+    db: Session,
+    query_vector: list[float],
+    *,
+    top_k: int,
+    model_name: str,
+) -> list[dict]:
+    rows = db.execute(
+        text(
+            """
+            SELECT source_type, source_id, title, content, embedding_v2_model AS embedding_model,
+                   1 - (embedding_v2 <=> CAST(:query_vec AS vector)) AS score
+            FROM document_embeddings
+            WHERE embedding_v2 IS NOT NULL AND embedding_v2_model = :model_name
+            ORDER BY embedding_v2 <=> CAST(:query_vec AS vector)
+            LIMIT :limit
+            """
+        ),
+        {"query_vec": embedding_to_json(query_vector), "limit": top_k, "model_name": model_name},
+    ).mappings().all()
+    return [
+        {
+            "score": round(float(row["score"]), 4),
+            "source_type": row["source_type"],
+            "source_id": row["source_id"],
+            "title": row["title"],
+            "content": (row["content"] or "")[:1200],
+            "embedding_model": row["embedding_model"],
+        }
+        for row in rows
+    ]
