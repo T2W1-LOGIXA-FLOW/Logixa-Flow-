@@ -262,3 +262,13 @@ Code fixes committed to main:
 Validation: CI #564 passed on commit 4f530837fc148e44be2f6cb0ecb0a5f291278be2: backend 199 passed, 5 skipped; agents tests passed, frontend tests/build passed, and dependency security job passed. CodeQL #311 passed for Python and JavaScript/TypeScript. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906548 and https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906581.
 
 Render deploy dep-db5ie03hu5js73drbig0 reached live for code commit 4f530837fc148e44be2f6cb0ecb0a5f291278be2. This confirms deployment, not live recovery or RAG/publishing E2E. Production live workflow recovery, RAG→Agent→Brain→Publish, approval/resume, and scheduled-boundary evidence remain PENDING. Release certification remains PENDING.
+
+## 2026-10-11 — Imported draft publishing safety
+
+- Backend imported-draft conversion and the CLI publisher now HTML-escape untrusted Markdown lines before wrapping them in HTML, preventing embedded tags/attributes from becoming executable markup.
+- Regression tests cover backend imported drafts and the CLI publisher. CI #569 passed on 49ce8ccd8d413a69b925a84b0f60cad01d01e459: backend 200 passed / 5 skipped; agents 5 passed; frontend tests/build and dependency security passed. CodeQL #316 passed for Python and JavaScript/TypeScript.
+- Render deployment dep-db5ifnprn11c73dg9ak0 reached live for commit 8f8397f16d74281d1072ed3b8cb8bd5017a2c5c1.
+
+Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114461 · https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114411
+
+These are code, regression-test, CI, security-scan, and deployment results. They do not constitute live workflow recovery or production RAG/Agent/Brain/Publish evidence; those gates remain PENDING.
