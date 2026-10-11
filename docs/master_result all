@@ -227,3 +227,10 @@ Keys tested in chat — **rotate လုပ်ရမယ်**:
 2. Ollama install — local chat backup
 3. HF Spaces deploy — Myanmar chatbot demo
 4. Myanmar dataset — search & download
+
+
+## 8. Repository integration status — 2026-10-11
+
+The live API results above are owner-supplied smoke-test evidence. They do not, by themselves, prove application provider routing or production RAG E2E. The repository now has an additive Voyage 512-D path (migration `20261011_0013`, strict `voyage-3-lite` adapter, resumable backfill, and model-scoped retrieval). The existing 768-D vectors remain intact for rollback.
+
+**Cutover is intentionally not enabled yet.** Apply the migration, run the backfill with `VOYAGE_API_KEY`, confirm zero rows remain pending, and pass live ingest/search tests before setting `RAG_EMBEDDING_VERSION=2`. Cloudflare BGE-M3 is 1,024-D and must use a separate index/version; it must not be mixed as a direct Voyage fallback. Release remains PENDING until live RAG and publishing E2E are recorded.
