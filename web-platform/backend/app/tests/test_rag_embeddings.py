@@ -5,7 +5,7 @@ from unittest.mock import Mock
 from app.rag import embeddings
 
 
-def test_embeddings_use_local_hash_without_openrouter_key(monkeypatch) -> None:
+def test_embeddings_use_local_hash_without_openrouter_key(monkeypatch, caplog) -> None:
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     monkeypatch.delenv("ADMIN_OPENROUTER_API_KEY", raising=False)
     monkeypatch.delenv("USER_OPENROUTER_API_KEY", raising=False)
@@ -16,6 +16,7 @@ def test_embeddings_use_local_hash_without_openrouter_key(monkeypatch) -> None:
 
     assert model == "hash:fallback"
     assert len(vector) == embeddings.EMBEDDING_DIMENSIONS
+    assert "reason=missing_openrouter_key" in caplog.text
 
 
 def test_embeddings_call_only_free_openrouter_embedding_model(monkeypatch) -> None:
@@ -36,7 +37,7 @@ def test_embeddings_call_only_free_openrouter_embedding_model(monkeypatch) -> No
     assert post.call_args.kwargs["json"]["dimensions"] == embeddings.EMBEDDING_DIMENSIONS
 
 
-def test_embeddings_fall_back_locally_if_free_model_returns_wrong_dimension(monkeypatch) -> None:
+def test_embeddings_fall_back_locally_if_free_model_returns_wrong_dimension(monkeypatch, caplog) -> None:
     monkeypatch.setenv("OPENROUTER_API_KEY", "test-openrouter-key")
     response = Mock()
     response.raise_for_status.return_value = None
@@ -47,3 +48,4 @@ def test_embeddings_fall_back_locally_if_free_model_returns_wrong_dimension(monk
 
     assert model == "hash:fallback"
     assert len(vector) == embeddings.EMBEDDING_DIMENSIONS
+    assert f"reason=dimension_mismatch:expected={embeddings.EMBEDDING_DIMENSIONS}:actual=1024" in caplog.text
