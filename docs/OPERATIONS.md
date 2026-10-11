@@ -2,7 +2,7 @@
 
 > Owner: Operations
 > Update when: monitoring, recovery, or provider verification changes
-> Last Updated: 2026-10-08
+> Last Updated: 2026-10-11
 > Do NOT put here: secrets or unverified incident claims.
 
 ## Principles
@@ -91,3 +91,10 @@ Preserve evidence, correlation IDs, sanitized logs, affected run/session IDs, an
 - The workflow created a production logical backup, restored the `public` application schema into isolated project `bxvykaijlrqjvlhtumpg`, and verified Alembic head `20261008_0012`, four critical tables, and a numeric `rag_observability_events` row count (0).
 - Scope is deliberately limited to the application `public` schema. This does not verify managed Supabase Auth/Storage restoration, object-storage recovery, rollback, or post-rollback smoke checks.
 \n\n## All-provider release gate reconciliation — 2026-10-09\n\n- Live Release Gates run #15 passed all four provider tests (Cloudinary, Supabase Storage, private B2/S3, Google Drive): https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37956262981. Reuse this evidence; do not ask for a provider rerun unless code changes or new failure evidence warrants it.\n- Run #16 was cancelled before test execution and adds no new evidence.\n- Supabase Storage upload/read was successful and the test sent a cleanup DELETE, but the current test does not assert the DELETE response status. Treat only the deletion-confirmation assertion as open; do not reclassify the upload/read path as untested.\n
+
+## Release status reconciliation (2026-10-11)
+
+- Verified: production auth/API smoke (run #11), Cloudinary/Supabase Storage/B2/Google Drive provider evidence, B2 application private-download proxy (run #38049146602), QStash signed delivery/completion/duplicate protection, and isolated public-schema database restore (run #6).
+- Pending: live workflow retry/stale-claim/failure recovery, RAG and complete AI publishing journeys, approval/resume and real scheduled-boundary verification, newsletter delivery, controlled provider failover, managed Supabase Auth/Storage recovery, object-storage DR, rollback rehearsal, full authenticated Admin UI browser verification, and measurable SLO/error-budget/alert-path evidence.
+- Render's bounded event inspection did not show matching failure events, but request-count/latency telemetry was unavailable for the inspected window. Missing telemetry is not evidence of a good SLO.
+- OpenRouter free-tier HTTP 429 remains a provider quota/rate-limit blocker for scheduled AI preview. Do not enable paid fallback without explicit owner approval. Vercel remediation remains paused by owner direction.
