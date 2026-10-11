@@ -2,7 +2,7 @@
 
 > Owner: Engineering / Release
 > Status: PENDING FINAL EVIDENCE
-> Last Updated: 2026-10-10
+> Last Updated: 2026-10-11
 
 ## Certification rule
 
@@ -25,7 +25,9 @@ Release certification requires repository CI/security validation, live provider 
 - Newsletter/failover: PENDING.
 - Application-schema backup/restore drill: VERIFIED on 2026-10-09 (run #6); managed Auth/Storage and object-storage recovery remain separate pending gates.
 - DR/rollback rehearsal: PENDING — runbook/gate staged; live rehearsal required.
-- SLO/error-budget review: PENDING; contract is defined in `docs/SLO_ERROR_BUDGET.md`, with a bounded production observation window, alert-path test, and error-budget calculation still required.
+- SLO/error-budget review: PENDING; Render HTTP request-count/latency datapoints were unavailable for the inspected window. A bounded event inspection alone cannot calculate availability or an error budget. Request/error telemetry, an auditable measurement query/export, alert-path test, and required observation window are still required.
+- Dependency/license/security refresh review: PENDING. Supabase Auth leaked-password protection is disabled per the last advisor review and requires dashboard-level action/owner decision.
+- Newsletter delivery: PENDING; newsletter endpoints return HTTP 501 until a transactional email provider is connected.
 - Vercel deployment/check remediation remains paused by owner direction; do not resume without explicit approval. This does not authorize changing Vercel build quota or deployment settings.
 
 ## Current release position
