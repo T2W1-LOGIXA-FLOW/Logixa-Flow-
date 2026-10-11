@@ -257,3 +257,15 @@ Verified production B2 proxy evidence remains run #38049146602 (`2 passed in 12.
 Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906548 · https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906581
 
 These checks close the code-regression/CI gate for this patch only. They do not close production workflow recovery, stale-claim live verification, RAG ingestion/search, Agent→Brain→Publish, approval/resume, or scheduled time-boundary gates. Release remains PENDING.
+
+## 2026-10-11 — Publishing safety follow-up
+
+- [x] Escape untrusted imported-draft text before backend Markdown-to-HTML conversion.
+- [x] Escape untrusted CLI publisher draft text before HTML conversion.
+- [x] Regression tests passed in CI #569: backend 200 passed / 5 skipped; agents 5 passed; frontend tests/build and dependency security passed.
+- [x] CodeQL #316 passed for Python and JavaScript/TypeScript.
+- [x] Render deploy dep-db5ifnprn11c73dg9ak0 reached live for code commit 8f8397f16d74281d1072ed3b8cb8bd5017a2c5c1 
+
+Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114461 · https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114411
+
+Production workflow recovery and RAG→Agent→Brain→Publish live journeys are still unchecked release gates. CI/deployment is not live E2E evidence.
