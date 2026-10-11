@@ -66,3 +66,11 @@ Live workflow retry/stale-claim/failure recovery and production RAG→Agent→Br
 - Provider results dated 2026-10-10 were supplied by the owner without linked request logs. Treat Gemini/Groq/Mistral/Cohere/Cloudflare results as endpoint smoke notes only, not application failover evidence. OpenRouter 429/empty response and Cerebras/Hugging Face 402 remain reported blockers.
 - The configured embedding shape remains 768. Switching to Voyage 512-D or Cloudflare BGE-M3 1024-D requires a versioned data/index migration and full re-embedding/backfill; this has not been performed. No dimension truncation is approved.
 - Production RAG ingest→search, AI provider failover, and RAG→Agent→Brain→approval→publish remain PENDING. Release certification remains PENDING.
+
+
+## 2026-10-11 — Versioned RAG dimension remediation
+
+- Added an additive 512-D Voyage embedding path in migration `20261011_0013`, leaving the legacy 768-D vector column intact for rollback. Added strict dimension validation, model-scoped v2 retrieval, dual-write support behind `RAG_EMBEDDING_VERSION=2`, and a resumable backfill command.
+- The code/migration being committed does not mean production migration, re-embedding, or RAG E2E is complete. Keep the feature flag at `1` until production migration, zero-pending backfill, same-model retrieval, and live ingest/search checks are evidenced.
+- Cloudflare BGE-M3 is 1,024-D in the owner-supplied report and cannot be used as an automatic Voyage fallback. Provider endpoint smoke tests are not production failover proof.
+- Release certification remains PENDING.
