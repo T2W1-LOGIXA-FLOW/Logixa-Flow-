@@ -2,7 +2,7 @@
 
 > Owner: Project / Engineering
 > Update when: product architecture, subsystem boundaries, or durable design decisions change
-> Last Updated: 2026-10-08
+> Last Updated: 2026-10-11
 > Do NOT put here: current release status, release-gate tracking, deployment checklists, or security policy.
 
 ## 1. Identity
