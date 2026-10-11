@@ -2,7 +2,7 @@
 
 > Owner: Project / Engineering
 > Update when: a phase, release gate, deferred item, or backlog item changes status
-> Last Updated: 2026-10-10
+> Last Updated: 2026-10-11
 > Do NOT put here: detailed implementation instructions; use domain docs and runbooks.
 
 ## Completed Phases
@@ -226,3 +226,21 @@ CI #535 / CodeQL #282 passed on merged diagnostics SHA `896c3d0b1086799883b4128b
 
 - Historical B2 public-GET failure is documented above. Follow-up implementation now supports a Private bucket through an application download proxy; deploy and run the authenticated B2 gate plus application URL verification before closing this item.
 - Backup/restore run #3 completed connectivity, production logical backup, and isolated schema reset, but Supabase rejected role-only replay (`log_min_messages` permission). Workflow now skips replay of Supabase-managed roles and must be rerun to verify schema/data restoration.
+
+
+## 2026-10-11 Consolidated release closure checklist
+
+The following are **not yet release-certified** and must not be marked VERIFIED without direct evidence:
+
+- [ ] Live workflow retry/recovery, stale-claim reclamation, controlled failure recovery, and recovery observability.
+- [ ] Production RAG ingest → embed → search and Agent → Brain → publish, with durable final state and provenance.
+- [ ] Approval → resume → completion and scheduled execution across a real time boundary.
+- [ ] Newsletter delivery and controlled provider failover. Newsletter endpoints currently return HTTP 501 until a transactional email provider is connected.
+- [ ] Full authenticated Admin UI browser verification (not just login rendering, unauthenticated redirect, or API smoke).
+- [ ] Managed Supabase Auth/Storage recovery, object-storage disaster recovery, and application rollback rehearsal. The successful isolated public-schema restore is narrower than these gates.
+- [ ] Production SLO/error-budget calculation from request/error telemetry, auditable query/export, alert-path test, and required observation window. Current Render HTTP request/latency metrics were unavailable, so no SLO pass is evidenced.
+- [ ] Dependency/license/security refresh review and follow-up for the Supabase Auth leaked-password-protection warning.
+- [ ] Resolve OpenRouter free-tier HTTP 429 without enabling paid fallback unless explicitly authorized.
+- [ ] Vercel integration check/remediation remains owner-paused and requires explicit approval before work resumes.
+
+Verified production B2 proxy evidence remains run #38049146602 (`2 passed in 12.32s`). Other verified evidence is indexed in `docs/RELEASE_CERTIFICATION.md` and `docs/RELEASE_EVIDENCE.md`. This checklist is the release exit list, not a claim that these tests have already run.
