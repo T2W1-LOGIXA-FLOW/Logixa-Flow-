@@ -4,7 +4,7 @@
 
 > Owner: Project / Engineering
 > Update when: project identity, quick-start, documentation map, or high-level snapshot changes
-> Last Updated: 2026-10-08
+> Last Updated: 2026-10-11
 > Do NOT put here: detailed deployment, security, API, database, or provider runbooks.
 
 ## What is Logixa Flow?
@@ -43,7 +43,7 @@ Live production Supabase migration head: **20261008_0012** (verified 2026-10-08)
 
 Public AI default: disabled. Admin AI default: enabled in repository configuration. Provider implementation/configuration/live health are tracked separately.
 
-Release closure still requires the manual production gates documented in `docs/RELEASE_CERTIFICATION.md`: storage/provider E2E, production authentication/API smoke, isolated backup/restore, workflow recovery, scheduled workflow, RAG/AI publish, newsletter delivery, rollback/DR, and monitoring evidence.
+Release status is **PENDING FINAL EVIDENCE**. Verified live evidence includes Cloudinary, Supabase Storage upload/read/cleanup, private Backblaze B2/S3 plus deployed application upload → private download/readback → cleanup (run #38049146602), Google Drive upload/read, QStash signed delivery/completion/duplicate protection, production auth/API smoke, and isolated public-schema backup/restore. Remaining gates and exact blockers are tracked in `CURRENT_STATE.md`, `ROADMAP.md`, `docs/RELEASE_CERTIFICATION.md`, and `docs/RELEASE_EVIDENCE.md`. Do not infer full certification from provider tests or repository CI alone.
 
 ## Documentation map
 
