@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import logging
+import os
 
 from sqlalchemy.orm import Session
 
 from .. import models
 from .chunking import chunk_text
-from .embeddings import embed_text, embedding_to_json
-from .pgvector_store import pgvector_column_exists, store_embedding_vector
+from .embeddings import embed_text, embed_text_v2, embedding_to_json
+from .pgvector_store import pgvector_column_exists, store_embedding_vector, store_embedding_vector_v2
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,10 @@ def _replace_chunks(
     created = 0
     for index, chunk in enumerate(chunks):
         vector, model_name = embed_text(chunk)
+        vector_v2 = None
+        model_v2 = None
+        if os.getenv("RAG_EMBEDDING_VERSION", "1").strip() == "2":
+            vector_v2, model_v2 = embed_text_v2(chunk)
         row = models.DocumentEmbedding(
             source_type=source_type,
             source_id=source_id,
@@ -35,11 +40,15 @@ def _replace_chunks(
             content=chunk,
             embedding_json=embedding_to_json(vector),
             embedding_model=model_name,
+            embedding_v2_json=embedding_to_json(vector_v2) if vector_v2 is not None else None,
+            embedding_v2_model=model_v2,
         )
         db.add(row)
         if pgvector_column_exists(db):
             db.flush()
             store_embedding_vector(db, row.id, vector)
+            if vector_v2 is not None:
+                store_embedding_vector_v2(db, row.id, vector_v2)
         created += 1
     db.commit()
     return created
