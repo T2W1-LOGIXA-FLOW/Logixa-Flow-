@@ -11,23 +11,25 @@
 Status: VERIFIED. Evidence: 12 Markdown files were audited and ledgers A–E were built. No orphan file, plan, or decision was identified.
 
 ### Repository hardening and platform foundations
-Status: DONE / VERIFIED at repository level. Repository evidence includes the canonical workflow router, Alembic chain through repository head 20261008_0012, Render Free configuration, QStash integration, storage routing, AI/RAG implementation, and CI controls. Latest main CI and CodeQL are green. Live provider and production-path verification remains separate.
+Status: DONE / VERIFIED at repository level, with release certification still pending. Repository/live Alembic revision is `20261011_0013`; the Voyage v2 path is additive and the legacy 768-D path remains the active rollback path. Latest documented code checks are CI #569 and CodeQL #316 on `8f8397f16d74281d1072ed3b8cb8bd5017a2c5c1`, with Render deploy `dep-db5ifnprn11c73dg9ak0` live. Production `document_embeddings=0`, `intelligence_sources=0`, and `ai_memory_brain=122`; no production RAG ingest→search/citation E2E has been evidenced. OpenRouter HTTP 429 affects scheduled AI preview. Live workflow recovery, AI business journeys, monitoring/SLO, newsletter/failover, managed Auth/Storage and object-storage recovery, rollback, and authenticated Admin UI remain open.
 
 ## Active Phase
+
+**Release status: PENDING.** Production migration `20261011_0013` is applied, but production RAG tables are empty (`document_embeddings=0`, `intelligence_sources=0`) while `ai_memory_brain=122`. OpenRouter HTTP 429 was observed during scheduled preview. Keep `RAG_EMBEDDING_VERSION=1`; do not claim a zero-row backfill is complete or enable paid fallback without owner approval. Latest documented CI #569 / CodeQL #316 passed, but live production journey gates remain separate.
 
 ### Phase 13 — Release certification and maintenance
 
 Objective: close the remaining production/provider/recovery evidence gates and freeze only when the release evidence index is complete.
 
-Current state: production migration `20261008_0012_rag_observability` is applied. Cloudinary, Supabase Storage upload/read/cleanup, private B2/S3 provider and deployed application proxy, Google Drive upload/read, QStash core delivery/completion, production auth smoke, and public-schema logical backup/restore have live evidence. Remaining gates are workflow recovery, RAG/AI business journeys, newsletter/failover, object-storage/managed Auth-Storage recovery, rollback, monitoring/SLO, and full authenticated Admin UI verification.
+Current state (2026-10-11): production migration `20261011_0013` is applied; `20261008_0012_rag_observability` remains part of the migration history. Cloudinary, Supabase Storage upload/read/cleanup, private B2/S3 provider and deployed application proxy, Google Drive upload/read, QStash core delivery/completion, production auth smoke, and public-schema logical backup/restore have live evidence. Remaining gates are workflow recovery, RAG/AI business journeys, newsletter/failover, object-storage/managed Auth-Storage recovery, rollback, monitoring/SLO, and full authenticated Admin UI verification.
 
 ### Final live-infrastructure verification
 
 Objective: close evidence-based release gates without changing the current architecture merely to satisfy documentation.
 
 Current verified baseline:
-- Latest confirmed application-code CI: #535 success on merged diagnostics code SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420417).
-- Latest confirmed CodeQL: #282 success on the same code SHA (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420358).
+- Earlier application-code CI #535 / CodeQL #282 passed on diagnostics SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420417; https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420358).
+- Latest documented code checks are CI #569 and CodeQL #316 on publishing-safety SHA `8f8397f16d74281d1072ed3b8cb8bd5017a2c5c1` (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114461; https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114411); Render deployment `dep-db5ifnprn11c73dg9ak0` reached live.
 - The deployed application private-B2 proxy E2E passed in production verification run #38049146602 (`2 passed in 12.32s`), including authenticated upload, private download/readback, and cleanup.
 - Markdown/docs-only commits are intentionally excluded from CI/CodeQL triggers, so documentation commits do not create new red/green runs.
 
