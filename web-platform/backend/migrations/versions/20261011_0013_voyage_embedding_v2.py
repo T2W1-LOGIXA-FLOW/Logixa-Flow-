@@ -17,11 +17,16 @@ depends_on = None
 
 def upgrade() -> None:
     bind = op.get_bind()
-    op.add_column("document_embeddings", sa.Column("embedding_v2_json", sa.Text(), nullable=True))
-    op.add_column("document_embeddings", sa.Column("embedding_v2_model", sa.String(length=120), nullable=True))
+    inspector = sa.inspect(bind)
+    existing_columns = {column["name"] for column in inspector.get_columns("document_embeddings")}
+    if "embedding_v2_json" not in existing_columns:
+        op.add_column("document_embeddings", sa.Column("embedding_v2_json", sa.Text(), nullable=True))
+    if "embedding_v2_model" not in existing_columns:
+        op.add_column("document_embeddings", sa.Column("embedding_v2_model", sa.String(length=120), nullable=True))
     if bind.dialect.name == "postgresql":
         op.execute("CREATE EXTENSION IF NOT EXISTS vector")
-        op.execute("ALTER TABLE document_embeddings ADD COLUMN embedding_v2 vector(512)")
+        if "embedding_v2" not in existing_columns:
+            op.execute("ALTER TABLE document_embeddings ADD COLUMN embedding_v2 vector(512)")
         try:
             op.execute(
                 """
