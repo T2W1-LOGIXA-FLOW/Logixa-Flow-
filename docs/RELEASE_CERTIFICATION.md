@@ -84,3 +84,10 @@ Live workflow retry/stale-claim/failure recovery and production RAG→Agent→Br
 - Migration deployment is not backfill completion. No evidence yet shows zero pending Voyage rows or successful production RAG ingest→search. Keep RAG_EMBEDDING_VERSION=1.
 - Runtime routing audit found that only OpenRouter Free and local fallback are wired into the current LLMRouter; the other vendor adapters/keys are not currently an automatic runtime failover chain. Production local fallback defaults off, so OpenRouter HTTP 429 can still break generation.
 - Certification remains PENDING.
+
+
+## Production verification addendum (2026-10-11)
+
+- Latest Render deployment `dep-db5rei779l7c73frthcg` is live; application startup completed. The latest production database reports Alembic revision `20261011_0013`, and the Voyage v2 columns/index are present.
+- Production RAG readiness is **not certified**: `document_embeddings=0` and `intelligence_sources=0`, while `ai_memory_brain=122`. The v2 backfill has zero rows to process because no chunks are indexed; ingestion and ingest→search/citation E2E still need to run through the authenticated application route.
+- Render logs show OpenRouter HTTP 429 and a failed scheduled daily preview. Do not certify AI availability or enable paid failover without approval. `/health` was not independently confirmed by an HTTP response in this pass. Release remains PENDING.
