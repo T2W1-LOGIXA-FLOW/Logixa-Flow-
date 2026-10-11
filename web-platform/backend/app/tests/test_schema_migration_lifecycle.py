@@ -22,7 +22,7 @@ SCHEMA_MIGRATION = (
 MONEY_MIGRATION = (
     MIGRATIONS_DIR / "versions" / "20261005_0007_convert_money_to_numeric.py"
 )
-CURRENT_HEAD = "20261008_0012"
+CURRENT_HEAD = "20261011_0013"
 
 
 def alembic_config(database_url: str) -> Config:
@@ -292,3 +292,13 @@ def test_monetary_columns_are_numeric_after_current_head_upgrade(tmp_path) -> No
                 assert "NUMERIC" in actual[column]
     finally:
         engine.dispose()
+
+
+def test_voyage_v2_migration_is_additive_and_preserves_legacy_vectors() -> None:
+    source = (MIGRATIONS_DIR / "versions" / "20261011_0013_voyage_embedding_v2.py").read_text(encoding="utf-8")
+    assert 'revision = "20261011_0013"' in source
+    assert 'down_revision = "20261008_0012"' in source
+    assert "embedding_v2_json" in source
+    assert "embedding_v2_model" in source
+    assert "vector(512)" in source
+    assert "DROP COLUMN IF EXISTS embedding" not in source
