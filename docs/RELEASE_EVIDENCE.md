@@ -8,17 +8,18 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 
 ## Repository
 - [ ] Vercel integration check is green on the current main head. **Paused by owner direction on 2026-10-09**: do not attempt build-quota, deployment-refresh, or Vercel-integration remediation until the owner explicitly resumes it. This is an open release exception/gate, not authorization to make Vercel changes.
-- [ ] Release SHA fixed.
-- [x] Latest merged application-code SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` passed CI #535 and CodeQL #282 (CI: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420417; CodeQL: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420358). Render deploy `dep-db4t0iavcj2c73e3snu0` was confirmed live for this SHA. The subsequent one-time B2 verification synced the known-good B2 settings into Render and completed successfully: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602.
+- [ ] Release SHA fixed; the release candidate is not frozen while production gates remain open.
+- [x] Historical diagnostics SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` passed CI #535 and CodeQL #282 (CI: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420417; CodeQL: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420358). Render deploy `dep-db4t0iavcj2c73e3snu0` was confirmed live for that SHA; B2 proxy E2E later passed in run #38049146602.
+- [x] Latest documented publishing-safety code SHA `8f8397f16d74281d1072ed3b8cb8bd5017a2c5c1` passed CI #569 (backend 200 passed / 5 skipped; agents 5 passed; frontend tests/build and dependency security passed) and CodeQL #316; Render deploy `dep-db5ifnprn11c73dg9ak0` reached live. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114461 and https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114411. These checks do not close live production journey gates.
 - [x] Repository/infrastructure audit completed 2026-10-09; findings are recorded in `docs/REPO_INFRA_AUDIT.md`.
 - [x] Repository CI green for the Supabase cleanup-assertion code change at `b0af10c9208a10c4de794a0ee41d6a82b896d22e` (CI #514; backend 187 passed / 4 skipped; agents, frontend, and security jobs passed).
 - [x] CodeQL/security checks green for the same code change (CodeQL #261; Python and JavaScript/TypeScript analyses passed).
 - [ ] Dependency/license/security refresh reviewed.
-- [x] Repository migration head equals intended release migration head: `20261008_0012`.
+- [x] Current repository migration head is `20261011_0013`; production migration `20261011_0013` was independently confirmed applied on 2026-10-11. The 2026-10-09 isolated backup/restore evidence below tested the then-current `20261008_0012` revision and is historical evidence for that restore run, not a restore of migration 0013.
 
 ## Production database
-- [x] Supabase migration 20261008_0012_rag_observability applied on 2026-10-08.
-- [x] Production migration history independently re-read after apply; latest is 20261008093108 / 20261008_0012_rag_observability.
+- [x] Supabase migration `20261008_0012_rag_observability` applied on 2026-10-08.
+- [x] Production migration `20261011_0013` applied and independently verified on 2026-10-11; Voyage v2 JSON/model/512-D vector columns and HNSW index exist. The embedding table is empty, so this proves schema deployment only—not backfill or RAG E2E.
 - [x] Production RLS/privilege check: RLS enabled; service_role SELECT allowed; anon/authenticated SELECT denied.
 - [x] Supabase security/performance advisors reviewed 2026-10-08. Existing RLS-without-policy INFO findings are consistent with service-role-only internal tables; 96 unused-index INFO findings require workload-based review. One WARN remains: Auth leaked-password protection is disabled and requires dashboard-level action.
 
@@ -105,3 +106,10 @@ CI and deployment do not substitute for the unchecked live gates.
 - [x] Render deployment dep-db5ifnprn11c73dg9ak0 reached live for code commit 8f8397f16d74281d1072ed3b8cb8bd5017a2c5c1 
 
 Keep production workflow recovery, RAG ingestion/search, Agent→Brain→Publish, approval/resume, and scheduled-boundary gates unchecked until direct live evidence exists.
+
+## Current production RAG blocker (2026-10-11)
+
+- [ ] Production RAG ingest→embed→search/citation E2E. Read-only production counts: `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, `ai_memory_brain=122`; zero pending Voyage rows reflect an empty embedding table, not successful backfill.
+- [ ] Verify the deployed Voyage provider path and owner-authorized configuration before ingestion. Do not ingest through the legacy path while OpenRouter HTTP 429 is causing generation failures, and do not enable paid-provider fallback without explicit owner approval.
+- [ ] Authenticated ingestion of existing Brain records, stored vector/model/dimension checks, query retrieval and citation assertions.
+- Release remains PENDING until the live business journey and other open production gates have direct evidence.
