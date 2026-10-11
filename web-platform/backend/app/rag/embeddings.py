@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import math
 import os
 from collections import Counter
 
 import requests
+
+logger = logging.getLogger(__name__)
 
 EMBEDDING_DIMENSIONS = int(os.getenv("EMBEDDING_DIMENSIONS", "768"))
 FREE_EMBEDDING_MODEL = "liquid/lfm-2.5-embedding-350m:free"
@@ -41,6 +44,7 @@ def embed_text(text: str) -> tuple[list[float], str]:
     that dimension or is unavailable, use the deterministic local hash embedding.
     """
     api_key = _openrouter_key()
+    fallback_reason = "missing_openrouter_key"
     if api_key:
         try:
             response = requests.post(
@@ -64,9 +68,23 @@ def embed_text(text: str) -> tuple[list[float], str]:
             values = data[0].get("embedding") if data else None
             if isinstance(values, list) and len(values) == EMBEDDING_DIMENSIONS:
                 return [float(value) for value in values], FREE_EMBEDDING_MODEL
-        except Exception:
+            actual_dimensions = len(values) if isinstance(values, list) else 0
+            fallback_reason = f"dimension_mismatch:expected={EMBEDDING_DIMENSIONS}:actual={actual_dimensions}"
+        except requests.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else "unknown"
+            fallback_reason = f"http_error:{status}"
+        except requests.RequestException as exc:
+            fallback_reason = f"request_error:{exc.__class__.__name__}"
+        except (ValueError, TypeError, KeyError, IndexError) as exc:
+            fallback_reason = f"invalid_response:{exc.__class__.__name__}"
+        except Exception as exc:
             # Never switch to Gemini or another paid embedding API on failure.
-            pass
+            fallback_reason = f"unexpected_error:{exc.__class__.__name__}"
+    logger.warning(
+        "RAG embedding using deterministic hash fallback; reason=%s configured_dimensions=%s",
+        fallback_reason,
+        EMBEDDING_DIMENSIONS,
+    )
     return _hash_embedding(text), "hash:fallback"
 
 
