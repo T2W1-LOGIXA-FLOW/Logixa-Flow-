@@ -446,3 +446,89 @@ def test_claim_job_rejects_future_schedule() -> None:
         db.close()
 
     assert workflow._claim_job("future-claim") is False
+
+
+@pytest.mark.anyio
+async def test_restart_resume_skips_durable_completed_nodes(monkeypatch: pytest.MonkeyPatch) -> None:
+    await workflow.store_workflow(
+        WorkflowStorageCreate(
+            id="resume-progress-flow",
+            name="Resume progress flow",
+            nodes=[
+                WorkflowNode(id="first", name="First"),
+                WorkflowNode(id="second", name="Second", depends_on=["first"]),
+            ],
+        ),
+        _admin={"role": "admin"},
+    )
+    run = await workflow.run_workflow(
+        "resume-progress-flow",
+        WorkflowRunRequest(workflow_id="resume-progress-flow", delay_seconds=60),
+        _admin={"role": "admin"},
+    )
+    run.state.status = "running"
+    run.state.completed_nodes = ["first"]
+    run.state.current_node = "second"
+    workflow._persist_run_state(run)
+
+    workflow._WORKFLOW_STORAGE.clear()
+    workflow._WORKFLOW_RUNS.clear()
+    workflow._EXECUTION_QUEUE.clear()
+    workflow._EXECUTION_STATES.clear()
+    workflow._QUEUE_WORKER_RUNNING = False
+    assert workflow.restore_pending_workflow_runs() == 1
+
+    executed: list[str] = []
+
+    async def record_action(node, run_id: str) -> None:
+        executed.append(node.id)
+
+    monkeypatch.setattr(workflow, "_execute_node_action", record_action)
+    await workflow._execute_workflow(run.run_id)
+
+    assert executed == ["second"]
+    recovered = workflow._load_run_state(run.run_id)
+    assert recovered is not None
+    assert recovered.state.status == "completed"
+    assert recovered.state.completed_nodes == ["first", "second"]
+
+
+@pytest.mark.anyio
+async def test_claim_reclaims_running_job_without_claim_timestamp() -> None:
+    await workflow.store_workflow(
+        WorkflowStorageCreate(
+            id="missing-lease-flow",
+            name="Missing lease flow",
+            nodes=[WorkflowNode(id="step", name="Step")],
+        ),
+        _admin={"role": "admin"},
+    )
+    run = await workflow.run_workflow(
+        "missing-lease-flow",
+        WorkflowRunRequest(workflow_id="missing-lease-flow", delay_seconds=60),
+        _admin={"role": "admin"},
+    )
+    db = workflow.SessionLocal()
+    try:
+        job = db.query(models.ScheduledWorkflowJob).filter(
+            models.ScheduledWorkflowJob.run_id == run.run_id
+        ).one()
+        job.status = "running"
+        job.claimed_by = "dead-worker"
+        job.claimed_at = None
+        job.scheduled_for = workflow._now() - workflow.timedelta(seconds=1)
+        db.commit()
+    finally:
+        db.close()
+
+    assert workflow._claim_job(run.run_id) is True
+    db = workflow.SessionLocal()
+    try:
+        job = db.query(models.ScheduledWorkflowJob).filter(
+            models.ScheduledWorkflowJob.run_id == run.run_id
+        ).one()
+        assert job.status == "running"
+        assert job.claimed_by == workflow._WORKER_ID
+        assert job.claimed_at is not None
+    finally:
+        db.close()
