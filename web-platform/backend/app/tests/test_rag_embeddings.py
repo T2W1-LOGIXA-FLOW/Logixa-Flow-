@@ -49,3 +49,32 @@ def test_embeddings_fall_back_locally_if_free_model_returns_wrong_dimension(monk
     assert model == "hash:fallback"
     assert len(vector) == embeddings.EMBEDDING_DIMENSIONS
     assert f"reason=dimension_mismatch:expected={embeddings.EMBEDDING_DIMENSIONS}:actual=1024" in caplog.text
+
+
+def test_voyage_v2_embedding_uses_tested_512_dimension_model(monkeypatch) -> None:
+    monkeypatch.setenv("VOYAGE_API_KEY", "test-voyage-key")
+    values = [0.25] * 512
+    response = Mock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = {"data": [{"embedding": values}]}
+    post = Mock(return_value=response)
+    monkeypatch.setattr(embeddings.requests, "post", post)
+
+    vector, model = embeddings.embed_text_v2("supply chain context")
+
+    assert len(vector) == 512
+    assert model == "voyage-3-lite"
+    assert post.call_args.args[0] == "https://api.voyageai.com/v1/embeddings"
+    assert post.call_args.kwargs["json"]["output_dimension"] == 512
+
+
+def test_voyage_v2_embedding_fails_closed_without_key(monkeypatch) -> None:
+    monkeypatch.delenv("VOYAGE_API_KEY", raising=False)
+    monkeypatch.setattr(embeddings.requests, "post", Mock(side_effect=AssertionError("must not call external API")))
+
+    try:
+        embeddings.embed_text_v2("supply chain context")
+    except RuntimeError as exc:
+        assert "VOYAGE_API_KEY is required" in str(exc)
+    else:
+        raise AssertionError("version 2 must not silently fall back to hash embeddings")
