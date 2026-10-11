@@ -21,17 +21,28 @@ def _replace_chunks(
     title: str,
     chunks: list[str],
 ) -> int:
+    use_v2 = os.getenv("RAG_EMBEDDING_VERSION", "1").strip() == "2"
+
+    # Generate every vector before deleting existing chunks. A provider failure must
+    # not leave the source partially ingested or let error telemetry commit a delete.
+    prepared: list[tuple[str, list[float], str, list[float] | None, str | None]] = []
+    for chunk in chunks:
+        vector, model_name = embed_text(chunk)
+        if model_name == "hash:fallback" and not use_v2:
+            raise RuntimeError(
+                "Semantic embedding provider unavailable; refusing to persist hash fallback vectors"
+            )
+        vector_v2 = None
+        model_v2 = None
+        if use_v2:
+            vector_v2, model_v2 = embed_text_v2(chunk)
+        prepared.append((chunk, vector, model_name, vector_v2, model_v2))
+
     db.query(models.DocumentEmbedding).filter(
         models.DocumentEmbedding.source_type == source_type,
         models.DocumentEmbedding.source_id == source_id,
     ).delete(synchronize_session=False)
-    created = 0
-    for index, chunk in enumerate(chunks):
-        vector, model_name = embed_text(chunk)
-        vector_v2 = None
-        model_v2 = None
-        if os.getenv("RAG_EMBEDDING_VERSION", "1").strip() == "2":
-            vector_v2, model_v2 = embed_text_v2(chunk)
+    for index, (chunk, vector, model_name, vector_v2, model_v2) in enumerate(prepared):
         row = models.DocumentEmbedding(
             source_type=source_type,
             source_id=source_id,
@@ -49,9 +60,8 @@ def _replace_chunks(
             store_embedding_vector(db, row.id, vector)
             if vector_v2 is not None:
                 store_embedding_vector_v2(db, row.id, vector_v2)
-        created += 1
     db.commit()
-    return created
+    return len(prepared)
 
 
 def ingest_intelligence_source(db: Session, source: models.IntelligenceSource) -> int:
