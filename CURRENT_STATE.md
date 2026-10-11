@@ -289,3 +289,12 @@ These are code, regression-test, CI, security-scan, and deployment results. They
 - Do not set `RAG_EMBEDDING_VERSION=2` until production migration 0013 is applied, all existing rows have v2 vectors, remaining count is zero, and live ingest/search tests pass. Rollback is environment flag back to `1`; legacy 768-D data is retained.
 - Cloudflare BGE-M3 (1,024-D) is deliberately not an automatic Voyage fallback: mixed embedding spaces are not comparable. It requires its own 1,024-D versioned index/backfill if chosen later.
 - Production RAG ingest→search, provider failover, and publishing E2E remain PENDING. Release certification remains PENDING.
+
+
+## 2026-10-11 — Latest deploy and runtime provider audit
+
+- CI #586 passed on commit 5a359f79f831ca8f0e925d7e1818f67c89659cf1: backend migration/tests, agents, frontend tests/build, and dependency security succeeded. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38136913611.
+- Render deploy dep-db5nf395efls73aqkdi0 is live. Startup logs show Alembic migration 20261008_0012 → 20261011_0013 ran before Uvicorn startup. SQLAlchemy emitted warnings that it did not recognize pgvector column types during schema inspection; investigate/fix before treating schema/index inspection as clean.
+- RAG_EMBEDDING_VERSION=1 remains active. Voyage backfill has not been run/verified, zero pending rows are not established, and production ingest→search is still PENDING.
+- Provider audit: app/llm/providers.py implements multiple provider adapters, but app/llm/router.py currently wires only OpenRouter openrouter/free plus local fallback. Production local fallback defaults off, so other provider keys and endpoint smoke tests do not establish live application failover. OpenRouter HTTP 429 remains an AI availability risk.
+- Release certification remains PENDING.
