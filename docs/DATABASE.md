@@ -26,3 +26,10 @@ web-platform/frontend/src/lib/migrations.sql is unreferenced legacy material and
 ## Durable workflow state
 
 Workflow definitions, runs, execution state, and recovery metadata persist in PostgreSQL. In-memory queues and caches are not durable authority.
+
+
+## Versioned RAG vectors — 2026-10-11
+
+Migration `20261011_0013` adds nullable 512-D Voyage embedding storage without altering or dropping the existing 768-D column. The legacy column is the rollback path. Repository head is now `20261011_0013`; production application of this migration has not yet been independently verified.
+
+Backfill is an explicit application command, not an automatic migration side effect: from `web-platform/backend`, run `python -m app.rag.reembed_v2 --dry-run` and then `python -m app.rag.reembed_v2 --batch-size 50` with `VOYAGE_API_KEY` configured in the secure runtime. The script resumes by processing rows missing v2 vectors and does not rewrite legacy vectors. Keep `RAG_EMBEDDING_VERSION=1` until the migration is applied, the pending count reaches zero, and v2 ingest/search smoke tests pass. Rollback means setting the flag back to `1`; do not drop the v2 columns as a routine rollback.
