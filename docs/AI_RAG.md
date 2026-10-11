@@ -42,3 +42,18 @@ A versioned 512-D path is now implemented additively:
 - The backfill is resumable and does not overwrite legacy vectors. If verification fails, leave the version flag at `1`; the old 768-D path remains available.
 
 Cloudflare BGE-M3 is not configured as an automatic Voyage fallback because its 1,024-D vectors occupy a different embedding space. Using it requires a separate versioned 1,024-D migration/backfill and query route. User-supplied provider smoke notes do not establish production RAG E2E; ingest→search evidence remains pending until run and recorded.
+
+
+## Actual runtime provider/key behavior (verified from code, 2026-10-11)
+
+- The active backend LLMRouter in app/llm/router.py currently instantiates only OpenRouterProvider(model="openrouter/free") and FallbackLocalProvider. It deliberately ignores legacy provider/model selections to prevent accidental paid calls. Render ADMIN_AI_PROVIDER, ADMIN_AI_MODEL, and task-specific provider settings do not currently activate other provider adapters through this router.
+- In production, local fallback defaults off unless explicitly overridden. Therefore OpenRouter quota/rate-limit failures can make generation fail instead of automatically switching to Groq, Cloudflare, Cohere, or Gemini. Provider smoke tests in docs/master_result all are endpoint tests, not proof that those adapters are active in the website runtime route.
+- Key lookup for the active OpenRouter provider checks ADMIN_OPENROUTER_API_KEY or USER_OPENROUTER_API_KEY according to role, then OPENROUTER_API_KEY. These secrets must stay server-side; never expose them through frontend NEXT_PUBLIC variables.
+- Current legacy RAG embedding path (RAG_EMBEDDING_VERSION=1) calls OpenRouter's embedding endpoint with liquid/lfm-2.5-embedding-350m:free, requests the configured 768-D shape, and uses deterministic local hash embeddings if the remote request fails or returns the wrong shape. Hash vectors are not semantic-model embeddings. The Voyage v2 path uses VOYAGE_API_KEY, requests voyage-3-lite at 512 dimensions, and fails closed instead of mixing model spaces.
+- Cloudflare BGE-M3 is 1,024-D and cannot be substituted into the Voyage 512-D index. Although provider endpoint tests list Cloudflare chat, embeddings, image, and speech as available, current LLM routing does not automatically use Cloudflare as fallback.
+- render.yaml sets USER_AI_ENABLED=false and ADMIN_AI_ENABLED=true. Admin AI generation still depends on the active OpenRouter-free route and its key/quota.
+- Keep provider secrets only in Render environment variables/secret stores. Never commit them, put them in frontend variables, or paste them into logs/chat. Rotate any key exposed in a public repository, issue, workflow log, or other untrusted place.
+
+## Voyage migration deployment update (2026-10-11)
+
+Render deployment dep-db5nf395efls73aqkdi0 for commit 5a359f79f831ca8f0e925d7e1818f67c89659cf1 reached live. Startup logs show Alembic running upgrade 20261008_0012 → 20261011_0013 before Uvicorn started. The backfill has not been run or verified; keep RAG_EMBEDDING_VERSION=1 until pending-row count is zero and production ingest/search E2E passes.
