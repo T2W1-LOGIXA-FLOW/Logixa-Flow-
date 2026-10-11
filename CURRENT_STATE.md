@@ -279,3 +279,13 @@ These are code, regression-test, CI, security-scan, and deployment results. They
 - Owner-supplied smoke notes report Gemini/Groq/Mistral/Cohere/Cloudflare endpoints responding, while OpenRouter returned 429/empty replies and Cerebras/Hugging Face returned 402. These are not independently linked and do not prove application-level failover. Free-only production routing remains unchanged pending explicit cost/terms approval.
 - RAG dimension blocker remains: configured/stored shape is 768; Voyage 512 and Cloudflare BGE-M3 1024 are incompatible without a planned migration and re-embedding. Do not change the dimension in place.
 - RAG ingest→search, provider failover, publishing, approval/resume, workflow recovery, authenticated Admin UI, SLO telemetry, email, managed Auth/Storage recovery, and rollback rehearsal remain PENDING. Release certification remains PENDING.
+
+
+## 2026-10-11 — Versioned Voyage RAG dimension path
+
+- Added migration `20261011_0013` for nullable 512-D Voyage vectors while preserving legacy 768-D vectors. Application schema change is additive; production application is not yet verified.
+- Added strict Voyage `voyage-3-lite` 512-D adapter, model-scoped v2 retrieval, dual-write support when `RAG_EMBEDDING_VERSION=2`, and resumable re-embedding command `python -m app.rag.reembed_v2`.
+- Regression tests cover the Voyage request shape and fail-closed behavior. CI and CodeQL must pass before considering the code change validated.
+- Do not set `RAG_EMBEDDING_VERSION=2` until production migration 0013 is applied, all existing rows have v2 vectors, remaining count is zero, and live ingest/search tests pass. Rollback is environment flag back to `1`; legacy 768-D data is retained.
+- Cloudflare BGE-M3 (1,024-D) is deliberately not an automatic Voyage fallback: mixed embedding spaces are not comparable. It requires its own 1,024-D versioned index/backfill if chosen later.
+- Production RAG ingest→search, provider failover, and publishing E2E remain PENDING. Release certification remains PENDING.
