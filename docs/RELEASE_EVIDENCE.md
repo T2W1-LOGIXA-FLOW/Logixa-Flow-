@@ -95,3 +95,13 @@ The current release remains PENDING until every gate above has direct evidence o
 - [ ] Live approval→resume→completion and scheduled execution across a real time boundary.
 
 CI and deployment do not substitute for the unchecked live gates.
+
+## Imported draft publishing safety (2026-10-11)
+
+- [x] Backend Markdown-to-HTML conversion escapes untrusted imported draft text.
+- [x] CLI publisher Markdown-to-HTML conversion escapes untrusted draft text.
+- [x] CI #569 passed: backend 200 passed / 5 skipped; agents 5 passed; frontend tests/build and dependency security passed: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114461
+- [x] CodeQL #316 passed for Python and JavaScript/TypeScript: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114411
+- [x] Render deployment dep-db5ifnprn11c73dg9ak0 reached live for code commit 8f8397f16d74281d1072ed3b8cb8bd5017a2c5c1 
+
+Keep production workflow recovery, RAG ingestion/search, Agent→Brain→Publish, approval/resume, and scheduled-boundary gates unchecked until direct live evidence exists.
