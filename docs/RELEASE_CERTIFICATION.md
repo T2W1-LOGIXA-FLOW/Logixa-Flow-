@@ -39,3 +39,13 @@ See `docs/RELEASE_EVIDENCE.md` for the canonical checklist.
 ## Freeze gate
 
 Do not mark the release candidate certified until every PENDING item above has direct evidence or an explicit approved exception recorded in the release decision.
+
+
+## 2026-10-11 — Workflow/Agent hardening validation
+
+- Code commit 4f530837fc148e44be2f6cb0ecb0a5f291278be2 fixes durable completed-node resume, missing-lease stale-job reclamation, undefined safe_message in build_steps(), and unsafe HTML interpolation in local Agent drafts.
+- CI #564 passed: backend 199 passed / 5 skipped; agent tests, frontend tests/build, and dependency security job passed. CodeQL #311 passed for Python and JavaScript/TypeScript.
+- Render deployment dep-db5ie03hu5js73drbig0 is live on that code commit.
+- This is deterministic test/deployment evidence only. Live workflow retry/recovery, RAG→Agent→Brain→Publish, approval/resume, and scheduled-boundary production journeys remain PENDING. Do not certify release based on CI/deploy status alone.
+
+Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906548 · https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906581
