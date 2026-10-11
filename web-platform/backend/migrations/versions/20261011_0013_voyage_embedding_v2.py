@@ -17,8 +17,16 @@ depends_on = None
 
 def upgrade() -> None:
     bind = op.get_bind()
-    inspector = sa.inspect(bind)
-    existing_columns = {column["name"] for column in inspector.get_columns("document_embeddings")}
+    # Query catalog metadata directly: SQLAlchemy reflection does not understand
+    # pgvector's custom type and emits misleading warnings during column inspection.
+    if bind.dialect.name == "postgresql":
+        existing_columns = set(bind.execute(sa.text(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_schema = current_schema() AND table_name = :table"
+        ), {"table": "document_embeddings"}).scalars())
+    else:
+        inspector = sa.inspect(bind)
+        existing_columns = {column["name"] for column in inspector.get_columns("document_embeddings")}
     if "embedding_v2_json" not in existing_columns:
         op.add_column("document_embeddings", sa.Column("embedding_v2_json", sa.Text(), nullable=True))
     if "embedding_v2_model" not in existing_columns:
