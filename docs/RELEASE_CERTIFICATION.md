@@ -59,3 +59,10 @@ Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906
 Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114461 · https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114411
 
 Live workflow retry/stale-claim/failure recovery and production RAG→Agent→Brain→Publish, approval/resume, and scheduled-boundary verification remain PENDING.
+
+## 2026-10-11 — RAG fallback diagnostics and provider smoke boundary
+
+- Code commit `4746ffc0b89aee5581e6c74308a9e1db46e7dbe0` adds safe warning logs for missing embedding credentials, request/HTTP failures, invalid provider responses, and vector-dimension mismatch; test commit `35793c2d29dbc9b1814e030cd03ebea6610a8720` asserts the diagnostic markers. These changes do not establish a successful production embedding call.
+- Provider results dated 2026-10-10 were supplied by the owner without linked request logs. Treat Gemini/Groq/Mistral/Cohere/Cloudflare results as endpoint smoke notes only, not application failover evidence. OpenRouter 429/empty response and Cerebras/Hugging Face 402 remain reported blockers.
+- The configured embedding shape remains 768. Switching to Voyage 512-D or Cloudflare BGE-M3 1024-D requires a versioned data/index migration and full re-embedding/backfill; this has not been performed. No dimension truncation is approved.
+- Production RAG ingest→search, AI provider failover, and RAG→Agent→Brain→approval→publish remain PENDING. Release certification remains PENDING.
