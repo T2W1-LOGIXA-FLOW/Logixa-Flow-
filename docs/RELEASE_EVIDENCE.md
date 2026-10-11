@@ -81,3 +81,17 @@ Certification is NOT CERTIFIED while any required production gate remains unchec
 - [ ] Vercel integration check remains paused by owner direction; no remediation without explicit approval.
 
 The current release remains PENDING until every gate above has direct evidence or an explicitly approved release exception. Do not check an item merely because implementation or deterministic tests exist.
+
+## Workflow/Agent hardening patch evidence (2026-10-11)
+
+- [x] Deterministic workflow recovery regression tests: resume skips durable completed nodes; missing claimed_at is reclaimable.
+- [x] Agent draft regression tests: build_steps() sanitized objective and HTML escaping of untrusted local-draft values.
+- [x] CI #564 passed (backend 199 passed, 5 skipped; agents, frontend tests/build, dependency security passed): https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906548
+- [x] CodeQL #311 passed for Python and JavaScript/TypeScript: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906581
+- [x] Render deployment dep-db5ie03hu5js73drbig0 reached live for commit 4f530837fc148e44be2f6cb0ecb0a5f291278be2.
+
+- [ ] Live workflow retry/recovery, stale-claim reclamation and controlled failure recovery.
+- [ ] Live RAG ingest→embed→search and Agent→Brain→Publish with durable final state/provenance.
+- [ ] Live approval→resume→completion and scheduled execution across a real time boundary.
+
+CI and deployment do not substitute for the unchecked live gates.
