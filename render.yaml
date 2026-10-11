@@ -32,6 +32,13 @@ services:
         value: "768"
       - key: EMBEDDING_COST_PER_1K
         value: "0"
+      # Version 2 remains disabled until migration + full Voyage backfill + live RAG checks pass.
+      - key: RAG_EMBEDDING_VERSION
+        value: "1"
+      - key: VOYAGE_API_KEY
+        sync: false
+      - key: VOYAGE_EMBEDDING_MODEL
+        value: voyage-3-lite
       - key: USER_AI_ENABLED
         value: false
       - key: ADMIN_AI_ENABLED
