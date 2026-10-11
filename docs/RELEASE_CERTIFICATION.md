@@ -49,3 +49,13 @@ Do not mark the release candidate certified until every PENDING item above has d
 - This is deterministic test/deployment evidence only. Live workflow retry/recovery, RAG→Agent→Brain→Publish, approval/resume, and scheduled-boundary production journeys remain PENDING. Do not certify release based on CI/deploy status alone.
 
 Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906548 · https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906581
+
+## 2026-10-11 — Imported draft and CLI publishing safety
+
+- Backend imported draft conversion and the CLI publisher now escape untrusted text before wrapping it in HTML.
+- CI #569 passed: backend 200 passed / 5 skipped; agents 5 passed; frontend tests/build and dependency security passed. CodeQL #316 passed for Python and JavaScript/TypeScript.
+- Render deployment dep-db5ifnprn11c73dg9ak0 reached live for commit 8f8397f16d74281d1072ed3b8cb8bd5017a2c5c1 
+
+Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114461 · https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114411
+
+Live workflow retry/stale-claim/failure recovery and production RAG→Agent→Brain→Publish, approval/resume, and scheduled-boundary verification remain PENDING.
