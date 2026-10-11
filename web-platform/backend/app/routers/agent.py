@@ -39,6 +39,7 @@ def unique_slug(db: Session, title: str) -> str:
 
 
 def build_steps(message: str, sources: list[models.IntelligenceSource]) -> list[tuple[str, str]]:
+    safe_message = sanitize_for_llm(message)
     source_count = len(sources)
     return [
         ("planner", f"Objective parsed: {safe_message[:180]}"),
@@ -56,15 +57,19 @@ def generate_local_brief(message: str, sources: list[models.IntelligenceSource])
     source_notes = " ".join(source.notes for source in sources if source.notes).strip()
     source_context = source_notes[:900] if source_notes else "No detailed source notes were attached."
     title = f"AI Preview: {category} Signal Brief"
+    safe_title = escape(title)
+    safe_message = escape(safe_message)
+    safe_source_titles = escape(source_titles)
+    safe_source_context = escape(source_context)
     excerpt = (
         f"Private AI-generated draft based on {source_titles}. Review source quality, edit the language, "
         "then publish only when ready."
     )
     content = f"""
-<h2>{title}</h2>
-<p><strong>Objective:</strong> {message}</p>
-<p><strong>Source basis:</strong> {source_titles}</p>
-<p>{source_context}</p>
+<h2>{safe_title}</h2>
+<p><strong>Objective:</strong> {safe_message}</p>
+<p><strong>Source basis:</strong> {safe_source_titles}</p>
+<p>{safe_source_context}</p>
 <h3>Analyst view</h3>
 <p>This draft highlights the likely operational impact, decision points, and follow-up checks for Myanmar supply chain teams. Treat it as an editorial starting point, not an automatic publication.</p>
 <h3>Recommended action</h3>
