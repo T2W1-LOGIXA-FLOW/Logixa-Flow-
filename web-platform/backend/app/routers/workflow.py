@@ -611,7 +611,10 @@ def _claim_job(run_id: str) -> bool:
                 (models.ScheduledWorkflowJob.status == "queued")
                 | (
                     (models.ScheduledWorkflowJob.status == "running")
-                    & (models.ScheduledWorkflowJob.claimed_at <= stale_before)
+                    & (
+                        models.ScheduledWorkflowJob.claimed_at.is_(None)
+                        | (models.ScheduledWorkflowJob.claimed_at <= stale_before)
+                    )
                 )
             ),
         ).update(
@@ -718,6 +721,9 @@ async def _execute_workflow(run_id: str) -> None:
 
     executor = WorkflowExecutor(run_id, run.workflow_id, workflow)
     executor.state = run.state
+    # Resume from durable node progress after process restart. Without this,
+    # every completed node would run again and could duplicate side effects.
+    executor.completed_nodes = set(run.state.completed_nodes)
     executor.state.status = "queued"
     executor.persist()
     try:
