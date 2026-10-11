@@ -288,6 +288,8 @@ class DocumentEmbedding(Base):
     content = Column(Text, nullable=False)
     embedding_json = Column(Text, nullable=False)
     embedding_model = Column(String(120), nullable=False, default="hash:fallback")
+    embedding_v2_json = Column(Text, nullable=True)
+    embedding_v2_model = Column(String(120), nullable=True)
     source_version = Column(Integer, nullable=False, default=1)
     indexed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
