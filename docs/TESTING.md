@@ -2,7 +2,7 @@
 
 > Owner: Engineering
 > Update when: test strategy, release gates, or evidence requirements change
-> Last Updated: 2026-10-08
+> Last Updated: 2026-10-11
 > Do NOT put here: speculative test results.
 
 ## Test layers
@@ -22,7 +22,7 @@ A unit test proves its tested path, not external-provider health. Configured cre
 
 Repository migration lifecycle tests identify **20261008_0012** as the current repository head. Live production migration history and alembic_version independently verify **20261008_0012** on 2026-10-09.
 
-Latest confirmed application validation is green: CI #450 and CodeQL #197 both succeeded on `115482a27a9c7d56294c8fe09940190555a8d7a1`. Later Markdown-only commits are excluded from these push workflows by design.
+Latest confirmed application-code validation is green: CI #535 and CodeQL #282 both succeeded on diagnostics SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` (CI: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420417; CodeQL: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420358). The deployed B2 proxy was subsequently verified by production run #38049146602 (`2 passed in 12.32s`). Later Markdown-only commits are excluded from these push workflows by design.
 
 These results verify repository CI/security automation for that main commit; they do not substitute for production/provider E2E evidence.
 
