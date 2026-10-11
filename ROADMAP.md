@@ -244,3 +244,16 @@ The following are **not yet release-certified** and must not be marked VERIFIED 
 - [ ] Vercel integration check/remediation remains owner-paused and requires explicit approval before work resumes.
 
 Verified production B2 proxy evidence remains run #38049146602 (`2 passed in 12.32s`). Other verified evidence is indexed in `docs/RELEASE_CERTIFICATION.md` and `docs/RELEASE_EVIDENCE.md`. This checklist is the release exit list, not a claim that these tests have already run.
+
+## 2026-10-11 — Workflow and Agent/RAG hardening follow-up
+
+- [x] Restore executor completed_nodes from durable run state after process restart.
+- [x] Reclaim a running scheduled job whose claimed_at is missing.
+- [x] Define the sanitized objective in build_steps() and HTML-escape untrusted values in local Agent draft markup.
+- [x] Add deterministic regression tests for those cases.
+- [x] CI #564 passed: backend 199 passed / 5 skipped; agents, frontend tests/build, and dependency security job passed. CodeQL #311 passed for Python and JavaScript/TypeScript.
+- [x] Render deployment for commit 4f530837fc148e44be2f6cb0ecb0a5f291278be2 reached live.
+
+Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906548 · https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906581
+
+These checks close the code-regression/CI gate for this patch only. They do not close production workflow recovery, stale-claim live verification, RAG ingestion/search, Agent→Brain→Publish, approval/resume, or scheduled time-boundary gates. Release remains PENDING.
