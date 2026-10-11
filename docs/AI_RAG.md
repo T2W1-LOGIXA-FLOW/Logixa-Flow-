@@ -28,3 +28,17 @@ RAG error events, quality feedback, and A/B configuration now have a durable eve
 Publication-sensitive AI remains reviewable. Intended content path: Source/File/Feed → Extract/Normalize → Provenance → RAG → Research/Agent → Draft → SEO Packaging → Fact/Source QA → Human Approval → Publish.
 
 Do not describe this as a verified universal one-click pipeline until the required live provider/storage and quality gates pass.
+
+
+## Versioned embedding dimension migration (2026-10-11)
+
+The owner-supplied `docs/master_result all` report identifies `voyage-3-lite` as a live-tested embedding model returning 512 dimensions and Cloudflare `@cf/baai/bge-m3` as returning 1,024 dimensions. The existing production pgvector column is `vector(768)`; vectors from different models/dimensions must not be compared or truncated.
+
+A versioned 512-D path is now implemented additively:
+- Migration `20261011_0013` adds nullable `embedding_v2_json`, `embedding_v2_model`, and PostgreSQL `embedding_v2 vector(512)`; the legacy 768-D column remains intact for rollback.
+- `embed_text_v2` calls Voyage `voyage-3-lite`, validates exactly 512 dimensions, and fails closed if `VOYAGE_API_KEY` is missing or the provider response is invalid. It never substitutes hash or Cloudflare vectors into the Voyage model space.
+- `RAG_EMBEDDING_VERSION=2` selects the versioned query/ingestion path. Keep it at `1` until migration is applied and the re-embedding backfill completes.
+- From `web-platform/backend`, run `python -m alembic upgrade head`, then `VOYAGE_API_KEY=... python -m app.rag.reembed_v2 --dry-run`, then `VOYAGE_API_KEY=... python -m app.rag.reembed_v2 --batch-size 50`. Verify remaining rows is zero and test ingest/search before setting `RAG_EMBEDDING_VERSION=2`.
+- The backfill is resumable and does not overwrite legacy vectors. If verification fails, leave the version flag at `1`; the old 768-D path remains available.
+
+Cloudflare BGE-M3 is not configured as an automatic Voyage fallback because its 1,024-D vectors occupy a different embedding space. Using it requires a separate versioned 1,024-D migration/backfill and query route. User-supplied provider smoke notes do not establish production RAG E2E; ingest→search evidence remains pending until run and recorded.
