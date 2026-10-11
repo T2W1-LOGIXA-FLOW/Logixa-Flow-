@@ -92,3 +92,11 @@ The following regression cases were added:
 CI #564 passed on commit 4f530837fc148e44be2f6cb0ecb0a5f291278be2: backend 199 passed / 5 skipped; agents tests, frontend tests/build, and dependency security job passed. CodeQL #311 passed for Python and JavaScript/TypeScript. Run links: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906548 and https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906581.
 
 The Render deploy reached live, but live workflow recovery and RAG/publishing journeys have not been run by this CI job. Keep those production gates PENDING.
+
+## Imported draft publishing safety regression evidence (2026-10-11)
+
+Backend and CLI Markdown-to-HTML conversion now escape untrusted text before wrapping it in HTML. Regression tests cover HTML/script-like input for both paths. CI #569 passed with backend 200 passed / 5 skipped, agents 5 passed, frontend tests/build passed, and dependency security passed. CodeQL #316 passed for Python and JavaScript/TypeScript.
+
+Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114461 · https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114411
+
+The production deploy reached live, but live workflow recovery and RAG/publishing journeys remain separate pending gates.
