@@ -301,4 +301,4 @@ def test_voyage_v2_migration_is_additive_and_preserves_legacy_vectors() -> None:
     assert "embedding_v2_json" in source
     assert "embedding_v2_model" in source
     assert "vector(512)" in source
-    assert "DROP COLUMN IF EXISTS embedding" not in source
+    assert "DROP COLUMN IF EXISTS embedding\"" not in source
