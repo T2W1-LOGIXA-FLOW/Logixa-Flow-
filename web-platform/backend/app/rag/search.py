@@ -31,7 +31,7 @@ def _attach_citations(db: Session, matches: list[dict]) -> list[dict]:
                 "title": source.title,
                 "url": source.url,
                 "excerpt": sanitize_for_llm((source.content_text or source.notes or match.get("content", ""))[:500]),
-                "published_or_updated_at": source.updated_at,
+                "published_or_updated_at": source.updated_at.isoformat() if source.updated_at else None,
                 "trust_score": source.trust_score,
                 "freshness_score": source.freshness_score,
                 "similarity_score": match.get("score", 0),
