@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from html import escape
 from pathlib import Path
 
 import requests
@@ -13,7 +14,8 @@ from manager import archive_draft
 def markdown_to_html(markdown: str) -> str:
     html_lines: list[str] = []
     for raw_line in markdown.splitlines():
-        line = raw_line.strip()
+        # Draft text is untrusted input; preserve text, not executable HTML.
+        line = escape(raw_line.strip(), quote=False)
         if not line:
             continue
         if line.startswith("### "):
