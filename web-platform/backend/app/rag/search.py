@@ -5,8 +5,8 @@ import os
 from sqlalchemy.orm import Session
 
 from .. import models
-from .embeddings import embed_text, embedding_from_json
-from .pgvector_store import pgvector_enabled, similarity_search_pgvector
+from .embeddings import embed_text, embed_text_v2, embedding_from_json
+from .pgvector_store import pgvector_enabled, similarity_search_pgvector, similarity_search_pgvector_v2
 from .semantic_cache import get_cached_answer, set_cached_answer
 from .sanitizer import sanitize_for_llm
 from .vector_math import cosine_similarity
@@ -42,7 +42,46 @@ def _attach_citations(db: Session, matches: list[dict]) -> list[dict]:
 def similarity_search(db: Session, query: str, top_k: int | None = None) -> list[dict]:
     limit = top_k or int(os.getenv("RAG_TOP_K", "6"))
     safe_query = sanitize_for_llm(query)
-    query_vector, model_name = embed_text(safe_query)
+    use_v2 = os.getenv("RAG_EMBEDDING_VERSION", "1").strip() == "2"
+    query_vector, model_name = embed_text_v2(safe_query) if use_v2 else embed_text(safe_query)
+
+    if use_v2:
+        if pgvector_enabled(db):
+            try:
+                matches = similarity_search_pgvector_v2(db, query_vector, top_k=limit, model_name=model_name)
+                return _attach_citations(db, matches)
+            except Exception:
+                # Fall through to same-model JSON vectors only. Never compare unlike model spaces.
+                pass
+        rows = (
+            db.query(models.DocumentEmbedding)
+            .filter(models.DocumentEmbedding.embedding_v2_model == model_name)
+            .order_by(models.DocumentEmbedding.created_at.desc())
+            .limit(2000)
+            .all()
+        )
+        scored: list[tuple[float, models.DocumentEmbedding]] = []
+        for row in rows:
+            if not row.embedding_v2_json:
+                continue
+            vector = embedding_from_json(row.embedding_v2_json)
+            if len(vector) != len(query_vector):
+                continue
+            score = cosine_similarity(query_vector, vector)
+            scored.append((score, row))
+        scored.sort(key=lambda item: item[0], reverse=True)
+        matches = [
+            {
+                "score": round(score, 4),
+                "source_type": row.source_type,
+                "source_id": row.source_id,
+                "title": row.title,
+                "content": sanitize_for_llm(row.content[:1200]),
+                "embedding_model": row.embedding_v2_model or model_name,
+            }
+            for score, row in scored[:limit]
+        ]
+        return _attach_citations(db, matches)
 
     if pgvector_enabled(db):
         try:
@@ -54,6 +93,8 @@ def similarity_search(db: Session, query: str, top_k: int | None = None) -> list
     scored: list[tuple[float, models.DocumentEmbedding]] = []
     for row in rows:
         vector = embedding_from_json(row.embedding_json)
+        if len(vector) != len(query_vector):
+            continue
         score = cosine_similarity(query_vector, vector)
         scored.append((score, row))
     scored.sort(key=lambda item: item[0], reverse=True)
@@ -69,7 +110,7 @@ def similarity_search(db: Session, query: str, top_k: int | None = None) -> list
                 "embedding_model": row.embedding_model or model_name,
             }
         )
-    return output
+    return _attach_citations(db, output)
 
 
 def build_rag_context(db: Session, query: str, source_ids: list[int] | None = None) -> str:
