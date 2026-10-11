@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 EMBEDDING_DIMENSIONS = int(os.getenv("EMBEDDING_DIMENSIONS", "768"))
 FREE_EMBEDDING_MODEL = "liquid/lfm-2.5-embedding-350m:free"
+VOYAGE_EMBEDDING_MODEL = os.getenv("VOYAGE_EMBEDDING_MODEL", "voyage-3-lite")
+VOYAGE_EMBEDDING_DIMENSIONS = 512
 
 
 def _hash_embedding(text: str, dimensions: int | None = None) -> list[float]:
@@ -86,6 +88,26 @@ def embed_text(text: str) -> tuple[list[float], str]:
         EMBEDDING_DIMENSIONS,
     )
     return _hash_embedding(text), "hash:fallback"
+
+
+def embed_text_v2(text: str) -> tuple[list[float], str]:
+    """Create a versioned 512-D Voyage vector; never silently substitute another model space."""
+    api_key = os.getenv("VOYAGE_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("VOYAGE_API_KEY is required for RAG_EMBEDDING_VERSION=2")
+    response = requests.post(
+        "https://api.voyageai.com/v1/embeddings",
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        json={"input": [(text or "")[:8000]], "model": VOYAGE_EMBEDDING_MODEL, "output_dimension": VOYAGE_EMBEDDING_DIMENSIONS},
+        timeout=45,
+    )
+    response.raise_for_status()
+    data = response.json().get("data") or []
+    values = data[0].get("embedding") if data else None
+    if not isinstance(values, list) or len(values) != VOYAGE_EMBEDDING_DIMENSIONS:
+        actual = len(values) if isinstance(values, list) else 0
+        raise ValueError(f"Voyage embedding dimension mismatch: expected {VOYAGE_EMBEDDING_DIMENSIONS}, got {actual}")
+    return [float(value) for value in values], VOYAGE_EMBEDDING_MODEL
 
 
 def embedding_to_json(values: list[float]) -> str:
