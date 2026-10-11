@@ -74,3 +74,13 @@ Live workflow retry/stale-claim/failure recovery and production RAG→Agent→Br
 - The code/migration being committed does not mean production migration, re-embedding, or RAG E2E is complete. Keep the feature flag at `1` until production migration, zero-pending backfill, same-model retrieval, and live ingest/search checks are evidenced.
 - Cloudflare BGE-M3 is 1,024-D in the owner-supplied report and cannot be used as an automatic Voyage fallback. Provider endpoint smoke tests are not production failover proof.
 - Release certification remains PENDING.
+
+
+## 2026-10-11 — Voyage migration deployed; release still pending
+
+- CI #586 passed on 5a359f79f831ca8f0e925d7e1818f67c89659cf1: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38136913611.
+- Render deployment dep-db5nf395efls73aqkdi0 reached live; startup logs show Alembic running 20261008_0012 → 20261011_0013 before application startup.
+- SQLAlchemy emitted warnings about not recognizing existing pgvector column types during schema inspection. This requires follow-up, although the service started successfully.
+- Migration deployment is not backfill completion. No evidence yet shows zero pending Voyage rows or successful production RAG ingest→search. Keep RAG_EMBEDDING_VERSION=1.
+- Runtime routing audit found that only OpenRouter Free and local fallback are wired into the current LLMRouter; the other vendor adapters/keys are not currently an automatic runtime failover chain. Production local fallback defaults off, so OpenRouter HTTP 429 can still break generation.
+- Certification remains PENDING.
