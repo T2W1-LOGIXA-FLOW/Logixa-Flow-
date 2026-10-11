@@ -42,16 +42,28 @@ def verify_database_migrations() -> None:
             schema_name = "public" if connection.dialect.name == "postgresql" else None
             existing_tables = set(schema.get_table_names(schema=schema_name))
             missing_tables = set(models.Base.metadata.tables) - existing_tables
+            if connection.dialect.name == "postgresql":
+                # Query information_schema directly instead of reflecting column types.
+                # SQLAlchemy does not natively reflect pgvector and otherwise emits
+                # warnings despite the catalog metadata being usable.
+                catalog_rows = connection.execute(text(
+                    "SELECT table_name, column_name FROM information_schema.columns "
+                    "WHERE table_schema = :schema"
+                ), {"schema": schema_name}).all()
+                columns_by_table: dict[str, set[str]] = {}
+                for table_name, column_name in catalog_rows:
+                    columns_by_table.setdefault(table_name, set()).add(column_name)
+            else:
+                columns_by_table = {
+                    table_name: {column["name"] for column in schema.get_columns(table_name)}
+                    for table_name in existing_tables
+                }
             missing_columns = {
                 f"{table.name}.{column.name}"
                 for table in models.Base.metadata.sorted_tables
                 if table.name in existing_tables
                 for column in table.columns
-                if column.name
-                not in {
-                    existing["name"]
-                    for existing in schema.get_columns(table.name, schema=schema_name)
-                }
+                if column.name not in columns_by_table.get(table.name, set())
             }
     except SQLAlchemyError as exc:
         raise RuntimeError(
