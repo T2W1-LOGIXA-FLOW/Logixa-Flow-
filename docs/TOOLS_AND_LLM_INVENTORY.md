@@ -90,3 +90,12 @@ The provider adapter file contains additional implementations, but only provider
 ## 6. Source of truth
 
 Use repository code/configuration for implementation and selection claims, docs/RELEASE_EVIDENCE.md for live gate evidence, CURRENT_STATE.md for the current work queue, and docs/RELEASE_CERTIFICATION.md for the freeze decision. Never publish secret values in this inventory.
+
+
+## 2026-10-11 — Provider smoke notes and embedding fallback diagnostics
+
+- Owner-supplied provider smoke results report successful HTTP/reply checks for Gemini, Groq, Mistral, Cohere, and several Cloudflare Workers AI models; OpenRouter returned HTTP 429 or empty replies, Cerebras/Hugging Face returned HTTP 402, and NVIDIA credentials were absent. These are user-supplied endpoint smoke notes, not independently linked evidence and not proof that the application router invokes these providers.
+- The production backend intentionally remains on the OpenRouter free-only generation route until provider cost/terms and routing approval are explicit. A successful HTTP status alone does not prove zero cost, stable availability, or app-level failover.
+- RAG still requests 768-dimensional embeddings to preserve existing stored-vector compatibility. Owner-supplied Voyage (512-D) and Cloudflare BGE-M3 (1024-D) checks do not match that configured shape. Do not change the dimension or truncate vectors without a versioned migration, full re-embedding/backfill, query/index update, and rollback plan.
+- Commit 4746ffc0b89aee5581e6c74308a9e1db46e7dbe0 adds safe warning logs when the free embedding call is missing credentials, fails, returns an invalid response, or returns the wrong dimension. It deliberately retains the stable `hash:fallback` model marker and does not silently switch to a potentially billable embedding API.
+- Production RAG ingest → semantic search and publication E2E remain PENDING.
