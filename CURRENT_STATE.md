@@ -15,9 +15,11 @@ Phase 13 — Release certification and maintenance.
 
 ## 3. Overall Status
 
-**PENDING** — production migration 0012 is applied and repository-side release controls are staged; final certification still depends on live provider, recovery, monitoring, and release evidence.
+**PENDING — NOT RELEASE-CERTIFIED.** Production migration `20261011_0013` is applied, and recent code changes have passed CI/security checks and reached Render. Live workflow recovery, production RAG ingest/search, Agent→Brain→Publish, authenticated Admin UI, measurable SLO/alerting, rollback/DR, newsletter delivery, and provider failover remain open gates.
 
-Repository Alembic head is **20261008_0012**. Live production migration history is now **VERIFIED through `20261008_0012_rag_observability`**, applied on 2026-10-08; production durability is now eligible for live telemetry verification.
+Repository and live production Alembic revision are **20261011_0013**. Migration `20261011_0013` adds the versioned Voyage 512-D embedding path without replacing the legacy 768-D path. Production counts inspected on 2026-10-11 were `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, and `ai_memory_brain=122`; therefore the zero-row Voyage backfill is not evidence of RAG readiness. OpenRouter HTTP 429 has also affected scheduled AI preview. Keep `RAG_EMBEDDING_VERSION=1` until the provider/configuration path is explicitly authorized and verified, then ingest and validate retrieval/citations before enabling v2.
+
+Latest documented code validation: CI #569 passed (backend 200 passed / 5 skipped; agents 5 passed; frontend tests/build and dependency security passed) and CodeQL #316 passed for commit `8f8397f16d74281d1072ed3b8cb8bd5017a2c5c1`; Render deploy `dep-db5ifnprn11c73dg9ak0` reached live. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114461 and https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114411. These are code/CI/deployment evidence, not live workflow/RAG business-journey evidence.
 
 ## 4. COMPLETED
 
@@ -29,9 +31,9 @@ Repository Alembic head is **20261008_0012**. Live production migration history 
 - Storage routing code exists for Cloudinary, Supabase Storage, and S3-compatible/B2 paths; Google Drive export/backup code exists.
 - Public AI and admin AI are independently gated; public AI defaults off in the configured production model.
 - RAG ingestion/search/reliability/quality features are implemented. Durable RAG observability event storage is implemented in repository code and deployed in production.
-- Alembic migration `20261008_0012` is now the repository head and adds durable RAG observability events.
+- Alembic migration `20261008_0012` adds durable RAG observability events; repository/live head has since advanced to `20261011_0013` for the additive Voyage 512-D embedding path.
 - Documentation audit and Phase 0 ledgers are complete.
-- Latest confirmed CI #535 and CodeQL #282 passed on merged diagnostics code SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` (CI: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420417; CodeQL: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420358). Render deployment is now VERIFIED: deploy `dep-db4t0iavcj2c73e3snu0` is `live` on 2026-10-10 at 05:43:30Z for SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` (https://dashboard.render.com/web/srv-d9172fe8bjmc739pd600). CI #535 and CodeQL #282 are green. The follow-up one-time production verification run #38049146602 succeeded after syncing the known-good GitHub B2 settings into Render and waiting for the deployment to become live; authenticated application upload → private download/readback → cleanup and direct B2 round-trip both passed (2 passed in 12.32s). Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602.
+- Earlier CI #535 and CodeQL #282 passed on merged diagnostics code SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` (CI: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420417; CodeQL: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420358). Render deployment is now VERIFIED: deploy `dep-db4t0iavcj2c73e3snu0` is `live` on 2026-10-10 at 05:43:30Z for SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` (https://dashboard.render.com/web/srv-d9172fe8bjmc739pd600). CI #535 and CodeQL #282 are green. The follow-up one-time production verification run #38049146602 succeeded after syncing the known-good GitHub B2 settings into Render and waiting for the deployment to become live; authenticated application upload → private download/readback → cleanup and direct B2 round-trip both passed (2 passed in 12.32s). Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602.
 
 ## 5. VERIFIED
 
@@ -40,7 +42,7 @@ Repository Alembic head is **20261008_0012**. Live production migration history 
 - **Cloudinary live E2E passed on 2026-10-08**: a real 1x1 PNG was uploaded to the connected Cloudinary account, retrieved by asset ID, verified for identity/size, and deleted successfully. Test asset: `logixa/release-gate-cloudinary-20261008`.
 - **QStash signed delivery + canonical workflow completion passed on 2026-10-08**: QStash message `msg_7YoJxFpwkEy5zBp2YxbmSsWDsqwAbXM5wtckxoReAkhqA6PJibwLF` reached the Render dispatch endpoint and the durable Supabase workflow run `release-gate-qstash-a1` completed with node `probe`; the scheduled job became `completed`.
 - **QStash duplicate-delivery protection passed on 2026-10-08**: a second direct QStash delivery for the same completed run did not add another execution-log entry; the durable run remained `completed` with exactly one `probe` execution entry. This is backed by the terminal-run guard added in commit `3c3e1ca8b7d8e8c07cc6eb53cfe5640d3cd4163a`.
-- Repository migration head is `20261008_0012_rag_observability`; it follows `20261007_0011_agent_step_execution_metadata`.
+- Historical repository migration `20261008_0012_rag_observability` follows `20261007_0011_agent_step_execution_metadata`; the current repository/live revision is `20261011_0013`.
 - Deterministic stale-claim reclamation coverage is now present in commit `34137b30527bbce0975d78ca4b554cb2291af68c`; live production stale-claim recovery remains pending.
 - **Live production Supabase migration history contains `20261008_0012_rag_observability` as the latest migration**, verified from the connected Supabase project on 2026-10-08. Evidence: Supabase project `ephrnmigiwjhdjksreos`, migration listing observed 2026-10-08; dashboard: `https://supabase.com/dashboard/project/ephrnmigiwjhdjksreos/database/migrations`.
 - Render configuration contains one Free Web Service and `CELERY_ENABLED=false`.
@@ -107,7 +109,7 @@ No repository-level blocker is established. Production Auth/API smoke and isolat
 11. Newsletter delivery remains pending; endpoints currently return HTTP 501 until a transactional email provider is connected.
 12. Controlled external-provider failover remains pending.
 
-Latest confirmed application-code validation remains CI #535 and CodeQL #282 on `896c3d0b1086799883b4128bb5ed3d088c5965d3` (see the linked runs above). Subsequent documentation-only commits do not trigger CI/CodeQL by design; Vercel deployment remediation remains paused at owner direction.
+Historical application-code validation CI #535 / CodeQL #282 passed on `896c3d0b1086799883b4128bb5ed3d088c5965d3`; the later publishing-safety change passed CI #569 / CodeQL #316 on `8f8397f16d74281d1072ed3b8cb8bd5017a2c5c1` (see the 2026-10-11 update above). Subsequent documentation-only commits do not trigger CI/CodeQL by design; Vercel deployment remediation remains paused at owner direction.
 
 ## 11. LAST VERIFIED
 
