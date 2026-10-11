@@ -2,7 +2,7 @@
 
 > Owner: Engineering / Operations
 > Status: PRE-STAGED
-> Last Updated: 2026-10-08
+> Last Updated: 2026-10-11
 
 ## Purpose
 
@@ -20,7 +20,7 @@ This document defines the evidence required before release freeze for database r
 
 ## Current state
 
-Repository-side rollback/recovery contracts are partially staged through deterministic workflow recovery tests and release-gate automation. Actual production backup/restore and rollback remain live operational gates and must not be inferred from configuration alone.
+The isolated public-schema logical backup/restore drill passed on 2026-10-09 (run #6): restored application schema/data, migration head `20261008_0012`, critical tables, and RAG observability count were checked in the isolated restore project. This does **not** verify managed Supabase Auth/Storage, object-storage disaster recovery, point-in-time recovery, or application rollback. Deterministic workflow recovery tests exist, but live retry/stale-claim/failure recovery and a production rollback rehearsal remain pending. Do not restore over production as part of this drill.
 
 ## Exit evidence
 
