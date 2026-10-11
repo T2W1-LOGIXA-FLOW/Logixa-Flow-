@@ -98,3 +98,11 @@ Preserve evidence, correlation IDs, sanitized logs, affected run/session IDs, an
 - Pending: live workflow retry/stale-claim/failure recovery, RAG and complete AI publishing journeys, approval/resume and real scheduled-boundary verification, newsletter delivery, controlled provider failover, managed Supabase Auth/Storage recovery, object-storage DR, rollback rehearsal, full authenticated Admin UI browser verification, and measurable SLO/error-budget/alert-path evidence.
 - Render's bounded event inspection did not show matching failure events, but request-count/latency telemetry was unavailable for the inspected window. Missing telemetry is not evidence of a good SLO.
 - OpenRouter free-tier HTTP 429 remains a provider quota/rate-limit blocker for scheduled AI preview. Do not enable paid fallback without explicit owner approval. Vercel remediation remains paused by owner direction.
+
+## Workflow/Agent hardening deployment (2026-10-11)
+
+- Render deployment dep-db5ie03hu5js73drbig0 reached live for commit 4f530837fc148e44be2f6cb0ecb0a5f291278be2.
+- CI #564 passed (backend 199 passed / 5 skipped; agents, frontend tests/build, dependency security passed) and CodeQL #311 passed for Python and JavaScript/TypeScript.
+- Patch addresses durable workflow node-progress resume, reclaiming jobs without claimed_at, undefined sanitized objective in build_steps(), and HTML escaping in local Agent drafts.
+- These are code/CI/deploy checks, not live workflow recovery or RAG/publishing proof. Keep production retry/stale-claim/failure recovery, RAG→Agent→Brain→Publish, approval/resume, and scheduled-boundary gates PENDING.
+- OpenRouter free-tier HTTP 429 remains a production AI blocker; do not enable paid fallback without explicit owner approval. Vercel remediation remains paused.
