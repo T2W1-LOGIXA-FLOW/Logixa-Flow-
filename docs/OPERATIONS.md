@@ -106,3 +106,10 @@ Preserve evidence, correlation IDs, sanitized logs, affected run/session IDs, an
 - Patch addresses durable workflow node-progress resume, reclaiming jobs without claimed_at, undefined sanitized objective in build_steps(), and HTML escaping in local Agent drafts.
 - These are code/CI/deploy checks, not live workflow recovery or RAG/publishing proof. Keep production retry/stale-claim/failure recovery, RAG→Agent→Brain→Publish, approval/resume, and scheduled-boundary gates PENDING.
 - OpenRouter free-tier HTTP 429 remains a production AI blocker; do not enable paid fallback without explicit owner approval. Vercel remediation remains paused.
+
+## Imported draft publishing safety deployment (2026-10-11)
+
+- Backend and CLI draft converters escape untrusted text before HTML wrapping.
+- CI #569 passed (backend 200 passed / 5 skipped, agents 5 passed, frontend tests/build and dependency security passed); CodeQL #316 passed for Python and JavaScript/TypeScript.
+- Render deployment dep-db5ifnprn11c73dg9ak0 reached live for code commit 8f8397f16d74281d1072ed3b8cb8bd5017a2c5c1 
+- This does not close live workflow recovery, RAG ingest/search, Agent→Brain→Publish, approval/resume, or scheduled-boundary checks. OpenRouter HTTP 429 remains a provider-capacity blocker; paid fallback is not authorized. Vercel remediation remains paused.
