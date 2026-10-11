@@ -8,6 +8,7 @@ import socket
 import urllib.request
 import xml.etree.ElementTree as ET
 from decimal import Decimal, InvalidOperation
+from html import escape
 from urllib.parse import urljoin, urlparse
 from pathlib import Path
 from typing import Any
@@ -93,7 +94,8 @@ def drafts_directory() -> Path:
 def markdown_to_html(markdown: str) -> str:
     html_lines: list[str] = []
     for raw_line in markdown.splitlines():
-        line = raw_line.strip()
+        # Imported drafts are untrusted input; preserve text, not executable HTML.
+        line = escape(raw_line.strip(), quote=False)
         if not line:
             continue
         if line.startswith("### "):
