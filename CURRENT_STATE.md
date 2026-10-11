@@ -251,3 +251,14 @@ The production B2 application proxy remains VERIFIED by run #38049146602; do not
 Remaining engineering work: live retry/stale-claim/failure recovery; RAG ingest→embed→search and Agent→Brain→publish journeys; approval→resume and scheduled time-boundary tests; newsletter delivery and controlled provider failover; full authenticated Admin UI browser verification; managed Auth/Storage and object-storage recovery; application rollback rehearsal; measurable production SLO/error-budget and alert-path evidence; dependency/license/security review. OpenRouter free-tier HTTP 429 remains an observed AI quota blocker; paid fallback is not authorized. Vercel remediation remains paused by owner direction.
 
 Evidence limitation: Render event inspection showed no matching failure events in the bounded returned event set, but HTTP request-count/latency datapoints were unavailable. Do not interpret this as an SLO pass. Each live gate needs an evidence link or a clearly documented owner-controlled blocker.
+
+## 2026-10-11 — Workflow recovery and Agent/RAG code hardening
+
+Code fixes committed to main:
+- web-platform/backend/app/routers/workflow.py: resume now seeds executor progress from persisted completed_nodes; a running job with a missing claimed_at is reclaimable instead of becoming stranded.
+- web-platform/backend/app/routers/agent.py: build_steps() now defines its sanitized objective; local draft HTML escapes the objective, title, source titles, and source notes before interpolation.
+- Regression tests added for restart-resume without replaying completed nodes, missing-lease reclamation, build_steps(), and HTML escaping.
+
+Validation: CI #564 passed on commit 4f530837fc148e44be2f6cb0ecb0a5f291278be2: backend 199 passed, 5 skipped; agents tests passed, frontend tests/build passed, and dependency security job passed. CodeQL #311 passed for Python and JavaScript/TypeScript. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906548 and https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906581.
+
+Render deploy dep-db5ie03hu5js73drbig0 reached live for code commit 4f530837fc148e44be2f6cb0ecb0a5f291278be2. This confirms deployment, not live recovery or RAG/publishing E2E. Production live workflow recovery, RAG→Agent→Brain→Publish, approval/resume, and scheduled-boundary evidence remain PENDING. Release certification remains PENDING.
