@@ -79,3 +79,16 @@ Publication now has a deterministic approval/content gate in addition to publish
 - The B2 test verifies authenticated S3 API upload/read/delete. Application download proxy behavior is covered by backend unit tests; live verification requires deploying the change and testing the returned application URL.
 - Backup/restore now automatically adds `sslmode=require` to a shared Session Pooler URL when it is absent, rejects explicitly insecure modes, and keeps `session_replication_role=replica` active in the same psql session as the data import.
 - Local syntax/path checks passed. These checks do not count as live provider or restore success; rerun both manual workflows and retain their run links.
+
+
+## Workflow recovery and Agent draft regression evidence (2026-10-11)
+
+The following regression cases were added:
+- Recovery after restart resumes from durable completed_nodes rather than replaying completed nodes.
+- A running job with a missing claimed_at can be reclaimed.
+- build_steps() sanitizes the objective without raising NameError.
+- Local Agent draft HTML escapes user/source-controlled values.
+
+CI #564 passed on commit 4f530837fc148e44be2f6cb0ecb0a5f291278be2: backend 199 passed / 5 skipped; agents tests, frontend tests/build, and dependency security job passed. CodeQL #311 passed for Python and JavaScript/TypeScript. Run links: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906548 and https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906581.
+
+The Render deploy reached live, but live workflow recovery and RAG/publishing journeys have not been run by this CI job. Keep those production gates PENDING.
