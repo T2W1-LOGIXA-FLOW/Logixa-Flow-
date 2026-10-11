@@ -10,8 +10,8 @@ Release certification requires repository CI/security validation, live provider 
 
 ## Evidence index
 
-- Repository head: 20261008_0012.
-- Live production migration head: `20261008_0012_rag_observability`, applied and verified on 2026-10-08.
+- Repository code commit verified live on Render: `318114adfd60b4d0a6289f03b7bd6c1f0fe365a7` (deployment `dep-db5rei779l7c73frthcg`).
+- Live production Alembic migration head: `20261011_0013` (verified by read-only Supabase catalog query on 2026-10-11).
 - **Deployed application private-B2 download-proxy E2E VERIFIED on 2026-10-10**: one-time production verification run #38049146602 synced the known-good GitHub B2 settings into Render and waited for the deployment to become live. Both direct B2 round-trip and authenticated application upload → private download/readback → cleanup passed (`2 passed in 12.32s`). Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602. The earlier run #19 timeout is historical and was superseded by this successful production verification. CI #535 and CodeQL #282 also passed on the diagnostics SHA; the current release remains pending on other independent gates.
 - Cloudinary live E2E: VERIFIED 2026-10-08.
 - QStash signed delivery/completion/duplicate protection: VERIFIED 2026-10-08.
@@ -91,3 +91,11 @@ Live workflow retry/stale-claim/failure recovery and production RAG→Agent→Br
 - Latest Render deployment `dep-db5rei779l7c73frthcg` is live; application startup completed. The latest production database reports Alembic revision `20261011_0013`, and the Voyage v2 columns/index are present.
 - Production RAG readiness is **not certified**: `document_embeddings=0` and `intelligence_sources=0`, while `ai_memory_brain=122`. The v2 backfill has zero rows to process because no chunks are indexed; ingestion and ingest→search/citation E2E still need to run through the authenticated application route.
 - Render logs show OpenRouter HTTP 429 and a failed scheduled daily preview. Do not certify AI availability or enable paid failover without approval. `/health` was not independently confirmed by an HTTP response in this pass. Release remains PENDING.
+
+
+## Next RAG execution gate (2026-10-11)
+
+- Read-only production query confirms all 122 `ai_memory_brain` rows have at least one usable text field, while `document_embeddings=0` and `intelligence_sources=0`. The existing admin endpoint `POST /api/admin/rag/ingest/sources` calls the repository ingestion routine for both intelligence sources and Brain memories.
+- Do not ingest the 122 rows while `RAG_EMBEDDING_VERSION=1` if OpenRouter continues to return HTTP 429: the current legacy embedding adapter falls back to deterministic hash vectors, which are not semantic embeddings and would create misleading search results.
+- Safe order: (1) verify Voyage credentials/provider access from the deployed runtime without exposing secrets, (2) enable v2 only after owner-controlled config change, (3) invoke the authenticated ingestion endpoint, (4) verify stored v2 vectors/model/dimensions and counts, (5) run authenticated query→retrieval→citation E2E, and (6) retain v1 rollback until evidence passes.
+- This execution is blocked on authorized access to the authenticated admin/agent-service route and a verified provider call. No production rows were inserted or altered in this pass. Release certification remains PENDING.
