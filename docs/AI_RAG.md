@@ -57,3 +57,11 @@ Cloudflare BGE-M3 is not configured as an automatic Voyage fallback because its 
 ## Voyage migration deployment update (2026-10-11)
 
 Render deployment dep-db5nf395efls73aqkdi0 for commit 5a359f79f831ca8f0e925d7e1818f67c89659cf1 reached live. Startup logs show Alembic running upgrade 20261008_0012 → 20261011_0013 before Uvicorn started. The backfill has not been run or verified; keep RAG_EMBEDDING_VERSION=1 until pending-row count is zero and production ingest/search E2E passes.
+
+
+## Production RAG verification (2026-10-11)
+
+- Production Alembic revision is `20261011_0013`. The `document_embeddings` table contains both the preserved legacy `embedding` vector and the added `embedding_v2_json`, `embedding_v2_model`, and `embedding_v2` vector columns; the v2 HNSW index exists.
+- Direct read-only production counts show `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, and `ai_memory_brain=122`. Consequently, the Voyage v2 backfill command would process zero rows today, but the live RAG corpus is empty. Do not call this a successful RAG migration or E2E pass.
+- Required next step: ingest the existing Brain records through the authenticated RAG ingestion route with `RAG_EMBEDDING_VERSION=1` still active, then verify resulting chunk count, query retrieval, and citations. Only after that should Voyage v2 be enabled for a controlled ingestion/backfill test. `VOYAGE_API_KEY` must remain in the server-side secret store.
+- Render deployment `dep-db5rei779l7c73frthcg` is live and application startup completed. OpenRouter returned HTTP 429 during a scheduled preview, so generation availability remains degraded; paid provider failover requires owner approval.
