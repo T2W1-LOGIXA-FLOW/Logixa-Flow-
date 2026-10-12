@@ -1,10 +1,12 @@
-## Latest production RAG status (2026-10-12 04:54 UTC)
+## Latest production RAG status (2026-10-12 10:10 UTC)
 
-- PR #81 merged as `010983891de8ef6a4d14b2d800cc99c853e7c781`; Render deploy `dep-db66fa8u01pc73f9keg0` is live. Startup completed and the scheduler correctly skipped an immediate duplicate Daily Preview.
-- CI #615 passed: backend 220 passed / 5 skipped, agents passed, frontend tests and build passed, dependency security passed. CodeQL #362 passed. The Vercel status remains a separate build-rate-limit failure and is not part of the successful GitHub CI/CodeQL jobs.
-- Production Voyage smoke run #13 passed on 2026-10-12 04:41 UTC: `voyage-3-lite`, 512 dimensions, `persisted=false`. During the subsequent v2 rollout, a provider smoke logged a sanitized `HTTPError`; the ingestion attempt ingested source IDs 5 and 4 (one chunk each), then failed with `error_type=embedding` while the Render instance was shutting down during deployment.
-- To avoid certifying or leaving an incomplete v2 rollout active, `RAG_EMBEDDING_VERSION` was rolled back to `1`; the rollback deployment is live. Existing partial v2 chunks are retained, not deleted. The bounded Voyage retry fix is now deployed, but a post-retry provider-smoke success has not yet been independently confirmed from a workflow result.
-- Release remains PENDING. Next gate: confirm a clean provider smoke on the deployed retry code, then re-enable v2 and run the gated ingestion/search/citation E2E only after production status reports embedding_version=2. Verify zero ingestion errors, nonzero 512-D Voyage chunks, and a real citation before closing the gate.
+- **RAG production gate: VERIFIED.** Production Auth Smoke workflow run [#38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320) passed end-to-end against Render commit `3476848877c080d2f76441bd844c8efec3f37751`.
+- Provider smoke returned `status=ok`, `provider=voyage`, `model=voyage-3-lite`, `dimensions=512`, `persisted=false`.
+- Feed sync processed 1 configured feed (0 new imports because the feed was already synchronized). Authenticated ingestion processed 7 public RSS sources, 0 Brain items, 7 chunks, 0 errors, 1 attempt. Post-ingestion status reported `embedding_version=2`, 7 Voyage chunks, and 0 legacy-vector chunks.
+- Citation search returned `total=5`; the first result included a non-empty citation title and URL (Supply Chain Orchestration Is Becoming the Control Layer Between Decisions and Execution — Logistics Viewpoints). This closes the production ingest→embedding→retrieval→citation gate.
+- The HTTP 422 root cause was verified from safe structured logs: `TimeoutError` because the search budget was 5 seconds while Voyage calls are intentionally paced at 21 seconds. PR #90 fixed the logging allowlist; PR #91 raised the configurable search budget to 75 seconds and maps timeout errors to HTTP 503 instead of misclassifying them as HTTP 422. Both changes are merged and the latest Render deployment is live.
+- Read-only production counts: `ai_memory_brain=125`, `pending Brain=125`, `intelligence_sources=7`, `document_embeddings=7`, valid `voyage-3-lite` 512-D vectors=7, legacy vectors=0. Pending/private Brain drafts remain untouched.
+- **Overall release remains PENDING — not release-certified.** Workflow retry/stale-claim recovery, RAG→Agent→Brain→Publish, authenticated Admin UI, measurable SLO/alerting, rollback/DR rehearsal, newsletter delivery, provider failover, and the 24-hour scheduler observation remain independent open gates. Vercel remediation remains paused by owner direction; no Vercel changes were made.
 
 # Logixa Flow — Current State
 
