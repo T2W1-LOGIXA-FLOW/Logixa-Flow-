@@ -46,7 +46,7 @@ Release certification requires repository CI/security validation, live provider 
 
 - Production Voyage gate: PR #78 adds an admin-only non-persisting provider smoke and approved-source ingestion workflow. It is not yet merged/deployed or live-verified; keep RAG_EMBEDDING_VERSION=1 until the provider smoke succeeds.
 
-- Production Voyage smoke: first workflow run raced the Render deploy and failed before the new route was live. PR #79 adds a bounded readiness wait; a successful provider result is still pending.
+- Production Voyage smoke: VERIFIED by Production Auth Smoke run #13. RAG_EMBEDDING_VERSION=2 is enabled after the smoke; PR #80 changes ingestion to Voyage-only and adds a deployment readiness marker. Source ingestion and citation E2E remain pending.
 
 ## Current release position
 
