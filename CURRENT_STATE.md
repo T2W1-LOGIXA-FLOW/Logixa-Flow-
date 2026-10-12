@@ -49,8 +49,10 @@ Latest merged patch validation: PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf
 
 ## Production Voyage smoke workflow status (2026-10-12)
 
-- The first push-triggered production-auth workflow run (#12) began before Render finished deploying the provider-smoke endpoint; it failed during that deployment window. PR #79 adds a five-minute bounded readiness wait for the updated RAG status schema before the smoke call.
-- The provider smoke has not yet been verified successfully. RAG_EMBEDDING_VERSION remains 1 and no production ingestion has been performed. Do not enable v2 until a successful smoke result confirms voyage-3-lite and 512 dimensions.
+- PR #79's bounded readiness wait is deployed in Render deploy `dep-db66a5tckfvc73c9usc0` for commit `1a3085f610cf7376b72e14f4e995c28618f9d430`; deploy reached live at 2026-10-12 04:43:06 UTC.
+- The updated backend startup completed, and logs show the scheduler cooldown guard skipped an immediate preview. A public health request during the rollout briefly returned HTTP 502, then returned HTTP 200 after startup completed.
+- The workflow now waits up to five minutes for the authenticated RAG status schema before calling the admin-only, non-persisting Voyage smoke. A successful provider-smoke response is not yet independently confirmed in the available evidence, so provider verification remains PENDING.
+- `RAG_EMBEDDING_VERSION=1` remains active. The workflow intentionally skips feed sync and ingestion while version 1 is active; production corpus and citations remain unverified. Do not enable v2 or claim release certification until the smoke succeeds and the authorized RAG E2E gate passes.
 
 ## 4. COMPLETED
 
