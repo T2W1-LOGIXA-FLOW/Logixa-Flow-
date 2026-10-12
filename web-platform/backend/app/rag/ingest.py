@@ -25,7 +25,7 @@ def _replace_chunks(
 
     # Generate every vector before deleting existing chunks. A provider failure must
     # not leave the source partially ingested or let error telemetry commit a delete.
-    prepared: list[tuple[str, list[float], str, list[float] | None, str | None]] = []
+    prepared: list[tuple[str, list[float] | None, str, list[float] | None, str | None]] = []
     for chunk in chunks:
         vector, model_name = embed_text(chunk)
         if model_name == "hash:fallback" and not use_v2:
@@ -36,6 +36,11 @@ def _replace_chunks(
         model_v2 = None
         if use_v2:
             vector_v2, model_v2 = embed_text_v2(chunk)
+            if model_name == "hash:fallback":
+                # Keep v2-only rows valid without persisting a synthetic vector in
+                # the legacy 768-D space. The legacy search path skips empty vectors.
+                vector = None
+                model_name = "v2-only"
         prepared.append((chunk, vector, model_name, vector_v2, model_v2))
 
     db.query(models.DocumentEmbedding).filter(
@@ -49,7 +54,7 @@ def _replace_chunks(
             chunk_index=index,
             title=title[:255],
             content=chunk,
-            embedding_json=embedding_to_json(vector),
+            embedding_json=embedding_to_json(vector) if vector is not None else "[]",
             embedding_model=model_name,
             embedding_v2_json=embedding_to_json(vector_v2) if vector_v2 is not None else None,
             embedding_v2_model=model_v2,
@@ -57,7 +62,8 @@ def _replace_chunks(
         db.add(row)
         if pgvector_column_exists(db):
             db.flush()
-            store_embedding_vector(db, row.id, vector)
+            if vector is not None:
+                store_embedding_vector(db, row.id, vector)
             if vector_v2 is not None:
                 store_embedding_vector_v2(db, row.id, vector_v2)
     db.commit()
