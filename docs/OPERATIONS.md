@@ -121,3 +121,11 @@ Preserve evidence, correlation IDs, sanitized logs, affected run/session IDs, an
 - This does not close live workflow recovery, RAG ingest/search, Agent→Brain→Publish, approval/resume, or scheduled-boundary checks. OpenRouter HTTP 429 remains a provider-capacity blocker; paid fallback is not authorized. Vercel remediation remains paused.
 
 - Production RAG rollout update (2026-10-12): full ingest→retrieval→citation E2E passed in run #38227390320 attempt 4. The HTTP 422 root cause was a 5-second search budget conflicting with 21-second Voyage pacing; PR #90 fixed safe diagnostic logging and PR #91 raised the configurable timeout budget to 75 seconds and classifies timeouts as 503. Both are merged and live. Overall release remains pending for the separate recovery, publishing, SLO, rollback/DR, newsletter, failover, and scheduler-observation gates.
+
+
+## Production release-closure gates
+
+- **Authenticated Admin UI:** run the manual GitHub Actions workflow `Production Admin UI Smoke`. It logs in using the GitHub `production` environment credentials, confirms the authenticated dashboard renders, navigates to AI Brain, and confirms the Brain page renders. It is read-only after login. Required secrets: `PRODUCTION_FRONTEND_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `PRODUCTION_ADMIN_EMAIL`, and `PRODUCTION_ADMIN_PASSWORD`. A missing secret is a configuration blocker, not a pass.
+- **Synthetic health/SLO probe:** `Production SLO Synthetic Probe` runs every 15 minutes and records a timestamp, HTTP status, and request latency in a 30-day Actions artifact. Set `PRODUCTION_API_URL` and `OPS_ALERT_WEBHOOK_URL` in the `production` environment. Manually dispatch with `test_alert=true` to verify the external notification path. The probe only measures synthetic `/health`; it does not certify real user-request availability, workflow completion SLOs, or the 30-day error budget.
+- **Agent → Brain → Publish:** backend integration tests exercise agent-run creation, private pending Brain state, explicit approval, publication, and soft-unpublish. This proves application-path behavior under a test database only; production business-journey evidence remains a separate release gate.
+- **Rollback/DR:** follow `docs/DR_ROLLBACK.md`. No production rollback, destructive restore, or publication mutation is run automatically by these checks.
