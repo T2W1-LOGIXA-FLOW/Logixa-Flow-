@@ -50,9 +50,10 @@ def similarity_search(db: Session, query: str, top_k: int | None = None) -> list
             try:
                 matches = similarity_search_pgvector_v2(db, query_vector, top_k=limit, model_name=model_name)
                 return _attach_citations(db, matches)
-            except Exception:
-                # Fall through to same-model JSON vectors only. Never compare unlike model spaces.
-                pass
+            except Exception as error:
+                # A failed PostgreSQL statement leaves the transaction aborted; rollback
+                # before trying the safe same-model JSON-vector fallback.
+                db.rollback()
         rows = (
             db.query(models.DocumentEmbedding)
             .filter(models.DocumentEmbedding.embedding_v2_model == model_name)
@@ -87,7 +88,8 @@ def similarity_search(db: Session, query: str, top_k: int | None = None) -> list
         try:
             return _attach_citations(db, similarity_search_pgvector(db, query_vector, top_k=limit, model_name=model_name))
         except Exception:
-            pass
+            # PostgreSQL marks the transaction failed after a query error.
+            db.rollback()
 
     rows = db.query(models.DocumentEmbedding).order_by(models.DocumentEmbedding.created_at.desc()).limit(2000).all()
     scored: list[tuple[float, models.DocumentEmbedding]] = []
