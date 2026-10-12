@@ -140,6 +140,13 @@ Status: ACTIVE — final evidence closure.
 - **PAUSED at owner direction (2026-10-09): Vercel deployment/check remediation.** Leave build quota, deployment refresh, and Vercel integration work untouched until explicitly resumed.
 - Live-gate workflows are implemented, but production evidence depends on the user running manual GitHub Actions workflows with production environment secrets configured. Secret values must not be shared in chat or committed to the repository.
 
+## 2026-10-12 regression validation
+
+- [x] Workflow execution/orchestration tests use isolated in-memory SQLite fixtures and no longer depend on an implicit pre-existing `workflow_runs` table.
+- [x] Targeted workflow tests: 10 passed; full backend suite: 153 passed.
+- [x] PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf189b758344`; CI #592 and CodeQL #339 passed.
+- [ ] Live workflow recovery, RAG ingest→embed→search/citation, Agent→Brain→Publish, approval/resume, scheduler boundary, SLO/alerting, rollback/DR, newsletter, and provider failover gates remain open.
+
 ## Remaining Work — Release Closure
 
 ### Audit follow-up (2026-10-09)
