@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from unittest.mock import Mock
 
+import requests
+
 from app.rag import embeddings
 
 
@@ -55,6 +57,8 @@ def test_voyage_v2_embedding_uses_tested_512_dimension_model(monkeypatch) -> Non
     monkeypatch.setenv("VOYAGE_API_KEY", "test-voyage-key")
     values = [0.25] * 512
     response = Mock()
+    response.status_code = 200
+    response.headers = {}
     response.raise_for_status.return_value = None
     response.json.return_value = {"data": [{"embedding": values}]}
     post = Mock(return_value=response)
@@ -78,3 +82,45 @@ def test_voyage_v2_embedding_fails_closed_without_key(monkeypatch) -> None:
         assert "VOYAGE_API_KEY is required" in str(exc)
     else:
         raise AssertionError("version 2 must not silently fall back to hash embeddings")
+
+
+def test_voyage_v2_retries_rate_limit_using_retry_after(monkeypatch) -> None:
+    monkeypatch.setenv("VOYAGE_API_KEY", "test-voyage-key")
+    monkeypatch.setenv("VOYAGE_EMBEDDING_MAX_ATTEMPTS", "3")
+    throttled = Mock()
+    throttled.status_code = 429
+    throttled.headers = {"Retry-After": "0"}
+    throttled.raise_for_status.side_effect = requests.HTTPError("429")
+    success = Mock()
+    success.status_code = 200
+    success.headers = {}
+    success.raise_for_status.return_value = None
+    success.json.return_value = {"data": [{"embedding": [0.25] * 512}]}
+    post = Mock(side_effect=[throttled, success])
+    monkeypatch.setattr(embeddings.requests, "post", post)
+    monkeypatch.setattr(embeddings.time, "sleep", Mock())
+
+    vector, model = embeddings.embed_text_v2("retry rate-limited request")
+
+    assert len(vector) == 512
+    assert model == "voyage-3-lite"
+    assert post.call_count == 2
+
+
+def test_voyage_v2_does_not_retry_permanent_bad_request(monkeypatch) -> None:
+    monkeypatch.setenv("VOYAGE_API_KEY", "test-voyage-key")
+    response = Mock()
+    response.status_code = 400
+    response.headers = {}
+    response.raise_for_status.side_effect = requests.HTTPError("400")
+    post = Mock(return_value=response)
+    monkeypatch.setattr(embeddings.requests, "post", post)
+
+    try:
+        embeddings.embed_text_v2("invalid request")
+    except requests.HTTPError:
+        pass
+    else:
+        raise AssertionError("non-retryable provider errors must fail closed")
+
+    assert post.call_count == 1
