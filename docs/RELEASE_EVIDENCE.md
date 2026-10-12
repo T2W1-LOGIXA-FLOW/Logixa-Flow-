@@ -48,7 +48,7 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 - [ ] Live stale-claim reclamation evidence.
 - [ ] Controlled live failure/recovery evidence.
 - [x] Production Auth Smoke run #11 passed on 2026-10-09: password-grant authentication, `/api/auth/me` admin-role assertion, and admin RAG metrics request succeeded. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474.
-- [ ] RAG ingest → embed → search production evidence.
+- [x] RAG ingest → embed → search production evidence: VERIFIED by run #38227390320 attempt 4; 7 sources/chunks, 0 ingestion errors, 5 matches, and a non-empty citation.
 - [ ] Agent → Brain → publish production evidence.
 - [ ] Approval → resume → completion production evidence.
 - [ ] Scheduled workflow crosses a real time boundary.
@@ -76,12 +76,12 @@ Certification is NOT CERTIFIED while any required production gate remains unchec
 ## Production observations (2026-10-10)
 - Production verification run #38049146602 confirms the deployed application proxy path is passing. Render event history for 2026-10-09 16:45Z through 2026-10-10 16:50Z shows successful builds/deploys in the returned window and no matching `server_failed`, `build_ended`-failure, or `image_pull_failed` event. This is a bounded event-history observation, not a full availability/SLO certification.
 - Render metrics returned no HTTP request-count or latency datapoints for the queried window; only a few CPU/memory datapoints were available. Therefore a defensible SLO/error-budget calculation and alert-path verification are still pending; do not infer healthy request latency from missing metrics.
-- Startup logs recorded `openrouter-free` HTTP 429 and a failed scheduled daily preview. This is a separate AI provider rate-limit/quota issue; the production router intentionally avoids paid-provider fallback. Keep RAG/AI E2E pending until provider capacity/retry behavior is verified under the intended cost policy.
+- Startup logs recorded `openrouter-free` HTTP 429 and a failed scheduled daily preview. This remains a separate AI provider rate-limit/quota issue; the production router intentionally avoids paid-provider fallback. The Voyage RAG ingestion/retrieval/citation gate is verified; broader AI publishing and provider-failover gates remain pending.
 
 
 ## Consolidated open gates (2026-10-11)
 - [ ] Workflow retry/recovery, stale-claim reclamation, controlled failure recovery, and recovery observability in live production.
-- [ ] RAG ingest→embed→search; Agent→Brain→publish; approval→resume→completion; scheduled workflow across a real time boundary.
+- [x] RAG ingest→embed→search/citation: VERIFIED by run #38227390320 attempt 4. [ ] Agent→Brain→publish; approval→resume→completion; scheduled workflow across a real time boundary.
 - [ ] Newsletter delivery (currently HTTP 501 until a transactional email provider is connected) and controlled provider failover.
 - [ ] Full authenticated Admin UI browser test.
 - [ ] Managed Supabase Auth/Storage and object-storage disaster recovery; application rollback rehearsal. Existing isolated public-schema restore does not cover these systems.
@@ -101,7 +101,7 @@ The current release remains PENDING until every gate above has direct evidence o
 - [x] Render deployment dep-db5ie03hu5js73drbig0 reached live for commit 4f530837fc148e44be2f6cb0ecb0a5f291278be2.
 
 - [ ] Live workflow retry/recovery, stale-claim reclamation and controlled failure recovery.
-- [ ] Live RAG ingest→embed→search and Agent→Brain→Publish with durable final state/provenance.
+- [x] Live RAG ingest→embed→search/citation: VERIFIED by run #38227390320 attempt 4. [ ] Agent→Brain→Publish with durable final state/provenance.
 - [ ] Live approval→resume→completion and scheduled execution across a real time boundary.
 
 CI and deployment do not substitute for the unchecked live gates.
@@ -114,12 +114,12 @@ CI and deployment do not substitute for the unchecked live gates.
 - [x] CodeQL #316 passed for Python and JavaScript/TypeScript: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114411
 - [x] Render deployment dep-db5ifnprn11c73dg9ak0 reached live for code commit 8f8397f16d74281d1072ed3b8cb8bd5017a2c5c1 
 
-Keep production workflow recovery, RAG ingestion/search, Agent→Brain→Publish, approval/resume, and scheduled-boundary gates unchecked until direct live evidence exists.
+Production RAG ingestion/search/citation is now VERIFIED by run #38227390320 attempt 4. Keep workflow recovery, Agent→Brain→Publish, approval/resume, and scheduled-boundary gates unchecked until direct live evidence exists.
 
 ## Historical production RAG blocker snapshot (2026-10-11; superseded by latest E2E above)
 
 - [x] At this historical snapshot, production RAG ingest→embed→search/citation was pending and the embedding table was empty. Superseded by run #38227390320 attempt 4, which verified 7-source ingestion and citation-bearing retrieval.
-- [ ] Verify the deployed Voyage provider path and owner-authorized configuration before ingestion. Do not ingest through the legacy path while OpenRouter HTTP 429 is causing generation failures, and do not enable paid-provider fallback without explicit owner approval.
+- [x] Historical provider verification blocker was closed by run #38227390320 attempt 4 (Voyage smoke plus full ingestion/retrieval/citation). Do not enable paid-provider fallback without explicit owner approval.
 - [x] The current public RSS ingestion, stored Voyage model/dimension checks, query retrieval, and citation assertions passed in run #38227390320 attempt 4. Pending/private Brain drafts remain excluded.
 - Release remains PENDING until the live business journey and other open production gates have direct evidence.
 
@@ -186,7 +186,7 @@ Release remains PENDING for the independent non-RAG gates. Health checks, schema
 - [x] Readiness-wait change deployed in Render deploy `dep-db66a5tckfvc73c9usc0` for commit `1a3085f610cf7376b72e14f4e995c28618f9d430`; live at 2026-10-12 04:43:06 UTC.
 - [x] Backend startup completed. The scheduler logged that it skipped the scheduled daily preview because a recent attempt is recorded. A public health check returned HTTP 200 after a transient HTTP 502 during the deployment window.
 - [ ] Successful authenticated POST `/api/admin/rag/provider-smoke` evidence is not yet available in this review. Do not infer Voyage provider health from key presence or general service health.
-- [ ] RAG ingestion/search/citation E2E remains pending. Version 1 intentionally prevents the production workflow from syncing feeds or ingesting records.
+- [x] Historical status: version 1 intentionally skipped feed sync/ingestion. Superseded by the successful version-2 Voyage-only E2E in run #38227390320 attempt 4.
 
 ## Scheduler cold-start duplicate-preview investigation (2026-10-12)
 
@@ -207,7 +207,7 @@ Release remains PENDING for the independent non-RAG gates. Health checks, schema
 - [x] Code review found that v2 ingestion could persist a hash:fallback legacy vector if the legacy provider failed, even while Voyage v2 succeeded.
 - [x] PR #77 changes this path to mark the legacy vector as unavailable, skip the legacy pgvector write, and store the valid Voyage v2 vector only. Legacy search skips v2-only rows; no unlike vector spaces are compared.
 - [x] Local backend suite: 164 passed, 2 non-failing warnings.
-- [ ] CI/CodeQL, deployed provider smoke, authenticated ingestion, 512-D vector verification, retrieval/citations E2E, and 24-hour scheduler-cycle observation remain pending. Keep RAG_EMBEDDING_VERSION=1 until those gates pass.
+- [x] CI/CodeQL, deployed provider smoke, authenticated ingestion, 512-D vector verification, and retrieval/citation E2E have passed. The 24-hour scheduler-cycle observation remains pending; current RAG_EMBEDDING_VERSION is 2.
 
 
 ## Production Voyage smoke automation and approved-source guard (2026-10-12)
@@ -224,7 +224,7 @@ Release remains PENDING for the independent non-RAG gates. Health checks, schema
 
 - [x] First push-triggered production-auth run #12 started before Render had deployed the new provider-smoke route and failed during the deployment window. The endpoint returned 404 until the Render deploy completed; the service is now live with the route.
 - [x] Follow-up PR #79 adds a bounded readiness loop: the workflow waits for the new admin RAG status schema before calling the provider-smoke endpoint, avoiding a race between GitHub Actions and Render deployment.
-- [ ] A successful live Voyage provider smoke is still not evidenced. Keep RAG_EMBEDDING_VERSION=1 until a later workflow run reports provider=voyage, model=voyage-3-lite, dimensions=512, persisted=false.
+- [x] Historical smoke-verification blocker was closed by run #38227390320 attempt 4: provider=voyage, model=voyage-3-lite, dimensions=512, persisted=false.
 
 
 ## Voyage v2 rollout reconciliation and retry deployment (2026-10-12 04:54 UTC)
@@ -234,7 +234,7 @@ Release remains PENDING for the independent non-RAG gates. Health checks, schema
 - [x] During the earlier v2 rollout, Render logged a provider-smoke `HTTPError`. The ingestion request successfully logged source 5 (1 chunk) and source 4 (1 chunk), then failed with `operation=all_sources`, `error_type=embedding`; the instance was shutting down as the environment deployment completed.
 - [x] `RAG_EMBEDDING_VERSION` was rolled back to `1` and the rollback deployment reached live. Partial v2 chunks were preserved for safe re-ingestion; no cleanup/deletion was run.
 - [ ] A successful provider smoke using the newly deployed retry code has not been independently confirmed from a workflow run result in this review. The smoke-only workflow was retriggered after the retry deployment, but absence of a Render failure log is not accepted as proof of workflow success.
-- [ ] Keep release PENDING until a clean retry-enabled Voyage smoke is confirmed, then enable v2 only after the deployment is live and execute the gated feed-sync/ingest/search/citation E2E. Required evidence: zero ingestion errors, nonzero Voyage 512-D chunks, successful retrieval with a nonempty citation, and post-run counts.
+- [x] The clean retry-enabled Voyage smoke and gated feed-sync/ingest/search/citation E2E passed in run #38227390320 attempt 4. Overall release remains PENDING for independent open gates.
 
 ## Historical partial Voyage E2E result (superseded by latest production RAG E2E above)
 
