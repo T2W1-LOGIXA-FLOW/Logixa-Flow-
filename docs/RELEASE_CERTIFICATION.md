@@ -21,7 +21,7 @@ Release certification requires repository CI/security validation, live provider 
 - Live workflow retry/stale-claim/failure recovery: PENDING.
 - Production authentication/API smoke: VERIFIED by Production Auth Smoke run #11 on 2026-10-09; password-grant authentication, `/api/auth/me` admin-role assertion, and admin RAG metrics request passed. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474.
 - Full authenticated Admin UI browser verification: PENDING. Existing checks prove login page rendering, unauthenticated protection, and API auth, but do not prove the authenticated dashboard renders and navigates correctly.
-- Production RAG/AI journeys: PENDING.
+- Production RAG ingestion/retrieval/citation gate: VERIFIED by Production Auth Smoke run #38227390320, attempt 4. It reported 7 sources, 7 valid Voyage 512-D chunks, zero ingestion errors, 5 retrieval matches, and a non-empty citation title/URL. Broader RAG→Agent→Brain→Publish and provider failover journeys remain PENDING.
 - Newsletter/failover: PENDING.
 - Application-schema backup/restore drill: VERIFIED on 2026-10-09 (run #6); managed Auth/Storage and object-storage recovery remain separate pending gates.
 - DR/rollback rehearsal: PENDING — runbook/gate staged; live rehearsal required.
@@ -32,7 +32,8 @@ Release certification requires repository CI/security validation, live provider 
 
 ## Latest read-only production/security review (2026-10-12)
 
-- Production database remains at Alembic revision `20261011_0013`; current counts are `ai_memory_brain=124` (all pending), `document_embeddings=0`, `intelligence_sources=0`, and `stored_files=0`.
+- Production database remains at Alembic revision `20261011_0013`. Latest counts: `ai_memory_brain=125` (pending=125), `intelligence_sources=7`, `document_embeddings=7`, valid Voyage 512-D chunks=7, legacy vectors=0, and `stored_files=0`. All pending Brain drafts remain untouched.
+- Production RAG ingestion/retrieval/citation is VERIFIED by [run #38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320). Overall certification remains PENDING for the other open gates above.
 - Supabase security advisors report 34 informational RLS-enabled/no-policy findings and one warning for disabled leaked-password protection. A read-only privilege audit found no table grants to `anon`, `authenticated`, or `PUBLIC`; no broad policy or grant was added. Leaked-password protection still requires dashboard-level action/verification.
 - Performance advisors report 88 unused-index notices. No indexes were dropped because low observed use does not establish that an index is unnecessary for the intended workload.
 - Latest frontend local validation: 35 test files / 83 tests passed; production build passed. Production-only npm audit reports zero findings; full dev-inclusive audit still has 8 findings (7 high, 1 moderate) in development/tooling dependencies.
@@ -120,4 +121,4 @@ Live workflow retry/stale-claim/failure recovery and production RAG→Agent→Br
 - Safe order: (1) verify Voyage credentials/provider access from the deployed runtime without exposing secrets, (2) enable v2 only after owner-controlled config change, (3) invoke the authenticated ingestion endpoint, (4) verify stored v2 vectors/model/dimensions and counts, (5) run authenticated query→retrieval→citation E2E, and (6) retain v1 rollback until evidence passes.
 - This execution is blocked on authorized access to the authenticated admin/agent-service route and a verified provider call. No production rows were inserted or altered in this pass. Release certification remains PENDING.
 
-- Production Voyage smoke: VERIFIED by run #13. First E2E imported 5 sources and persisted 2 valid Voyage chunks, then failed on legacy provider HTTP 400; RAG_EMBEDDING_VERSION is rolled back to 1. PR #81 adds transient Voyage retries; PR #84 makes ingestion Voyage-only and adds a deployment readiness marker. Full source ingestion and citation E2E remain pending.
+- Production Voyage smoke and full source ingestion/retrieval/citation E2E are now VERIFIED by run #38227390320 attempt 4. The earlier legacy-provider failure and HTTP 422 timeout failure are superseded. PR #90 exposes safe diagnostic fields and PR #91 fixes the 5-second-vs-21-second pacing timeout; both are merged/deployed. Overall release remains PENDING for independent non-RAG gates.
