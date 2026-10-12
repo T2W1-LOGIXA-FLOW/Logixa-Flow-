@@ -129,6 +129,39 @@ def _claim_scheduled_preview_slot(
     return True
 
 
+def _seconds_until_next_scheduled_preview(
+    interval_hours: int,
+    *,
+    now: datetime | None = None,
+) -> float:
+    """Return the remaining cooldown instead of resetting a full sleep on cold start."""
+    interval_seconds = max(interval_hours, 1) * 60 * 60
+    current = now or datetime.now(timezone.utc)
+    current = current.replace(tzinfo=timezone.utc) if current.tzinfo is None else current.astimezone(timezone.utc)
+    db = SessionLocal()
+    try:
+        setting = (
+            db.query(AppSetting)
+            .filter(AppSetting.key == _SCHEDULED_PREVIEW_LAST_ATTEMPT_KEY)
+            .first()
+        )
+        if setting is None:
+            return float(interval_seconds)
+        try:
+            last_attempt = _as_utc(datetime.fromisoformat(setting.value))
+        except (TypeError, ValueError):
+            return float(interval_seconds)
+        if last_attempt is None:
+            return float(interval_seconds)
+        elapsed_seconds = (current - last_attempt).total_seconds()
+        remaining_seconds = interval_seconds - elapsed_seconds
+        # If a previous run failed before its claim could be persisted, avoid a
+        # hot retry loop while still checking again sooner than a full interval.
+        return max(60.0, min(float(interval_seconds), remaining_seconds))
+    finally:
+        db.close()
+
+
 def _run_scheduled_preview(event_name: str) -> int | None:
     db = SessionLocal()
     try:
@@ -242,7 +275,15 @@ def start_scheduler() -> None:
                         "Scheduled daily preview failed; scheduler will continue",
                         extra={"operation": "scheduled_daily_preview"},
                     )
-                sleep(interval_hours * 60 * 60)
+                try:
+                    delay_seconds = _seconds_until_next_scheduled_preview(interval_hours)
+                except Exception:
+                    logger.exception(
+                        "Could not calculate the next scheduled preview time; falling back to interval",
+                        extra={"operation": "scheduled_daily_preview"},
+                    )
+                    delay_seconds = interval_hours * 60 * 60
+                sleep(delay_seconds)
         finally:
             _SCHEDULER_LOCK.release()
 
