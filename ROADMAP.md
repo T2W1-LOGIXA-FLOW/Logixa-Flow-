@@ -140,6 +140,13 @@ Status: ACTIVE — final evidence closure.
 - **PAUSED at owner direction (2026-10-09): Vercel deployment/check remediation.** Leave build quota, deployment refresh, and Vercel integration work untouched until explicitly resumed.
 - Live-gate workflows are implemented, but production evidence depends on the user running manual GitHub Actions workflows with production environment secrets configured. Secret values must not be shared in chat or committed to the repository.
 
+## 2026-10-12 RAG v2 fallback-vector safety
+
+- [x] Identified a code-path gap: with RAG_EMBEDDING_VERSION=2, a legacy hash:fallback vector could still be written to the legacy 768-D column even when the Voyage 512-D vector succeeded.
+- [x] PR #77 changes v2-only rows to store no legacy vector, skips the legacy pgvector write, and keeps retrieval model-space-safe.
+- [x] Local backend suite: 164 passed, 2 non-failing warnings.
+- [ ] PR CI/CodeQL and production deployment verification pending. Keep RAG_EMBEDDING_VERSION=1 until deployed Voyage smoke, authenticated ingestion, vector/model/dimension checks, retrieval/citations E2E are complete.
+
 ## 2026-10-12 scheduler cadence follow-up
 
 - [x] PR #76 calculates the remaining cooldown from the durable last-attempt timestamp, avoiding a fresh full 24-hour sleep after each cold start.
