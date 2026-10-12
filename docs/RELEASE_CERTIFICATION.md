@@ -40,7 +40,7 @@ Release certification requires repository CI/security validation, live provider 
 
 - [x] Newest read-only production query at 2026-10-12 04:10 UTC: ai_memory_brain=125 (pending=125), document_embeddings=0, intelligence_sources=0, stored_files=0, workflow_runs=0. No RAG data was ingested and no workflow state was modified by the QStash signature-only smoke.
 
-- Scheduler restart duplication: PENDING deployment verification. Production created Daily Preview pending rows 123–125 during repeated cold starts; PR #75 adds a durable 24-hour cooldown. Local backend tests pass, but the fix is not yet deployed.
+- Scheduler restart duplication: fix merged in PR #75 and deployed in Render deploy dep-db65vj7avr4c73fn6gvg. The cooldown was bootstrapped from the latest prior preview; first post-deploy observation shows 0 new preview rows (total remains 125). The next 24-hour scheduled cycle remains pending.
 
 ## Current release position
 
