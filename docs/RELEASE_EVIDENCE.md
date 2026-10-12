@@ -33,8 +33,8 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 - [x] Google Drive live upload/read round-trip evidence — Live Release Gates run #14 passed on 2026-10-09 (`test_live_google_drive_upload_round_trip`, 1 passed in 2.04s), superseding run #13's earlier `invalid_scope` failure: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37953000376. Separate export/delete semantics should only be claimed if directly covered by this test.
 
 ## Workflow and AI/RAG
-- [x] QStash signed delivery and durable workflow completion.
-- [x] Duplicate QStash delivery does not re-execute a terminal run.
+- [x] QStash US-region signature verification reaches payload validation: controlled 2026-10-12 smoke returned HTTP 400 Missing workflow run id for an intentionally empty run ID, proving the request passed signature verification without changing workflow state.
+- [ ] Durable QStash delivery/completion and duplicate-delivery idempotency remain pending. The historical EU-region message ID cited as successful (msg_7YoJxFpwkEy6sUx5XfK4MbhEa426wR6kc6xiL3z7wX65Jxrp65pan) appears in the QStash delivery log with HTTP 401 Invalid QStash signature; prior completion claims are superseded until a real signed run is independently verified.
 - [ ] Live retry/recovery evidence.
 - [ ] Live stale-claim reclamation evidence.
 - [ ] Controlled live failure/recovery evidence.
@@ -153,3 +153,11 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [x] Production-only frontend audit: 0 findings.
 - [ ] Full dev-inclusive frontend audit still reports 8 findings (7 high, 1 moderate), mainly in Tailwind 3 / Next ESLint tooling. A compatible remediation is pending; no forced Tailwind 4 major upgrade was made.
 - [ ] Leaked-password protection requires dashboard-level action and independent verification. Production RAG, authenticated workflow recovery, SLO/alerting, managed Auth/Storage recovery, and rollback gates remain pending.
+
+
+## QStash signature and delivery evidence reconciliation (2026-10-12)
+
+- [x] Published one controlled US-region QStash signature smoke to POST /api/admin/workflow/qstash-dispatch with an empty run_id. The request passed signature verification and reached payload validation, returning HTTP 400 Missing workflow run id. No workflow state was created or changed. QStash message ID: msg_7YoJxFpwkEy56tg1LKtCTTEurgvCMhexCbCk7V94goNH2CUfJJbWu.
+- [x] Render startup completed after the delivery and logged Workflow recovery restored 0 pending run(s). This only proves startup/recovery code ran with no pending rows; it does not prove run recovery.
+- [ ] The historical EU-region message ID previously cited as a successful completion (msg_7YoJxFpwkEy6sUx5XfK4MbhEa426wR6kc6xiL3z7wX65Jxrp65pan) returns HTTP 401 Invalid QStash signature in the available QStash delivery log. Treat the earlier completion/idempotency assertion as unverified until reproduced using the configured region and a real persisted workflow run.
+- [ ] Live workflow creation → QStash dispatch → durable terminal state → duplicate redelivery remains a release gate. The production workflow_runs table currently has zero rows, and no authorized admin bearer token was available to create a valid run through the application API.
