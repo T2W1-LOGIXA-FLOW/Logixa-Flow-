@@ -1,4 +1,4 @@
-# Production Voyage provider smoke rerun after bounded retry deployment was confirmed live on 2026-10-12.
+# Production Voyage smoke plus gated [run-rag-e2e] ingestion/citation verification after Voyage-only deployment.
 name: Production Auth Smoke
 
 on:
