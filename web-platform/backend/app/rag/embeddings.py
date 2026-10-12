@@ -5,6 +5,7 @@ import json
 import logging
 import math
 import os
+import time
 from collections import Counter
 
 import requests
@@ -95,13 +96,60 @@ def embed_text_v2(text: str) -> tuple[list[float], str]:
     api_key = os.getenv("VOYAGE_API_KEY", "").strip()
     if not api_key:
         raise RuntimeError("VOYAGE_API_KEY is required for RAG_EMBEDDING_VERSION=2")
-    response = requests.post(
-        "https://api.voyageai.com/v1/embeddings",
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-        json={"input": [(text or "")[:8000]], "model": VOYAGE_EMBEDDING_MODEL, "output_dimension": VOYAGE_EMBEDDING_DIMENSIONS},
-        timeout=45,
-    )
-    response.raise_for_status()
+
+    max_attempts = max(1, int(os.getenv("VOYAGE_EMBEDDING_MAX_ATTEMPTS", "3")))
+    response = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            response = requests.post(
+                "https://api.voyageai.com/v1/embeddings",
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={
+                    "input": [(text or "")[:8000]],
+                    "model": VOYAGE_EMBEDDING_MODEL,
+                    "output_dimension": VOYAGE_EMBEDDING_DIMENSIONS,
+                },
+                timeout=45,
+            )
+            if response.status_code == 429 or response.status_code >= 500:
+                if attempt < max_attempts:
+                    retry_after = response.headers.get("Retry-After", "")
+                    try:
+                        delay = min(5.0, max(0.0, float(retry_after)))
+                    except (TypeError, ValueError):
+                        delay = 0.5 * attempt
+                    logger.warning(
+                        "Voyage embedding provider returned a retryable status",
+                        extra={
+                            "operation": "voyage_embedding",
+                            "http_status": response.status_code,
+                            "attempt": attempt,
+                            "max_attempts": max_attempts,
+                            "retry_delay_seconds": delay,
+                        },
+                    )
+                    time.sleep(delay)
+                    continue
+            response.raise_for_status()
+            break
+        except (requests.Timeout, requests.ConnectionError) as exc:
+            if attempt >= max_attempts:
+                raise
+            delay = 0.5 * attempt
+            logger.warning(
+                "Voyage embedding provider request failed transiently",
+                extra={
+                    "operation": "voyage_embedding",
+                    "error_type": exc.__class__.__name__,
+                    "attempt": attempt,
+                    "max_attempts": max_attempts,
+                    "retry_delay_seconds": delay,
+                },
+            )
+            time.sleep(delay)
+
+    if response is None:
+        raise RuntimeError("Voyage embedding provider returned no response")
     data = response.json().get("data") or []
     values = data[0].get("embedding") if data else None
     if not isinstance(values, list) or len(values) != VOYAGE_EMBEDDING_DIMENSIONS:
