@@ -341,12 +341,24 @@ def _run_search(operation: Callable[[], dict], *, operation_name: str, db: Sessi
             _error_counts["search"] += 1
             _record_error("search", error_type.value, db)
             threshold = _current_alert_threshold()
+            response = getattr(error, "response", None)
+            original_error = getattr(error, "orig", None)
+            provider_status_code = getattr(response, "status_code", None)
+            database_error_detail = (
+                str(original_error)[:200]
+                if original_error is not None
+                and error.__class__.__module__.startswith("sqlalchemy")
+                else None
+            )
             logger.warning(
                 "RAG search failed",
                 extra={
                     "correlation_id": str(correlation_id),
                     "operation": operation_name,
                     "error_type": error_type.value,
+                    "error_class": error.__class__.__name__,
+                    "provider_status_code": provider_status_code,
+                    "database_error_detail": database_error_detail,
                     "attempt": attempt,
                     "retryable": error_type == RAGSearchErrorType.search and attempt < MAX_SEARCH_ATTEMPTS,
                     "error_count": _error_counts["search"],
