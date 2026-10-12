@@ -33,7 +33,10 @@ def test_pgvector_disabled_on_sqlite(db: Session):
     assert pgvector_enabled(db) is False
 
 
-def test_similarity_search_sqlite_fallback(db: Session):
+def test_similarity_search_sqlite_fallback(monkeypatch, db: Session):
+    # Tests must not depend on live provider credentials or persist hash fallback vectors.
+    monkeypatch.setattr("app.rag.ingest.embed_text", lambda text: ([1.0] + [0.0] * 767, "test-embedding"))
+    monkeypatch.setattr("app.rag.search.embed_text", lambda text: ([1.0] + [0.0] * 767, "test-embedding"))
     source = models.IntelligenceSource(
         title="Port congestion watch",
         url="https://example.com/port",
@@ -56,7 +59,10 @@ def test_similarity_search_sqlite_fallback(db: Session):
     assert "score" in matches[0]
 
 
-def test_build_rag_context_returns_grounded_text(db: Session):
+def test_build_rag_context_returns_grounded_text(monkeypatch, db: Session):
+    # Keep this unit test deterministic and independent of provider secrets.
+    monkeypatch.setattr("app.rag.ingest.embed_text", lambda text: ([1.0] + [0.0] * 767, "test-embedding"))
+    monkeypatch.setattr("app.rag.search.embed_text", lambda text: ([1.0] + [0.0] * 767, "test-embedding"))
     source = models.IntelligenceSource(
         title="Supplier risk memo",
         source_type="manual",
