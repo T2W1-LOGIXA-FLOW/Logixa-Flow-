@@ -1,9 +1,11 @@
-## 2026-10-12 Voyage v2 rollout and retry gate
+## 2026-10-12 Production RAG E2E — VERIFIED
 
-- [x] PR #81 merged and deployed: bounded retry/backoff for transient Voyage 429/5xx and connection/timeouts; permanent errors remain fail-closed. CI #615 and CodeQL #362 passed.
-- [x] Production Auth Smoke run #13 verified one non-persisting Voyage embedding response (512 dimensions). A later v2 rollout smoke returned a sanitized HTTPError and ingestion failed after two source chunks were ingested.
-- [x] Rolled `RAG_EMBEDDING_VERSION` back to `1`; rollback deployment is live. Existing v2 chunks remain untouched and will be overwritten safely by a successful re-ingest.
-- [ ] Confirm a successful provider smoke on the retry-enabled deployment; then re-enable v2 only after the service is live and run the gated ingestion/search/citation E2E. Release remains PENDING until the run proves zero ingestion errors, nonzero Voyage chunks, and citation-backed retrieval.
+- [x] Voyage provider smoke passed: `voyage-3-lite`, 512 dimensions, `persisted=false`.
+- [x] `RAG_EMBEDDING_VERSION=2` and deployed mode `voyage_only` verified by the authenticated production workflow.
+- [x] Full ingestion passed: 7 RSS sources, 7 Voyage 512-D chunks, 0 errors, 0 Brain items ingested, 0 legacy-vector chunks.
+- [x] Citation retrieval passed: 5 matches returned and the first match had a non-empty citation title/URL. Evidence: [Production Auth Smoke run #38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320).
+- [x] Fixed the production timeout mismatch: Voyage request pacing is 21 seconds, while the previous search budget was 5 seconds. PR #90 made safe diagnostics visible; PR #91 made the search budget configurable (75-second default) and classified timeouts as search/503 rather than unknown/422. Both are merged and deployed.
+- [ ] Overall release remains PENDING: workflow recovery, RAG→Agent→Brain→Publish, authenticated Admin UI, SLO/alerting, rollback/DR rehearsal, newsletter delivery, provider failover, and 24-hour scheduler observation remain open.
 
 # Logixa Flow — Roadmap
 
