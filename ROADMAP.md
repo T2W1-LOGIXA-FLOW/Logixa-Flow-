@@ -140,12 +140,18 @@ Status: ACTIVE — final evidence closure.
 - **PAUSED at owner direction (2026-10-09): Vercel deployment/check remediation.** Leave build quota, deployment refresh, and Vercel integration work untouched until explicitly resumed.
 - Live-gate workflows are implemented, but production evidence depends on the user running manual GitHub Actions workflows with production environment secrets configured. Secret values must not be shared in chat or committed to the repository.
 
+## 2026-10-12 scheduler cadence follow-up
+
+- [x] PR #76 calculates the remaining cooldown from the durable last-attempt timestamp, avoiding a fresh full 24-hour sleep after each cold start.
+- [x] Targeted scheduler tests: 10 passed; full backend suite: 163 passed, 2 non-failing warnings.
+- [ ] Follow-up deployment and next scheduled-cycle observation remain pending.
+
 ## 2026-10-12 scheduler restart duplicate-preview fix
 
 - [x] Root cause identified: the scheduler runs immediately on every process start before sleeping for the configured interval. Production records 123–125 show repeated private Daily Preview drafts over roughly 32 minutes during service restarts.
 - [x] Fix staged in PR #75: persist a scheduler cooldown in app_settings before provider work and bootstrap the first cooldown from recent preview/agent records. Manual preview route remains independent.
 - [x] Local backend suite: 159 passed, 2 non-failing warnings.
-- [ ] Local backend suite: 160 passed. First post-deploy startup is verified: scheduler cooldown key is present, total Brain rows remain 125, and zero Daily Preview rows were created after deployment. Observe the next 24-hour cycle before closing the long-interval gate. Existing private pending Brain records were preserved; no production rows were deleted or ingested.
+- [ ] Local backend suite: 163 passed. First post-deploy startup is verified: scheduler cooldown key is present, total Brain rows remain 125, and zero Daily Preview rows were created after deployment. Follow-up PR #76 calculates the remaining cooldown after restarts so the interval does not drift; observe the next 24-hour cycle after deployment before closing the long-interval gate. Existing private pending Brain records were preserved; no production rows were deleted or ingested.
 
 ## 2026-10-12 frontend hardening follow-up
 

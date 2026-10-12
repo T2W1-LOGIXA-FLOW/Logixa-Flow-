@@ -219,3 +219,53 @@ def test_scheduled_preview_skips_provider_call_during_cooldown(
         assert db.query(models.AiMemoryBrain).count() == 0
     finally:
         db.close()
+
+
+
+def test_scheduler_sleeps_only_remaining_cooldown_after_recent_attempt(
+    scheduler_session_factory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = datetime(2026, 10, 12, 4, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr(scheduler, "SessionLocal", scheduler_session_factory)
+    db = scheduler_session_factory()
+    try:
+        db.add(
+            models.AppSetting(
+                key="scheduler_daily_preview_last_attempt",
+                value=(now - timedelta(hours=23)).isoformat(),
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    delay = scheduler._seconds_until_next_scheduled_preview(24, now=now)
+    assert 3599 <= delay <= 3601
+
+
+def test_scheduler_falls_back_to_full_interval_without_timestamp(
+    scheduler_session_factory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = datetime(2026, 10, 12, 4, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr(scheduler, "SessionLocal", scheduler_session_factory)
+    assert scheduler._seconds_until_next_scheduled_preview(24, now=now) == 24 * 60 * 60
+
+
+def test_scheduler_avoids_hot_loop_when_cooldown_has_elapsed(
+    scheduler_session_factory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = datetime(2026, 10, 12, 4, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr(scheduler, "SessionLocal", scheduler_session_factory)
+    db = scheduler_session_factory()
+    try:
+        db.add(
+            models.AppSetting(
+                key="scheduler_daily_preview_last_attempt",
+                value=(now - timedelta(hours=25)).isoformat(),
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    assert scheduler._seconds_until_next_scheduled_preview(24, now=now) == 60
