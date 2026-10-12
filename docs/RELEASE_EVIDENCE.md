@@ -76,6 +76,7 @@ Certification is NOT CERTIFIED while any required production gate remains unchec
 ## Production observations (2026-10-10)
 - Production verification run #38049146602 confirms the deployed application proxy path is passing. Render event history for 2026-10-09 16:45Z through 2026-10-10 16:50Z shows successful builds/deploys in the returned window and no matching `server_failed`, `build_ended`-failure, or `image_pull_failed` event. This is a bounded event-history observation, not a full availability/SLO certification.
 - Render metrics returned no HTTP request-count or latency datapoints for the queried window; only a few CPU/memory datapoints were available. Therefore a defensible SLO/error-budget calculation and alert-path verification are still pending; do not infer healthy request latency from missing metrics.
+- Recheck on 2026-10-12 12:35 UTC: Render returned empty `http_request_count`, `http_latency` (p95), and CPU series for 06:00–12:30 UTC; memory had only two isolated points. A request-log query for 09:00–12:30 UTC returned zero request records. This still cannot support an availability/error-budget calculation; retain SLO and alert-path gates as PENDING.
 - Startup logs recorded `openrouter-free` HTTP 429 and a failed scheduled daily preview. This remains a separate AI provider rate-limit/quota issue; the production router intentionally avoids paid-provider fallback. The Voyage RAG ingestion/retrieval/citation gate is verified; broader AI publishing and provider-failover gates remain pending.
 
 
