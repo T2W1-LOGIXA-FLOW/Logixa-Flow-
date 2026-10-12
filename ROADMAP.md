@@ -166,6 +166,12 @@ Status: ACTIVE — final evidence closure.
 - [x] Targeted scheduler tests: 10 passed; full backend suite: 163 passed, 2 non-failing warnings.
 - [ ] Follow-up deployment and next scheduled-cycle observation remain pending.
 
+## 2026-10-12 production Voyage smoke readiness fix
+
+- [x] Bounded five-minute wait for the deployed admin RAG status schema merged and deployed: Render deploy `dep-db66a5tckfvc73c9usc0`, commit `1a3085f610cf7376b72e14f4e995c28618f9d430`.
+- [x] Render startup completed and public `/health` returned HTTP 200 after a brief HTTP 502 during the deployment window.
+- [ ] A successful authenticated Voyage provider smoke result has not yet been independently confirmed. Keep `RAG_EMBEDDING_VERSION=1`; ingestion and retrieval/citation E2E remain pending.
+
 ## 2026-10-12 scheduler restart duplicate-preview fix
 
 - [x] Root cause identified: the scheduler runs immediately on every process start before sleeping for the configured interval. Production records 123–125 show repeated private Daily Preview drafts over roughly 32 minutes during service restarts.
