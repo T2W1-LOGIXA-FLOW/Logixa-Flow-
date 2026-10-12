@@ -20,11 +20,11 @@
 Status: VERIFIED. Evidence: 12 Markdown files were audited and ledgers A–E were built. No orphan file, plan, or decision was identified.
 
 ### Repository hardening and platform foundations
-Status: DONE / VERIFIED at repository level, with release certification still pending. Repository/live Alembic revision is `20261011_0013`; the Voyage v2 path is additive and the legacy 768-D path remains the active rollback path. Latest merged patch validation: PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf189b758344`; CI #592 and CodeQL #339 passed, and Render deploy `dep-db65h2mk1f9s73evo9mg` reached live. Production `document_embeddings=0`, `intelligence_sources=0`, and `ai_memory_brain=125` (pending=125); no production RAG ingest→search/citation E2E has been evidenced. OpenRouter HTTP 429 affects scheduled AI preview. Live workflow recovery, AI business journeys, monitoring/SLO, newsletter/failover, managed Auth/Storage and object-storage recovery, rollback, and authenticated Admin UI remain open.
+Status: DONE / VERIFIED at repository level, with overall release certification still pending. Repository/live Alembic revision is `20261011_0013`; the Voyage v2 path is additive and legacy 768-D vectors are retained for rollback. Production RAG ingest→retrieval→citation is VERIFIED by run #38227390320 attempt 4: 7 sources, 7 valid Voyage 512-D chunks, 0 errors, 5 retrieval matches, and a non-empty citation. Current counts are `document_embeddings=7`, `intelligence_sources=7`, and `ai_memory_brain=125` (pending=125). OpenRouter HTTP 429 remains a separate scheduled AI preview risk. Live workflow recovery, RAG→Agent→Brain→Publish, monitoring/SLO, newsletter/failover, managed Auth/Storage and object-storage recovery, rollback, and authenticated Admin UI remain open.
 
 ## Active Phase
 
-**Release status: PENDING.** Production migration `20261011_0013` is applied, but production RAG tables are empty (`document_embeddings=0`, `intelligence_sources=0`) while `ai_memory_brain=125` (pending=125). OpenRouter HTTP 429 was observed during scheduled preview. Keep `RAG_EMBEDDING_VERSION=1`; do not claim a zero-row backfill is complete or enable paid fallback without owner approval. Most recent CI #592 / CodeQL #339 passed for PR #73, but live production journey gates remain separate.
+**Release status: PENDING — NOT RELEASE-CERTIFIED.** Production migration `20261011_0013` is applied and RAG v2 is active in `voyage_only` mode. The production ingest→retrieval→citation gate passed in run #38227390320 attempt 4 with 7 valid Voyage chunks and 0 ingestion errors. Keep the no-paid-fallback policy; OpenRouter HTTP 429 still affects the separate scheduled AI preview. Live workflow recovery, RAG→Agent→Brain→Publish, authenticated Admin UI, SLO/alerting, rollback/DR, newsletter, provider failover, and scheduler observation remain open.
 
 ### Phase 13 — Release certification and maintenance
 
@@ -345,9 +345,9 @@ Production workflow recovery and RAG→Agent→Brain→Publish live journeys are
 - [ ] Verify live retrieval and citation provenance; keep release PENDING until these checks and remaining release gates pass.
 - [ ] Triage full local backend suite failures/errors separately. PR #73 isolates two RAG search tests from external provider credentials; targeted RAG tests passed (21 passed), but the complete local suite did not pass.
 
-## 2026-10-12 partial production Voyage ingestion
+## Historical partial production Voyage ingestion (superseded by verified E2E above)
 
 - [x] Provider smoke passed with voyage-3-lite, 512 dimensions, and no persistence.
-- [x] RSS sync imported 5 source records; read-only DB check confirms 2 valid Voyage v2 chunks and no indexed pending Brain drafts.
+- [x] At this intermediate stage, RSS sync had 5 source records and 2 valid Voyage v2 chunks; the latest run now verifies 7 sources and 7 valid chunks.
 - [x] PR #81 adds bounded retry for transient Voyage 429/5xx and connection/timeouts; permanent 4xx fails closed.
-- [ ] PR #84 bypasses the legacy provider in v2 mode and gates E2E on the deployed voyage_only marker. Deploy the fix, rerun ingestion, verify all eligible chunks and a citation-bearing retrieval result. Release remains PENDING.
+- [x] PR #84 and follow-up fixes are merged/deployed. Run #38227390320 attempt 4 verified Voyage-only ingestion and citation-bearing retrieval. Overall release remains PENDING for independent non-RAG gates.
