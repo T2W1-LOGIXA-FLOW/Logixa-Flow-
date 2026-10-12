@@ -145,7 +145,7 @@ Status: ACTIVE — final evidence closure.
 - [x] Root cause identified: the scheduler runs immediately on every process start before sleeping for the configured interval. Production records 123–125 show repeated private Daily Preview drafts over roughly 32 minutes during service restarts.
 - [x] Fix staged in PR #75: persist a scheduler cooldown in app_settings before provider work and bootstrap the first cooldown from recent preview/agent records. Manual preview route remains independent.
 - [x] Local backend suite: 159 passed, 2 non-failing warnings.
-- [ ] CI/CodeQL and production deployment verification remain pending. Existing private pending Brain records are preserved; no production rows were deleted or ingested.
+- [ ] Local backend suite: 160 passed. First post-deploy startup is verified: scheduler cooldown key is present, total Brain rows remain 125, and zero Daily Preview rows were created after deployment. Observe the next 24-hour cycle before closing the long-interval gate. Existing private pending Brain records were preserved; no production rows were deleted or ingested.
 
 ## 2026-10-12 frontend hardening follow-up
 
