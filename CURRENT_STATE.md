@@ -25,11 +25,11 @@ Phase 13 — Release certification and maintenance.
 
 ## 3. Overall Status
 
-**PENDING — NOT RELEASE-CERTIFIED.** Production migration `20261011_0013` is applied, and recent code changes have passed CI/security checks and reached Render. Live workflow recovery, production RAG ingest/search, Agent→Brain→Publish, authenticated Admin UI, measurable SLO/alerting, rollback/DR, newsletter delivery, and provider failover remain open gates.
+**PENDING — NOT RELEASE-CERTIFIED.** Production migration `20261011_0013` is applied. The production RAG ingest→embedding→retrieval→citation gate is VERIFIED by run #38227390320 attempt 4; live workflow recovery, RAG→Agent→Brain→Publish, authenticated Admin UI, measurable SLO/alerting, rollback/DR, newsletter delivery, provider failover, and the 24-hour scheduler observation remain open gates.
 
-Repository and live production Alembic revision are **20261011_0013**. Migration `20261011_0013` adds the versioned Voyage 512-D embedding path without replacing the legacy 768-D path. Production counts inspected on 2026-10-11 were `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, and `ai_memory_brain=122`; therefore the zero-row Voyage backfill is not evidence of RAG readiness. OpenRouter HTTP 429 has also affected scheduled AI preview. Keep `RAG_EMBEDDING_VERSION=1` until the provider/configuration path is explicitly authorized and verified, then ingest and validate retrieval/citations before enabling v2.
+Repository and live production Alembic revision are **20261011_0013**. Migration `20261011_0013` adds the versioned Voyage 512-D embedding path without replacing the legacy 768-D path. Current production configuration is `RAG_EMBEDDING_VERSION=2`, `rag_v2_ingestion_mode=voyage_only`. Read-only counts are `document_embeddings=7`, `intelligence_sources=7`, `stored_files=0`, and `ai_memory_brain=125` (pending=125); all 7 embedding rows are valid Voyage 512-D vectors, with zero legacy vectors. The pending Brain records remain untouched. OpenRouter HTTP 429 remains a separate scheduled AI preview/provider-failover risk.
 
-Latest merged patch validation: PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf189b758344`; CI #592 passed backend, agents, frontend tests/build, and security jobs, and CodeQL #339 passed for Python and JavaScript/TypeScript. Render deploy `dep-db65h2mk1f9s73evo9mg` reached live. A fresh read-only production query on 2026-10-12 04:00 UTC shows `ai_memory_brain=124` (pending=124), `document_embeddings=0`, `intelligence_sources=0`, and `stored_files=0`; the RAG ingest/search gate remains blocked. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38201060689 and https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38201060691. These are code/CI/deployment evidence, not live workflow/RAG business-journey evidence.
+The latest production RAG gate is live-verified, not inferred from CI: run #38227390320 attempt 4 passed provider smoke, 7-source ingestion with zero errors, and retrieval returning 5 matches with a non-empty citation. CI/backend, frontend, agents, security, and CodeQL checks passed for PR #91; Render deploy `dep-db6b2ac9v7es739sk9f0` is live. Older zero-row snapshots below are historical and superseded by the current counts above.
 
 ## Latest regression validation (2026-10-12)
 
@@ -333,14 +333,14 @@ These are code, regression-test, CI, security-scan, and deployment results. They
 - Regression tests cover the Voyage request shape and fail-closed behavior. CI and CodeQL must pass before considering the code change validated.
 - Do not set `RAG_EMBEDDING_VERSION=2` until production migration 0013 is applied, all existing rows have v2 vectors, remaining count is zero, and live ingest/search tests pass. Rollback is environment flag back to `1`; legacy 768-D data is retained.
 - Cloudflare BGE-M3 (1,024-D) is deliberately not an automatic Voyage fallback: mixed embedding spaces are not comparable. It requires its own 1,024-D versioned index/backfill if chosen later.
-- Production RAG ingest→search, provider failover, and publishing E2E remain PENDING. Release certification remains PENDING.
+- Historical status at the time of the 2026-10-11 Voyage migration: production RAG ingest→search was pending. Superseded by the latest verified production RAG E2E at the top of this file. Provider failover, RAG→Agent→Brain→Publish, and overall release certification remain PENDING.
 
 
 ## 2026-10-11 — Latest deploy and runtime provider audit
 
 - CI #586 passed on commit 5a359f79f831ca8f0e925d7e1818f67c89659cf1: backend migration/tests, agents, frontend tests/build, and dependency security succeeded. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38136913611.
 - Render deploy dep-db5nf395efls73aqkdi0 is live. Startup logs show Alembic migration 20261008_0012 → 20261011_0013 ran before Uvicorn startup. SQLAlchemy emitted warnings that it did not recognize pgvector column types during schema inspection; investigate/fix before treating schema/index inspection as clean.
-- RAG_EMBEDDING_VERSION=1 remains active. Voyage backfill has not been run/verified, zero pending rows are not established, and production ingest→search is still PENDING.
+- Historical snapshot (superseded by the latest production RAG status at the top): at that time RAG_EMBEDDING_VERSION=1 and production ingest→search was pending.
 - Provider audit: app/llm/providers.py implements multiple provider adapters, but app/llm/router.py currently wires only OpenRouter openrouter/free plus local fallback. Production local fallback defaults off, so other provider keys and endpoint smoke tests do not establish live application failover. OpenRouter HTTP 429 remains an AI availability risk.
 - Release certification remains PENDING.
 
@@ -349,22 +349,22 @@ These are code, regression-test, CI, security-scan, and deployment results. They
 
 - Render deploy `dep-db5rei779l7c73frthcg` for commit `318114adfd60b4d0a6289f03b7bd6c1f0fe365a7` is live. Logs show `Application startup complete`; startup/schema inspection now uses PostgreSQL `information_schema` for column names instead of SQLAlchemy reflection of pgvector types. No matching pgvector-reflection warning was found in the log window after this deploy became live; retain monitoring until an explicit health request confirms runtime status.
 - Direct read-only inspection of the production Supabase project `ephrnmigiwjhdjksreos` confirms Alembic revision `20261011_0013`, the legacy `embedding` vector column, Voyage v2 JSON/model/vector columns, and the `ix_document_embeddings_embedding_v2_hnsw` index.
-- Production counts: `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, `ai_memory_brain=122`, `posts=8`. Voyage backfill pending count is zero only because the embedding table is empty; this is not proof of RAG readiness. The next blocker is authenticated ingestion of existing Brain records, then a real ingest→search/citation E2E test.
+- Historical production counts from this dated snapshot were `document_embeddings=0`, `intelligence_sources=0`, `ai_memory_brain=122`, `posts=8`. Superseded by the latest production counts and successful RAG E2E at the top; pending/private Brain records are intentionally not bulk-ingested.
 - Recent Render startup logs also show OpenRouter HTTP 429 and a failed scheduled daily preview. Do not enable paid provider routing without owner approval. Release certification remains PENDING; `/health` was not independently confirmed by an HTTP response in this verification pass.
 
 
 ## Production verification update (2026-10-12)
 
 - Direct HTTP request to `https://logixa-flow.onrender.com/health` returned HTTP 200. Response reported database `ok`, profile `supabase`, `pgvector_enabled=true`, `rag_chunks=0`, and legacy embedding model `liquid/lfm-2.5-embedding-350m:free`. This confirms service health, not Voyage provider health.
-- Production Supabase read-only query at 2026-10-12 03:36 UTC reconfirmed Alembic revision `20261011_0013`, `ai_memory_brain=122`, `ai_memory_brain status=pending=122`, `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, and Voyage `voyage-3-lite` v2 rows=0.
-- Authenticated RAG endpoints under `/api/admin/rag/*` return HTTP 401 without a bearer token. No admin bearer token is available in this execution context, so no production ingestion or RAG query was attempted. The user reports `VOYAGE_API_KEY` is configured, but an actual Voyage API call has not yet been observed; do not mark provider verified.
+- Historical production query at 2026-10-12 03:36 UTC found `ai_memory_brain=122` and zero source/embedding rows. Superseded by the latest read-only query and successful ingestion recorded at the top.
+- Historical auth check: unauthenticated RAG endpoints correctly returned HTTP 401. This was an expected auth gate, not an ingestion attempt; subsequent authenticated workflow run #38227390320 attempt 4 verified provider smoke and ingestion.
 - Earlier local full-suite failure counts are superseded by the 2026-10-12 isolated workflow-fixture fix: the full backend suite now passes (153 passed, two non-failing warnings). Production RAG remains pending because provider smoke, authenticated ingestion, vector verification, and retrieval/citation E2E are still unverified.
-- Production `RAG_EMBEDDING_VERSION=1` remains unchanged. Do not claim RAG readiness: corpus has not been ingested, Voyage v2 row count is zero, and live retrieval/citation evidence is missing. Release certification remains PENDING.
+- Historical snapshot (superseded): `RAG_EMBEDDING_VERSION=1`, empty corpus, and no retrieval evidence. Current v2 corpus and citation E2E are verified at the top of this file; overall release certification remains PENDING for independent gates.
 
-## Production Voyage E2E partial state (2026-10-12)
+## Historical partial Voyage E2E state (superseded by latest production RAG status above)
 
 - Production Auth Smoke run #13 passed: Voyage model voyage-3-lite, 512 dimensions, no vector persisted by the smoke.
-- The first authenticated E2E imported 5 public RSS sources and persisted 2 valid Voyage v2 chunks, then failed on a later source because the legacy embedding provider returned HTTP 400.
-- Current read-only counts: ai_memory_brain=125 (pending=125), intelligence_sources=5, document_embeddings=2, workflow_runs=0. Both embedding rows are model v2-only with voyage-3-lite 512-D vectors and empty legacy JSON vectors. No pending Brain drafts were indexed.
-- RAG_EMBEDDING_VERSION has been rolled back to 1 while the Voyage-only ingestion fix is reviewed. PR #84 adds rag_v2_ingestion_mode=voyage_only and makes the production workflow wait for the deployed code before retrying.
-- Release remains PENDING until all eligible source chunks are indexed and citation-bearing retrieval E2E passes.
+- The first authenticated E2E imported 5 public RSS sources and persisted 2 valid Voyage v2 chunks, then failed on a later source because the legacy embedding provider returned HTTP 400. This intermediate failure is superseded by the successful attempt 4 E2E above.
+- Historical counts at that stage were `intelligence_sources=5` and `document_embeddings=2`; the latest state is 7 sources/7 valid Voyage chunks. No pending Brain drafts were indexed.
+- At that stage RAG_EMBEDDING_VERSION had been rolled back to 1. It is now version 2 with deployed `voyage_only` mode after the successful E2E.
+- The ingestion/retrieval/citation gate has passed; overall release remains PENDING for the independent gates listed above.
