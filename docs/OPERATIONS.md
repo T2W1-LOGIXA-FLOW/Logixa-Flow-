@@ -30,6 +30,8 @@ Backlog runbooks: correlation-ID investigation; threshold tuning; durable metric
 
 - RAG v2 rollout: do not enable RAG_EMBEDDING_VERSION=2 or ingest the production Brain backlog until PR #77 is deployed and a live Voyage smoke confirms the model/dimension. V2-only rows intentionally have no legacy 768-D vector; switching back to version 1 skips those rows until they are re-embedded with a valid legacy provider.
 
+- RAG provider gate: use the production-auth workflow to run the admin-only Voyage smoke first. It must report voyage-3-lite with 512 dimensions and persisted=false. While RAG_EMBEDDING_VERSION=1, the workflow must not ingest. Only after a successful smoke should the flag be enabled and the workflow rerun; it syncs public RSS sources and indexes only approved/published Brain records, then verifies citations.
+
 ## Provider verification
 
 Configured integrations are not live until real E2E evidence exists for Cloudinary, Supabase Storage, B2, Google Drive, QStash, and the selected AI path.
