@@ -1,0 +1,95 @@
+name: Production SLO Synthetic Probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_alert:
+        description: Send a clearly labelled test notification through the configured operations webhook
+        required: true
+        type: boolean
+        default: false
+  schedule:
+    - cron: "*/15 * * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 5
+    env:
+      PRODUCTION_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+      OPS_ALERT_WEBHOOK_URL: ${{ secrets.OPS_ALERT_WEBHOOK_URL }}
+      TEST_ALERT: ${{ inputs.test_alert || false }}
+    steps:
+      - name: Validate probe target
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${PRODUCTION_API_URL:-}" ]]; then
+            echo "::error::Missing PRODUCTION_API_URL production environment secret."
+            exit 1
+          fi
+          python - <<'PY'
+          import os
+          from urllib.parse import urlparse
+          value = os.environ["PRODUCTION_API_URL"]
+          parsed = urlparse(value)
+          if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password:
+              raise SystemExit("::error::PRODUCTION_API_URL must be HTTPS and contain no embedded credentials")
+          PY
+      - name: Probe production health and record latency
+        id: probe
+        shell: bash
+        run: |
+          set -u
+          mkdir -p slo-evidence
+          timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          body_file="$(mktemp)"
+          metrics="$(curl --silent --show-error --max-time 20 -o "$body_file" -w '%{http_code} %{time_total}' "${PRODUCTION_API_URL%/}/health" 2>&1)"
+          curl_exit=$?
+          http_code="$(awk '{print $1}' <<<"$metrics")"
+          latency="$(awk '{print $2}' <<<"$metrics")"
+          [[ "$http_code" =~ ^[0-9]{3}$ ]] || http_code="000"
+          [[ "$latency" =~ ^[0-9]+([.][0-9]+)?$ ]] || latency="0"
+          if [[ "$curl_exit" -eq 0 && "$http_code" == "200" ]]; then result="success"; else result="failure"; fi
+          jq -n --arg timestamp "$timestamp" --arg result "$result" --arg http_code "$http_code" --arg latency_seconds "$latency" --arg run_url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" '{timestamp:$timestamp,result:$result,http_code:$http_code,latency_seconds:($latency_seconds|tonumber),run_url:$run_url}' > slo-evidence/probe.json
+          echo "result=$result" >> "$GITHUB_OUTPUT"
+          echo "http_code=$http_code" >> "$GITHUB_OUTPUT"
+          echo "latency=$latency" >> "$GITHUB_OUTPUT"
+          cat slo-evidence/probe.json
+          rm -f "$body_file"
+          if [[ "$result" != "success" ]]; then
+            echo "::error::Production /health probe failed (HTTP $http_code; curl exit $curl_exit)."
+            exit 1
+          fi
+      - name: Send configured alert notification
+        if: failure() || env.TEST_ALERT == 'true'
+        env:
+          PROBE_RESULT: ${{ steps.probe.outputs.result || 'not_run' }}
+          PROBE_HTTP_CODE: ${{ steps.probe.outputs.http_code || 'unknown' }}
+          PROBE_LATENCY: ${{ steps.probe.outputs.latency || 'unknown' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${OPS_ALERT_WEBHOOK_URL:-}" ]]; then
+            echo "::error::OPS_ALERT_WEBHOOK_URL is missing; external alert delivery cannot be verified."
+            exit 1
+          fi
+          if [[ "$TEST_ALERT" == "true" && "$PROBE_RESULT" == "success" ]]; then
+            message="TEST ALERT: Logixa Flow production SLO probe notification path. No incident is implied."
+          else
+            message="ALERT: Logixa Flow production /health probe failed. HTTP=$PROBE_HTTP_CODE latency_seconds=$PROBE_LATENCY run=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          fi
+          payload="$(jq -n --arg text "$message" '{text:$text}')"
+          curl --fail --silent --show-error --max-time 15 -X POST -H 'Content-Type: application/json' --data "$payload" "$OPS_ALERT_WEBHOOK_URL"
+      - name: Upload probe evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-slo-probe-${{ github.run_id }}
+          path: slo-evidence/
+          if-no-files-found: warn
+          retention-days: 30
