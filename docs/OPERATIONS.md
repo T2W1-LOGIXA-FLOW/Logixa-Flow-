@@ -28,6 +28,8 @@ Backlog runbooks: correlation-ID investigation; threshold tuning; durable metric
 
 - Scheduler guard: PR #75 is deployed (Render deploy dep-db65vj7avr4c73fn6gvg). The cooldown key was seeded from the last existing preview, and the first post-deploy startup created no new preview. Preserve pending drafts for admin review. Follow-up PR #76 calculates remaining cooldown rather than resetting a full interval on each restart; deploy it and confirm the next 24-hour cycle before closing this gate.
 
+- RAG v2 rollout: do not enable RAG_EMBEDDING_VERSION=2 or ingest the production Brain backlog until PR #77 is deployed and a live Voyage smoke confirms the model/dimension. V2-only rows intentionally have no legacy 768-D vector; switching back to version 1 skips those rows until they are re-embedded with a valid legacy provider.
+
 ## Provider verification
 
 Configured integrations are not live until real E2E evidence exists for Cloudinary, Supabase Storage, B2, Google Drive, QStash, and the selected AI path.
