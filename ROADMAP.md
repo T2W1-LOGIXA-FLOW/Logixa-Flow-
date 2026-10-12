@@ -11,17 +11,17 @@
 Status: VERIFIED. Evidence: 12 Markdown files were audited and ledgers A–E were built. No orphan file, plan, or decision was identified.
 
 ### Repository hardening and platform foundations
-Status: DONE / VERIFIED at repository level, with release certification still pending. Repository/live Alembic revision is `20261011_0013`; the Voyage v2 path is additive and the legacy 768-D path remains the active rollback path. Latest merged patch validation: PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf189b758344`; CI #592 and CodeQL #339 passed, and Render deploy `dep-db65h2mk1f9s73evo9mg` reached live. Production `document_embeddings=0`, `intelligence_sources=0`, and `ai_memory_brain=122`; no production RAG ingest→search/citation E2E has been evidenced. OpenRouter HTTP 429 affects scheduled AI preview. Live workflow recovery, AI business journeys, monitoring/SLO, newsletter/failover, managed Auth/Storage and object-storage recovery, rollback, and authenticated Admin UI remain open.
+Status: DONE / VERIFIED at repository level, with release certification still pending. Repository/live Alembic revision is `20261011_0013`; the Voyage v2 path is additive and the legacy 768-D path remains the active rollback path. Latest merged patch validation: PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf189b758344`; CI #592 and CodeQL #339 passed, and Render deploy `dep-db65h2mk1f9s73evo9mg` reached live. Production `document_embeddings=0`, `intelligence_sources=0`, and `ai_memory_brain=124` (pending=124); no production RAG ingest→search/citation E2E has been evidenced. OpenRouter HTTP 429 affects scheduled AI preview. Live workflow recovery, AI business journeys, monitoring/SLO, newsletter/failover, managed Auth/Storage and object-storage recovery, rollback, and authenticated Admin UI remain open.
 
 ## Active Phase
 
-**Release status: PENDING.** Production migration `20261011_0013` is applied, but production RAG tables are empty (`document_embeddings=0`, `intelligence_sources=0`) while `ai_memory_brain=122`. OpenRouter HTTP 429 was observed during scheduled preview. Keep `RAG_EMBEDDING_VERSION=1`; do not claim a zero-row backfill is complete or enable paid fallback without owner approval. Most recent CI #592 / CodeQL #339 passed for PR #73, but live production journey gates remain separate.
+**Release status: PENDING.** Production migration `20261011_0013` is applied, but production RAG tables are empty (`document_embeddings=0`, `intelligence_sources=0`) while `ai_memory_brain=124` (pending=124). OpenRouter HTTP 429 was observed during scheduled preview. Keep `RAG_EMBEDDING_VERSION=1`; do not claim a zero-row backfill is complete or enable paid fallback without owner approval. Most recent CI #592 / CodeQL #339 passed for PR #73, but live production journey gates remain separate.
 
 ### Phase 13 — Release certification and maintenance
 
 Objective: close the remaining production/provider/recovery evidence gates and freeze only when the release evidence index is complete.
 
-Current state (2026-10-11): production migration `20261011_0013` is applied; `20261008_0012_rag_observability` remains part of the migration history. Cloudinary, Supabase Storage upload/read/cleanup, private B2/S3 provider and deployed application proxy, Google Drive upload/read, QStash core delivery/completion, production auth smoke, and public-schema logical backup/restore have live evidence. Remaining gates are workflow recovery, RAG/AI business journeys, newsletter/failover, object-storage/managed Auth-Storage recovery, rollback, monitoring/SLO, and full authenticated Admin UI verification.
+Current state (2026-10-11): production migration `20261011_0013` is applied; `20261008_0012_rag_observability` remains part of the migration history. Cloudinary, Supabase Storage upload/read/cleanup, private B2/S3 provider and deployed application proxy, Google Drive upload/read, QStash US-region signature-only smoke, production auth smoke, and public-schema logical backup/restore have live evidence. Remaining gates are workflow recovery, RAG/AI business journeys, newsletter/failover, object-storage/managed Auth-Storage recovery, rollback, monitoring/SLO, and full authenticated Admin UI verification.
 
 ### Final live-infrastructure verification
 
@@ -37,7 +37,7 @@ Remaining acceptance criteria:
 - Provider-level Supabase Storage, private B2/S3, Google Drive E2E, and deployed application private-B2 proxy E2E are verified. B2 application proxy evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602.
 - Retry, stale-claim recovery, and failure recovery are verified.
 - Duplicate-delivery protection remains verified.
-- QStash signature verification, delivery, and canonical workflow completion remain verified.
+- QStash US-region signature validation is verified; durable delivery/completion/idempotency remain pending because the historical EU-region message returned HTTP 401 Invalid QStash signature.
 - Cloudinary E2E remains verified.
 - Production authentication/API smoke is VERIFIED by run #11: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474.
 - Monitoring and failure-mode checks pass.
@@ -140,6 +140,14 @@ Status: ACTIVE — final evidence closure.
 - **PAUSED at owner direction (2026-10-09): Vercel deployment/check remediation.** Leave build quota, deployment refresh, and Vercel integration work untouched until explicitly resumed.
 - Live-gate workflows are implemented, but production evidence depends on the user running manual GitHub Actions workflows with production environment secrets configured. Secret values must not be shared in chat or committed to the repository.
 
+## 2026-10-12 frontend hardening follow-up
+
+- [x] Frontend dependency install from the updated lockfile passed; frontend tests passed (35 files, 83 tests).
+- [x] Production build passed with bounded Next.js build workers (`experimental.cpus=2`), avoiding worker-spawn exhaustion in constrained build containers; the RAG index page hook-dependency warning was fixed using `useCallback`.
+- [x] Production-only npm audit: 0 findings. Full dev-inclusive audit still reports 8 findings (7 high, 1 moderate), predominantly the Tailwind 3 / Next ESLint tooling dependency chain. No forced Tailwind 4 major migration was applied.
+- [ ] Dev-toolchain advisories need a compatible major-version remediation plan and full validation.
+- [ ] QStash live durable workflow completion/idempotency needs a new successful signed run; the 2026-10-12 signature-only smoke did not create workflow state.
+
 ## 2026-10-12 regression validation
 
 - [x] Workflow execution/orchestration tests use isolated in-memory SQLite fixtures and no longer depend on an implicit pre-existing `workflow_runs` table.
@@ -215,7 +223,7 @@ Deterministic repository-side coverage has expanded for RAG ingest/search, publi
 33. Broader observability/operational controls.
 34. Broader supply-chain intelligence coverage.
 
-CI #535 / CodeQL #282 passed on merged diagnostics SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` (CI: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420417; CodeQL: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420358). Render deploy `dep-db4t0iavcj2c73e3snu0` confirms diagnostics SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` live as of 2026-10-10 05:43:30Z; the targeted production B2 proxy gate is now ready to rerun. Render startup logs also observed OpenRouter HTTP 429 causing the scheduled AI preview to fail; keep production RAG/AI pending and do not enable paid fallback without owner approval. Production migration parity is closed; live provider and production-path evidence remains separate. Cloudinary and the core QStash delivery/completion/idempotency path are also no longer listed as remaining work because they have real evidence.
+CI #535 / CodeQL #282 passed on merged diagnostics SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` (CI: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420417; CodeQL: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420358). Render deploy `dep-db4t0iavcj2c73e3snu0` confirms diagnostics SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` live as of 2026-10-10 05:43:30Z; the targeted production B2 proxy gate is now ready to rerun. Render startup logs also observed OpenRouter HTTP 429 causing the scheduled AI preview to fail; keep production RAG/AI pending and do not enable paid fallback without owner approval. Production migration parity is closed; live provider and production-path evidence remains separate. Cloudinary remains verified. QStash durable delivery/completion/idempotency is pending after the 2026-10-12 log reconciliation; only US-region signature validation has current direct evidence.
 
 ## Release Gate Remediation — 2026-10-09
 

@@ -19,7 +19,7 @@ Phase 13 — Release certification and maintenance.
 
 Repository and live production Alembic revision are **20261011_0013**. Migration `20261011_0013` adds the versioned Voyage 512-D embedding path without replacing the legacy 768-D path. Production counts inspected on 2026-10-11 were `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, and `ai_memory_brain=122`; therefore the zero-row Voyage backfill is not evidence of RAG readiness. OpenRouter HTTP 429 has also affected scheduled AI preview. Keep `RAG_EMBEDDING_VERSION=1` until the provider/configuration path is explicitly authorized and verified, then ingest and validate retrieval/citations before enabling v2.
 
-Latest merged patch validation: PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf189b758344`; CI #592 passed backend, agents, frontend tests/build, and security jobs, and CodeQL #339 passed for Python and JavaScript/TypeScript. Render deploy `dep-db65h2mk1f9s73evo9mg` reached live. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38201060689 and https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38201060691. These are code/CI/deployment evidence, not live workflow/RAG business-journey evidence.
+Latest merged patch validation: PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf189b758344`; CI #592 passed backend, agents, frontend tests/build, and security jobs, and CodeQL #339 passed for Python and JavaScript/TypeScript. Render deploy `dep-db65h2mk1f9s73evo9mg` reached live. A fresh read-only production query on 2026-10-12 04:00 UTC shows `ai_memory_brain=124` (pending=124), `document_embeddings=0`, `intelligence_sources=0`, and `stored_files=0`; the RAG ingest/search gate remains blocked. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38201060689 and https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38201060691. These are code/CI/deployment evidence, not live workflow/RAG business-journey evidence.
 
 ## Latest regression validation (2026-10-12)
 
@@ -48,8 +48,8 @@ Latest merged patch validation: PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf
 - **Backblaze B2 private S3 API and deployed application proxy live E2E passed**: provider-level upload/read/delete passed in run #12 on 2026-10-09; the deployed application private-download proxy passed in production verification run #38049146602 on 2026-10-10 (`2 passed in 12.32s`), covering direct B2 round-trip and authenticated application upload → private download/readback → cleanup. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602.
 - **All live storage-provider tests passed in Live Release Gates run #15 on 2026-10-09** (4 passed): Cloudinary, Supabase Storage, private B2/S3, and Google Drive. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37956262981. Supabase Storage upload/read matched bytes in run #15. The cleanup DELETE assertion was strengthened on 2026-10-10 and passed the targeted production gate in Live Release Gates run #17 (`1 passed in 3.24s`): https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38021152054. Supabase Storage upload/read/cleanup is now VERIFIED. Do not rerun the full provider suite without a code change or new failure.
 - **Cloudinary live E2E passed on 2026-10-08**: a real 1x1 PNG was uploaded to the connected Cloudinary account, retrieved by asset ID, verified for identity/size, and deleted successfully. Test asset: `logixa/release-gate-cloudinary-20261008`.
-- **QStash signed delivery + canonical workflow completion passed on 2026-10-08**: QStash message `msg_7YoJxFpwkEy5zBp2YxbmSsWDsqwAbXM5wtckxoReAkhqA6PJibwLF` reached the Render dispatch endpoint and the durable Supabase workflow run `release-gate-qstash-a1` completed with node `probe`; the scheduled job became `completed`.
-- **QStash duplicate-delivery protection passed on 2026-10-08**: a second direct QStash delivery for the same completed run did not add another execution-log entry; the durable run remained `completed` with exactly one `probe` execution entry. This is backed by the terminal-run guard added in commit `3c3e1ca8b7d8e8c07cc6eb53cfe5640d3cd4163a`.
+- QStash evidence correction (2026-10-12): the historical message msg_7YoJxFpwkEy6sUx5XfK4MbhEa426wR6kc6xiL3z7wX65Jxrp65pan is present in the EU-region delivery log with HTTP 401 Invalid QStash signature, contradicting the earlier completion claim. A fresh US-region signature-only smoke reached payload validation and returned HTTP 400 Missing workflow run id as expected. US-region signature validation is verified; durable workflow delivery/completion remains PENDING until a real persisted run succeeds via the configured region.
+- QStash duplicate-delivery protection remains PENDING. The terminal-run guard exists in code (commit 3c3e1ca8b7d8e8c07cc6eb53cfe5640d3cd4163a), but the historical live message evidence conflicts with delivery logs and must be re-run with a valid signed delivery before certification.
 - Historical repository migration `20261008_0012_rag_observability` follows `20261007_0011_agent_step_execution_metadata`; the current repository/live revision is `20261011_0013`.
 - Deterministic stale-claim reclamation coverage is now present in commit `34137b30527bbce0975d78ca4b554cb2291af68c`; live production stale-claim recovery remains pending.
 - **Live production Supabase migration history contains `20261008_0012_rag_observability` as the latest migration**, verified from the connected Supabase project on 2026-10-08. Evidence: Supabase project `ephrnmigiwjhdjksreos`, migration listing observed 2026-10-08; dashboard: `https://supabase.com/dashboard/project/ephrnmigiwjhdjksreos/database/migrations`.
@@ -106,8 +106,8 @@ No repository-level blocker is established. Production Auth/API smoke and isolat
 
 1. Supabase Storage upload/read/cleanup E2E is verified by run #17; the deployed application private-B2 download-proxy E2E is verified by run #38049146602 (`2 passed in 12.32s`). Backup/restore is separately verified for the `public` application schema in run #6. Cloudinary and Google Drive upload/read round-trip also have live evidence.
 2. Retry, stale-claim recovery, and controlled failure/recovery live verification remain pending.
-3. Duplicate-delivery protection is verified.
-4. QStash signing, delivery, and canonical workflow completion are verified.
+3. Duplicate-delivery protection remains pending live evidence.
+4. US-region QStash signature validation is verified by the 2026-10-12 signature-only smoke; durable delivery and canonical workflow completion remain pending.
 5. Production authentication/API smoke tests pass. **VERIFIED** by Production Auth Smoke run #11 on 2026-10-09: password-grant authentication, `/api/auth/me` admin-role assertion, and admin RAG metrics request passed. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474.
 6. Monitoring, SLO/error-budget observation, alerting, and failure-mode checks remain pending.
 7. Production RAG ingest → embed → search remains pending.
@@ -132,8 +132,8 @@ Historical application-code validation CI #535 / CodeQL #282 passed on `896c3d0b
 - Current repository tree contains no `UnifiedBackground2.tsx`; only archived historical documentation references it.
 - CI #452: **success** on `e46864fad964e24dc60063fb07f46d2f9524e87f`; CodeQL #199: **success** on the same commit. Earlier CI/CodeQL runs remain historical evidence only.
 - Cloudinary live E2E passed with real upload/read/delete evidence.
-- QStash signed delivery and canonical workflow completion passed with durable PostgreSQL evidence.
-- Duplicate QStash delivery was acknowledged without re-executing the completed workflow.
+- Earlier QStash completion/idempotency claims are under re-verification: the message ID cited in the older note returned HTTP 401 Invalid QStash signature in the EU-region delivery log.
+- A new US-region signature-only smoke reached payload validation (HTTP 400 Missing workflow run id); it created no workflow state. Durable completion/idempotency remains pending.
 - A stale-claim production test was seeded but did not reach execution during the observation window; it remains pending rather than being inferred as verified.
 - Remaining provider/recovery gates are still pending and were not inferred from repository presence alone.
 

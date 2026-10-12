@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import AdminBreadcrumb from "@/components/admin/AdminBreadcrumb";
 import { adminFetch } from "@/components/api";
@@ -19,7 +19,7 @@ export default function RagIndexPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<number | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     try {
@@ -30,9 +30,9 @@ export default function RagIndexPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
 
-  useEffect(() => { if (isAuthenticated && token) load(); }, [isAuthenticated, token]);
+  useEffect(() => { if (isAuthenticated && token) load(); }, [isAuthenticated, token, load]);
 
   async function reindex(id: number) {
     if (!token) return;

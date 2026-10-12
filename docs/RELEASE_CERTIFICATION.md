@@ -2,7 +2,7 @@
 
 > Owner: Engineering / Release
 > Status: PENDING FINAL EVIDENCE
-> Last Updated: 2026-10-11
+> Last Updated: 2026-10-12
 
 ## Certification rule
 
@@ -14,7 +14,7 @@ Release certification requires repository CI/security validation, live provider 
 - Live production Alembic migration head: `20261011_0013` (verified by read-only Supabase catalog query on 2026-10-11).
 - **Deployed application private-B2 download-proxy E2E VERIFIED on 2026-10-10**: one-time production verification run #38049146602 synced the known-good GitHub B2 settings into Render and waited for the deployment to become live. Both direct B2 round-trip and authenticated application upload → private download/readback → cleanup passed (`2 passed in 12.32s`). Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602. The earlier run #19 timeout is historical and was superseded by this successful production verification. CI #535 and CodeQL #282 also passed on the diagnostics SHA; the current release remains pending on other independent gates.
 - Cloudinary live E2E: VERIFIED 2026-10-08.
-- QStash signed delivery/completion/duplicate protection: VERIFIED 2026-10-08.
+- QStash US-region signature validation: VERIFIED by signature-only smoke on 2026-10-12 (HTTP 400 after signature validation for an intentionally empty run ID). Durable delivery/completion/idempotency: PENDING; the older EU-region message cited as successful returns HTTP 401 Invalid QStash signature in the available delivery log.
 - Supabase Storage upload/read: VERIFIED by all-provider Live Release Gates run #15 (4 passed); strict cleanup DELETE response assertion was added on 2026-10-10; the targeted live Supabase rerun passed in run #17 (`1 passed in 3.24s`), completing the upload/read/cleanup gate.
 - Backblaze B2 provider-level authenticated upload/read/delete: VERIFIED by run #12; deployed application private-download proxy: VERIFIED by run #38049146602.
 - Google Drive upload/read round-trip: VERIFIED by run #14 and included in all-provider run #15; broader export semantics only if directly covered by a dedicated test.
@@ -30,9 +30,17 @@ Release certification requires repository CI/security validation, live provider 
 - Newsletter delivery: PENDING; newsletter endpoints return HTTP 501 until a transactional email provider is connected.
 - Vercel deployment/check remediation remains paused by owner direction; do not resume without explicit approval. This does not authorize changing Vercel build quota or deployment settings.
 
+## Latest read-only production/security review (2026-10-12)
+
+- Production database remains at Alembic revision `20261011_0013`; current counts are `ai_memory_brain=124` (all pending), `document_embeddings=0`, `intelligence_sources=0`, and `stored_files=0`.
+- Supabase security advisors report 34 informational RLS-enabled/no-policy findings and one warning for disabled leaked-password protection. A read-only privilege audit found no table grants to `anon`, `authenticated`, or `PUBLIC`; no broad policy or grant was added. Leaked-password protection still requires dashboard-level action/verification.
+- Performance advisors report 88 unused-index notices. No indexes were dropped because low observed use does not establish that an index is unnecessary for the intended workload.
+- Latest frontend local validation: 35 test files / 83 tests passed; production build passed. Production-only npm audit reports zero findings; full dev-inclusive audit still has 8 findings (7 high, 1 moderate) in development/tooling dependencies.
+- CI/CodeQL and the live health endpoint are not evidence of authenticated RAG ingestion, retrieval/citations, live workflow recovery, or a complete DR/rollback drill. Release status remains PENDING.
+
 ## Current release position
 
-Production database migration parity is closed. Cloudinary, Supabase Storage upload/read, private B2/S3 provider round-trip, Google Drive upload/read, and QStash core evidence have live evidence (all-provider run #15: 4 tests passed). Run #16 was cancelled before tests ran and is not a failure of those gates. The Supabase cleanup assertion was verified by targeted run #17. The targeted B2 application download-proxy gate passed in production verification run #38049146602 (`2 passed in 12.32s`), including upload, private download/readback, and cleanup. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602. Render startup logs also captured an OpenRouter HTTP 429 that caused the scheduled AI preview to fail; production RAG/AI remains pending and paid-provider fallback is not authorized. All remaining PENDING items require real production/provider/operations evidence and cannot be inferred from repository tests.
+Production database migration parity is closed. Cloudinary, Supabase Storage upload/read, private B2/S3 provider round-trip, and Google Drive upload/read have live evidence; QStash signature validation has a separate live smoke. Durable QStash workflow completion/idempotency remains pending; all-provider run #15 covers storage providers, not QStash. Run #16 was cancelled before tests ran and is not a failure of those gates. The Supabase cleanup assertion was verified by targeted run #17. The targeted B2 application download-proxy gate passed in production verification run #38049146602 (`2 passed in 12.32s`), including upload, private download/readback, and cleanup. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602. Render startup logs also captured an OpenRouter HTTP 429 that caused the scheduled AI preview to fail; production RAG/AI remains pending and paid-provider fallback is not authorized. All remaining PENDING items require real production/provider/operations evidence and cannot be inferred from repository tests.
 
 See `docs/RELEASE_EVIDENCE.md` for the canonical checklist.
 
@@ -89,7 +97,7 @@ Live workflow retry/stale-claim/failure recovery and production RAG→Agent→Br
 ## Production verification addendum (2026-10-11)
 
 - Latest Render deployment `dep-db5rei779l7c73frthcg` is live; application startup completed. The latest production database reports Alembic revision `20261011_0013`, and the Voyage v2 columns/index are present.
-- Production RAG readiness is **not certified**: `document_embeddings=0` and `intelligence_sources=0`, while `ai_memory_brain=122`. The v2 backfill has zero rows to process because no chunks are indexed; ingestion and ingest→search/citation E2E still need to run through the authenticated application route.
+- Production RAG readiness is **not certified**: `document_embeddings=0` and `intelligence_sources=0`, while `ai_memory_brain=124` (pending=124), per the latest read-only query on 2026-10-12 04:00 UTC. The v2 backfill has zero rows to process because no chunks are indexed; ingestion and ingest→search/citation E2E still need to run through the authenticated application route.
 - Render logs show OpenRouter HTTP 429 and a failed scheduled daily preview. Do not certify AI availability or enable paid failover without approval. `/health` was not independently confirmed by an HTTP response in this pass. Release remains PENDING.
 
 
