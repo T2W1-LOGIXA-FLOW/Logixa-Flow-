@@ -3,13 +3,16 @@ from __future__ import annotations
 import asyncio
 
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
+from app import models
 from app.routers import workflow as workflow_router
 from app.schemas import WorkflowNode, WorkflowRunOut, WorkflowState, WorkflowStorageCreate, WorkflowStorageOut
 
 
 @pytest.fixture(autouse=True)
-def reset_workflow_state() -> None:
+def reset_workflow_state(monkeypatch: pytest.MonkeyPatch) -> None:
     workflow_router._WORKFLOW_STORAGE.clear()
     workflow_router._WORKFLOW_RUNS.clear()
     workflow_router._SUBSCRIBERS.clear()
@@ -18,6 +21,10 @@ def reset_workflow_state() -> None:
     workflow_router._ERROR_NOTIFICATIONS.clear()
     workflow_router._QUEUE_WORKER_RUNNING = False
     workflow_router._CONTROLLER_RUNS.clear()
+    engine = create_engine("sqlite:///:memory:")
+    session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    models.Base.metadata.create_all(bind=engine)
+    monkeypatch.setattr(workflow_router, "SessionLocal", session_factory)
     yield
     workflow_router._WORKFLOW_STORAGE.clear()
     workflow_router._WORKFLOW_RUNS.clear()
@@ -26,6 +33,7 @@ def reset_workflow_state() -> None:
     workflow_router._EXECUTION_QUEUE.clear()
     workflow_router._ERROR_NOTIFICATIONS.clear()
     workflow_router._QUEUE_WORKER_RUNNING = False
+    engine.dispose()
 
 
 @pytest.mark.anyio
