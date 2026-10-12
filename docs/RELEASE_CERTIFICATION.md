@@ -39,17 +39,17 @@ Release certification requires repository CI/security validation, live provider 
 - Latest frontend local validation: 35 test files / 83 tests passed; production build passed. Production-only npm audit reports zero findings; full dev-inclusive audit still has 8 findings (7 high, 1 moderate) in development/tooling dependencies.
 - CI/CodeQL and the live health endpoint are not evidence of authenticated RAG ingestion, retrieval/citations, live workflow recovery, or a complete DR/rollback drill. Release status remains PENDING.
 
-- [x] Newest read-only production query at 2026-10-12 04:10 UTC: ai_memory_brain=125 (pending=125), document_embeddings=0, intelligence_sources=0, stored_files=0, workflow_runs=0. No RAG data was ingested and no workflow state was modified by the QStash signature-only smoke.
+- [x] Latest read-only production query after RAG E2E: `ai_memory_brain=125` (pending=125), `document_embeddings=7`, `intelligence_sources=7`, valid Voyage 512-D chunks=7, legacy vectors=0. QStash signature-only smoke did not create workflow state.
 
 - Scheduler restart duplication: fix merged in PR #75 and deployed in Render deploy dep-db65vj7avr4c73fn6gvg. The cooldown was bootstrapped from the latest prior preview; first post-deploy observation shows 0 new preview rows (total remains 125). Follow-up PR #76 preserves remaining cooldown time across cold starts; local backend suite passes 163 tests. Its deployment and the next 24-hour scheduled cycle remain pending.
 
-- RAG v2 fallback safety: PR #77 fixes persistence of legacy hash fallback vectors in v2 mode; deployment and tests against the live Voyage provider are pending. Production embeddings remain empty.
+- RAG v2 fallback safety: PR #77 and the Voyage-only ingestion follow-up are deployed. Production has 7 valid Voyage 512-D chunks and zero legacy vectors. Live ingest→retrieval→citation is VERIFIED by run #38227390320 attempt 4; broader RAG→Agent→Brain→Publish remains pending.
 
-- Production Voyage gate: PR #78 adds an admin-only non-persisting provider smoke and approved-source ingestion workflow. It is not yet merged/deployed or live-verified; keep RAG_EMBEDDING_VERSION=1 until the provider smoke succeeds.
+- Production Voyage gate: VERIFIED by run #38227390320 attempt 4. The non-persisting provider smoke, Voyage-only ingestion of 7 public RSS sources, stored 512-D vectors, and citation-bearing retrieval all passed. Current RAG_EMBEDDING_VERSION is 2.
 
-- Production Voyage smoke: first workflow run raced the Render deploy and failed before the new route was live. PR #79 adds a bounded readiness wait; a successful provider result is still pending.
+- Production Voyage smoke readiness: PR #79's bounded readiness wait and the later deployment marker are in place; run #38227390320 attempt 4 passed the smoke and full RAG E2E.
 
-- Voyage v2 provider/ingestion E2E: PENDING. Run #13's non-persisting provider smoke passed once, but the later v2 rollout smoke returned HTTPError and ingestion failed during a concurrent deployment. Retry handling is deployed; `RAG_EMBEDDING_VERSION=1` is active until a post-retry smoke is confirmed.
+- Voyage v2 provider/ingestion/retrieval/citation E2E: VERIFIED by run #38227390320 attempt 4. The earlier provider/legacy-ingestion failure and 5-second search timeout are superseded. PR #90 and PR #91 are merged and live. Overall certification remains PENDING for independent release gates.
 
 ## Current release position
 
