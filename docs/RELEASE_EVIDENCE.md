@@ -170,6 +170,15 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [ ] RAG ingestion and persisted workflow run creation remain pending; do not infer success from health, signature verification, or empty-table counts.
 
 
+
+
+## Production Voyage smoke readiness update (2026-10-12)
+
+- [x] Readiness-wait change deployed in Render deploy `dep-db66a5tckfvc73c9usc0` for commit `1a3085f610cf7376b72e14f4e995c28618f9d430`; live at 2026-10-12 04:43:06 UTC.
+- [x] Backend startup completed. The scheduler logged that it skipped the scheduled daily preview because a recent attempt is recorded. A public health check returned HTTP 200 after a transient HTTP 502 during the deployment window.
+- [ ] Successful authenticated POST `/api/admin/rag/provider-smoke` evidence is not yet available in this review. Do not infer Voyage provider health from key presence or general service health.
+- [ ] RAG ingestion/search/citation E2E remains pending. Version 1 intentionally prevents the production workflow from syncing feeds or ingesting records.
+
 ## Scheduler cold-start duplicate-preview investigation (2026-10-12)
 
 - [x] Read-only production rows 123–125 are Daily Preview records, status pending, provider openrouter, no workflow_run_id; creation timestamps were 2026-10-12 03:39:04Z, 03:50:34Z, and 04:11:26Z.
@@ -209,9 +218,11 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [ ] A successful live Voyage provider smoke is still not evidenced. Keep RAG_EMBEDDING_VERSION=1 until a later workflow run reports provider=voyage, model=voyage-3-lite, dimensions=512, persisted=false.
 
 
-## Voyage provider smoke passed; v2 ingestion gated (2026-10-12)
+## Production Voyage E2E partial result (2026-10-12)
 
-- [x] Production Auth Smoke run #13 passed: admin authentication and the non-persisting Voyage provider smoke completed successfully. The workflow asserts provider=voyage, model=voyage-3-lite, dimensions=512, persisted=false.
-- [x] Render environment update set RAG_EMBEDDING_VERSION=2 after the provider smoke passed. No ingestion occurred in that environment update.
-- [x] PR #80 makes v2 ingestion Voyage-only (does not call the rate-limited legacy provider) and marks the admin status with rag_v2_ingestion_mode=voyage_only so the production workflow waits for the new code to deploy.
-- [ ] Production RSS feed sync, approved-source ingestion, 512-D stored-vector verification, and citation-bearing retrieval E2E remain pending. Do not treat the successful provider smoke as RAG readiness.
+- [x] Production Auth Smoke run #13 passed: provider=voyage, model=voyage-3-lite, dimensions=512, persisted=false.
+- [x] Render configuration now has `RAG_EMBEDDING_VERSION=2`.
+- [x] Feed sync imported 5 public RSS sources. Production DB inspection confirms `intelligence_sources=5`, `document_embeddings=2`; both embedding rows have `embedding_model=v2-only`, `embedding_v2_model=voyage-3-lite`, legacy JSON length 2 (`[]`), and Voyage JSON length consistent with 512 dimensions.
+- [x] No pending Brain drafts were indexed; the 125 pending private Daily Preview records remain untouched.
+- [ ] The first E2E attempt failed on a later source with legacy provider HTTP 400. PR #80 removes legacy-provider calls from v2 mode and waits for the `voyage_only` deployment marker before retrying.
+- [ ] Verify full eligible-source ingestion and a citation-bearing retrieval result before release certification.
