@@ -30,7 +30,7 @@ Backlog runbooks: correlation-ID investigation; threshold tuning; durable metric
 
 - RAG v2 rollout: do not enable RAG_EMBEDDING_VERSION=2 or ingest the production Brain backlog until PR #77 is deployed and a live Voyage smoke confirms the model/dimension. V2-only rows intentionally have no legacy 768-D vector; switching back to version 1 skips those rows until they are re-embedded with a valid legacy provider.
 
-- RAG provider gate: use the production-auth workflow to run the admin-only Voyage smoke first. It must report voyage-3-lite with 512 dimensions and persisted=false. While RAG_EMBEDDING_VERSION=1, the workflow must not ingest. Only after a successful smoke should the flag be enabled and the workflow rerun; it syncs public RSS sources and indexes only approved/published Brain records, then verifies citations.
+- RAG provider gate: The admin-only Voyage smoke passed in run #13 (voyage-3-lite, 512 dimensions, persisted=false) and RAG_EMBEDDING_VERSION=2 is enabled. PR #80 makes v2 ingestion Voyage-only and adds a status marker so the workflow waits for the deployed code before retrying. The first E2E imported 5 RSS sources and persisted 2 valid v2 chunks, but later ingestion failed when the legacy provider returned HTTP 400. Retry only after PR #80 deploys; the workflow syncs public RSS sources, indexes only approved/published Brain records, and verifies citations.
 
 ## Provider verification
 
