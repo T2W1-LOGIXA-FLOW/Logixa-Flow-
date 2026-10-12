@@ -1,3 +1,4 @@
+# Owner-authorized production RAG v2 E2E retry on 2026-10-12 after the deployment-version readiness guard.
 name: Production Auth Smoke
 
 on:
@@ -74,18 +75,25 @@ jobs:
           echo "$me" | jq -e '.role == "admin" and (.username | length > 0)' >/dev/null
           curl -fsS -H "Authorization: Bearer $token" "$api_url/api/admin/rag/metrics?hours=1" >/dev/null
 
+          require_v2=false
+          if [[ "$GITHUB_EVENT_HEAD_COMMIT_MESSAGE" == "[run-rag-e2e]"* || "$RUN_RAG_E2E_INPUT" == "true" ]]; then
+            require_v2=true
+          fi
           ready=false
           for attempt in $(seq 1 30); do
             status_before="$(curl -fsS -H "Authorization: Bearer $token" "$api_url/api/admin/rag/status" 2>/dev/null || true)"
             if echo "$status_before" | jq -e 'has("embedding_version") and .rag_v2_ingestion_mode == "voyage_only" and has("voyage_embedding_model")' >/dev/null 2>&1; then
-              ready=true
-              break
+              deployed_version="$(echo "$status_before" | jq -r '.embedding_version // "1"')"
+              if [[ "$require_v2" != "true" || "$deployed_version" == "2" ]]; then
+                ready=true
+                break
+              fi
             fi
-            echo "::notice::Waiting for the latest RAG status schema to reach production (attempt $attempt/30)."
+            echo "::notice::Waiting for the latest RAG status schema/configuration to reach production (attempt $attempt/30; require_v2=$require_v2)."
             sleep 10
           done
           if [[ "$ready" != "true" ]]; then
-            echo "::error::The deployed RAG status schema was not ready after five minutes."
+            echo "::error::The deployed RAG status schema/configuration was not ready after five minutes."
             exit 1
           fi
 
