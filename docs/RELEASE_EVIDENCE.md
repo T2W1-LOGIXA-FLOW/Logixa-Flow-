@@ -181,3 +181,12 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [x] Follow-up PR #76 adds remaining-cooldown sleep calculation so a cold start does not reset a full 24-hour sleep.
 - [x] PR #76 local validation: 10 targeted scheduler tests passed; full backend suite 163 passed, 2 non-failing warnings.
 - [ ] Follow-up deployment and next 24-hour scheduled-cycle observation remain pending. Do not delete existing pending drafts automatically; they are preserved for admin review.
+
+
+## RAG v2 fallback-vector safety correction (2026-10-12)
+
+- [x] Read-only production counts remain ai_memory_brain=125 (pending=125), document_embeddings=0, intelligence_sources=0, stored_files=0. No production ingestion was performed.
+- [x] Code review found that v2 ingestion could persist a hash:fallback legacy vector if the legacy provider failed, even while Voyage v2 succeeded.
+- [x] PR #77 changes this path to mark the legacy vector as unavailable, skip the legacy pgvector write, and store the valid Voyage v2 vector only. Legacy search skips v2-only rows; no unlike vector spaces are compared.
+- [x] Local backend suite: 164 passed, 2 non-failing warnings.
+- [ ] CI/CodeQL, deployed provider smoke, authenticated ingestion, 512-D vector verification, retrieval/citations E2E, and 24-hour scheduler-cycle observation remain pending. Keep RAG_EMBEDDING_VERSION=1 until those gates pass.
