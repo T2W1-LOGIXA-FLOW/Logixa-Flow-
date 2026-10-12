@@ -27,20 +27,22 @@ def _replace_chunks(
     # not leave the source partially ingested or let error telemetry commit a delete.
     prepared: list[tuple[str, list[float] | None, str, list[float] | None, str | None]] = []
     for chunk in chunks:
-        vector, model_name = embed_text(chunk)
-        if model_name == "hash:fallback" and not use_v2:
-            raise RuntimeError(
-                "Semantic embedding provider unavailable; refusing to persist hash fallback vectors"
-            )
         vector_v2 = None
         model_v2 = None
         if use_v2:
+            # Voyage v2 is the active provider for this version. Do not call the
+            # legacy provider (which may be rate-limited) or synthesize a fallback
+            # vector; new rows are explicitly v2-only until a valid legacy vector
+            # can be backfilled.
+            vector = None
+            model_name = "v2-only"
             vector_v2, model_v2 = embed_text_v2(chunk)
+        else:
+            vector, model_name = embed_text(chunk)
             if model_name == "hash:fallback":
-                # Keep v2-only rows valid without persisting a synthetic vector in
-                # the legacy 768-D space. The legacy search path skips empty vectors.
-                vector = None
-                model_name = "v2-only"
+                raise RuntimeError(
+                    "Semantic embedding provider unavailable; refusing to persist hash fallback vectors"
+                )
         prepared.append((chunk, vector, model_name, vector_v2, model_v2))
 
     db.query(models.DocumentEmbedding).filter(
