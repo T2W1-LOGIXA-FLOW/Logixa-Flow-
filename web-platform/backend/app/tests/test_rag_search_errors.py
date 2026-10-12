@@ -56,3 +56,23 @@ def test_search_classifies_ranking_failures(monkeypatch):
 
     assert exc_info.value.detail["error_type"] == RAGSearchErrorType.ranking.value
     assert exc_info.value.detail["retry"]["retryable"] is False
+
+def test_search_timeout_is_retryable_503_not_unknown_422(monkeypatch):
+    attempts = 0
+
+    def slow_provider(db, q, top_k):
+        nonlocal attempts
+        attempts += 1
+        raise TimeoutError("provider request exceeded search budget")
+
+    monkeypatch.setattr(rag, "similarity_search", slow_provider)
+
+    with pytest.raises(HTTPException) as exc_info:
+        rag.rag_search(q="supply chain", top_k=3, db=object(), _={"role": "admin"})
+
+    assert attempts == 1
+    assert exc_info.value.status_code == 503
+    assert exc_info.value.detail["error_type"] == RAGSearchErrorType.search.value
+    assert exc_info.value.detail["retry"]["retryable"] is True
+    assert "provider request exceeded search budget" not in str(exc_info.value.detail)
+
