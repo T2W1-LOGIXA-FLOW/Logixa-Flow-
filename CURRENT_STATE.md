@@ -29,6 +29,10 @@ Latest merged patch validation: PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf
 - PR #73 was merged as `cc91b9c0f78e603584a6bbe7737ebf189b758344`. CI #592 passed all backend, agents, frontend, and security jobs; CodeQL #339 passed for Python and JavaScript/TypeScript.
 - These results close this patch's code-regression gate only. Production workflow retry/recovery, stale-claim recovery, RAG ingest/search/citations, Agent→Brain→Publish, and other live release gates remain PENDING.
 
+## Latest live database check (2026-10-12 04:10 UTC)
+
+- Production RAG live counts were refreshed at 2026-10-12 04:10 UTC: ai_memory_brain=125 (pending=125), document_embeddings=0, intelligence_sources=0, stored_files=0, workflow_runs=0. The workflow table is empty, so no persisted run is available for a safe duplicate-delivery smoke. Release remains PENDING.
+
 ## 4. COMPLETED
 
 - Canonical workflow implementation remains `web-platform/backend/app/routers/workflow.py`.
