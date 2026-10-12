@@ -1,7 +1,7 @@
 # Logixa Flow — SLO and Error Budget
 
 > Owner: Engineering / Operations
-> Status: PRE-STAGED — synthetic probe and webhook alert workflow added; measurement window still pending
+> Status: IMPLEMENTED — synthetic probe and webhook alert workflow merged; production alert test and measurement window pending
 > Last Updated: 2026-10-11
 
 ## Purpose
