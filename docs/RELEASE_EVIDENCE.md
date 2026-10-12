@@ -216,3 +216,13 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [x] First push-triggered production-auth run #12 started before Render had deployed the new provider-smoke route and failed during the deployment window. The endpoint returned 404 until the Render deploy completed; the service is now live with the route.
 - [x] Follow-up PR #79 adds a bounded readiness loop: the workflow waits for the new admin RAG status schema before calling the provider-smoke endpoint, avoiding a race between GitHub Actions and Render deployment.
 - [ ] A successful live Voyage provider smoke is still not evidenced. Keep RAG_EMBEDDING_VERSION=1 until a later workflow run reports provider=voyage, model=voyage-3-lite, dimensions=512, persisted=false.
+
+
+## Voyage v2 rollout reconciliation and retry deployment (2026-10-12 04:54 UTC)
+
+- [x] Production Auth Smoke run #13 passed the non-persisting Voyage smoke: `voyage-3-lite`, 512 dimensions, `persisted=false` (run: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38204802339).
+- [x] PR #81 merged as `010983891de8ef6a4d14b2d800cc99c853e7c781`; Render deploy `dep-db66fa8u01pc73f9keg0` reached live. It adds bounded retries for Voyage 429/5xx and transient connection/timeouts, honors a capped `Retry-After`, and keeps permanent 4xx/dimension errors fail-closed. CI #615 and CodeQL #362 passed; backend CI was 220 passed / 5 skipped, frontend tests/build passed, dependency security passed.
+- [x] During the earlier v2 rollout, Render logged a provider-smoke `HTTPError`. The ingestion request successfully logged source 5 (1 chunk) and source 4 (1 chunk), then failed with `operation=all_sources`, `error_type=embedding`; the instance was shutting down as the environment deployment completed.
+- [x] `RAG_EMBEDDING_VERSION` was rolled back to `1` and the rollback deployment reached live. Partial v2 chunks were preserved for safe re-ingestion; no cleanup/deletion was run.
+- [ ] A successful provider smoke using the newly deployed retry code has not been independently confirmed from a workflow run result in this review. The smoke-only workflow was retriggered after the retry deployment, but absence of a Render failure log is not accepted as proof of workflow success.
+- [ ] Keep release PENDING until a clean retry-enabled Voyage smoke is confirmed, then enable v2 only after the deployment is live and execute the gated feed-sync/ingest/search/citation E2E. Required evidence: zero ingestion errors, nonzero Voyage 512-D chunks, successful retrieval with a nonempty citation, and post-run counts.
