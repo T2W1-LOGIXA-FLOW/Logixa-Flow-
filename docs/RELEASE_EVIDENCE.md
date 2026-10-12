@@ -2,7 +2,7 @@
 
 > Owner: Engineering / Release
 > Status: PRE-STAGED
-> Last Updated: 2026-10-11
+> Last Updated: 2026-10-12
 
 This is the canonical evidence checklist for the Phase 7–13 release candidate. Evidence must identify the exact SHA, environment, timestamp, and observed durable outcome where applicable.
 
@@ -124,3 +124,14 @@ Keep production workflow recovery, RAG ingestion/search, Agent→Brain→Publish
 - [ ] Targeted local RAG tests passed (21 passed) after a test-only change prepared in PR #73. The full local backend suite remains not green: 182 passed, 5 skipped, 12 failed, 9 errors in the isolated SQLite/Python 3.13 environment; workflow/integration and phase-4 diagnostics failures require triage.
 
 Release remains PENDING. Health checks, schema presence, and unit tests are not substitutes for a production Voyage ingest→search/citation journey.
+
+
+## Workflow test isolation and CI verification (2026-10-12)
+
+- [x] Workflow execution and orchestration tests create an isolated in-memory SQLite schema and monkeypatch the workflow session factory. This removes clean-environment failures caused by tests relying on a pre-existing `workflow_runs` table.
+- [x] Targeted workflow execution/orchestration tests passed: `10 passed`.
+- [x] Full backend test suite passed in the isolated Python 3.13 environment: `153 passed`, with two non-failing dependency/deprecation warnings.
+- [x] PR #73 merged at `cc91b9c0f78e603584a6bbe7737ebf189b758344`.
+- [x] CI #592 passed backend, agents, frontend tests/build, and security jobs: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38201060689
+- [x] CodeQL #339 passed Python and JavaScript/TypeScript analyses: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38201060691
+- [ ] Live workflow retry/recovery, stale-claim reclamation, controlled failure recovery, and all production RAG/publish journeys remain pending. Local tests and CI are not live production evidence.
