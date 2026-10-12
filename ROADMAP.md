@@ -73,7 +73,7 @@ Status: ACTIVE.
 
 ### Phase 8 — Production AI/RAG and workflow journey closure
 - RAG source re-ingestion now has deterministic idempotency coverage.
-- Next live gates: RAG ingest→embed→search, Agent→Brain→publish, approval→resume→completion, and scheduled time-boundary execution.
+- Production RAG ingest→embed→search/citation is VERIFIED by run #38227390320 attempt 4. Next live gates: Agent→Brain→publish, approval→resume→completion, and scheduled time-boundary execution.
 Status: PRE-STAGED.
 - Production Auth Smoke run #11 is verified; rerun only if credentials/config change or a new failure occurs.
 - RAG ingest → embed → search.
@@ -201,7 +201,7 @@ Status: ACTIVE — final evidence closure.
 - [x] Workflow execution/orchestration tests use isolated in-memory SQLite fixtures and no longer depend on an implicit pre-existing `workflow_runs` table.
 - [x] Targeted workflow tests: 10 passed; full backend suite: 153 passed.
 - [x] PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf189b758344`; CI #592 and CodeQL #339 passed.
-- [ ] Live workflow recovery, RAG ingest→embed→search/citation, Agent→Brain→Publish, approval/resume, scheduler boundary, SLO/alerting, rollback/DR, newsletter, and provider failover gates remain open.
+- [ ] Live workflow recovery, Agent→Brain→Publish, approval/resume, scheduler boundary, SLO/alerting, rollback/DR, newsletter, and provider failover gates remain open. Production RAG ingest→search/citation is VERIFIED by run #38227390320 attempt 4.
 
 ## Remaining Work — Release Closure
 
@@ -298,7 +298,7 @@ CI #535 / CodeQL #282 passed on merged diagnostics SHA `896c3d0b1086799883b4128b
 The following are **not yet release-certified** and must not be marked VERIFIED without direct evidence:
 
 - [ ] Live workflow retry/recovery, stale-claim reclamation, controlled failure recovery, and recovery observability.
-- [ ] Production RAG ingest → embed → search and Agent → Brain → publish, with durable final state and provenance.
+- [x] Production RAG ingest → embed → search/citation, verified by run #38227390320 attempt 4. [ ] Agent → Brain → publish, with durable final state and provenance.
 - [ ] Approval → resume → completion and scheduled execution across a real time boundary.
 - [ ] Newsletter delivery and controlled provider failover. Newsletter endpoints currently return HTTP 501 until a transactional email provider is connected.
 - [ ] Full authenticated Admin UI browser verification (not just login rendering, unauthenticated redirect, or API smoke).
@@ -321,7 +321,7 @@ Verified production B2 proxy evidence remains run #38049146602 (`2 passed in 12.
 
 Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906548 · https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906581
 
-These checks close the code-regression/CI gate for this patch only. They do not close production workflow recovery, stale-claim live verification, RAG ingestion/search, Agent→Brain→Publish, approval/resume, or scheduled time-boundary gates. Release remains PENDING.
+These checks close the code-regression/CI gate for that patch only. Production RAG ingestion/search/citation was later verified by run #38227390320 attempt 4. Workflow recovery, stale-claim live verification, Agent→Brain→Publish, approval/resume, and scheduled time-boundary gates remain PENDING.
 
 ## 2026-10-11 — Publishing safety follow-up
 
@@ -341,7 +341,7 @@ Production workflow recovery and RAG→Agent→Brain→Publish live journeys are
 - [x] Read-only production counts reconfirmed migration `20261011_0013`, 122 pending Brain records, and zero RAG embedding/source/file rows. Evidence is recorded in `CURRENT_STATE.md` and `docs/RELEASE_EVIDENCE.md`.
 - [ ] Verify Voyage API credentials with a real provider call from the deployed backend; a configured secret is not proof that the API accepts it.
 - [ ] Obtain an authorized admin bearer token through the approved secret/auth workflow; unauthenticated RAG endpoints return HTTP 401. Do not bypass authentication or expose secrets.
-- [ ] Run controlled Brain ingestion with Voyage v2 only after provider smoke succeeds; verify model name, 512-D dimensions, durable row counts, and zero unembedded source chunks.
+- [x] Controlled public RSS ingestion with Voyage v2, model/dimension checks, and zero ingestion errors passed in run #38227390320 attempt 4. Pending/private Brain drafts remain excluded.
 - [ ] Verify live retrieval and citation provenance; keep release PENDING until these checks and remaining release gates pass.
 - [ ] Triage full local backend suite failures/errors separately. PR #73 isolates two RAG search tests from external provider credentials; targeted RAG tests passed (21 passed), but the complete local suite did not pass.
 
