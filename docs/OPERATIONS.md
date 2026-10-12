@@ -2,7 +2,7 @@
 
 > Owner: Operations
 > Update when: monitoring, recovery, or provider verification changes
-> Last Updated: 2026-10-11
+> Last Updated: 2026-10-12
 > Do NOT put here: secrets or unverified incident claims.
 
 ## Principles
@@ -28,9 +28,9 @@ Backlog runbooks: correlation-ID investigation; threshold tuning; durable metric
 
 - Scheduler guard: PR #75 is deployed (Render deploy dep-db65vj7avr4c73fn6gvg). The cooldown key was seeded from the last existing preview, and the first post-deploy startup created no new preview. Preserve pending drafts for admin review. Follow-up PR #76 calculates remaining cooldown rather than resetting a full interval on each restart; deploy it and confirm the next 24-hour cycle before closing this gate.
 
-- RAG v2 rollout: do not enable RAG_EMBEDDING_VERSION=2 or ingest the production Brain backlog until PR #77 is deployed and a live Voyage smoke confirms the model/dimension. V2-only rows intentionally have no legacy 768-D vector; switching back to version 1 skips those rows until they are re-embedded with a valid legacy provider.
+- RAG v2 rollout: current production is on `RAG_EMBEDDING_VERSION=2` and deployed mode `voyage_only`. The 7 indexed chunks use valid Voyage 512-D vectors; legacy vectors are intentionally absent. Do not roll back to version 1 without a deliberate migration/re-embedding plan, because v1 search skips v2-only rows.
 
-- RAG provider gate: use the production-auth workflow to run the admin-only Voyage smoke first. It must report voyage-3-lite with 512 dimensions and persisted=false. While RAG_EMBEDDING_VERSION=1, the workflow must not ingest. Only after a successful smoke should the flag be enabled and the workflow rerun; it syncs public RSS sources and indexes only approved/published Brain records, then verifies citations.
+- RAG provider/E2E gate: Production Auth Smoke run #38227390320 attempt 4 passed the non-persisting Voyage smoke (`voyage-3-lite`, 512 dimensions, `persisted=false`), synced feeds, ingested 7 sources with zero errors, and returned 5 retrieval matches with a non-empty citation. The 125 pending/private Brain records were not ingested. Preserve the admin-auth gate and keep ingestion limited to public RSS sources plus approved/published Brain records.
 
 ## Provider verification
 
@@ -120,4 +120,4 @@ Preserve evidence, correlation IDs, sanitized logs, affected run/session IDs, an
 - Render deployment dep-db5ifnprn11c73dg9ak0 reached live for code commit 8f8397f16d74281d1072ed3b8cb8bd5017a2c5c1 
 - This does not close live workflow recovery, RAG ingest/search, Agent→Brain→Publish, approval/resume, or scheduled-boundary checks. OpenRouter HTTP 429 remains a provider-capacity blocker; paid fallback is not authorized. Vercel remediation remains paused.
 
-- Production RAG rollout update: the admin-only Voyage smoke passed in run #13 (voyage-3-lite, 512 dimensions, persisted=false). The first E2E imported 5 RSS sources and persisted 2 valid v2 chunks, but later ingestion failed when the legacy provider returned HTTP 400; RAG_EMBEDDING_VERSION is rolled back to 1. PR #81 adds bounded retries for transient Voyage errors; PR #84 makes v2 ingestion Voyage-only and adds a status marker so the workflow waits for the deployed code before retrying. The workflow syncs public RSS sources, indexes only approved/published Brain records, and verifies citations.
+- Production RAG rollout update (2026-10-12): full ingest→retrieval→citation E2E passed in run #38227390320 attempt 4. The HTTP 422 root cause was a 5-second search budget conflicting with 21-second Voyage pacing; PR #90 fixed safe diagnostic logging and PR #91 raised the configurable timeout budget to 75 seconds and classifies timeouts as 503. Both are merged and live. Overall release remains pending for the separate recovery, publishing, SLO, rollback/DR, newsletter, failover, and scheduler-observation gates.
