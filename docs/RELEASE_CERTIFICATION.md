@@ -122,3 +122,14 @@ Live workflow retry/stale-claim/failure recovery and production RAG→Agent→Br
 - This execution is blocked on authorized access to the authenticated admin/agent-service route and a verified provider call. No production rows were inserted or altered in this pass. Release certification remains PENDING.
 
 - Production Voyage smoke and full source ingestion/retrieval/citation E2E are now VERIFIED by run #38227390320 attempt 4. The earlier legacy-provider failure and HTTP 422 timeout failure are superseded. PR #90 exposes safe diagnostic fields and PR #91 fixes the 5-second-vs-21-second pacing timeout; both are merged/deployed. Overall release remains PENDING for independent non-RAG gates.
+
+
+## Release closure implementation evidence (2026-10-12)
+
+- PR #93 merged: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/93. CI #641 passed all backend, frontend, agents, and security jobs: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38261937734. CodeQL #389 passed Python and JavaScript/TypeScript: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38261937903.
+- PR #92 merged: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/92. CI #640 and CodeQL #388 passed; workflow integration tests use an isolated SQLite fixture.
+- Added `Production Admin UI Smoke` (manual, read-only after login) and `Production SLO Synthetic Probe` (15-minute `/health` synthetic checks with webhook alert/test mode). Their production execution has not yet been observed in this evidence record.
+- The Agent→Brain→approval→publish→soft-unpublish integration test is a deterministic test-database result, not production publishing evidence. No production Brain item was changed.
+- DR/rollback rehearsal procedure is documented, but no production deployment rollback, managed Auth/Storage recovery, or object-storage recovery is claimed as complete. The full SLO observation window and error-budget calculation remain pending.
+
+Release status remains **PENDING — NOT RELEASE-CERTIFIED**.
