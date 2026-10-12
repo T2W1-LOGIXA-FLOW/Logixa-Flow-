@@ -1,3 +1,11 @@
+## 2026-10-12 partial production Voyage ingestion
+
+- [x] Provider smoke passed with `voyage-3-lite`, 512 dimensions, and no persistence.
+- [x] Production RAG flag set to version 2 after provider smoke.
+- [x] RSS sync imported 5 source records; read-only DB check confirms 2 valid Voyage v2 chunks and no indexed pending Brain drafts.
+- [ ] First ingestion attempt stopped after the legacy embedding provider returned HTTP 400. PR #80 bypasses that provider in v2 mode and gates the E2E on the deployed `voyage_only` marker.
+- [ ] Deploy the fix, rerun ingestion, verify all eligible chunks and a citation-bearing retrieval result. Release remains PENDING.
+
 # Logixa Flow — Roadmap
 
 > Owner: Project / Engineering
@@ -15,7 +23,7 @@ Status: DONE / VERIFIED at repository level, with release certification still pe
 
 ## Active Phase
 
-**Release status: PENDING.** Production migration `20261011_0013` is applied, but production RAG tables are empty (`document_embeddings=0`, `intelligence_sources=0`) while `ai_memory_brain=125` (pending=125). OpenRouter HTTP 429 was observed during scheduled preview. Keep `RAG_EMBEDDING_VERSION=1`; do not claim a zero-row backfill is complete or enable paid fallback without owner approval. Most recent CI #592 / CodeQL #339 passed for PR #73, but live production journey gates remain separate.
+**Release status: PENDING.** Production migration `20261011_0013` is applied, but production RAG tables are empty (`document_embeddings=0`, `intelligence_sources=0`) while `ai_memory_brain=125` (pending=125). OpenRouter HTTP 429 was observed during scheduled preview. The provider smoke passed and `RAG_EMBEDDING_VERSION=2` is enabled. The first E2E imported 5 RSS sources and stored 2 valid Voyage v2 chunks before legacy provider HTTP 400 stopped ingestion. PR #80 switches v2 ingestion to Voyage-only; finish ingestion/citation verification before release certification. Paid fallback remains unauthorized. Most recent CI #592 / CodeQL #339 passed for PR #73, but live production journey gates remain separate.
 
 ### Phase 13 — Release certification and maintenance
 
