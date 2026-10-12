@@ -96,15 +96,17 @@ def test_voyage_v2_retries_rate_limit_using_retry_after(monkeypatch) -> None:
     success.headers = {}
     success.raise_for_status.return_value = None
     success.json.return_value = {"data": [{"embedding": [0.25] * 512}]}
-    post = Mock(side_effect=[throttled, success])
+    post = Mock(side_effect=[throttled, throttled, success])
     monkeypatch.setattr(embeddings.requests, "post", post)
-    monkeypatch.setattr(embeddings.time, "sleep", Mock())
+    sleep = Mock()
+    monkeypatch.setattr(embeddings.time, "sleep", sleep)
 
     vector, model = embeddings.embed_text_v2("retry rate-limited request")
 
     assert len(vector) == 512
     assert model == "voyage-3-lite"
-    assert post.call_count == 2
+    assert post.call_count == 3
+    assert [call.args[0] for call in sleep.call_args_list] == [1.0, 2.0]
 
 
 def test_voyage_v2_does_not_retry_permanent_bad_request(monkeypatch) -> None:

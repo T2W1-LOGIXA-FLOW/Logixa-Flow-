@@ -6,6 +6,8 @@ import logging
 import math
 import os
 import time
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from collections import Counter
 
 import requests
@@ -97,7 +99,7 @@ def embed_text_v2(text: str) -> tuple[list[float], str]:
     if not api_key:
         raise RuntimeError("VOYAGE_API_KEY is required for RAG_EMBEDDING_VERSION=2")
 
-    max_attempts = max(1, int(os.getenv("VOYAGE_EMBEDDING_MAX_ATTEMPTS", "3")))
+    max_attempts = max(1, int(os.getenv("VOYAGE_EMBEDDING_MAX_ATTEMPTS", "5")))
     response = None
     for attempt in range(1, max_attempts + 1):
         try:
@@ -114,10 +116,23 @@ def embed_text_v2(text: str) -> tuple[list[float], str]:
             if response.status_code == 429 or response.status_code >= 500:
                 if attempt < max_attempts:
                     retry_after = response.headers.get("Retry-After", "")
-                    try:
-                        delay = min(5.0, max(0.0, float(retry_after)))
-                    except (TypeError, ValueError):
-                        delay = 0.5 * attempt
+                    delay = None
+                    if retry_after:
+                        try:
+                            delay = float(retry_after)
+                        except (TypeError, ValueError):
+                            try:
+                                retry_at = parsedate_to_datetime(retry_after)
+                                if retry_at.tzinfo is None:
+                                    retry_at = retry_at.replace(tzinfo=timezone.utc)
+                                delay = (retry_at - datetime.now(timezone.utc)).total_seconds()
+                            except (TypeError, ValueError, OverflowError):
+                                delay = None
+                    # A zero/malformed Retry-After must not create a hot retry loop.
+                    # Use bounded exponential backoff; cap server-provided delays too.
+                    if delay is None or delay <= 0:
+                        delay = min(30.0, 1.0 * (2 ** (attempt - 1)))
+                    delay = min(60.0, max(0.5, delay))
                     logger.warning(
                         "Voyage embedding provider returned a retryable status",
                         extra={
