@@ -170,6 +170,15 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [ ] RAG ingestion and persisted workflow run creation remain pending; do not infer success from health, signature verification, or empty-table counts.
 
 
+
+
+## Production Voyage smoke readiness update (2026-10-12)
+
+- [x] Readiness-wait change deployed in Render deploy `dep-db66a5tckfvc73c9usc0` for commit `1a3085f610cf7376b72e14f4e995c28618f9d430`; live at 2026-10-12 04:43:06 UTC.
+- [x] Backend startup completed. The scheduler logged that it skipped the scheduled daily preview because a recent attempt is recorded. A public health check returned HTTP 200 after a transient HTTP 502 during the deployment window.
+- [ ] Successful authenticated POST `/api/admin/rag/provider-smoke` evidence is not yet available in this review. Do not infer Voyage provider health from key presence or general service health.
+- [ ] RAG ingestion/search/citation E2E remains pending. Version 1 intentionally prevents the production workflow from syncing feeds or ingesting records.
+
 ## Scheduler cold-start duplicate-preview investigation (2026-10-12)
 
 - [x] Read-only production rows 123–125 are Daily Preview records, status pending, provider openrouter, no workflow_run_id; creation timestamps were 2026-10-12 03:39:04Z, 03:50:34Z, and 04:11:26Z.
