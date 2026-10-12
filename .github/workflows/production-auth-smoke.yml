@@ -77,7 +77,7 @@ jobs:
           ready=false
           for attempt in $(seq 1 30); do
             status_before="$(curl -fsS -H "Authorization: Bearer $token" "$api_url/api/admin/rag/status" 2>/dev/null || true)"
-            if echo "$status_before" | jq -e 'has("embedding_version") and has("voyage_embedding_model")' >/dev/null 2>&1; then
+            if echo "$status_before" | jq -e 'has("embedding_version") and .rag_v2_ingestion_mode == "voyage_only" and has("voyage_embedding_model")' >/dev/null 2>&1; then
               ready=true
               break
             fi
