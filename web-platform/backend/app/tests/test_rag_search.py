@@ -309,3 +309,49 @@ def test_single_brain_ingestion_rejects_unapproved_draft(db: Session):
     with pytest.raises(rag.HTTPException) as error:
         rag.rag_ingest_one_brain(pending.id, db=db, _={"role": "admin"})
     assert error.value.status_code == 409
+
+def test_v2_search_rolls_back_failed_pgvector_query_before_json_fallback(monkeypatch, db: Session):
+    monkeypatch.setenv("RAG_EMBEDDING_VERSION", "2")
+    monkeypatch.setattr("app.rag.search.embed_text_v2", lambda text: ([0.5] * 512, "voyage-3-lite"))
+    monkeypatch.setattr("app.rag.search.pgvector_enabled", lambda session: True)
+    monkeypatch.setattr(
+        "app.rag.search.similarity_search_pgvector_v2",
+        Mock(side_effect=RuntimeError("simulated pgvector operator error")),
+    )
+
+    source = models.IntelligenceSource(
+        title="Voyage fallback source",
+        url="https://example.com/voyage-fallback",
+        source_type="url",
+        category="Logistics",
+        trust_level="standard",
+        notes="Grounded source for a JSON-vector fallback.",
+    )
+    db.add(source)
+    db.commit()
+    db.refresh(source)
+    db.add(
+        models.DocumentEmbedding(
+            source_type="intelligence_source",
+            source_id=str(source.id),
+            chunk_index=0,
+            title=source.title,
+            content="Grounded logistics source content.",
+            embedding_json="[]",
+            embedding_model="v2-only",
+            embedding_v2_json=json.dumps([0.5] * 512),
+            embedding_v2_model="voyage-3-lite",
+        )
+    )
+    db.commit()
+
+    original_rollback = db.rollback
+    rollback = Mock(wraps=original_rollback)
+    monkeypatch.setattr(db, "rollback", rollback)
+
+    matches = similarity_search(db, "supply chain logistics", top_k=1)
+
+    rollback.assert_called_once()
+    assert len(matches) == 1
+    assert matches[0]["citation"]["title"] == "Voyage fallback source"
+
