@@ -1,3 +1,10 @@
+## 2026-10-12 Voyage v2 rollout and retry gate
+
+- [x] PR #81 merged and deployed: bounded retry/backoff for transient Voyage 429/5xx and connection/timeouts; permanent errors remain fail-closed. CI #615 and CodeQL #362 passed.
+- [x] Production Auth Smoke run #13 verified one non-persisting Voyage embedding response (512 dimensions). A later v2 rollout smoke returned a sanitized HTTPError and ingestion failed after two source chunks were ingested.
+- [x] Rolled `RAG_EMBEDDING_VERSION` back to `1`; rollback deployment is live. Existing v2 chunks remain untouched and will be overwritten safely by a successful re-ingest.
+- [ ] Confirm a successful provider smoke on the retry-enabled deployment; then re-enable v2 only after the service is live and run the gated ingestion/search/citation E2E. Release remains PENDING until the run proves zero ingestion errors, nonzero Voyage chunks, and citation-backed retrieval.
+
 # Logixa Flow — Roadmap
 
 > Owner: Project / Engineering
