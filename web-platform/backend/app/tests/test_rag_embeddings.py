@@ -54,6 +54,7 @@ def test_embeddings_fall_back_locally_if_free_model_returns_wrong_dimension(monk
 
 
 def test_voyage_v2_embedding_uses_tested_512_dimension_model(monkeypatch) -> None:
+    monkeypatch.setenv("VOYAGE_EMBEDDING_MIN_INTERVAL_SECONDS", "0")
     monkeypatch.setenv("VOYAGE_API_KEY", "test-voyage-key")
     values = [0.25] * 512
     response = Mock()
@@ -85,6 +86,7 @@ def test_voyage_v2_embedding_fails_closed_without_key(monkeypatch) -> None:
 
 
 def test_voyage_v2_retries_rate_limit_using_retry_after(monkeypatch) -> None:
+    monkeypatch.setenv("VOYAGE_EMBEDDING_MIN_INTERVAL_SECONDS", "0")
     monkeypatch.setenv("VOYAGE_API_KEY", "test-voyage-key")
     monkeypatch.setenv("VOYAGE_EMBEDDING_MAX_ATTEMPTS", "3")
     throttled = Mock()
@@ -110,6 +112,7 @@ def test_voyage_v2_retries_rate_limit_using_retry_after(monkeypatch) -> None:
 
 
 def test_voyage_v2_does_not_retry_permanent_bad_request(monkeypatch) -> None:
+    monkeypatch.setenv("VOYAGE_EMBEDDING_MIN_INTERVAL_SECONDS", "0")
     monkeypatch.setenv("VOYAGE_API_KEY", "test-voyage-key")
     response = Mock()
     response.status_code = 400
