@@ -644,6 +644,11 @@ def rag_status(
         "database_profile": database_profile(),
         "embedding_model": os.getenv("EMBEDDING_MODEL", "models/text-embedding-004"),
         "embedding_version": os.getenv("RAG_EMBEDDING_VERSION", "1").strip(),
+        "rag_v2_ingestion_mode": (
+            "voyage_only"
+            if os.getenv("RAG_EMBEDDING_VERSION", "1").strip() == "2"
+            else "legacy_768d"
+        ),
         "voyage_embedding_model": VOYAGE_EMBEDDING_MODEL,
         "voyage_embedding_dimensions": VOYAGE_EMBEDDING_DIMENSIONS,
         "voyage_api_key_configured": bool(os.getenv("VOYAGE_API_KEY", "").strip()),
