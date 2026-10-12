@@ -6,6 +6,15 @@
 
 This is the canonical evidence checklist for the Phase 7–13 release candidate. Evidence must identify the exact SHA, environment, timestamp, and observed durable outcome where applicable.
 
+## Latest production RAG E2E — VERIFIED (2026-10-12 10:10 UTC)
+
+- [x] Workflow [#38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320) passed the authenticated production provider-smoke → feed-sync → ingestion → retrieval/citation flow against Render commit `3476848877c080d2f76441bd844c8efec3f37751`.
+- [x] Voyage smoke: `voyage-3-lite`, 512 dimensions, `persisted=false`.
+- [x] Feed sync: 1 feed processed, 0 new imports. Ingestion: 7 sources, 7 chunks, 0 Brain items, 0 errors, 1 attempt.
+- [x] Post-run status: embedding version 2, 7 Voyage chunks, 0 legacy-vector chunks. Read-only DB query confirms 7 source records and 7 valid Voyage 512-D vectors; all 125 Brain records remain pending.
+- [x] Retrieval returned 5 matches and a non-empty first citation title/URL. The prior HTTP 422 was traced to a 5-second application search budget conflicting with 21-second Voyage request pacing; PR #90 exposed safe error class/status fields in JSON logs, and PR #91 raised the configurable timeout budget to 75 seconds and classified timeouts as 503. Both changes are merged/deployed.
+- [ ] Release certification remains pending for independent gates listed below (workflow recovery, Agent→Brain→Publish, authenticated Admin UI, SLO/alerting, rollback/DR, newsletter delivery, provider failover, and 24-hour scheduler observation).
+
 ## Repository
 - [ ] Vercel integration check is green on the current main head. **Paused by owner direction on 2026-10-09**: do not attempt build-quota, deployment-refresh, or Vercel-integration remediation until the owner explicitly resumes it. This is an open release exception/gate, not authorization to make Vercel changes.
 - [ ] Release SHA fixed; the release candidate is not frozen while production gates remain open.
@@ -227,11 +236,10 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [ ] A successful provider smoke using the newly deployed retry code has not been independently confirmed from a workflow run result in this review. The smoke-only workflow was retriggered after the retry deployment, but absence of a Render failure log is not accepted as proof of workflow success.
 - [ ] Keep release PENDING until a clean retry-enabled Voyage smoke is confirmed, then enable v2 only after the deployment is live and execute the gated feed-sync/ingest/search/citation E2E. Required evidence: zero ingestion errors, nonzero Voyage 512-D chunks, successful retrieval with a nonempty citation, and post-run counts.
 
-## Production Voyage E2E partial result (2026-10-12)
+## Historical partial Voyage E2E result (superseded by latest production RAG E2E above)
 
 - [x] Production Auth Smoke run #13 passed: provider=voyage, model=voyage-3-lite, dimensions=512, persisted=false.
 - [x] RSS sync imported 5 public sources. Production DB has intelligence_sources=5, document_embeddings=2; both rows are v2-only with valid voyage-3-lite 512-D vectors and empty legacy vectors.
 - [x] The 125 pending private Brain drafts remain untouched; bulk ingestion now selects only approved/published Brain records.
 - [x] PR #81 adds bounded retries for transient Voyage 429/5xx and connection/timeouts, while permanent 4xx remains fail-closed.
-- [ ] First E2E failed when the legacy embedding provider returned HTTP 400. RAG_EMBEDDING_VERSION was rolled back to 1. PR #84 makes v2 ingestion Voyage-only and waits for the new code to deploy before retrying.
-- [ ] Verify full eligible-source ingestion and citation-bearing retrieval before release certification.
+- [x] This intermediate failure was superseded by Production Auth Smoke run #38227390320 attempt 4, which completed ingestion and citation retrieval successfully. The deployed flag is now version 2; overall release certification remains pending for other independent gates.
