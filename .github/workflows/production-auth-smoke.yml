@@ -1,4 +1,4 @@
-# Production Voyage smoke and guarded ingestion/citation E2E after RPM-aware pacing deployment.
+# Production Voyage smoke and guarded ingestion/citation E2E after pgvector fallback rollback fix.
 name: Production Auth Smoke
 
 on:
