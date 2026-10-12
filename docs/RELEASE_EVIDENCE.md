@@ -207,3 +207,11 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [x] First push-triggered production-auth run #12 started before Render had deployed the new provider-smoke route and failed during the deployment window. The endpoint returned 404 until the Render deploy completed; the service is now live with the route.
 - [x] Follow-up PR #79 adds a bounded readiness loop: the workflow waits for the new admin RAG status schema before calling the provider-smoke endpoint, avoiding a race between GitHub Actions and Render deployment.
 - [ ] A successful live Voyage provider smoke is still not evidenced. Keep RAG_EMBEDDING_VERSION=1 until a later workflow run reports provider=voyage, model=voyage-3-lite, dimensions=512, persisted=false.
+
+
+## Voyage provider smoke passed; v2 ingestion gated (2026-10-12)
+
+- [x] Production Auth Smoke run #13 passed: admin authentication and the non-persisting Voyage provider smoke completed successfully. The workflow asserts provider=voyage, model=voyage-3-lite, dimensions=512, persisted=false.
+- [x] Render environment update set RAG_EMBEDDING_VERSION=2 after the provider smoke passed. No ingestion occurred in that environment update.
+- [x] PR #80 makes v2 ingestion Voyage-only (does not call the rate-limited legacy provider) and marks the admin status with rag_v2_ingestion_mode=voyage_only so the production workflow waits for the new code to deploy.
+- [ ] Production RSS feed sync, approved-source ingestion, 512-D stored-vector verification, and citation-bearing retrieval E2E remain pending. Do not treat the successful provider smoke as RAG readiness.
