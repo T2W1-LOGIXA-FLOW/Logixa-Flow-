@@ -2,7 +2,7 @@
 
 > Owner: Engineering / Release
 > Status: PENDING FINAL EVIDENCE
-> Last Updated: 2026-10-11
+> Last Updated: 2026-10-12
 
 ## Certification rule
 
@@ -29,6 +29,14 @@ Release certification requires repository CI/security validation, live provider 
 - Dependency/license/security refresh review: PENDING. Supabase Auth leaked-password protection is disabled per the last advisor review and requires dashboard-level action/owner decision.
 - Newsletter delivery: PENDING; newsletter endpoints return HTTP 501 until a transactional email provider is connected.
 - Vercel deployment/check remediation remains paused by owner direction; do not resume without explicit approval. This does not authorize changing Vercel build quota or deployment settings.
+
+## Latest read-only production/security review (2026-10-12)
+
+- Production database remains at Alembic revision `20261011_0013`; current counts are `ai_memory_brain=124` (all pending), `document_embeddings=0`, `intelligence_sources=0`, and `stored_files=0`.
+- Supabase security advisors report 34 informational RLS-enabled/no-policy findings and one warning for disabled leaked-password protection. A read-only privilege audit found no table grants to `anon`, `authenticated`, or `PUBLIC`; no broad policy or grant was added. Leaked-password protection still requires dashboard-level action/verification.
+- Performance advisors report 88 unused-index notices. No indexes were dropped because low observed use does not establish that an index is unnecessary for the intended workload.
+- Latest frontend local validation: 35 test files / 83 tests passed; production build passed. Production-only npm audit reports zero findings; full dev-inclusive audit still has 8 findings (7 high, 1 moderate) in development/tooling dependencies.
+- CI/CodeQL and the live health endpoint are not evidence of authenticated RAG ingestion, retrieval/citations, live workflow recovery, or a complete DR/rollback drill. Release status remains PENDING.
 
 ## Current release position
 
@@ -89,7 +97,7 @@ Live workflow retry/stale-claim/failure recovery and production RAG→Agent→Br
 ## Production verification addendum (2026-10-11)
 
 - Latest Render deployment `dep-db5rei779l7c73frthcg` is live; application startup completed. The latest production database reports Alembic revision `20261011_0013`, and the Voyage v2 columns/index are present.
-- Production RAG readiness is **not certified**: `document_embeddings=0` and `intelligence_sources=0`, while `ai_memory_brain=122`. The v2 backfill has zero rows to process because no chunks are indexed; ingestion and ingest→search/citation E2E still need to run through the authenticated application route.
+- Production RAG readiness is **not certified**: `document_embeddings=0` and `intelligence_sources=0`, while `ai_memory_brain=124` (pending=124), per the latest read-only query on 2026-10-12 04:00 UTC. The v2 backfill has zero rows to process because no chunks are indexed; ingestion and ingest→search/citation E2E still need to run through the authenticated application route.
 - Render logs show OpenRouter HTTP 429 and a failed scheduled daily preview. Do not certify AI availability or enable paid failover without approval. `/health` was not independently confirmed by an HTTP response in this pass. Release remains PENDING.
 
 
