@@ -1,3 +1,11 @@
+## Latest production RAG status (2026-10-12 04:54 UTC)
+
+- PR #81 merged as `010983891de8ef6a4d14b2d800cc99c853e7c781`; Render deploy `dep-db66fa8u01pc73f9keg0` is live. Startup completed and the scheduler correctly skipped an immediate duplicate Daily Preview.
+- CI #615 passed: backend 220 passed / 5 skipped, agents passed, frontend tests and build passed, dependency security passed. CodeQL #362 passed. The Vercel status remains a separate build-rate-limit failure and is not part of the successful GitHub CI/CodeQL jobs.
+- Production Voyage smoke run #13 passed on 2026-10-12 04:41 UTC: `voyage-3-lite`, 512 dimensions, `persisted=false`. During the subsequent v2 rollout, a provider smoke logged a sanitized `HTTPError`; the ingestion attempt ingested source IDs 5 and 4 (one chunk each), then failed with `error_type=embedding` while the Render instance was shutting down during deployment.
+- To avoid certifying or leaving an incomplete v2 rollout active, `RAG_EMBEDDING_VERSION` was rolled back to `1`; the rollback deployment is live. Existing partial v2 chunks are retained, not deleted. The bounded Voyage retry fix is now deployed, but a post-retry provider-smoke success has not yet been independently confirmed from a workflow result.
+- Release remains PENDING. Next gate: confirm a clean provider smoke on the deployed retry code, then re-enable v2 and run the gated ingestion/search/citation E2E only after production status reports embedding_version=2. Verify zero ingestion errors, nonzero 512-D Voyage chunks, and a real citation before closing the gate.
+
 # Logixa Flow — Current State
 
 > Owner: Project / Engineering
