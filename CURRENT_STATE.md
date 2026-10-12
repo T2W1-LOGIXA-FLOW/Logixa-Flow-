@@ -308,3 +308,12 @@ These are code, regression-test, CI, security-scan, and deployment results. They
 - Direct read-only inspection of the production Supabase project `ephrnmigiwjhdjksreos` confirms Alembic revision `20261011_0013`, the legacy `embedding` vector column, Voyage v2 JSON/model/vector columns, and the `ix_document_embeddings_embedding_v2_hnsw` index.
 - Production counts: `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, `ai_memory_brain=122`, `posts=8`. Voyage backfill pending count is zero only because the embedding table is empty; this is not proof of RAG readiness. The next blocker is authenticated ingestion of existing Brain records, then a real ingest→search/citation E2E test.
 - Recent Render startup logs also show OpenRouter HTTP 429 and a failed scheduled daily preview. Do not enable paid provider routing without owner approval. Release certification remains PENDING; `/health` was not independently confirmed by an HTTP response in this verification pass.
+
+
+## Production verification update (2026-10-12)
+
+- Direct HTTP request to `https://logixa-flow.onrender.com/health` returned HTTP 200. Response reported database `ok`, profile `supabase`, `pgvector_enabled=true`, `rag_chunks=0`, and legacy embedding model `liquid/lfm-2.5-embedding-350m:free`. This confirms service health, not Voyage provider health.
+- Production Supabase read-only query at 2026-10-12 03:36 UTC reconfirmed Alembic revision `20261011_0013`, `ai_memory_brain=122`, `ai_memory_brain status=pending=122`, `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, and Voyage `voyage-3-lite` v2 rows=0.
+- Authenticated RAG endpoints under `/api/admin/rag/*` return HTTP 401 without a bearer token. No admin bearer token is available in this execution context, so no production ingestion or RAG query was attempted. The user reports `VOYAGE_API_KEY` is configured, but an actual Voyage API call has not yet been observed; do not mark provider verified.
+- Targeted RAG tests passed locally after a test-only patch was prepared in PR #73: 21 passed. Full isolated backend suite is not green (182 passed, 5 skipped, 12 failed, 9 errors); failures/errors include workflow orchestration/integration and phase-4 diagnostics setup in the local SQLite/Python 3.13 environment and need separate triage.
+- Production `RAG_EMBEDDING_VERSION=1` remains unchanged. Do not claim RAG readiness: corpus has not been ingested, Voyage v2 row count is zero, and live retrieval/citation evidence is missing. Release certification remains PENDING.
