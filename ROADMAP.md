@@ -11,11 +11,11 @@
 Status: VERIFIED. Evidence: 12 Markdown files were audited and ledgers A–E were built. No orphan file, plan, or decision was identified.
 
 ### Repository hardening and platform foundations
-Status: DONE / VERIFIED at repository level, with release certification still pending. Repository/live Alembic revision is `20261011_0013`; the Voyage v2 path is additive and the legacy 768-D path remains the active rollback path. Latest documented code checks are CI #569 and CodeQL #316 on `8f8397f16d74281d1072ed3b8cb8bd5017a2c5c1`, with Render deploy `dep-db5ifnprn11c73dg9ak0` live. Production `document_embeddings=0`, `intelligence_sources=0`, and `ai_memory_brain=122`; no production RAG ingest→search/citation E2E has been evidenced. OpenRouter HTTP 429 affects scheduled AI preview. Live workflow recovery, AI business journeys, monitoring/SLO, newsletter/failover, managed Auth/Storage and object-storage recovery, rollback, and authenticated Admin UI remain open.
+Status: DONE / VERIFIED at repository level, with release certification still pending. Repository/live Alembic revision is `20261011_0013`; the Voyage v2 path is additive and the legacy 768-D path remains the active rollback path. Latest merged patch validation: PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf189b758344`; CI #592 and CodeQL #339 passed, and Render deploy `dep-db65h2mk1f9s73evo9mg` reached live. Production `document_embeddings=0`, `intelligence_sources=0`, and `ai_memory_brain=122`; no production RAG ingest→search/citation E2E has been evidenced. OpenRouter HTTP 429 affects scheduled AI preview. Live workflow recovery, AI business journeys, monitoring/SLO, newsletter/failover, managed Auth/Storage and object-storage recovery, rollback, and authenticated Admin UI remain open.
 
 ## Active Phase
 
-**Release status: PENDING.** Production migration `20261011_0013` is applied, but production RAG tables are empty (`document_embeddings=0`, `intelligence_sources=0`) while `ai_memory_brain=122`. OpenRouter HTTP 429 was observed during scheduled preview. Keep `RAG_EMBEDDING_VERSION=1`; do not claim a zero-row backfill is complete or enable paid fallback without owner approval. Latest documented CI #569 / CodeQL #316 passed, but live production journey gates remain separate.
+**Release status: PENDING.** Production migration `20261011_0013` is applied, but production RAG tables are empty (`document_embeddings=0`, `intelligence_sources=0`) while `ai_memory_brain=122`. OpenRouter HTTP 429 was observed during scheduled preview. Keep `RAG_EMBEDDING_VERSION=1`; do not claim a zero-row backfill is complete or enable paid fallback without owner approval. Most recent CI #592 / CodeQL #339 passed for PR #73, but live production journey gates remain separate.
 
 ### Phase 13 — Release certification and maintenance
 
@@ -29,7 +29,7 @@ Objective: close evidence-based release gates without changing the current archi
 
 Current verified baseline:
 - Earlier application-code CI #535 / CodeQL #282 passed on diagnostics SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420417; https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420358).
-- Latest documented code checks are CI #569 and CodeQL #316 on publishing-safety SHA `8f8397f16d74281d1072ed3b8cb8bd5017a2c5c1` (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114461; https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114411); Render deployment `dep-db5ifnprn11c73dg9ak0` reached live.
+- Latest merged patch validation: CI #592 and CodeQL #339 passed on PR #73 (https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38201060689; https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38201060691); Render deployment `dep-db65h2mk1f9s73evo9mg` reached live.
 - The deployed application private-B2 proxy E2E passed in production verification run #38049146602 (`2 passed in 12.32s`), including authenticated upload, private download/readback, and cleanup.
 - Markdown/docs-only commits are intentionally excluded from CI/CodeQL triggers, so documentation commits do not create new red/green runs.
 
