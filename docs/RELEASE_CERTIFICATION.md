@@ -86,7 +86,7 @@ Live workflow retry/stale-claim/failure recovery and production RAG→Agent→Br
 - Code commit `4746ffc0b89aee5581e6c74308a9e1db46e7dbe0` adds safe warning logs for missing embedding credentials, request/HTTP failures, invalid provider responses, and vector-dimension mismatch; test commit `35793c2d29dbc9b1814e030cd03ebea6610a8720` asserts the diagnostic markers. These changes do not establish a successful production embedding call.
 - Provider results dated 2026-10-10 were supplied by the owner without linked request logs. Treat Gemini/Groq/Mistral/Cohere/Cloudflare results as endpoint smoke notes only, not application failover evidence. OpenRouter 429/empty response and Cerebras/Hugging Face 402 remain reported blockers.
 - The configured embedding shape remains 768. Switching to Voyage 512-D or Cloudflare BGE-M3 1024-D requires a versioned data/index migration and full re-embedding/backfill; this has not been performed. No dimension truncation is approved.
-- Production RAG ingest→search, AI provider failover, and RAG→Agent→Brain→approval→publish remain PENDING. Release certification remains PENDING.
+- Production RAG ingest→search/citation is VERIFIED by run #38227390320 attempt 4. AI provider failover and RAG→Agent→Brain→approval→publish remain PENDING. Release certification remains PENDING.
 
 
 ## 2026-10-11 — Versioned RAG dimension remediation
@@ -102,7 +102,7 @@ Live workflow retry/stale-claim/failure recovery and production RAG→Agent→Br
 - CI #586 passed on 5a359f79f831ca8f0e925d7e1818f67c89659cf1: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38136913611.
 - Render deployment dep-db5nf395efls73aqkdi0 reached live; startup logs show Alembic running 20261008_0012 → 20261011_0013 before application startup.
 - SQLAlchemy emitted warnings about not recognizing existing pgvector column types during schema inspection. This requires follow-up, although the service started successfully.
-- Migration deployment is not backfill completion. No evidence yet shows zero pending Voyage rows or successful production RAG ingest→search. Keep RAG_EMBEDDING_VERSION=1.
+- Historical migration/backfill snapshot (superseded): migration deployment alone did not prove RAG readiness. The current production RAG ingest→search/citation gate is VERIFIED by run #38227390320 attempt 4; `RAG_EMBEDDING_VERSION=2` is active.
 - Runtime routing audit found that only OpenRouter Free and local fallback are wired into the current LLMRouter; the other vendor adapters/keys are not currently an automatic runtime failover chain. Production local fallback defaults off, so OpenRouter HTTP 429 can still break generation.
 - Certification remains PENDING.
 
@@ -110,15 +110,15 @@ Live workflow retry/stale-claim/failure recovery and production RAG→Agent→Br
 ## Production verification addendum (2026-10-11)
 
 - Latest Render deployment `dep-db5rei779l7c73frthcg` is live; application startup completed. The latest production database reports Alembic revision `20261011_0013`, and the Voyage v2 columns/index are present.
-- Production RAG readiness is **not certified**: `document_embeddings=0` and `intelligence_sources=0`, while `ai_memory_brain=124` (pending=124), per the latest read-only query on 2026-10-12 04:00 UTC. The v2 backfill has zero rows to process because no chunks are indexed; ingestion and ingest→search/citation E2E still need to run through the authenticated application route.
+- Historical read-only snapshot at 2026-10-12 04:00 UTC found `document_embeddings=0` and `intelligence_sources=0`. Superseded by the latest query and successful authenticated E2E: 7 sources, 7 valid Voyage 512-D chunks, 0 ingestion errors, 5 search matches, and a non-empty citation.
 - Render logs show OpenRouter HTTP 429 and a failed scheduled daily preview. Do not certify AI availability or enable paid failover without approval. `/health` was not independently confirmed by an HTTP response in this pass. Release remains PENDING.
 
 
 ## Next RAG execution gate (2026-10-11)
 
-- Read-only production query confirms all 122 `ai_memory_brain` rows have at least one usable text field, while `document_embeddings=0` and `intelligence_sources=0`. The existing admin endpoint `POST /api/admin/rag/ingest/sources` calls the repository ingestion routine for both intelligence sources and Brain memories.
-- Do not ingest the 122 rows while `RAG_EMBEDDING_VERSION=1` if OpenRouter continues to return HTTP 429: the current legacy embedding adapter falls back to deterministic hash vectors, which are not semantic embeddings and would create misleading search results.
-- Safe order: (1) verify Voyage credentials/provider access from the deployed runtime without exposing secrets, (2) enable v2 only after owner-controlled config change, (3) invoke the authenticated ingestion endpoint, (4) verify stored v2 vectors/model/dimensions and counts, (5) run authenticated query→retrieval→citation E2E, and (6) retain v1 rollback until evidence passes.
+- Historical pre-ingestion query confirmed usable text fields in 122 Brain rows while the embedding/source tables were empty. Current state is 7 public RSS sources/7 Voyage chunks; pending Brain drafts remain untouched.
+- Historical safety instruction for the legacy v1 path: do not ingest Brain rows through a hash fallback when OpenRouter returns HTTP 429. Current RAG v2 uses Voyage-only ingestion; do not enable paid-provider fallback without explicit approval.
+- This was the historical safe execution order; steps 1–5 were completed for public RSS sources by run #38227390320 attempt 4. Do not use v1 search as a fallback for v2-only rows; rollback requires an explicit re-embedding plan.
 - This execution is blocked on authorized access to the authenticated admin/agent-service route and a verified provider call. No production rows were inserted or altered in this pass. Release certification remains PENDING.
 
 - Production Voyage smoke and full source ingestion/retrieval/citation E2E are now VERIFIED by run #38227390320 attempt 4. The earlier legacy-provider failure and HTTP 422 timeout failure are superseded. PR #90 exposes safe diagnostic fields and PR #91 fixes the 5-second-vs-21-second pacing timeout; both are merged/deployed. Overall release remains PENDING for independent non-RAG gates.
