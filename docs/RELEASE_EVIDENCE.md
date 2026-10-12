@@ -121,7 +121,7 @@ Keep production workflow recovery, RAG ingestion/search, Agent→Brain→Publish
 - [x] Read-only Supabase query reconfirmed Alembic revision `20261011_0013`, `ai_memory_brain=122`, pending Brain records=122, `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, and `voyage-3-lite` v2 rows=0.
 - [x] Unauthenticated requests to `/api/admin/rag/status`, `/api/admin/rag/context`, and `/api/admin/rag/ingest/sources` returned HTTP 401 (Missing bearer token); this confirms the expected auth gate, not successful admin functionality.
 - [ ] Actual deployed Voyage embedding request, authenticated ingestion, stored 512-D vector verification, and retrieval/citation E2E remain unverified. The owner reports the server-side `VOYAGE_API_KEY` is configured, but this execution had no authorized admin bearer token and did not attempt ingestion.
-- [ ] Targeted local RAG tests passed (21 passed) after a test-only change prepared in PR #73. The full local backend suite remains not green: 182 passed, 5 skipped, 12 failed, 9 errors in the isolated SQLite/Python 3.13 environment; workflow/integration and phase-4 diagnostics failures require triage.
+- [x] Targeted local RAG tests passed (21 passed). After the workflow test fixtures were isolated from the default database, the full backend suite passed: 153 passed with two non-failing dependency/deprecation warnings. This supersedes the earlier local-suite failure count.
 
 Release remains PENDING. Health checks, schema presence, and unit tests are not substitutes for a production Voyage ingest→search/citation journey.
 
