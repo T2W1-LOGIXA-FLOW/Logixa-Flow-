@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app import models
-from app.rag.ingest import ingest_intelligence_source
+from app import main  # noqa: F401  # Initialize routers before importing rag routes.
+from app.routers import rag
+from app.rag.ingest import ingest_all_sources, ingest_intelligence_source
 from app.rag.pgvector_store import pgvector_enabled, pgvector_column_exists
 from app.rag.search import similarity_search, build_rag_context
 
@@ -221,3 +223,90 @@ def test_v2_ingestion_never_persists_hash_fallback_vector(monkeypatch, db: Sessi
     monkeypatch.setenv("RAG_EMBEDDING_VERSION", "1")
     monkeypatch.setattr("app.rag.search.embed_text", lambda text: ([0.25] * 768, "legacy-test"))
     assert similarity_search(db, "verified content", top_k=3) == []
+
+
+
+def test_voyage_provider_smoke_is_non_persisting(monkeypatch):
+    monkeypatch.setattr(
+        rag,
+        "embed_text_v2",
+        lambda text: ([0.1] * 512, rag.VOYAGE_EMBEDDING_MODEL),
+    )
+    result = rag.rag_provider_smoke(_={"role": "admin"})
+    assert result == {
+        "status": "ok",
+        "provider": "voyage",
+        "model": rag.VOYAGE_EMBEDDING_MODEL,
+        "dimensions": 512,
+        "persisted": False,
+    }
+
+
+def test_voyage_provider_smoke_sanitizes_provider_error(monkeypatch):
+    def fail_provider(_text):
+        raise RuntimeError("secret API response must not be returned")
+
+    monkeypatch.setattr(rag, "embed_text_v2", fail_provider)
+    with pytest.raises(rag.HTTPException) as error:
+        rag.rag_provider_smoke(_={"role": "admin"})
+    assert error.value.status_code == 503
+    assert error.value.detail["error_type"] == "RuntimeError"
+    assert "secret API response" not in str(error.value.detail)
+
+
+def test_bulk_rag_ingestion_excludes_unapproved_brain_drafts(monkeypatch, db: Session):
+    monkeypatch.setenv("RAG_EMBEDDING_VERSION", "1")
+    monkeypatch.setattr(
+        "app.rag.ingest.embed_text",
+        lambda text: ([0.2] * 768, "legacy-test"),
+    )
+    pending = models.AiMemoryBrain(
+        category="Supply Chain",
+        source_title="Pending private preview",
+        prompt="draft",
+        content="Unapproved draft content",
+        summary="draft",
+        status="pending",
+        is_public=False,
+    )
+    approved = models.AiMemoryBrain(
+        category="Supply Chain",
+        source_title="Approved source note",
+        prompt="approved",
+        content="Approved and safe to index",
+        summary="approved",
+        status="approved",
+        is_public=True,
+    )
+    db.add_all([pending, approved])
+    db.commit()
+    db.refresh(pending)
+    db.refresh(approved)
+
+    result = ingest_all_sources(db, limit=200)
+    rows = db.query(models.DocumentEmbedding).filter(
+        models.DocumentEmbedding.source_type == "brain"
+    ).all()
+    assert result["brain_items"] == 1
+    assert result["chunks"] == 1
+    assert [row.source_id for row in rows] == [str(approved.id)]
+    assert str(pending.id) not in {row.source_id for row in rows}
+
+
+def test_single_brain_ingestion_rejects_unapproved_draft(db: Session):
+    pending = models.AiMemoryBrain(
+        category="Supply Chain",
+        source_title="Pending private preview",
+        prompt="draft",
+        content="Unapproved draft content",
+        summary="draft",
+        status="pending",
+        is_public=False,
+    )
+    db.add(pending)
+    db.commit()
+    db.refresh(pending)
+
+    with pytest.raises(rag.HTTPException) as error:
+        rag.rag_ingest_one_brain(pending.id, db=db, _={"role": "admin"})
+    assert error.value.status_code == 409

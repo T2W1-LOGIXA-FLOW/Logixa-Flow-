@@ -140,6 +140,14 @@ Status: ACTIVE — final evidence closure.
 - **PAUSED at owner direction (2026-10-09): Vercel deployment/check remediation.** Leave build quota, deployment refresh, and Vercel integration work untouched until explicitly resumed.
 - Live-gate workflows are implemented, but production evidence depends on the user running manual GitHub Actions workflows with production environment secrets configured. Secret values must not be shared in chat or committed to the repository.
 
+## 2026-10-12 production Voyage smoke and approved-source gate
+
+- [x] Added an admin-only provider smoke endpoint that validates the configured Voyage model and 512-D output without persisting a vector.
+- [x] Added a production-auth workflow trigger for RAG code/workflow changes. It uses existing production environment secrets, logs only sanitized model/dimension metadata, and skips all ingestion while embedding version is 1.
+- [x] Bulk RAG ingestion now indexes only approved/published Brain records; direct ingestion of pending/rejected drafts returns HTTP 409. The workflow can sync configured public RSS feeds without implicit ingestion, then ingest once and verify Voyage chunks plus citation-bearing search results when version 2 is enabled.
+- [x] Local backend suite: 168 passed, 2 non-failing warnings; workflow YAML and shell syntax validation passed.
+- [ ] PR #78 merge/deploy, first live provider smoke, authenticated source ingestion, 512-D stored-vector verification, and citation E2E remain pending. Production currently has 125 pending Brain drafts and zero embeddings; no data was ingested by this patch.
+
 ## 2026-10-12 RAG v2 fallback-vector safety
 
 - [x] Identified a code-path gap: with RAG_EMBEDDING_VERSION=2, a legacy hash:fallback vector could still be written to the legacy 768-D column even when the Voyage 512-D vector succeeded.

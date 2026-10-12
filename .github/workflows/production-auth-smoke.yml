@@ -2,6 +2,22 @@ name: Production Auth Smoke
 
 on:
   workflow_dispatch:
+    inputs:
+      run_rag_e2e:
+        description: Run feed sync, ingestion, and citation E2E only after RAG_EMBEDDING_VERSION=2
+        required: true
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/production-auth-smoke.yml
+      - web-platform/backend/app/routers/rag.py
+      - web-platform/backend/app/rag/embeddings.py
+      - web-platform/backend/app/rag/ingest.py
+      - web-platform/backend/app/rag/search.py
+      - web-platform/backend/app/routers/integration.py
+      - web-platform/backend/app/integration_service.py
 
 permissions:
   contents: read
@@ -16,6 +32,8 @@ jobs:
       PRODUCTION_ADMIN_EMAIL: ${{ secrets.PRODUCTION_ADMIN_EMAIL }}
       PRODUCTION_ADMIN_PASSWORD: ${{ secrets.PRODUCTION_ADMIN_PASSWORD }}
       PRODUCTION_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+      GITHUB_EVENT_HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message || '' }}
+      RUN_RAG_E2E_INPUT: ${{ inputs.run_rag_e2e || false }}
     steps:
       - name: Validate configuration
         shell: bash
@@ -40,14 +58,50 @@ jobs:
                   raise SystemExit(f"::error::{name} must be an HTTPS base URL without embedded credentials")
           PY
           echo "Required production auth configuration is present."
-      - name: Authenticate and verify admin API
+      - name: Authenticate, smoke Voyage, and gate production RAG
+        shell: bash
         run: |
           set -euo pipefail
-          response="$(curl -fsS -X POST "$SUPABASE_URL/auth/v1/token?grant_type=password"             -H "apikey: $SUPABASE_PUBLISHABLE_KEY"             -H "Content-Type: application/json"             --data "$(jq -n --arg email "$PRODUCTION_ADMIN_EMAIL" --arg password "$PRODUCTION_ADMIN_PASSWORD" '{email:$email,password:$password}')")"
+          response="$(curl -fsS -X POST "${SUPABASE_URL%/}/auth/v1/token?grant_type=password" \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            -H "Content-Type: application/json" \
+            --data "$(jq -n --arg email "$PRODUCTION_ADMIN_EMAIL" --arg password "$PRODUCTION_ADMIN_PASSWORD" '{email:$email,password:$password}')")"
           token="$(echo "$response" | jq -r '.access_token')"
           test -n "$token"
           test "$token" != "null"
-          api_url="$PRODUCTION_API_URL"
+          api_url="${PRODUCTION_API_URL%/}"
           me="$(curl -fsS -H "Authorization: Bearer $token" "$api_url/api/auth/me")"
           echo "$me" | jq -e '.role == "admin" and (.username | length > 0)' >/dev/null
           curl -fsS -H "Authorization: Bearer $token" "$api_url/api/admin/rag/metrics?hours=1" >/dev/null
+
+          smoke="$(curl -fsS -X POST -H "Authorization: Bearer $token" "$api_url/api/admin/rag/provider-smoke")"
+          echo "$smoke" | jq -e '.status == "ok" and .provider == "voyage" and .dimensions == 512 and .persisted == false' >/dev/null
+          echo "$smoke" | jq '{status, provider, model, dimensions, persisted}'
+
+          status_before="$(curl -fsS -H "Authorization: Bearer $token" "$api_url/api/admin/rag/status")"
+          version="$(echo "$status_before" | jq -r '.embedding_version // "1"')"
+          echo "$status_before" | jq '{embedding_version, voyage_embedding_model, voyage_embedding_dimensions, voyage_api_key_configured, chunks_total, voyage_chunks_total}'
+          if [[ "$version" != "2" ]]; then
+            echo "::notice::Voyage provider smoke passed. RAG_EMBEDDING_VERSION is $version; production feed sync and ingestion were intentionally skipped."
+            exit 0
+          fi
+          if [[ "$GITHUB_EVENT_HEAD_COMMIT_MESSAGE" != "[run-rag-e2e]"* && "$RUN_RAG_E2E_INPUT" != "true" ]]; then
+            echo "::notice::RAG_EMBEDDING_VERSION=2, but ingestion is skipped unless the commit message starts with [run-rag-e2e] or the workflow input is explicitly enabled."
+            exit 0
+          fi
+
+          feed_sync="$(curl -fsS -X POST "$api_url/api/admin/integration/sync-feeds?limit_per_feed=5&ingest_rag=false" -H "Authorization: Bearer $token")"
+          echo "$feed_sync" | jq '{feeds_processed, imported, skipped}'
+          echo "$feed_sync" | jq -e '.feeds_processed > 0 and ((.imported + .skipped) > 0)' >/dev/null
+
+          ingest="$(curl -fsS -X POST "$api_url/api/admin/rag/ingest/sources?limit=500" -H "Authorization: Bearer $token")"
+          echo "$ingest" | jq '{sources, brain_items, chunks, errors, attempts}'
+          echo "$ingest" | jq -e '.errors == 0 and .sources > 0 and .chunks > 0' >/dev/null
+
+          status_after="$(curl -fsS -H "Authorization: Bearer $token" "$api_url/api/admin/rag/status")"
+          echo "$status_after" | jq '{embedding_version, chunks_total, voyage_chunks_total, legacy_vector_chunks_total}'
+          echo "$status_after" | jq -e '.embedding_version == "2" and .chunks_total > 0 and .voyage_chunks_total > 0' >/dev/null
+
+          search="$(curl -fsS -G "$api_url/api/admin/rag/search" -H "Authorization: Bearer $token" --data-urlencode "q=supply chain logistics" --data-urlencode "top_k=5")"
+          echo "$search" | jq -e '.total > 0 and (.matches | length) > 0 and ((.matches[0].citation.title // "") | length) > 0' >/dev/null
+          echo "$search" | jq '{total, first_citation: .matches[0].citation}'

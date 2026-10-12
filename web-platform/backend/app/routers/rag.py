@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from ..database import SessionLocal, get_db
 from ..db_bootstrap import database_profile
 from ..rag.ingest import _replace_chunks, ingest_all_sources, ingest_brain_memory, ingest_intelligence_source
+from ..rag.embeddings import VOYAGE_EMBEDDING_DIMENSIONS, VOYAGE_EMBEDDING_MODEL, embed_text_v2
 from ..rag.pgvector_store import pgvector_enabled
 from ..rag.search import build_rag_context, similarity_search
 from .. import models
@@ -585,11 +586,52 @@ def rag_ingest_one_brain(
     memory = db.query(models.AiMemoryBrain).filter(models.AiMemoryBrain.id == memory_id).first()
     if not memory:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Brain item not found")
+    if memory.status not in {"approved", "published"}:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Brain item must be approved or published before RAG ingestion",
+        )
     return _run_ingestion(
         lambda: {"memory_id": memory_id, "chunks": ingest_brain_memory(db, memory)},
         operation_name=f"brain:{memory_id}",
         db=db,
     )
+
+
+@router.post("/admin/rag/provider-smoke")
+def rag_provider_smoke(_: dict = Depends(require_admin)) -> dict:
+    """Verify the configured Voyage provider without persisting an embedding."""
+    try:
+        vector, model_name = embed_text_v2("Logixa Flow production Voyage provider smoke test")
+    except Exception as error:
+        logger.warning(
+            "Voyage provider smoke failed",
+            extra={"operation": "voyage_provider_smoke", "error_type": error.__class__.__name__},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "status": "error",
+                "provider": "voyage",
+                "error_type": error.__class__.__name__,
+            },
+        ) from error
+    if model_name != VOYAGE_EMBEDDING_MODEL or len(vector) != VOYAGE_EMBEDDING_DIMENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "status": "error",
+                "provider": "voyage",
+                "error_type": "model_or_dimension_mismatch",
+            },
+        )
+    return {
+        "status": "ok",
+        "provider": "voyage",
+        "model": model_name,
+        "dimensions": len(vector),
+        "persisted": False,
+    }
 
 
 @router.get("/admin/rag/status")
@@ -601,6 +643,17 @@ def rag_status(
     return {
         "database_profile": database_profile(),
         "embedding_model": os.getenv("EMBEDDING_MODEL", "models/text-embedding-004"),
+        "embedding_version": os.getenv("RAG_EMBEDDING_VERSION", "1").strip(),
+        "voyage_embedding_model": VOYAGE_EMBEDDING_MODEL,
+        "voyage_embedding_dimensions": VOYAGE_EMBEDDING_DIMENSIONS,
+        "voyage_api_key_configured": bool(os.getenv("VOYAGE_API_KEY", "").strip()),
+        "voyage_chunks_total": db.query(models.DocumentEmbedding).filter(
+            models.DocumentEmbedding.embedding_v2_model == VOYAGE_EMBEDDING_MODEL,
+            models.DocumentEmbedding.embedding_v2_json.isnot(None),
+        ).count(),
+        "legacy_vector_chunks_total": db.query(models.DocumentEmbedding).filter(
+            models.DocumentEmbedding.embedding_json != "[]"
+        ).count(),
         "chunk_size": int(os.getenv("RAG_CHUNK_SIZE", "800")),
         "chunk_overlap": int(os.getenv("RAG_CHUNK_OVERLAP", "150")),
         "chunks_total": db.query(models.DocumentEmbedding).count(),

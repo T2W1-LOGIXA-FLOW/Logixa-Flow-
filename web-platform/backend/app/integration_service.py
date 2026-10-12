@@ -174,6 +174,7 @@ def sync_default_feeds(
     category: str = "Supply Chain",
     trust_level: str = "standard",
     limit_per_feed: int = 5,
+    ingest_rag: bool = True,
 ) -> dict[str, Any]:
     total_imported = 0
     total_skipped = 0
@@ -190,7 +191,7 @@ def sync_default_feeds(
         total_skipped += skipped
         feed_results.append({"feed_url": feed_url, "imported": imported, "skipped": skipped})
     rag_summary: dict[str, int] = {}
-    if total_imported and os.getenv("RAG_AUTO_INGEST", "true").lower() == "true":
+    if total_imported and ingest_rag and os.getenv("RAG_AUTO_INGEST", "true").lower() == "true":
         from .rag.ingest import ingest_all_sources
 
         rag_summary = ingest_all_sources(db, limit=200)

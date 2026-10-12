@@ -105,7 +105,13 @@ def ingest_all_sources(db: Session, limit: int = 200) -> dict[str, int]:
     total_chunks = 0
     for source in sources:
         total_chunks += ingest_intelligence_source(db, source)
-    memories = db.query(models.AiMemoryBrain).order_by(models.AiMemoryBrain.updated_at.desc()).limit(limit).all()
+    memories = (
+        db.query(models.AiMemoryBrain)
+        .filter(models.AiMemoryBrain.status.in_({"approved", "published"}))
+        .order_by(models.AiMemoryBrain.updated_at.desc())
+        .limit(limit)
+        .all()
+    )
     for memory in memories:
         total_chunks += ingest_brain_memory(db, memory)
     return {"sources": len(sources), "brain_items": len(memories), "chunks": total_chunks}

@@ -22,11 +22,14 @@ router = APIRouter()
 @router.post("/admin/integration/sync-feeds")
 def integration_sync_feeds(
     limit_per_feed: int = Query(default=5, ge=1, le=20),
+    ingest_rag: bool = Query(default=True),
     db: Session = Depends(get_db),
     _: dict = Depends(require_admin_or_agent_service),
 ) -> dict:
-    """Import RSS items from INTEGRATION_RSS_FEEDS (or defaults) into intelligence_sources."""
-    return sync_default_feeds(db, limit_per_feed=limit_per_feed)
+    """Import RSS items into intelligence_sources, optionally deferring RAG ingestion."""
+    if ingest_rag:
+        return sync_default_feeds(db, limit_per_feed=limit_per_feed)
+    return sync_default_feeds(db, limit_per_feed=limit_per_feed, ingest_rag=False)
 
 
 @router.post("/admin/integration/import-drafts")
