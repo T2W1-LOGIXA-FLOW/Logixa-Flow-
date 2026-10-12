@@ -37,11 +37,11 @@ The latest production RAG gate is live-verified, not inferred from CI: run #3822
 - Targeted workflow execution/orchestration tests: 10 passed.
 - Full backend suite in the isolated Python 3.13 environment: 153 passed, 2 non-failing dependency/deprecation warnings.
 - PR #73 was merged as `cc91b9c0f78e603584a6bbe7737ebf189b758344`. CI #592 passed all backend, agents, frontend, and security jobs; CodeQL #339 passed for Python and JavaScript/TypeScript.
-- These results close this patch's code-regression gate only. Production workflow retry/recovery, stale-claim recovery, RAG ingest/search/citations, Agent→Brain→Publish, and other live release gates remain PENDING.
+- These results close this patch's code-regression gate only. The RAG ingest/search/citation gate was later verified by run #38227390320 attempt 4. Production workflow retry/recovery, stale-claim recovery, Agent→Brain→Publish, and other live release gates remain PENDING.
 
 ## Latest live database check (2026-10-12 04:10 UTC)
 
-- Production RAG live counts were refreshed at 2026-10-12 04:10 UTC: ai_memory_brain=125 (pending=125), document_embeddings=0, intelligence_sources=0, stored_files=0, workflow_runs=0. The workflow table is empty, so no persisted run is available for a safe duplicate-delivery smoke. Release remains PENDING.
+- Historical production counts at 2026-10-12 04:10 UTC were 125 pending Brain rows and zero sources/embeddings. Superseded by the latest successful RAG E2E at the top. The empty workflow table still means duplicate-delivery/recovery has not been verified; release remains PENDING.
 
 ## Scheduler restart-duplication finding (2026-10-12)
 
@@ -52,7 +52,7 @@ The latest production RAG gate is live-verified, not inferred from CI: run #3822
 
 ## RAG v2 fallback-vector safety finding (2026-10-12)
 
-- Production still has 125 pending Brain records and zero document_embeddings rows; no RAG ingestion has occurred.
+- Historical snapshot before the authenticated RAG E2E: 125 pending Brain records and zero embeddings. Current public RSS ingestion is verified at the top; pending Brain drafts remain untouched.
 - Code review found that when RAG_EMBEDDING_VERSION=2 and the legacy embedding provider returns hash:fallback, the ingestion path still wrote that synthetic vector into the legacy 768-D column while storing the valid Voyage 512-D vector.
 - PR #77 fixes this: v2-only chunks store an empty legacy JSON vector and a v2-only marker, skip legacy pgvector writes, and persist only the valid Voyage vector. Legacy search skips those rows rather than comparing unlike vector spaces. If rolling back to version 1, v2-only rows are intentionally unavailable until a valid legacy embedding is generated.
 - Local backend suite: 168 passed, 2 non-failing warnings. PR #78 stages an admin-only, non-persisting Voyage provider smoke and a production workflow that runs it on merge; while embedding version remains 1, the workflow intentionally skips ingestion. When version 2 is explicitly enabled after smoke success, it syncs configured public RSS feeds, ingests source records plus only approved/published Brain records, verifies 512-D Voyage chunks, and checks retrieval citations. CI/deployment and live Voyage smoke remain pending; do not enable RAG v2 until the smoke succeeds.
@@ -62,7 +62,7 @@ The latest production RAG gate is live-verified, not inferred from CI: run #3822
 - PR #79's bounded readiness wait is deployed in Render deploy `dep-db66a5tckfvc73c9usc0` for commit `1a3085f610cf7376b72e14f4e995c28618f9d430`; deploy reached live at 2026-10-12 04:43:06 UTC.
 - The updated backend startup completed, and logs show the scheduler cooldown guard skipped an immediate preview. A public health request during the rollout briefly returned HTTP 502, then returned HTTP 200 after startup completed.
 - The workflow now waits up to five minutes for the authenticated RAG status schema before calling the admin-only, non-persisting Voyage smoke. A successful provider-smoke response is not yet independently confirmed in the available evidence, so provider verification remains PENDING.
-- `RAG_EMBEDDING_VERSION=1` remains active. The workflow intentionally skips feed sync and ingestion while version 1 is active; production corpus and citations remain unverified. Do not enable v2 or claim release certification until the smoke succeeds and the authorized RAG E2E gate passes.
+- Historical workflow behavior while `RAG_EMBEDDING_VERSION=1`: feed sync and ingestion were skipped. Current production uses version 2 and `voyage_only`; the authenticated RAG E2E passed, while overall release remains pending for other gates.
 
 ## 4. COMPLETED
 
@@ -117,7 +117,7 @@ Current active closure tracks:
 - Stale-claim recovery verification with a durable before/after state and execution evidence.
 - Controlled failure/recovery verification, including sanitized logs/metrics.
 - Production monitoring, alert delivery, SLO observation window, and error-budget review.
-- End-to-end RAG ingest → embed → search in production; resolve the observed OpenRouter free-tier HTTP 429 without enabling paid-provider fallback absent owner approval.
+- Production RAG ingest→embed→search/citation: VERIFIED by run #38227390320 attempt 4. The separate OpenRouter free-tier HTTP 429 affecting scheduled AI preview remains open; paid-provider fallback is not authorized.
 - Agent → Brain → publish E2E.
 - Workflow approval → resume → completion.
 - Scheduled workflow over a real time boundary.
@@ -323,7 +323,7 @@ These are code, regression-test, CI, security-scan, and deployment results. They
 - Commit `4746ffc0b89aee5581e6c74308a9e1db46e7dbe0` logs a safe reason when RAG embedding falls back to deterministic hash vectors (missing key, HTTP failure, invalid response, or dimension mismatch). Regression assertions were added in commit `35793c2d29dbc9b1814e030cd03ebea6610a8720`.
 - Owner-supplied smoke notes report Gemini/Groq/Mistral/Cohere/Cloudflare endpoints responding, while OpenRouter returned 429/empty replies and Cerebras/Hugging Face returned 402. These are not independently linked and do not prove application-level failover. Free-only production routing remains unchanged pending explicit cost/terms approval.
 - RAG dimension blocker remains: configured/stored shape is 768; Voyage 512 and Cloudflare BGE-M3 1024 are incompatible without a planned migration and re-embedding. Do not change the dimension in place.
-- RAG ingest→search, provider failover, publishing, approval/resume, workflow recovery, authenticated Admin UI, SLO telemetry, email, managed Auth/Storage recovery, and rollback rehearsal remain PENDING. Release certification remains PENDING.
+- Production RAG ingest→search/citation is VERIFIED by run #38227390320 attempt 4. Provider failover, publishing, approval/resume, workflow recovery, authenticated Admin UI, SLO telemetry, email, managed Auth/Storage recovery, and rollback rehearsal remain PENDING. Release certification remains PENDING.
 
 
 ## 2026-10-11 — Versioned Voyage RAG dimension path
