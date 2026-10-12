@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  experimental: {
+    cpus: 2,
+  },
   output: "standalone",
   typescript: {
     ignoreBuildErrors: false,
