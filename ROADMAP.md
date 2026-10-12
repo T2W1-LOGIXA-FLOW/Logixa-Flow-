@@ -271,3 +271,13 @@ These checks close the code-regression/CI gate for this patch only. They do not 
 Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114461 · https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114411
 
 Production workflow recovery and RAG→Agent→Brain→Publish live journeys are still unchecked release gates. CI/deployment is not live E2E evidence.
+
+## 2026-10-12 — RAG production verification and remaining gates
+
+- [x] Live `/health` request returned HTTP 200; database and pgvector were reported healthy.
+- [x] Read-only production counts reconfirmed migration `20261011_0013`, 122 pending Brain records, and zero RAG embedding/source/file rows. Evidence is recorded in `CURRENT_STATE.md` and `docs/RELEASE_EVIDENCE.md`.
+- [ ] Verify Voyage API credentials with a real provider call from the deployed backend; a configured secret is not proof that the API accepts it.
+- [ ] Obtain an authorized admin bearer token through the approved secret/auth workflow; unauthenticated RAG endpoints return HTTP 401. Do not bypass authentication or expose secrets.
+- [ ] Run controlled Brain ingestion with Voyage v2 only after provider smoke succeeds; verify model name, 512-D dimensions, durable row counts, and zero unembedded source chunks.
+- [ ] Verify live retrieval and citation provenance; keep release PENDING until these checks and remaining release gates pass.
+- [ ] Triage full local backend suite failures/errors separately. PR #73 isolates two RAG search tests from external provider credentials; targeted RAG tests passed (21 passed), but the complete local suite did not pass.
