@@ -35,6 +35,9 @@ class JsonLogFormatter(logging.Formatter):
             "alert_triggered",
             "fallback_used",
             "fallback_strategy",
+            "error_class",
+            "database_error_code",
+            "provider_http_status",
         ):
             if hasattr(record, key):
                 payload[key] = getattr(record, key)
