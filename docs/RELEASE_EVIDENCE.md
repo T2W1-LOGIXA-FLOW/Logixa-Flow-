@@ -178,4 +178,6 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [x] Local backend suite passed: 159 passed, 2 non-failing warnings.
 - [x] PR #75 merged at d7db46c15fabe635df052b26c55fb0ed6e4039e8 and Render deploy dep-db65vj7avr4c73fn6gvg reached live.
 - [x] First post-deploy observation: scheduler cooldown key persisted with the prior attempt timestamp 2026-10-12 04:11:26 UTC; brain_rows=125, pending_brain=125, previews_since_deploy=0, latest_preview_at=04:11:26 UTC. No new preview was created during the post-deploy cold start.
-- [ ] Observe the next 24-hour scheduled cycle before closing the long-interval gate. Do not delete existing pending drafts automatically; they are preserved for admin review.
+- [x] Follow-up PR #76 adds remaining-cooldown sleep calculation so a cold start does not reset a full 24-hour sleep.
+- [x] PR #76 local validation: 10 targeted scheduler tests passed; full backend suite 163 passed, 2 non-failing warnings.
+- [ ] Follow-up deployment and next 24-hour scheduled-cycle observation remain pending. Do not delete existing pending drafts automatically; they are preserved for admin review.
