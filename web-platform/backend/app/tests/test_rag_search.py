@@ -1,3 +1,6 @@
+import json
+from unittest.mock import Mock
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -167,3 +170,54 @@ def test_ingest_embed_search_pipeline_returns_grounded_source(monkeypatch, db: S
     assert matches[0]["source_id"] == str(source.id)
     assert matches[0]["embedding_model"] == "test-embedding"
     assert "resilient supplier" in matches[0]["content"].lower()
+
+
+
+def test_v2_ingestion_never_persists_hash_fallback_vector(monkeypatch, db: Session):
+    monkeypatch.setenv("RAG_EMBEDDING_VERSION", "2")
+    monkeypatch.setattr(
+        "app.rag.ingest.embed_text",
+        lambda text: ([0.25] * 768, "hash:fallback"),
+    )
+    monkeypatch.setattr(
+        "app.rag.ingest.embed_text_v2",
+        lambda text: ([0.5] * 512, "voyage-3-lite"),
+    )
+    monkeypatch.setattr("app.rag.ingest.pgvector_column_exists", lambda session: True)
+    legacy_vector_store = Mock()
+    v2_vector_store = Mock()
+    monkeypatch.setattr("app.rag.ingest.store_embedding_vector", legacy_vector_store)
+    monkeypatch.setattr("app.rag.ingest.store_embedding_vector_v2", v2_vector_store)
+
+    source = models.IntelligenceSource(
+        title="Voyage-only source",
+        source_type="manual",
+        category="Supply Chain",
+        trust_level="verified",
+        content_text="Verified content for Voyage-only indexing.",
+    )
+    db.add(source)
+    db.commit()
+    db.refresh(source)
+
+    assert ingest_intelligence_source(db, source) == 1
+    row = (
+        db.query(models.DocumentEmbedding)
+        .filter(
+            models.DocumentEmbedding.source_type == "intelligence_source",
+            models.DocumentEmbedding.source_id == str(source.id),
+        )
+        .one()
+    )
+    assert row.embedding_json == "[]"
+    assert row.embedding_model == "v2-only"
+    assert row.embedding_v2_model == "voyage-3-lite"
+    assert len(json.loads(row.embedding_v2_json)) == 512
+    legacy_vector_store.assert_not_called()
+    v2_vector_store.assert_called_once()
+
+    # Rolling back the search flag must skip v2-only rows instead of parsing a
+    # synthetic legacy vector or crashing on an empty legacy vector.
+    monkeypatch.setenv("RAG_EMBEDDING_VERSION", "1")
+    monkeypatch.setattr("app.rag.search.embed_text", lambda text: ([0.25] * 768, "legacy-test"))
+    assert similarity_search(db, "verified content", top_k=3) == []
