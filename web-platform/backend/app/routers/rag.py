@@ -341,12 +341,23 @@ def _run_search(operation: Callable[[], dict], *, operation_name: str, db: Sessi
             _error_counts["search"] += 1
             _record_error("search", error_type.value, db)
             threshold = _current_alert_threshold()
+            original_error = getattr(error, "orig", None)
+            response = getattr(error, "response", None)
+            safe_error_facts = {
+                "error_class": error.__class__.__name__,
+                "database_error_code": (
+                    getattr(original_error, "sqlstate", None)
+                    or getattr(original_error, "pgcode", None)
+                ),
+                "provider_http_status": getattr(response, "status_code", None),
+            }
             logger.warning(
                 "RAG search failed",
                 extra={
                     "correlation_id": str(correlation_id),
                     "operation": operation_name,
                     "error_type": error_type.value,
+                    **safe_error_facts,
                     "attempt": attempt,
                     "retryable": error_type == RAGSearchErrorType.search and attempt < MAX_SEARCH_ATTEMPTS,
                     "error_count": _error_counts["search"],
