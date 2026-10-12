@@ -351,3 +351,12 @@ Production workflow recovery and RAG→Agent→Brain→Publish live journeys are
 - [x] At this intermediate stage, RSS sync had 5 source records and 2 valid Voyage v2 chunks; the latest run now verifies 7 sources and 7 valid chunks.
 - [x] PR #81 adds bounded retry for transient Voyage 429/5xx and connection/timeouts; permanent 4xx fails closed.
 - [x] PR #84 and follow-up fixes are merged/deployed. Run #38227390320 attempt 4 verified Voyage-only ingestion and citation-bearing retrieval. Overall release remains PENDING for independent non-RAG gates.
+
+
+## 2026-10-12 Release closure implementation update
+
+- [x] Added deterministic Agent → Brain → approve → publish → soft-unpublish API integration coverage; PR #93 merged, CI #641 passed, CodeQL #389 passed.
+- [x] Added manual authenticated production Admin UI browser smoke workflow. Production execution remains pending until `PRODUCTION_FRONTEND_URL` and other production environment secrets are confirmed.
+- [x] Added 15-minute synthetic `/health` probe, 30-day probe artifacts, and configurable webhook alert delivery/test mode. This is not real-request SLO/error-budget certification; run the manual alert test and collect the complete observation window.
+- [x] Expanded controlled DR/rollback rehearsal steps; no production rollback or destructive restore was executed.
+- [ ] Overall release remains PENDING until live Agent→Brain→Publish, authenticated Admin UI, alert-path, workflow recovery, scheduler boundary, object-storage recovery, rollback/DR, and SLO/error-budget gates have direct evidence.

@@ -1,7 +1,7 @@
 # Logixa Flow — Disaster Recovery and Rollback
 
 > Owner: Engineering / Operations
-> Status: PRE-STAGED
+> Status: RUNBOOK READY — live rollback/DR rehearsal pending
 > Last Updated: 2026-10-11
 
 ## Purpose
