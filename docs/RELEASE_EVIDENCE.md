@@ -1,7 +1,7 @@
 # Logixa Flow — Release Evidence Index
 
 > Owner: Engineering / Release
-> Status: PRE-STAGED
+> Status: ACTIVE — RAG E2E VERIFIED; OVERALL RELEASE PENDING
 > Last Updated: 2026-10-12
 
 This is the canonical evidence checklist for the Phase 7–13 release candidate. Evidence must identify the exact SHA, environment, timestamp, and observed durable outcome where applicable.
@@ -116,23 +116,23 @@ CI and deployment do not substitute for the unchecked live gates.
 
 Keep production workflow recovery, RAG ingestion/search, Agent→Brain→Publish, approval/resume, and scheduled-boundary gates unchecked until direct live evidence exists.
 
-## Current production RAG blocker (2026-10-11)
+## Historical production RAG blocker snapshot (2026-10-11; superseded by latest E2E above)
 
-- [ ] Production RAG ingest→embed→search/citation E2E. Read-only production counts: `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, `ai_memory_brain=122`; zero pending Voyage rows reflect an empty embedding table, not successful backfill.
+- [x] At this historical snapshot, production RAG ingest→embed→search/citation was pending and the embedding table was empty. Superseded by run #38227390320 attempt 4, which verified 7-source ingestion and citation-bearing retrieval.
 - [ ] Verify the deployed Voyage provider path and owner-authorized configuration before ingestion. Do not ingest through the legacy path while OpenRouter HTTP 429 is causing generation failures, and do not enable paid-provider fallback without explicit owner approval.
-- [ ] Authenticated ingestion of existing Brain records, stored vector/model/dimension checks, query retrieval and citation assertions.
+- [x] The current public RSS ingestion, stored Voyage model/dimension checks, query retrieval, and citation assertions passed in run #38227390320 attempt 4. Pending/private Brain drafts remain excluded.
 - Release remains PENDING until the live business journey and other open production gates have direct evidence.
 
 
-## Production RAG verification update (2026-10-12)
+## Historical production RAG verification snapshot (2026-10-12; superseded by latest E2E above)
 
 - [x] Live `GET /health` returned HTTP 200. Response reported database `ok`, `pgvector_enabled=true`, and `rag_chunks=0`. This is application/database health evidence only, not a Voyage smoke test.
 - [x] Read-only Supabase query reconfirmed Alembic revision `20261011_0013`, `ai_memory_brain=124`, pending Brain records=124, `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, and `voyage-3-lite` v2 rows=0.
 - [x] Unauthenticated requests to `/api/admin/rag/status`, `/api/admin/rag/context`, and `/api/admin/rag/ingest/sources` returned HTTP 401 (Missing bearer token); this confirms the expected auth gate, not successful admin functionality.
-- [ ] Actual deployed Voyage embedding request, authenticated ingestion, stored 512-D vector verification, and retrieval/citation E2E remain unverified. The owner reports the server-side `VOYAGE_API_KEY` is configured, but this execution had no authorized admin bearer token and did not attempt ingestion.
+- [x] This snapshot preceded the authenticated E2E. Run #38227390320 attempt 4 later verified the deployed Voyage request, authenticated ingestion, stored 512-D vectors, and retrieval/citation. The expected 401 from unauthenticated requests remains correct.
 - [x] Targeted local RAG tests passed (21 passed). After the workflow test fixtures were isolated from the default database, the full backend suite passed: 153 passed with two non-failing dependency/deprecation warnings. This supersedes the earlier local-suite failure count.
 
-Release remains PENDING. Health checks, schema presence, and unit tests are not substitutes for a production Voyage ingest→search/citation journey.
+Release remains PENDING for the independent non-RAG gates. Health checks, schema presence, and unit tests are not substitutes for production business-journey evidence.
 
 
 ## Workflow test isolation and CI verification (2026-10-12)
