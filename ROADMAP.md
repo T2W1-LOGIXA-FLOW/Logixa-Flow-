@@ -21,7 +21,7 @@ Status: DONE / VERIFIED at repository level, with release certification still pe
 
 Objective: close the remaining production/provider/recovery evidence gates and freeze only when the release evidence index is complete.
 
-Current state (2026-10-11): production migration `20261011_0013` is applied; `20261008_0012_rag_observability` remains part of the migration history. Cloudinary, Supabase Storage upload/read/cleanup, private B2/S3 provider and deployed application proxy, Google Drive upload/read, QStash core delivery/completion, production auth smoke, and public-schema logical backup/restore have live evidence. Remaining gates are workflow recovery, RAG/AI business journeys, newsletter/failover, object-storage/managed Auth-Storage recovery, rollback, monitoring/SLO, and full authenticated Admin UI verification.
+Current state (2026-10-11): production migration `20261011_0013` is applied; `20261008_0012_rag_observability` remains part of the migration history. Cloudinary, Supabase Storage upload/read/cleanup, private B2/S3 provider and deployed application proxy, Google Drive upload/read, QStash US-region signature-only smoke, production auth smoke, and public-schema logical backup/restore have live evidence. Remaining gates are workflow recovery, RAG/AI business journeys, newsletter/failover, object-storage/managed Auth-Storage recovery, rollback, monitoring/SLO, and full authenticated Admin UI verification.
 
 ### Final live-infrastructure verification
 
@@ -37,7 +37,7 @@ Remaining acceptance criteria:
 - Provider-level Supabase Storage, private B2/S3, Google Drive E2E, and deployed application private-B2 proxy E2E are verified. B2 application proxy evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602.
 - Retry, stale-claim recovery, and failure recovery are verified.
 - Duplicate-delivery protection remains verified.
-- QStash signature verification, delivery, and canonical workflow completion remain verified.
+- QStash US-region signature validation is verified; durable delivery/completion/idempotency remain pending because the historical EU-region message returned HTTP 401 Invalid QStash signature.
 - Cloudinary E2E remains verified.
 - Production authentication/API smoke is VERIFIED by run #11: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474.
 - Monitoring and failure-mode checks pass.
@@ -146,6 +146,7 @@ Status: ACTIVE — final evidence closure.
 - [x] Production build passed with bounded Next.js build workers (`experimental.cpus=2`), avoiding worker-spawn exhaustion in constrained build containers; the RAG index page hook-dependency warning was fixed using `useCallback`.
 - [x] Production-only npm audit: 0 findings. Full dev-inclusive audit still reports 8 findings (7 high, 1 moderate), predominantly the Tailwind 3 / Next ESLint tooling dependency chain. No forced Tailwind 4 major migration was applied.
 - [ ] Dev-toolchain advisories need a compatible major-version remediation plan and full validation.
+- [ ] QStash live durable workflow completion/idempotency needs a new successful signed run; the 2026-10-12 signature-only smoke did not create workflow state.
 
 ## 2026-10-12 regression validation
 
@@ -222,7 +223,7 @@ Deterministic repository-side coverage has expanded for RAG ingest/search, publi
 33. Broader observability/operational controls.
 34. Broader supply-chain intelligence coverage.
 
-CI #535 / CodeQL #282 passed on merged diagnostics SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` (CI: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420417; CodeQL: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420358). Render deploy `dep-db4t0iavcj2c73e3snu0` confirms diagnostics SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` live as of 2026-10-10 05:43:30Z; the targeted production B2 proxy gate is now ready to rerun. Render startup logs also observed OpenRouter HTTP 429 causing the scheduled AI preview to fail; keep production RAG/AI pending and do not enable paid fallback without owner approval. Production migration parity is closed; live provider and production-path evidence remains separate. Cloudinary and the core QStash delivery/completion/idempotency path are also no longer listed as remaining work because they have real evidence.
+CI #535 / CodeQL #282 passed on merged diagnostics SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` (CI: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420417; CodeQL: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38028420358). Render deploy `dep-db4t0iavcj2c73e3snu0` confirms diagnostics SHA `896c3d0b1086799883b4128bb5ed3d088c5965d3` live as of 2026-10-10 05:43:30Z; the targeted production B2 proxy gate is now ready to rerun. Render startup logs also observed OpenRouter HTTP 429 causing the scheduled AI preview to fail; keep production RAG/AI pending and do not enable paid fallback without owner approval. Production migration parity is closed; live provider and production-path evidence remains separate. Cloudinary remains verified. QStash durable delivery/completion/idempotency is pending after the 2026-10-12 log reconciliation; only US-region signature validation has current direct evidence.
 
 ## Release Gate Remediation — 2026-10-09
 
