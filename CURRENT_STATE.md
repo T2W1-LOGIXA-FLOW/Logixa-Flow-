@@ -358,3 +358,11 @@ These are code, regression-test, CI, security-scan, and deployment results. They
 - Authenticated RAG endpoints under `/api/admin/rag/*` return HTTP 401 without a bearer token. No admin bearer token is available in this execution context, so no production ingestion or RAG query was attempted. The user reports `VOYAGE_API_KEY` is configured, but an actual Voyage API call has not yet been observed; do not mark provider verified.
 - Earlier local full-suite failure counts are superseded by the 2026-10-12 isolated workflow-fixture fix: the full backend suite now passes (153 passed, two non-failing warnings). Production RAG remains pending because provider smoke, authenticated ingestion, vector verification, and retrieval/citation E2E are still unverified.
 - Production `RAG_EMBEDDING_VERSION=1` remains unchanged. Do not claim RAG readiness: corpus has not been ingested, Voyage v2 row count is zero, and live retrieval/citation evidence is missing. Release certification remains PENDING.
+
+## Production Voyage E2E partial state (2026-10-12)
+
+- Production Auth Smoke run #13 passed: Voyage model voyage-3-lite, 512 dimensions, no vector persisted by the smoke.
+- The first authenticated E2E imported 5 public RSS sources and persisted 2 valid Voyage v2 chunks, then failed on a later source because the legacy embedding provider returned HTTP 400.
+- Current read-only counts: ai_memory_brain=125 (pending=125), intelligence_sources=5, document_embeddings=2, workflow_runs=0. Both embedding rows are model v2-only with voyage-3-lite 512-D vectors and empty legacy JSON vectors. No pending Brain drafts were indexed.
+- RAG_EMBEDDING_VERSION has been rolled back to 1 while the Voyage-only ingestion fix is reviewed. PR #84 adds rag_v2_ingestion_mode=voyage_only and makes the production workflow wait for the deployed code before retrying.
+- Release remains PENDING until all eligible source chunks are indexed and citation-bearing retrieval E2E passes.

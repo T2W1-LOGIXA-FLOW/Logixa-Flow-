@@ -342,3 +342,10 @@ Production workflow recovery and RAG→Agent→Brain→Publish live journeys are
 - [ ] Run controlled Brain ingestion with Voyage v2 only after provider smoke succeeds; verify model name, 512-D dimensions, durable row counts, and zero unembedded source chunks.
 - [ ] Verify live retrieval and citation provenance; keep release PENDING until these checks and remaining release gates pass.
 - [ ] Triage full local backend suite failures/errors separately. PR #73 isolates two RAG search tests from external provider credentials; targeted RAG tests passed (21 passed), but the complete local suite did not pass.
+
+## 2026-10-12 partial production Voyage ingestion
+
+- [x] Provider smoke passed with voyage-3-lite, 512 dimensions, and no persistence.
+- [x] RSS sync imported 5 source records; read-only DB check confirms 2 valid Voyage v2 chunks and no indexed pending Brain drafts.
+- [x] PR #81 adds bounded retry for transient Voyage 429/5xx and connection/timeouts; permanent 4xx fails closed.
+- [ ] PR #84 bypasses the legacy provider in v2 mode and gates E2E on the deployed voyage_only marker. Deploy the fix, rerun ingestion, verify all eligible chunks and a citation-bearing retrieval result. Release remains PENDING.

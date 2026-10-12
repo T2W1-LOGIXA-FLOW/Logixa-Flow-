@@ -226,3 +226,12 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [x] `RAG_EMBEDDING_VERSION` was rolled back to `1` and the rollback deployment reached live. Partial v2 chunks were preserved for safe re-ingestion; no cleanup/deletion was run.
 - [ ] A successful provider smoke using the newly deployed retry code has not been independently confirmed from a workflow run result in this review. The smoke-only workflow was retriggered after the retry deployment, but absence of a Render failure log is not accepted as proof of workflow success.
 - [ ] Keep release PENDING until a clean retry-enabled Voyage smoke is confirmed, then enable v2 only after the deployment is live and execute the gated feed-sync/ingest/search/citation E2E. Required evidence: zero ingestion errors, nonzero Voyage 512-D chunks, successful retrieval with a nonempty citation, and post-run counts.
+
+## Production Voyage E2E partial result (2026-10-12)
+
+- [x] Production Auth Smoke run #13 passed: provider=voyage, model=voyage-3-lite, dimensions=512, persisted=false.
+- [x] RSS sync imported 5 public sources. Production DB has intelligence_sources=5, document_embeddings=2; both rows are v2-only with valid voyage-3-lite 512-D vectors and empty legacy vectors.
+- [x] The 125 pending private Brain drafts remain untouched; bulk ingestion now selects only approved/published Brain records.
+- [x] PR #81 adds bounded retries for transient Voyage 429/5xx and connection/timeouts, while permanent 4xx remains fail-closed.
+- [ ] First E2E failed when the legacy embedding provider returned HTTP 400. RAG_EMBEDDING_VERSION was rolled back to 1. PR #84 makes v2 ingestion Voyage-only and waits for the new code to deploy before retrying.
+- [ ] Verify full eligible-source ingestion and citation-bearing retrieval before release certification.
