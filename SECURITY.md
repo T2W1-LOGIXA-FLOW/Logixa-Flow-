@@ -2,7 +2,7 @@
 
 > Owner: Security / Engineering
 > Update when: threat model, authorization boundaries, secrets, dependency policy, or incident procedures change
-> Last Updated: 2026-10-08
+> Last Updated: 2026-10-12
 > Do NOT put here: release status details that belong in CURRENT_STATE.md or domain implementation details that belong in docs/.
 
 ## Scope
@@ -27,7 +27,7 @@ Admin chat sessions are owner-scoped. Foreign, inactive, and ownerless sessions 
 
 The backend owns application database access. The frontend must not receive service-role credentials. RLS is defense-in-depth and does not replace API authorization. Avoid broad grants or permissive policies solely to silence advisor output.
 
-Schema changes use Alembic. Repository migration head is 20261008_0012; live production head is 20261008_0012, verified 2026-10-08 from the connected Supabase migration history.
+Schema changes use Alembic. Repository and live production migration head is `20261011_0013`; production parity was independently verified on 2026-10-12. Production Supabase security advisors currently report 34 informational `RLS enabled, no policy` findings across internal application tables and one warning that leaked-password protection is disabled. A read-only grant audit found no table privileges granted to `anon`, `authenticated`, or `PUBLIC`; do not add broad policies/grants merely to silence the informational findings. Leaked-password protection remains a dashboard-level security action and is not yet verified enabled.
 
 ## Service role and secrets
 
