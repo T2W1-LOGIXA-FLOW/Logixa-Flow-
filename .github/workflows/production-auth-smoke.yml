@@ -116,8 +116,8 @@ jobs:
 
           feed_sync="$(curl -fsS -X POST "$api_url/api/admin/integration/sync-feeds?limit_per_feed=5&ingest_rag=false" -H "Authorization: Bearer $token")"
           echo "$feed_sync" | jq '{feeds_processed, imported, skipped}'
-          # Existing feeds can be fully synchronized with no new imports; ingestion must still reprocess all eligible stored sources.
-echo "$feed_sync" | jq -e '.feeds_processed > 0' >/dev/null
+                    # Existing feeds can be fully synchronized with no new imports; ingestion must still reprocess all eligible stored sources.
+          echo "$feed_sync" | jq -e '.feeds_processed > 0' >/dev/null
 
           ingest="$(curl -fsS -X POST "$api_url/api/admin/rag/ingest/sources?limit=500" -H "Authorization: Bearer $token")"
           echo "$ingest" | jq '{sources, brain_items, chunks, errors, attempts}'
