@@ -1,4 +1,4 @@
-# Production Voyage smoke plus gated [run-rag-e2e] ingestion/citation verification after Voyage-only deployment.
+# Production Voyage smoke and guarded ingestion/citation E2E after bounded Voyage retry deployment.
 name: Production Auth Smoke
 
 on:
