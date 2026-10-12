@@ -47,6 +47,11 @@ Latest merged patch validation: PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf
 - PR #77 fixes this: v2-only chunks store an empty legacy JSON vector and a v2-only marker, skip legacy pgvector writes, and persist only the valid Voyage vector. Legacy search skips those rows rather than comparing unlike vector spaces. If rolling back to version 1, v2-only rows are intentionally unavailable until a valid legacy embedding is generated.
 - Local backend suite: 168 passed, 2 non-failing warnings. PR #78 stages an admin-only, non-persisting Voyage provider smoke and a production workflow that runs it on merge; while embedding version remains 1, the workflow intentionally skips ingestion. When version 2 is explicitly enabled after smoke success, it syncs configured public RSS feeds, ingests source records plus only approved/published Brain records, verifies 512-D Voyage chunks, and checks retrieval citations. CI/deployment and live Voyage smoke remain pending; do not enable RAG v2 until the smoke succeeds.
 
+## Production Voyage smoke workflow status (2026-10-12)
+
+- The first push-triggered production-auth workflow run (#12) began before Render finished deploying the provider-smoke endpoint; it failed during that deployment window. PR #79 adds a five-minute bounded readiness wait for the updated RAG status schema before the smoke call.
+- The provider smoke has not yet been verified successfully. RAG_EMBEDDING_VERSION remains 1 and no production ingestion has been performed. Do not enable v2 until a successful smoke result confirms voyage-3-lite and 512 dimensions.
+
 ## 4. COMPLETED
 
 - Canonical workflow implementation remains `web-platform/backend/app/routers/workflow.py`.
