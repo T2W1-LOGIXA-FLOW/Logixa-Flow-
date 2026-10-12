@@ -1,0 +1,54 @@
+name: Production Admin UI Smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  authenticated-admin-ui:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    env:
+      PRODUCTION_FRONTEND_URL: ${{ secrets.PRODUCTION_FRONTEND_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      PRODUCTION_ADMIN_EMAIL: ${{ secrets.PRODUCTION_ADMIN_EMAIL }}
+      PRODUCTION_ADMIN_PASSWORD: ${{ secrets.PRODUCTION_ADMIN_PASSWORD }}
+    steps:
+      - name: Validate configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in PRODUCTION_FRONTEND_URL SUPABASE_URL SUPABASE_PUBLISHABLE_KEY PRODUCTION_ADMIN_EMAIL PRODUCTION_ADMIN_PASSWORD; do
+            if [[ -z "${!name:-}" ]]; then missing+=("$name"); fi
+          done
+          if (( ${#missing[@]} > 0 )); then
+            printf '::error::Missing production environment secrets: %s\n' "${missing[*]}"
+            exit 1
+          fi
+          python - <<'PY'
+          import os
+          from urllib.parse import urlparse
+          for name in ("PRODUCTION_FRONTEND_URL", "SUPABASE_URL"):
+              value = os.environ[name]
+              parsed = urlparse(value)
+              if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password:
+                  raise SystemExit(f"::error::{name} must be an HTTPS URL without embedded credentials")
+          PY
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install browser smoke dependencies
+        working-directory: web-platform/frontend
+        run: |
+          npm ci
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Authenticate and navigate the production admin UI
+        working-directory: web-platform/frontend
+        run: node scripts/production-admin-ui-smoke.mjs
