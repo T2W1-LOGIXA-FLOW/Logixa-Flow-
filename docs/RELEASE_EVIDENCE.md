@@ -118,7 +118,7 @@ Keep production workflow recovery, RAG ingestion/search, Agent→Brain→Publish
 ## Production RAG verification update (2026-10-12)
 
 - [x] Live `GET /health` returned HTTP 200. Response reported database `ok`, `pgvector_enabled=true`, and `rag_chunks=0`. This is application/database health evidence only, not a Voyage smoke test.
-- [x] Read-only Supabase query reconfirmed Alembic revision `20261011_0013`, `ai_memory_brain=122`, pending Brain records=122, `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, and `voyage-3-lite` v2 rows=0.
+- [x] Read-only Supabase query reconfirmed Alembic revision `20261011_0013`, `ai_memory_brain=124`, pending Brain records=124, `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, and `voyage-3-lite` v2 rows=0.
 - [x] Unauthenticated requests to `/api/admin/rag/status`, `/api/admin/rag/context`, and `/api/admin/rag/ingest/sources` returned HTTP 401 (Missing bearer token); this confirms the expected auth gate, not successful admin functionality.
 - [ ] Actual deployed Voyage embedding request, authenticated ingestion, stored 512-D vector verification, and retrieval/citation E2E remain unverified. The owner reports the server-side `VOYAGE_API_KEY` is configured, but this execution had no authorized admin bearer token and did not attempt ingestion.
 - [x] Targeted local RAG tests passed (21 passed). After the workflow test fixtures were isolated from the default database, the full backend suite passed: 153 passed with two non-failing dependency/deprecation warnings. This supersedes the earlier local-suite failure count.
@@ -142,3 +142,14 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [x] Full frontend `npm audit` was reviewed: 8 findings in the baseline lockfile (7 high, 1 moderate); CI's production-only npm audit remains green.
 - [x] Findings are in the development/tooling dependency tree, including the Tailwind 3 `braces`/Chokidar/micromatch chain and `postcss-selector-parser`.
 - [ ] Compatible remediation and full frontend regression validation remain open. npm proposes Tailwind 4 for the Tailwind 3 dependency chain, which is a major upgrade; no forced major upgrade was made.
+
+
+## Latest production advisor and frontend verification (2026-10-12)
+
+- [x] Read-only production query at approximately 2026-10-12 04:00 UTC: Alembic `20261011_0013`, `ai_memory_brain=124` (pending=124), `document_embeddings=0`, `intelligence_sources=0`, and `stored_files=0`.
+- [x] Supabase security advisors reviewed: 34 informational `RLS enabled, no policy` findings and one warning for disabled leaked-password protection. A read-only grant query found no table privileges for `anon`, `authenticated`, or `PUBLIC`; no broad policies/grants were added.
+- [x] Supabase performance advisors reviewed: 88 unused-index notices. No index was dropped because this evidence alone does not establish that the indexes are unnecessary.
+- [x] Frontend clean install and tests passed: 35 test files, 83 tests. Next.js production build passed after bounding build workers to 2; the RAG index page's missing hook dependency warning was fixed.
+- [x] Production-only frontend audit: 0 findings.
+- [ ] Full dev-inclusive frontend audit still reports 8 findings (7 high, 1 moderate), mainly in Tailwind 3 / Next ESLint tooling. A compatible remediation is pending; no forced Tailwind 4 major upgrade was made.
+- [ ] Leaked-password protection requires dashboard-level action and independent verification. Production RAG, authenticated workflow recovery, SLO/alerting, managed Auth/Storage recovery, and rollback gates remain pending.
