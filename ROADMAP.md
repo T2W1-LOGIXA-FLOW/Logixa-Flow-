@@ -1,3 +1,11 @@
+## 2026-10-12 partial production Voyage ingestion
+
+- [x] Provider smoke passed with `voyage-3-lite`, 512 dimensions, and no persistence.
+- [x] Production RAG flag set to version 2 after provider smoke.
+- [x] RSS sync imported 5 source records; read-only DB check confirms 2 valid Voyage v2 chunks and no indexed pending Brain drafts.
+- [ ] First ingestion attempt stopped after the legacy embedding provider returned HTTP 400. PR #80 bypasses that provider in v2 mode and gates the E2E on the deployed `voyage_only` marker.
+- [ ] Deploy the fix, rerun ingestion, verify all eligible chunks and a citation-bearing retrieval result. Release remains PENDING.
+
 # Logixa Flow — Roadmap
 
 > Owner: Project / Engineering
@@ -15,7 +23,7 @@ Status: DONE / VERIFIED at repository level, with release certification still pe
 
 ## Active Phase
 
-**Release status: PENDING.** Production migration `20261011_0013` is applied, but production RAG tables are empty (`document_embeddings=0`, `intelligence_sources=0`) while `ai_memory_brain=125` (pending=125). OpenRouter HTTP 429 was observed during scheduled preview. Keep `RAG_EMBEDDING_VERSION=1`; do not claim a zero-row backfill is complete or enable paid fallback without owner approval. Most recent CI #592 / CodeQL #339 passed for PR #73, but live production journey gates remain separate.
+**Release status: PENDING.** Production migration `20261011_0013` is applied, but production RAG tables are empty (`document_embeddings=0`, `intelligence_sources=0`) while `ai_memory_brain=125` (pending=125). OpenRouter HTTP 429 was observed during scheduled preview. The provider smoke passed and `RAG_EMBEDDING_VERSION=2` is enabled. The first E2E imported 5 RSS sources and stored 2 valid Voyage v2 chunks before legacy provider HTTP 400 stopped ingestion. PR #80 switches v2 ingestion to Voyage-only; finish ingestion/citation verification before release certification. Paid fallback remains unauthorized. Most recent CI #592 / CodeQL #339 passed for PR #73, but live production journey gates remain separate.
 
 ### Phase 13 — Release certification and maintenance
 
@@ -140,13 +148,6 @@ Status: ACTIVE — final evidence closure.
 - **PAUSED at owner direction (2026-10-09): Vercel deployment/check remediation.** Leave build quota, deployment refresh, and Vercel integration work untouched until explicitly resumed.
 - Live-gate workflows are implemented, but production evidence depends on the user running manual GitHub Actions workflows with production environment secrets configured. Secret values must not be shared in chat or committed to the repository.
 
-## 2026-10-12 Voyage-only v2 ingestion rollout
-
-- [x] Production Auth Smoke run #13 passed after the deployment-readiness fix; the workflow only succeeds after admin auth, Voyage model, 512-D dimension, and persisted=false assertions pass.
-- [x] RAG_EMBEDDING_VERSION was set to 2 after the provider smoke passed.
-- [x] PR #80 changes v2 ingestion to call Voyage only, skips legacy provider calls and synthetic vectors, and adds a status marker so the production workflow waits for the new deployment.
-- [ ] Deploy PR #80 and run the explicitly gated [run-rag-e2e] production feed-sync → ingest → Voyage chunk verification → citation search. Release remains pending until that workflow succeeds.
-
 ## 2026-10-12 production smoke deployment race
 
 - [x] Run #12 exposed a race between the push-triggered workflow and Render deployment; PR #79 waits for the new RAG status schema before calling the provider-smoke endpoint.
@@ -172,6 +173,12 @@ Status: ACTIVE — final evidence closure.
 - [x] PR #76 calculates the remaining cooldown from the durable last-attempt timestamp, avoiding a fresh full 24-hour sleep after each cold start.
 - [x] Targeted scheduler tests: 10 passed; full backend suite: 163 passed, 2 non-failing warnings.
 - [ ] Follow-up deployment and next scheduled-cycle observation remain pending.
+
+## 2026-10-12 production Voyage smoke readiness fix
+
+- [x] Bounded five-minute wait for the deployed admin RAG status schema merged and deployed: Render deploy `dep-db66a5tckfvc73c9usc0`, commit `1a3085f610cf7376b72e14f4e995c28618f9d430`.
+- [x] Render startup completed and public `/health` returned HTTP 200 after a brief HTTP 502 during the deployment window.
+- [ ] A successful authenticated Voyage provider smoke result has not yet been independently confirmed. Keep `RAG_EMBEDDING_VERSION=1`; ingestion and retrieval/citation E2E remain pending.
 
 ## 2026-10-12 scheduler restart duplicate-preview fix
 
