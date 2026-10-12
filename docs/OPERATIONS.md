@@ -26,7 +26,7 @@ Current reliability/quality telemetry includes correlation IDs, sanitized errors
 
 Backlog runbooks: correlation-ID investigation; threshold tuning; durable metrics retention; notification-provider and threat-model decision.
 
-- Scheduler caution: the pre-fix scheduler runs immediately on every process startup. Until PR #75 is deployed, avoid manual service restarts solely to trigger a preview; each cold start may create another pending Daily Preview record and call the AI provider.
+- Scheduler guard: PR #75 is deployed (Render deploy dep-db65vj7avr4c73fn6gvg). The cooldown key was seeded from the last existing preview, and the first post-deploy startup created no new preview. Preserve pending drafts for admin review; confirm the next 24-hour cycle before closing this gate.
 
 ## Provider verification
 
