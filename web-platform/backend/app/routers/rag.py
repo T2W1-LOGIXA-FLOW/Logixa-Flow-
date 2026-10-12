@@ -78,7 +78,7 @@ _search_performance = {
 _quality_feedback: list[RAGFeedback] = []
 _quality_lock = threading.RLock()
 _ab_test = RAGABTestConfig(name="rag-search-quality", control="control", treatment="treatment")
-SEARCH_TIMEOUT_SECONDS = 5.0
+SEARCH_TIMEOUT_SECONDS = max(5.0, float(os.getenv("RAG_SEARCH_TIMEOUT_SECONDS", "75")))
 MAX_CACHE_ENTRIES = 512
 
 
@@ -222,6 +222,8 @@ def _run_ingestion(
 def _classify_search_error(error: Exception) -> RAGSearchErrorType:
     name = error.__class__.__name__.lower()
     message = str(error).lower()
+    if isinstance(error, TimeoutError):
+        return RAGSearchErrorType.search
     if isinstance(error, (ValueError, TypeError)) or "query" in name or "query" in message:
         return RAGSearchErrorType.query
     if "embed" in name or "embedding" in message:
@@ -359,14 +361,22 @@ def _run_search(operation: Callable[[], dict], *, operation_name: str, db: Sessi
                     "error_type": error_type.value,
                     **safe_error_facts,
                     "attempt": attempt,
-                    "retryable": error_type == RAGSearchErrorType.search and attempt < MAX_SEARCH_ATTEMPTS,
+                    "retryable": (
+                        error_type == RAGSearchErrorType.search
+                        and not isinstance(error, TimeoutError)
+                        and attempt < MAX_SEARCH_ATTEMPTS
+                    ),
                     "error_count": _error_counts["search"],
                     "fallback_used": False,
                     "fallback_strategy": "json_cosine",
                 },
                 exc_info=False,
             )
-            if error_type != RAGSearchErrorType.search or attempt == MAX_SEARCH_ATTEMPTS:
+            if (
+                error_type != RAGSearchErrorType.search
+                or isinstance(error, TimeoutError)
+                or attempt == MAX_SEARCH_ATTEMPTS
+            ):
                 break
             time.sleep(0.05 * attempt)
 
