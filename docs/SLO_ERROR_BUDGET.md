@@ -1,7 +1,7 @@
 # Logixa Flow — SLO and Error Budget
 
 > Owner: Engineering / Operations
-> Status: PRE-STAGED
+> Status: PRE-STAGED — synthetic probe and webhook alert workflow added; measurement window still pending
 > Last Updated: 2026-10-11
 
 ## Purpose
@@ -30,6 +30,12 @@ When a 30-day budget falls below 50%, production changes require explicit operat
 
 ## Certification evidence
 Record observation window, denominator, numerator, error classification, telemetry source, incident references, and calculation timestamp. A dashboard screenshot without an auditable query/export is insufficient.
+
+## Synthetic probe and alert path
+
+`.github/workflows/production-slo-probe.yml` runs the HTTPS `/health` probe every 15 minutes and on manual dispatch. Each run records UTC timestamp, HTTP status, latency, and Actions run URL as a 30-day artifact. Configure the GitHub `production` environment secrets `PRODUCTION_API_URL` and `OPS_ALERT_WEBHOOK_URL`. The workflow sends a notification on probe failure; manual dispatch with `test_alert=true` sends a clearly labelled test notification when the probe succeeds. Run that test once and retain its Actions run as evidence.
+
+This is **synthetic health availability**, not a substitute for real request/error telemetry, workflow completion SLOs, or latency percentiles. A 30-day SLO/error-budget pass must not be claimed until the observation window is complete and the numerator/denominator can be independently reconstructed from retained evidence. Scheduled Actions runs may be delayed or skipped, so record gaps and do not silently treat missing probes as successes.
 
 ## Current state
 The SLO contract is repository-defined but not production-measured. A bounded Render event inspection for 2026-10-09 16:45Z through 2026-10-10 16:50Z found no matching `server_failed`, failed `build_ended`, or `image_pull_failed` events in the returned event set. However, queried Render metrics did not provide HTTP request-count or latency datapoints for that window; only sparse CPU/memory datapoints were available. Therefore no availability/latency numerator, denominator, error budget, or SLO pass can be calculated from this evidence. Final certification remains blocked until request/error telemetry, an auditable measurement query/export, alert-path verification, and the required observation window are available.
