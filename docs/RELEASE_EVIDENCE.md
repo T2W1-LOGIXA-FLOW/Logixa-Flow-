@@ -28,7 +28,7 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 
 ## Production database
 - [x] Supabase migration `20261008_0012_rag_observability` applied on 2026-10-08.
-- [x] Production migration `20261011_0013` applied and independently verified on 2026-10-11; Voyage v2 JSON/model/512-D vector columns and HNSW index exist. The embedding table is empty, so this proves schema deployment only—not backfill or RAG E2E.
+- [x] Production migration `20261011_0013` applied and independently verified on 2026-10-11; Voyage v2 JSON/model/512-D vector columns and HNSW index exist. The earlier empty-table snapshot is superseded by the verified production RAG E2E at the top of this file: 7 stored Voyage 512-D chunks, 7 sources, 0 ingestion errors, and citation-bearing retrieval.
 - [x] Production RLS/privilege check: RLS enabled; service_role SELECT allowed; anon/authenticated SELECT denied.
 - [x] Supabase security/performance advisors reviewed 2026-10-08. Existing RLS-without-policy INFO findings are consistent with service-role-only internal tables; 96 unused-index INFO findings require workload-based review. One WARN remains: Auth leaked-password protection is disabled and requires dashboard-level action.
 
