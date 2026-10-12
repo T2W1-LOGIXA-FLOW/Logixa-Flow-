@@ -161,3 +161,10 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [x] Render startup completed after the delivery and logged Workflow recovery restored 0 pending run(s). This only proves startup/recovery code ran with no pending rows; it does not prove run recovery.
 - [ ] The historical EU-region message ID previously cited as a successful completion (msg_7YoJxFpwkEy6sUx5XfK4MbhEa426wR6kc6xiL3z7wX65Jxrp65pan) returns HTTP 401 Invalid QStash signature in the available QStash delivery log. Treat the earlier completion/idempotency assertion as unverified until reproduced using the configured region and a real persisted workflow run.
 - [ ] Live workflow creation → QStash dispatch → durable terminal state → duplicate redelivery remains a release gate. The production workflow_runs table currently has zero rows, and no authorized admin bearer token was available to create a valid run through the application API.
+
+
+## Latest production count delta (2026-10-12 04:10 UTC)
+
+- [x] Read-only query reconfirmed Alembic revision 20261011_0013, ai_memory_brain=125 (pending=125), document_embeddings=0, intelligence_sources=0, stored_files=0, and workflow_runs=0.
+- [x] The US-region QStash signature-only smoke returned HTTP 400 Missing workflow run id after signature validation. No workflow run was created; the delivery does not satisfy live workflow completion/idempotency gates.
+- [ ] RAG ingestion and persisted workflow run creation remain pending; do not infer success from health, signature verification, or empty-table counts.
