@@ -368,3 +368,8 @@ These are code, regression-test, CI, security-scan, and deployment results. They
 - Historical counts at that stage were `intelligence_sources=5` and `document_embeddings=2`; the latest state is 7 sources/7 valid Voyage chunks. No pending Brain drafts were indexed.
 - At that stage RAG_EMBEDDING_VERSION had been rolled back to 1. It is now version 2 with deployed `voyage_only` mode after the successful E2E.
 - The ingestion/retrieval/citation gate has passed; overall release remains PENDING for the independent gates listed above.
+
+
+## Release closure implementation staged (2026-10-12)
+
+A review branch stages a deterministic Agent → Brain → approval → publish → soft-unpublish API integration test, a manual authenticated production Admin UI browser smoke, and a 15-minute synthetic `/health` probe with an optional configured webhook alert path. `docs/SLO_ERROR_BUDGET.md` explicitly limits the probe to synthetic availability; a 30-day error-budget pass is not implied. `docs/DR_ROLLBACK.md` now specifies a controlled, isolated recovery rehearsal and read-only post-rollback smoke. These are implementation/runbook additions, not production evidence. Keep the release PENDING until PR CI passes, required production secrets are confirmed, the manual UI and alert-path runs pass, and live business-journey/rollback evidence is collected.

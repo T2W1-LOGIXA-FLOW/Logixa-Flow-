@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -9,6 +11,7 @@ from sqlalchemy.pool import StaticPool
 from .. import models, security, schemas
 from ..database import Base, get_db
 from ..main import app
+from ..routers import agent as agent_router
 from ..routers.agent import publish_memory
 from ..schemas import PostCreate
 
@@ -178,3 +181,71 @@ def test_brain_publish_requires_approval_before_publication():
         session.close()
         Base.metadata.drop_all(engine)
         engine.dispose()
+
+
+
+def test_agent_brain_review_publish_and_unpublish_api_journey(posts_client, monkeypatch):
+    client, session_factory = posts_client
+
+    def fake_content_graph(db, run, message, sources):
+        return SimpleNamespace(
+            final={
+                "title": "Release-gate integration test insight",
+                "excerpt": "A local integration test for the private review-to-publish journey.",
+                "content_html": "<p>Local test content; never sent to production.</p>",
+                "model": "test-model",
+                "fact_check": {"verdict": "pass"},
+                "quality_gate": {"verdict": "pass"},
+            },
+            providers=["test"],
+            total_tokens=12,
+        )
+
+    monkeypatch.setattr(agent_router, "execute_content_graph", fake_content_graph)
+    app.dependency_overrides[security.require_admin] = lambda: {
+        "sub": "release-test-admin",
+        "role": "admin",
+    }
+    try:
+        run_response = client.post(
+            "/api/agent/run",
+            json={"message": "Create a local release-gate test insight", "source_ids": []},
+        )
+        assert run_response.status_code == 201, run_response.text
+        run_payload = run_response.json()
+        assert run_payload["status"] == "completed"
+        assert run_payload["memory"]["status"] == "pending"
+        assert run_payload["memory"]["is_public"] is False
+        memory_id = run_payload["memory"]["id"]
+
+        approve_response = client.patch(f"/api/admin/brain/{memory_id}/approve")
+        assert approve_response.status_code == 200, approve_response.text
+        assert approve_response.json()["status"] == "approved"
+        assert approve_response.json()["is_public"] is False
+
+        publish_response = client.patch(
+            f"/api/admin/brain/{memory_id}/publish",
+            json={"publish_now": True},
+        )
+        assert publish_response.status_code == 200, publish_response.text
+        published_post = publish_response.json()
+        assert published_post["status"] == "published"
+        assert published_post["is_published"] is True
+
+        with session_factory() as session:
+            memory = session.query(models.AiMemoryBrain).filter_by(id=memory_id).one()
+            post = session.query(models.Post).filter_by(slug=memory.post_slug).one()
+            assert memory.status == "published"
+            assert memory.is_public is True
+            assert post.is_published is True
+
+        unpublish_response = client.patch(f"/api/admin/brain/{memory_id}/unpublish")
+        assert unpublish_response.status_code == 200, unpublish_response.text
+        assert unpublish_response.json()["status"] == "approved"
+        assert unpublish_response.json()["is_public"] is False
+        with session_factory() as session:
+            post = session.query(models.Post).filter_by(slug=published_post["slug"]).one()
+            assert post.status == "draft"
+            assert post.is_published is False
+    finally:
+        app.dependency_overrides.pop(security.require_admin, None)
