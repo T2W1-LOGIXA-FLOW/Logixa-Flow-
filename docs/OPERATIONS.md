@@ -26,6 +26,8 @@ Current reliability/quality telemetry includes correlation IDs, sanitized errors
 
 Backlog runbooks: correlation-ID investigation; threshold tuning; durable metrics retention; notification-provider and threat-model decision.
 
+- Scheduler caution: the pre-fix scheduler runs immediately on every process startup. Until PR #75 is deployed, avoid manual service restarts solely to trigger a preview; each cold start may create another pending Daily Preview record and call the AI provider.
+
 ## Provider verification
 
 Configured integrations are not live until real E2E evidence exists for Cloudinary, Supabase Storage, B2, Google Drive, QStash, and the selected AI path.
