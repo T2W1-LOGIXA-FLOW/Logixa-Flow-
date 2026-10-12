@@ -38,7 +38,7 @@ Latest merged patch validation: PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf
 - Production rows 123, 124, and 125 are private pending Daily Preview records created within roughly 32 minutes; all show provider openrouter and no workflow_run_id. Render logs show the app restarting around the same windows.
 - Root cause: start_scheduler immediately executes the daily preview before sleeping for SCHEDULER_INTERVAL_HOURS, so each Render cold start can generate another preview and hit provider rate limits.
 - PR #75 is merged as d7db46c15fabe635df052b26c55fb0ed6e4039e8 and Render deploy dep-db65vj7avr4c73fn6gvg is live. The durable 24-hour cooldown was bootstrapped from the latest existing preview (2026-10-12 04:11:26 UTC). Read-only verification after deployment: brain_rows=125, pending=125, previews_since_deploy=0. Manual admin preview remains separate; existing pending drafts were preserved.
-- Local backend suite after the fix: 160 passed, 2 non-failing dependency/deprecation warnings. Render deployment and first post-deploy cold-start guard are verified; the next 24-hour scheduled cycle remains to be observed.
+- Local backend suite after the fix: 163 passed, 2 non-failing dependency/deprecation warnings. Render deployment and first post-deploy cold-start guard are verified. Follow-up PR #76 preserves the remaining cooldown after a cold start rather than resetting a full 24-hour sleep; its local suite is green, but deployment and the next scheduled cycle remain pending.
 
 ## 4. COMPLETED
 
