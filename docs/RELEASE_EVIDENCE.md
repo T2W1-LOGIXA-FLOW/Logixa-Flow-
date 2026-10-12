@@ -176,4 +176,6 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [x] Code inspection found start_scheduler invokes generate_daily_agent_preview immediately before its first sleep, which allows each Render cold start to create another preview.
 - [x] PR #75 adds a durable app_settings cooldown, seeded from recent Daily Preview memory or matching AgentRun records, and persists the attempt before provider work. The guard applies only to the scheduled path; manual admin preview remains independent.
 - [x] Local backend suite passed: 159 passed, 2 non-failing warnings.
-- [ ] CI/CodeQL and live deployment observation remain pending. Do not delete the existing pending drafts automatically; they are preserved for admin review.
+- [x] PR #75 merged at d7db46c15fabe635df052b26c55fb0ed6e4039e8 and Render deploy dep-db65vj7avr4c73fn6gvg reached live.
+- [x] First post-deploy observation: scheduler cooldown key persisted with the prior attempt timestamp 2026-10-12 04:11:26 UTC; brain_rows=125, pending_brain=125, previews_since_deploy=0, latest_preview_at=04:11:26 UTC. No new preview was created during the post-deploy cold start.
+- [ ] Observe the next 24-hour scheduled cycle before closing the long-interval gate. Do not delete existing pending drafts automatically; they are preserved for admin review.
