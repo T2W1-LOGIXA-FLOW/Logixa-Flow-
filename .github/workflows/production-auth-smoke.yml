@@ -74,6 +74,21 @@ jobs:
           echo "$me" | jq -e '.role == "admin" and (.username | length > 0)' >/dev/null
           curl -fsS -H "Authorization: Bearer $token" "$api_url/api/admin/rag/metrics?hours=1" >/dev/null
 
+          ready=false
+          for attempt in $(seq 1 30); do
+            status_before="$(curl -fsS -H "Authorization: Bearer $token" "$api_url/api/admin/rag/status" 2>/dev/null || true)"
+            if echo "$status_before" | jq -e 'has("embedding_version") and has("voyage_embedding_model")' >/dev/null 2>&1; then
+              ready=true
+              break
+            fi
+            echo "::notice::Waiting for the latest RAG status schema to reach production (attempt $attempt/30)."
+            sleep 10
+          done
+          if [[ "$ready" != "true" ]]; then
+            echo "::error::The deployed RAG status schema was not ready after five minutes."
+            exit 1
+          fi
+
           smoke="$(curl -fsS -X POST -H "Authorization: Bearer $token" "$api_url/api/admin/rag/provider-smoke")"
           echo "$smoke" | jq -e '.status == "ok" and .provider == "voyage" and .dimensions == 512 and .persisted == false' >/dev/null
           echo "$smoke" | jq '{status, provider, model, dimensions, persisted}'
