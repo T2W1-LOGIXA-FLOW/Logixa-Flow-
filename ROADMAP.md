@@ -140,6 +140,13 @@ Status: ACTIVE — final evidence closure.
 - **PAUSED at owner direction (2026-10-09): Vercel deployment/check remediation.** Leave build quota, deployment refresh, and Vercel integration work untouched until explicitly resumed.
 - Live-gate workflows are implemented, but production evidence depends on the user running manual GitHub Actions workflows with production environment secrets configured. Secret values must not be shared in chat or committed to the repository.
 
+## 2026-10-12 Voyage-only v2 ingestion rollout
+
+- [x] Production Auth Smoke run #13 passed after the deployment-readiness fix; the workflow only succeeds after admin auth, Voyage model, 512-D dimension, and persisted=false assertions pass.
+- [x] RAG_EMBEDDING_VERSION was set to 2 after the provider smoke passed.
+- [x] PR #80 changes v2 ingestion to call Voyage only, skips legacy provider calls and synthetic vectors, and adds a status marker so the production workflow waits for the new deployment.
+- [ ] Deploy PR #80 and run the explicitly gated [run-rag-e2e] production feed-sync → ingest → Voyage chunk verification → citation search. Release remains pending until that workflow succeeds.
+
 ## 2026-10-12 production smoke deployment race
 
 - [x] Run #12 exposed a race between the push-triggered workflow and Render deployment; PR #79 waits for the new RAG status schema before calling the provider-smoke endpoint.
