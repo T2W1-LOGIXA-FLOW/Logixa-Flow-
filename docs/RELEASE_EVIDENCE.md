@@ -135,3 +135,10 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [x] CI #592 passed backend, agents, frontend tests/build, and security jobs: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38201060689
 - [x] CodeQL #339 passed Python and JavaScript/TypeScript analyses: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38201060691
 - [ ] Live workflow retry/recovery, stale-claim reclamation, controlled failure recovery, and all production RAG/publish journeys remain pending. Local tests and CI are not live production evidence.
+
+
+## Dev-inclusive dependency audit review (2026-10-12)
+
+- [x] Full frontend `npm audit` was reviewed: 8 findings in the baseline lockfile (7 high, 1 moderate); CI's production-only npm audit remains green.
+- [x] Findings are in the development/tooling dependency tree, including the Tailwind 3 `braces`/Chokidar/micromatch chain and `postcss-selector-parser`.
+- [ ] Compatible remediation and full frontend regression validation remain open. npm proposes Tailwind 4 for the Tailwind 3 dependency chain, which is a major upgrade; no forced major upgrade was made.
