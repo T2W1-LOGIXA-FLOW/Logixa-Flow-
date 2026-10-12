@@ -200,3 +200,10 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [x] Pending/rejected Brain drafts are excluded from bulk ingestion and direct ingestion of an unapproved Brain item returns HTTP 409.
 - [x] Local backend suite: 168 passed, 2 non-failing warnings; workflow YAML and shell syntax validation passed.
 - [ ] Merge/deploy and live provider smoke have not yet been verified. Production remains at 125 pending Brain drafts, zero intelligence sources, and zero document embeddings; no ingestion was performed.
+
+
+## Production-auth smoke deployment race correction (2026-10-12)
+
+- [x] First push-triggered production-auth run #12 started before Render had deployed the new provider-smoke route and failed during the deployment window. The endpoint returned 404 until the Render deploy completed; the service is now live with the route.
+- [x] Follow-up PR #79 adds a bounded readiness loop: the workflow waits for the new admin RAG status schema before calling the provider-smoke endpoint, avoiding a race between GitHub Actions and Render deployment.
+- [ ] A successful live Voyage provider smoke is still not evidenced. Keep RAG_EMBEDDING_VERSION=1 until a later workflow run reports provider=voyage, model=voyage-3-lite, dimensions=512, persisted=false.
