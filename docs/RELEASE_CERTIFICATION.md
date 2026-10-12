@@ -40,6 +40,8 @@ Release certification requires repository CI/security validation, live provider 
 
 - [x] Newest read-only production query at 2026-10-12 04:10 UTC: ai_memory_brain=125 (pending=125), document_embeddings=0, intelligence_sources=0, stored_files=0, workflow_runs=0. No RAG data was ingested and no workflow state was modified by the QStash signature-only smoke.
 
+- Scheduler restart duplication: PENDING deployment verification. Production created Daily Preview pending rows 123–125 during repeated cold starts; PR #75 adds a durable 24-hour cooldown. Local backend tests pass, but the fix is not yet deployed.
+
 ## Current release position
 
 Production database migration parity is closed. Cloudinary, Supabase Storage upload/read, private B2/S3 provider round-trip, and Google Drive upload/read have live evidence; QStash signature validation has a separate live smoke. Durable QStash workflow completion/idempotency remains pending; all-provider run #15 covers storage providers, not QStash. Run #16 was cancelled before tests ran and is not a failure of those gates. The Supabase cleanup assertion was verified by targeted run #17. The targeted B2 application download-proxy gate passed in production verification run #38049146602 (`2 passed in 12.32s`), including upload, private download/readback, and cleanup. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602. Render startup logs also captured an OpenRouter HTTP 429 that caused the scheduled AI preview to fail; production RAG/AI remains pending and paid-provider fallback is not authorized. All remaining PENDING items require real production/provider/operations evidence and cannot be inferred from repository tests.

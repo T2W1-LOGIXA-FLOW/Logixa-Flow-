@@ -33,6 +33,13 @@ Latest merged patch validation: PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf
 
 - Production RAG live counts were refreshed at 2026-10-12 04:10 UTC: ai_memory_brain=125 (pending=125), document_embeddings=0, intelligence_sources=0, stored_files=0, workflow_runs=0. The workflow table is empty, so no persisted run is available for a safe duplicate-delivery smoke. Release remains PENDING.
 
+## Scheduler restart-duplication finding (2026-10-12)
+
+- Production rows 123, 124, and 125 are private pending Daily Preview records created within roughly 32 minutes; all show provider openrouter and no workflow_run_id. Render logs show the app restarting around the same windows.
+- Root cause: start_scheduler immediately executes the daily preview before sleeping for SCHEDULER_INTERVAL_HOURS, so each Render cold start can generate another preview and hit provider rate limits.
+- A fix is staged in PR #75: durable 24-hour cooldown stored in app_settings, bootstrapped from recent preview/agent records so deployment itself will not create another immediate preview. Manual admin preview remains separate. Existing pending drafts are preserved, not deleted.
+- Local backend suite after the fix: 159 passed, 2 non-failing dependency/deprecation warnings. CI and production deployment evidence are still pending; do not mark the scheduler release gate closed until the fix is deployed and observed.
+
 ## 4. COMPLETED
 
 - Canonical workflow implementation remains `web-platform/backend/app/routers/workflow.py`.

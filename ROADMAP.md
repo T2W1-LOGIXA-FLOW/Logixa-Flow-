@@ -140,6 +140,13 @@ Status: ACTIVE — final evidence closure.
 - **PAUSED at owner direction (2026-10-09): Vercel deployment/check remediation.** Leave build quota, deployment refresh, and Vercel integration work untouched until explicitly resumed.
 - Live-gate workflows are implemented, but production evidence depends on the user running manual GitHub Actions workflows with production environment secrets configured. Secret values must not be shared in chat or committed to the repository.
 
+## 2026-10-12 scheduler restart duplicate-preview fix
+
+- [x] Root cause identified: the scheduler runs immediately on every process start before sleeping for the configured interval. Production records 123–125 show repeated private Daily Preview drafts over roughly 32 minutes during service restarts.
+- [x] Fix staged in PR #75: persist a scheduler cooldown in app_settings before provider work and bootstrap the first cooldown from recent preview/agent records. Manual preview route remains independent.
+- [x] Local backend suite: 159 passed, 2 non-failing warnings.
+- [ ] CI/CodeQL and production deployment verification remain pending. Existing private pending Brain records are preserved; no production rows were deleted or ingested.
+
 ## 2026-10-12 frontend hardening follow-up
 
 - [x] Frontend dependency install from the updated lockfile passed; frontend tests passed (35 files, 83 tests).

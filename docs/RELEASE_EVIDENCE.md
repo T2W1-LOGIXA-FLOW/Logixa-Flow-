@@ -168,3 +168,12 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [x] Read-only query reconfirmed Alembic revision 20261011_0013, ai_memory_brain=125 (pending=125), document_embeddings=0, intelligence_sources=0, stored_files=0, and workflow_runs=0.
 - [x] The US-region QStash signature-only smoke returned HTTP 400 Missing workflow run id after signature validation. No workflow run was created; the delivery does not satisfy live workflow completion/idempotency gates.
 - [ ] RAG ingestion and persisted workflow run creation remain pending; do not infer success from health, signature verification, or empty-table counts.
+
+
+## Scheduler cold-start duplicate-preview investigation (2026-10-12)
+
+- [x] Read-only production rows 123–125 are Daily Preview records, status pending, provider openrouter, no workflow_run_id; creation timestamps were 2026-10-12 03:39:04Z, 03:50:34Z, and 04:11:26Z.
+- [x] Code inspection found start_scheduler invokes generate_daily_agent_preview immediately before its first sleep, which allows each Render cold start to create another preview.
+- [x] PR #75 adds a durable app_settings cooldown, seeded from recent Daily Preview memory or matching AgentRun records, and persists the attempt before provider work. The guard applies only to the scheduled path; manual admin preview remains independent.
+- [x] Local backend suite passed: 159 passed, 2 non-failing warnings.
+- [ ] CI/CodeQL and live deployment observation remain pending. Do not delete the existing pending drafts automatically; they are preserved for admin review.
