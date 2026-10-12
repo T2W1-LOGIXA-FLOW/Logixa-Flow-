@@ -5,6 +5,7 @@ import json
 import logging
 import math
 import os
+import threading
 import time
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -18,6 +19,22 @@ EMBEDDING_DIMENSIONS = int(os.getenv("EMBEDDING_DIMENSIONS", "768"))
 FREE_EMBEDDING_MODEL = "liquid/lfm-2.5-embedding-350m:free"
 VOYAGE_EMBEDDING_MODEL = os.getenv("VOYAGE_EMBEDDING_MODEL", "voyage-3-lite")
 VOYAGE_EMBEDDING_DIMENSIONS = 512
+
+# The free-trial Voyage tier can be limited to 3 requests per minute. Share
+# request pacing across smoke tests and ingestion in this worker process.
+_VOYAGE_REQUEST_LOCK = threading.Lock()
+_VOYAGE_LAST_REQUEST_AT = 0.0
+
+
+def _pace_voyage_request() -> None:
+    global _VOYAGE_LAST_REQUEST_AT
+    interval = max(0.0, float(os.getenv("VOYAGE_EMBEDDING_MIN_INTERVAL_SECONDS", "21")))
+    with _VOYAGE_REQUEST_LOCK:
+        now = time.monotonic()
+        wait = interval - (now - _VOYAGE_LAST_REQUEST_AT)
+        if wait > 0:
+            time.sleep(wait)
+        _VOYAGE_LAST_REQUEST_AT = time.monotonic()
 
 
 def _hash_embedding(text: str, dimensions: int | None = None) -> list[float]:
@@ -103,6 +120,7 @@ def embed_text_v2(text: str) -> tuple[list[float], str]:
     response = None
     for attempt in range(1, max_attempts + 1):
         try:
+            _pace_voyage_request()
             response = requests.post(
                 "https://api.voyageai.com/v1/embeddings",
                 headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
