@@ -11,11 +11,11 @@
 Status: VERIFIED. Evidence: 12 Markdown files were audited and ledgers A–E were built. No orphan file, plan, or decision was identified.
 
 ### Repository hardening and platform foundations
-Status: DONE / VERIFIED at repository level, with release certification still pending. Repository/live Alembic revision is `20261011_0013`; the Voyage v2 path is additive and the legacy 768-D path remains the active rollback path. Latest merged patch validation: PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf189b758344`; CI #592 and CodeQL #339 passed, and Render deploy `dep-db65h2mk1f9s73evo9mg` reached live. Production `document_embeddings=0`, `intelligence_sources=0`, and `ai_memory_brain=122`; no production RAG ingest→search/citation E2E has been evidenced. OpenRouter HTTP 429 affects scheduled AI preview. Live workflow recovery, AI business journeys, monitoring/SLO, newsletter/failover, managed Auth/Storage and object-storage recovery, rollback, and authenticated Admin UI remain open.
+Status: DONE / VERIFIED at repository level, with release certification still pending. Repository/live Alembic revision is `20261011_0013`; the Voyage v2 path is additive and the legacy 768-D path remains the active rollback path. Latest merged patch validation: PR #73 merged as `cc91b9c0f78e603584a6bbe7737ebf189b758344`; CI #592 and CodeQL #339 passed, and Render deploy `dep-db65h2mk1f9s73evo9mg` reached live. Production `document_embeddings=0`, `intelligence_sources=0`, and `ai_memory_brain=124` (pending=124); no production RAG ingest→search/citation E2E has been evidenced. OpenRouter HTTP 429 affects scheduled AI preview. Live workflow recovery, AI business journeys, monitoring/SLO, newsletter/failover, managed Auth/Storage and object-storage recovery, rollback, and authenticated Admin UI remain open.
 
 ## Active Phase
 
-**Release status: PENDING.** Production migration `20261011_0013` is applied, but production RAG tables are empty (`document_embeddings=0`, `intelligence_sources=0`) while `ai_memory_brain=122`. OpenRouter HTTP 429 was observed during scheduled preview. Keep `RAG_EMBEDDING_VERSION=1`; do not claim a zero-row backfill is complete or enable paid fallback without owner approval. Most recent CI #592 / CodeQL #339 passed for PR #73, but live production journey gates remain separate.
+**Release status: PENDING.** Production migration `20261011_0013` is applied, but production RAG tables are empty (`document_embeddings=0`, `intelligence_sources=0`) while `ai_memory_brain=124` (pending=124). OpenRouter HTTP 429 was observed during scheduled preview. Keep `RAG_EMBEDDING_VERSION=1`; do not claim a zero-row backfill is complete or enable paid fallback without owner approval. Most recent CI #592 / CodeQL #339 passed for PR #73, but live production journey gates remain separate.
 
 ### Phase 13 — Release certification and maintenance
 
@@ -139,6 +139,13 @@ Status: ACTIVE — final evidence closure.
 
 - **PAUSED at owner direction (2026-10-09): Vercel deployment/check remediation.** Leave build quota, deployment refresh, and Vercel integration work untouched until explicitly resumed.
 - Live-gate workflows are implemented, but production evidence depends on the user running manual GitHub Actions workflows with production environment secrets configured. Secret values must not be shared in chat or committed to the repository.
+
+## 2026-10-12 frontend hardening follow-up
+
+- [x] Frontend dependency install from the updated lockfile passed; frontend tests passed (35 files, 83 tests).
+- [x] Production build passed with bounded Next.js build workers (`experimental.cpus=2`), avoiding worker-spawn exhaustion in constrained build containers; the RAG index page hook-dependency warning was fixed using `useCallback`.
+- [x] Production-only npm audit: 0 findings. Full dev-inclusive audit still reports 8 findings (7 high, 1 moderate), predominantly the Tailwind 3 / Next ESLint tooling dependency chain. No forced Tailwind 4 major migration was applied.
+- [ ] Dev-toolchain advisories need a compatible major-version remediation plan and full validation.
 
 ## 2026-10-12 regression validation
 
