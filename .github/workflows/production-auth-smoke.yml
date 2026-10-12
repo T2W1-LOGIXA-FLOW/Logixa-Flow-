@@ -1,4 +1,4 @@
-# Owner-authorized production RAG v2 E2E retry on 2026-10-12 after the deployment-version readiness guard.
+# Production Voyage provider smoke rerun after bounded retry deployment was confirmed live on 2026-10-12.
 name: Production Auth Smoke
 
 on:
