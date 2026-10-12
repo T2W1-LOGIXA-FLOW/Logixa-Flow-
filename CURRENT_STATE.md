@@ -2,7 +2,7 @@
 
 > Owner: Project / Engineering
 > Update when: release state, verification evidence, blockers, or next actions change
-> Last Updated: 2026-10-11
+> Last Updated: 2026-10-12
 > Do NOT put here: detailed architecture, implementation reference, or step-by-step runbooks; use `PROJECT_OVERVIEW.md` and `docs/*`.
 
 ## 1. Current Release
@@ -20,6 +20,14 @@ Phase 13 — Release certification and maintenance.
 Repository and live production Alembic revision are **20261011_0013**. Migration `20261011_0013` adds the versioned Voyage 512-D embedding path without replacing the legacy 768-D path. Production counts inspected on 2026-10-11 were `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, and `ai_memory_brain=122`; therefore the zero-row Voyage backfill is not evidence of RAG readiness. OpenRouter HTTP 429 has also affected scheduled AI preview. Keep `RAG_EMBEDDING_VERSION=1` until the provider/configuration path is explicitly authorized and verified, then ingest and validate retrieval/citations before enabling v2.
 
 Latest documented code validation: CI #569 passed (backend 200 passed / 5 skipped; agents 5 passed; frontend tests/build and dependency security passed) and CodeQL #316 passed for commit `8f8397f16d74281d1072ed3b8cb8bd5017a2c5c1`; Render deploy `dep-db5ifnprn11c73dg9ak0` reached live. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114461 and https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38117114411. These are code/CI/deployment evidence, not live workflow/RAG business-journey evidence.
+
+## Latest regression validation (2026-10-12)
+
+- Workflow execution/orchestration tests now use isolated in-memory SQLite fixtures instead of relying on the environment's default database; this resolved eight clean-environment failures caused by a missing `workflow_runs` table.
+- Targeted workflow execution/orchestration tests: 10 passed.
+- Full backend suite in the isolated Python 3.13 environment: 153 passed, 2 non-failing dependency/deprecation warnings.
+- PR #73 was merged as `cc91b9c0f78e603584a6bbe7737ebf189b758344`. CI #592 passed all backend, agents, frontend, and security jobs; CodeQL #339 passed for Python and JavaScript/TypeScript.
+- These results close this patch's code-regression gate only. Production workflow retry/recovery, stale-claim recovery, RAG ingest/search/citations, Agent→Brain→Publish, and other live release gates remain PENDING.
 
 ## 4. COMPLETED
 
