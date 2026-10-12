@@ -140,6 +140,11 @@ Status: ACTIVE — final evidence closure.
 - **PAUSED at owner direction (2026-10-09): Vercel deployment/check remediation.** Leave build quota, deployment refresh, and Vercel integration work untouched until explicitly resumed.
 - Live-gate workflows are implemented, but production evidence depends on the user running manual GitHub Actions workflows with production environment secrets configured. Secret values must not be shared in chat or committed to the repository.
 
+## 2026-10-12 production smoke deployment race
+
+- [x] Run #12 exposed a race between the push-triggered workflow and Render deployment; PR #79 waits for the new RAG status schema before calling the provider-smoke endpoint.
+- [ ] A successful live Voyage smoke is still pending; keep RAG_EMBEDDING_VERSION=1 and do not ingest production data until it passes.
+
 ## 2026-10-12 production Voyage smoke and approved-source gate
 
 - [x] Added an admin-only provider smoke endpoint that validates the configured Voyage model and 512-D output without persisting a vector.
