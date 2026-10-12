@@ -216,3 +216,13 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [x] First push-triggered production-auth run #12 started before Render had deployed the new provider-smoke route and failed during the deployment window. The endpoint returned 404 until the Render deploy completed; the service is now live with the route.
 - [x] Follow-up PR #79 adds a bounded readiness loop: the workflow waits for the new admin RAG status schema before calling the provider-smoke endpoint, avoiding a race between GitHub Actions and Render deployment.
 - [ ] A successful live Voyage provider smoke is still not evidenced. Keep RAG_EMBEDDING_VERSION=1 until a later workflow run reports provider=voyage, model=voyage-3-lite, dimensions=512, persisted=false.
+
+
+## Production Voyage E2E partial result (2026-10-12)
+
+- [x] Production Auth Smoke run #13 passed: provider=voyage, model=voyage-3-lite, dimensions=512, persisted=false.
+- [x] Render configuration now has `RAG_EMBEDDING_VERSION=2`.
+- [x] Feed sync imported 5 public RSS sources. Production DB inspection confirms `intelligence_sources=5`, `document_embeddings=2`; both embedding rows have `embedding_model=v2-only`, `embedding_v2_model=voyage-3-lite`, legacy JSON length 2 (`[]`), and Voyage JSON length consistent with 512 dimensions.
+- [x] No pending Brain drafts were indexed; the 125 pending private Daily Preview records remain untouched.
+- [ ] The first E2E attempt failed on a later source with legacy provider HTTP 400. PR #80 removes legacy-provider calls from v2 mode and waits for the `voyage_only` deployment marker before retrying.
+- [ ] Verify full eligible-source ingestion and a citation-bearing retrieval result before release certification.
