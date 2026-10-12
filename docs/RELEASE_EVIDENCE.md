@@ -113,3 +113,14 @@ Keep production workflow recovery, RAG ingestion/search, Agent→Brain→Publish
 - [ ] Verify the deployed Voyage provider path and owner-authorized configuration before ingestion. Do not ingest through the legacy path while OpenRouter HTTP 429 is causing generation failures, and do not enable paid-provider fallback without explicit owner approval.
 - [ ] Authenticated ingestion of existing Brain records, stored vector/model/dimension checks, query retrieval and citation assertions.
 - Release remains PENDING until the live business journey and other open production gates have direct evidence.
+
+
+## Production RAG verification update (2026-10-12)
+
+- [x] Live `GET /health` returned HTTP 200. Response reported database `ok`, `pgvector_enabled=true`, and `rag_chunks=0`. This is application/database health evidence only, not a Voyage smoke test.
+- [x] Read-only Supabase query reconfirmed Alembic revision `20261011_0013`, `ai_memory_brain=122`, pending Brain records=122, `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, and `voyage-3-lite` v2 rows=0.
+- [x] Unauthenticated requests to `/api/admin/rag/status`, `/api/admin/rag/context`, and `/api/admin/rag/ingest/sources` returned HTTP 401 (Missing bearer token); this confirms the expected auth gate, not successful admin functionality.
+- [ ] Actual deployed Voyage embedding request, authenticated ingestion, stored 512-D vector verification, and retrieval/citation E2E remain unverified. The owner reports the server-side `VOYAGE_API_KEY` is configured, but this execution had no authorized admin bearer token and did not attempt ingestion.
+- [ ] Targeted local RAG tests passed (21 passed) after a test-only change prepared in PR #73. The full local backend suite remains not green: 182 passed, 5 skipped, 12 failed, 9 errors in the isolated SQLite/Python 3.13 environment; workflow/integration and phase-4 diagnostics failures require triage.
+
+Release remains PENDING. Health checks, schema presence, and unit tests are not substitutes for a production Voyage ingest→search/citation journey.
