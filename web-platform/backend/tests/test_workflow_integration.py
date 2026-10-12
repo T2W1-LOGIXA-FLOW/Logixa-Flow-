@@ -4,7 +4,11 @@ import asyncio
 
 import pytest
 from fastapi import HTTPException, WebSocketDisconnect
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
+from app import models
 from app.routers import workflow
 from app.schemas import WorkflowRunRequest, WorkflowStorageCreate, WorkflowNode
 
@@ -41,11 +45,18 @@ class IdleWebSocket(FakeWebSocket):
 
 
 @pytest.fixture(autouse=True)
-def reset_workflow_state() -> None:
+def reset_workflow_state(monkeypatch: pytest.MonkeyPatch) -> None:
     workflow._WORKFLOW_STORAGE.clear()
     workflow._WORKFLOW_RUNS.clear()
     workflow._SUBSCRIBERS.clear()
+    workflow._EXECUTION_QUEUE.clear()
+    workflow._RUN_TASKS.clear()
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    models.Base.metadata.create_all(bind=engine)
+    monkeypatch.setattr(workflow, "SessionLocal", session_factory)
     yield
+    engine.dispose()
     workflow._SUBSCRIBERS.clear()
 
 
