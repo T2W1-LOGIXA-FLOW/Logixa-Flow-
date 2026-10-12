@@ -177,10 +177,8 @@ def test_ingest_embed_search_pipeline_returns_grounded_source(monkeypatch, db: S
 
 def test_v2_ingestion_never_persists_hash_fallback_vector(monkeypatch, db: Session):
     monkeypatch.setenv("RAG_EMBEDDING_VERSION", "2")
-    monkeypatch.setattr(
-        "app.rag.ingest.embed_text",
-        lambda text: ([0.25] * 768, "hash:fallback"),
-    )
+    legacy_embed = Mock(side_effect=AssertionError("legacy provider must not run in v2 mode"))
+    monkeypatch.setattr("app.rag.ingest.embed_text", legacy_embed)
     monkeypatch.setattr(
         "app.rag.ingest.embed_text_v2",
         lambda text: ([0.5] * 512, "voyage-3-lite"),
@@ -215,6 +213,7 @@ def test_v2_ingestion_never_persists_hash_fallback_vector(monkeypatch, db: Sessi
     assert row.embedding_model == "v2-only"
     assert row.embedding_v2_model == "voyage-3-lite"
     assert len(json.loads(row.embedding_v2_json)) == 512
+    legacy_embed.assert_not_called()
     legacy_vector_store.assert_not_called()
     v2_vector_store.assert_called_once()
 
