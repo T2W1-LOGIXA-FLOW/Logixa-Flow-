@@ -1,4 +1,4 @@
-# Owner-authorized production RAG v2 gate trigger recorded 2026-10-12; do not repeat without release approval.
+# Owner-authorized production RAG v2 E2E retry on 2026-10-12 after the deployment-version readiness guard.
 name: Production Auth Smoke
 
 on:
