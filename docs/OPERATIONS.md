@@ -26,7 +26,7 @@ Current reliability/quality telemetry includes correlation IDs, sanitized errors
 
 Backlog runbooks: correlation-ID investigation; threshold tuning; durable metrics retention; notification-provider and threat-model decision.
 
-- Scheduler guard: PR #75 is deployed (Render deploy dep-db65vj7avr4c73fn6gvg). The cooldown key was seeded from the last existing preview, and the first post-deploy startup created no new preview. Preserve pending drafts for admin review; confirm the next 24-hour cycle before closing this gate.
+- Scheduler guard: PR #75 is deployed (Render deploy dep-db65vj7avr4c73fn6gvg). The cooldown key was seeded from the last existing preview, and the first post-deploy startup created no new preview. Preserve pending drafts for admin review. Follow-up PR #76 calculates remaining cooldown rather than resetting a full interval on each restart; deploy it and confirm the next 24-hour cycle before closing this gate.
 
 ## Provider verification
 
