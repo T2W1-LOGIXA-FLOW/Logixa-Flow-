@@ -190,3 +190,13 @@ Release remains PENDING. Health checks, schema presence, and unit tests are not 
 - [x] PR #77 changes this path to mark the legacy vector as unavailable, skip the legacy pgvector write, and store the valid Voyage v2 vector only. Legacy search skips v2-only rows; no unlike vector spaces are compared.
 - [x] Local backend suite: 164 passed, 2 non-failing warnings.
 - [ ] CI/CodeQL, deployed provider smoke, authenticated ingestion, 512-D vector verification, retrieval/citations E2E, and 24-hour scheduler-cycle observation remain pending. Keep RAG_EMBEDDING_VERSION=1 until those gates pass.
+
+
+## Production Voyage smoke automation and approved-source guard (2026-10-12)
+
+- [x] PR #78 adds POST /api/admin/rag/provider-smoke. It requires admin authentication, makes one short Voyage embedding request, checks model and 512-D output, returns only sanitized metadata, and persists no vector.
+- [x] The production-auth workflow is triggered by changes to the RAG provider/ingestion code or its workflow file. It uses existing production environment secrets; while RAG_EMBEDDING_VERSION=1 it runs only the provider smoke and intentionally skips ingestion.
+- [x] When version 2 is enabled after successful smoke, the workflow syncs configured RSS feeds with implicit ingestion disabled, ingests sources plus only approved/published Brain records, checks stored Voyage chunk counts, and verifies a citation-bearing search result.
+- [x] Pending/rejected Brain drafts are excluded from bulk ingestion and direct ingestion of an unapproved Brain item returns HTTP 409.
+- [x] Local backend suite: 168 passed, 2 non-failing warnings; workflow YAML and shell syntax validation passed.
+- [ ] Merge/deploy and live provider smoke have not yet been verified. Production remains at 125 pending Brain drafts, zero intelligence sources, and zero document embeddings; no ingestion was performed.
