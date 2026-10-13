@@ -4,7 +4,7 @@
 - [x] Main CI passed backend, frontend, agents, and security: [run #38344770156](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770156).
 - [x] Python and JavaScript/TypeScript CodeQL passed: [run #38344770188](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770188).
 - [x] Production Admin UI core browser verification passed in [run #38379930389](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38379930389): admin login, authenticated dashboard render, AI Brain navigation, and Brain page render. The smoke workflow validates required production secrets without exposing their values.
-- [ ] A successful `/health` synthetic probe does not establish request-level SLO/error-budget compliance. Alert-path testing, request/error telemetry, and the defined observation window remain required.
+- [ ] A successful `/health` synthetic probe does not establish request-level SLO/error-budget compliance. Alert-path testing, request/error telemetry, and the defined observation window remain required. Run #38384976632 failed on a 20-second timeout while Render startup logs overlapped; PR #105 (`e13ed68`) adds bounded retries and artifact-safe timeout handling, but the post-merge fix is not yet evidenced by a new scheduled run.
 - Overall status remains **PENDING FINAL EVIDENCE**; CI/CodeQL success does not substitute for production workflow, publishing, recovery, SLO, or rollback evidence.
 
 # Logixa Flow — Release Certification
