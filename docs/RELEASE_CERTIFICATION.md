@@ -11,6 +11,19 @@
 
 Do not mark any pending gate complete based on implementation, CI, or unrelated provider evidence.
 
+## Current certification snapshot (2026-10-14)
+
+**Status: PENDING FINAL EVIDENCE — NOT RELEASE-CERTIFIED.**
+
+- Verified: production RAG ingest → Voyage embedding → retrieval/citation [#38227390320 attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320); authenticated Admin Brain API/UI response smoke [#38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082); main CI [#38417257244](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257244), CodeQL [#38417257528](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257528), and frontend PR #114 checks [CI #38424954202](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954202) / [CodeQL #38424954119](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954119).
+- Verified provider evidence remains limited to the individual tested paths: Cloudinary, Supabase Storage, B2/S3, Google Drive, production auth/API smoke, and private B2 application proxy [#38049146602](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602).
+- Pending: durable QStash run delivery/completion/idempotency; live retry/stale-claim/failure recovery; Agent → Brain → approval → Publish/resume; request/error telemetry, alert path, and SLO window; newsletter/provider failover; managed Auth/Storage and object-storage recovery; current-schema backup/restore; application rollback/DR; 24-hour scheduler observation.
+- The 2026-10-09 isolated public-schema restore verified migration `20261008_0012` at that time. It does not certify restore readiness for current migration `20261011_0013` or managed Auth/Storage/object storage.
+- Full dev-inclusive npm audit has 7 high development-toolchain findings and 0 moderate/critical; production-only audit has 0 findings. Supabase Auth leaked-password protection remains a Free-plan limitation. Vercel remediation and paid AI fallback remain owner-approval gated.
+- GitHub branch search currently returns `main` only; no open PRs were returned during this reconciliation.
+
+Do not mark any pending gate complete based on implementation, CI, or unrelated provider evidence.
+
 ## Latest repository and production validation (2026-10-13)
 
 - [x] Admin UI smoke selector fix merged by PR #95 at `93144ba83e0c5690089316404c71be4bcda9877d`: [PR #95](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/95).
