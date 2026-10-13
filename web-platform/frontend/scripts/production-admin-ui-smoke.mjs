@@ -46,10 +46,30 @@ try {
     { timeout: 30_000 },
   );
   await page.getByRole("link", { name: /AI Brain/ }).waitFor({ state: "visible" });
+  // Assert the authenticated Brain API itself, not only the page heading. A 500
+  // response can leave the static heading visible while the review queue is broken.
+  const brainApiResponsePromise = page.waitForResponse((response) => {
+    const responseUrl = new URL(response.url());
+    return responseUrl.pathname.replace(/\/+$/, "").endsWith("/api/admin/brain");
+  }, { timeout: 30_000 });
   await page.getByRole("link", { name: /AI Brain/ }).click();
   // Next.js client navigation may update the URL before click() resolves;
   // wait for the pathname itself rather than a new document load event.
   await page.waitForFunction(() => window.location.pathname === "/admin/brain", null, { timeout: 30_000 });
+  const brainApiResponse = await brainApiResponsePromise;
+  const brainApiUrl = new URL(brainApiResponse.url());
+  if (!brainApiResponse.ok()) {
+    throw new Error(\`Admin Brain API returned HTTP \${brainApiResponse.status()} for \${brainApiUrl.origin}\${brainApiUrl.pathname}\`);
+  }
+  let brainRecords;
+  try {
+    brainRecords = await brainApiResponse.json();
+  } catch {
+    throw new Error(\`Admin Brain API returned a non-JSON response for \${brainApiUrl.origin}\${brainApiUrl.pathname}\`);
+  }
+  if (!Array.isArray(brainRecords)) {
+    throw new Error(\`Admin Brain API returned a non-array payload for \${brainApiUrl.origin}\${brainApiUrl.pathname}\`);
+  }
 
   try {
     await page.getByText("AI Memory", { exact: true }).waitFor({ state: "visible" });
@@ -83,7 +103,7 @@ try {
   if (errors.length) throw new Error(`Browser runtime errors: ${errors.join(" | ").slice(0, 1200)}`);
   console.log(JSON.stringify({
     status: "passed",
-    checks: ["admin login", "authenticated dashboard render", "AI Brain navigation", "Brain page render"],
+    checks: ["admin login", "authenticated dashboard render", "AI Brain navigation", "Brain API HTTP/JSON array", "Brain page render"],
     frontend_origin: baseUrl.origin,
   }));
 } finally {
