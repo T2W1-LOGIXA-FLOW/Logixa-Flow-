@@ -125,3 +125,29 @@ async def test_workflow_state_recovery_and_cancellation() -> None:
     cancelled = await workflow.cancel_workflow_run(run.run_id, _admin={"role": "admin"})
     assert cancelled["status"] == "failed"
     assert workflow._EXECUTION_STATES[run.run_id]["status"] == "failed"
+
+@pytest.mark.anyio
+async def test_queue_claim_retries_transient_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    claim_attempts = 0
+    sleep_delays: list[float] = []
+
+    def flaky_claim(run_id: str) -> bool:
+        nonlocal claim_attempts
+        claim_attempts += 1
+        assert run_id == "claim-retry-run"
+        if claim_attempts == 1:
+            raise RuntimeError("temporary database outage")
+        return True
+
+    async def fake_sleep(delay: float) -> None:
+        sleep_delays.append(delay)
+
+    monkeypatch.setattr(workflow, "_claim_job", flaky_claim)
+    monkeypatch.setattr(workflow, "_queue_worker_sleep", fake_sleep)
+
+    claimed = await asyncio.wait_for(workflow._claim_job_with_retry("claim-retry-run"), timeout=5)
+
+    assert claimed is True
+    assert claim_attempts == 2
+    assert sleep_delays == [1.0]
+
