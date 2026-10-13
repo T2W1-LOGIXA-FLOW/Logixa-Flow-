@@ -1,3 +1,9 @@
+## Production Admin Brain response-validation finding (2026-10-13)
+
+- [ ] Render application logs at `2026-10-13T09:57:43Z` contain a `fastapi.exceptions.ResponseValidationError` with 43 category-field validation errors from the Admin Brain list response. The persisted Brain labels include editorial/internal values outside the public-post category enum.
+- [ ] PR #110 changes the Brain response schema to accept internal category labels and normalizes categories at the public-post creation boundary. The regression tests and CI/CodeQL must pass, then the deployed `GET /api/admin/brain` route must be rechecked before this production gate is marked verified.
+- No production data was mutated to diagnose the failure. Release certification remains pending.
+
 ## Latest closure evidence (2026-10-13)
 
 - [x] PR #95 fixed the Playwright Email textbox selector and was merged to `main` as `93144ba83e0c5690089316404c71be4bcda9877d`: [PR #95](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/95).

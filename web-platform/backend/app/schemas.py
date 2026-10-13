@@ -398,7 +398,8 @@ class AiMemoryOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    category: PostCategory
+    # Brain items can use internal/editorial categories that are broader than public post taxonomy.
+    category: str
     source_title: str
     source_url: str | None
     prompt: str

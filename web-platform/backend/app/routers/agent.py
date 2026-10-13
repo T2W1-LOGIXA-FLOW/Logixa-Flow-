@@ -38,6 +38,31 @@ def unique_slug(db: Session, title: str) -> str:
     return slug
 
 
+def _post_category_for_brain(category: str | None) -> schemas.PostCategory:
+    """Map internal Brain labels onto the fixed public-post category taxonomy."""
+    value = (category or "").strip().casefold()
+    canonical = {
+        "supply chain": "Supply Chain",
+        "logistics": "Logistics",
+        "procurement": "Procurement",
+        "operations excellence": "Operations Excellence",
+        "news": "News",
+    }
+    if value in canonical:
+        return canonical[value]  # type: ignore[return-value]
+    if value.startswith("logistics"):
+        return "Logistics"
+    if value.startswith("procurement"):
+        return "Procurement"
+    if value.startswith("operations excellence"):
+        return "Operations Excellence"
+    if value.startswith("news") or "daily brief" in value:
+        return "News"
+    # Labels such as "Supply Chain Insight" and "Logixa Flow Insight" are valid Brain
+    # labels but not public categories. Keep them in Brain; use the neutral public default.
+    return "Supply Chain"
+
+
 def build_steps(message: str, sources: list[models.IntelligenceSource]) -> list[tuple[str, str]]:
     safe_message = sanitize_for_llm(message)
     source_count = len(sources)
@@ -514,7 +539,7 @@ def publish_memory(
         title=memory.source_title,
         slug=slug,
         type="analysis",
-        category=memory.category,
+        category=_post_category_for_brain(memory.category),
         excerpt=memory.summary[:500],
         content_html=memory.content,
         source_url=memory.source_url,
