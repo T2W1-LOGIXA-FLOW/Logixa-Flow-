@@ -1,3 +1,11 @@
+## Latest release closure update (2026-10-13)
+
+- [x] PR #95 merged: production Admin UI smoke now targets the Email textbox explicitly, removing the observed Playwright strict-mode ambiguity. [PR #95](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/95).
+- [x] Main CI passed backend, frontend tests/build, agents, and security in [run #38344770156](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770156).
+- [x] Python and JavaScript/TypeScript CodeQL passed in [run #38344770188](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770188).
+- [ ] Run the manual Production Admin UI Smoke workflow on `main` with the five required production environment secrets, then inspect authenticated login, dashboard, and AI Brain navigation.
+- [ ] Keep overall certification pending until live workflow recovery, Agent→Brain→Publish, measurable SLO/alerting, rollback/DR, newsletter/provider failover, and scheduler observation have evidence.
+
 ## 2026-10-12 Production RAG E2E — VERIFIED
 
 - [x] Voyage provider smoke passed: `voyage-3-lite`, 512 dimensions, `persisted=false`.

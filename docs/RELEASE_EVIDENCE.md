@@ -1,3 +1,11 @@
+## Latest closure evidence (2026-10-13)
+
+- [x] PR #95 fixed the Playwright Email textbox selector and was merged to `main` as `93144ba83e0c5690089316404c71be4bcda9877d`: [PR #95](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/95).
+- [x] Main CI backend/frontend/agents/security jobs passed: [run #38344770156](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770156).
+- [x] Python and JavaScript/TypeScript CodeQL passed: [run #38344770188](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770188).
+- [ ] Re-run [Production Admin UI Smoke workflow](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/workflows/production-admin-ui-smoke.yml) manually on `main`. Required production environment secrets: `PRODUCTION_FRONTEND_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `PRODUCTION_ADMIN_EMAIL`, `PRODUCTION_ADMIN_PASSWORD`. Do not record their values in this file.
+- [ ] Keep SLO certification pending until alert-path evidence, request/error telemetry, and the required observation window are available; `/health` probes alone are synthetic availability/latency evidence only.
+
 # Logixa Flow — Release Evidence Index
 
 > Owner: Engineering / Release
