@@ -815,6 +815,10 @@ def start_queue_worker() -> None:
     asyncio.create_task(_queue_worker())
 
 
+async def _queue_worker_sleep(delay: float) -> None:
+    await asyncio.sleep(delay)
+
+
 async def _queue_worker() -> None:
     global _QUEUE_WORKER_RUNNING
     claim_retry_delay = 1.0
@@ -830,7 +834,7 @@ async def _queue_worker() -> None:
                 _EXECUTION_QUEUE.pop(0)
                 continue
             if _as_utc(item["scheduled_for"]) > now:
-                await asyncio.sleep(max((_as_utc(item["scheduled_for"]) - now).total_seconds(), 0))
+                await _queue_worker_sleep(max((_as_utc(item["scheduled_for"]) - now).total_seconds(), 0))
                 continue
 
             if run.state.status == "queued":
@@ -849,7 +853,7 @@ async def _queue_worker() -> None:
                     # Keep the durable run at the head of the in-process queue.
                     # A transient database outage must not strand it until a new
                     # workflow happens to be enqueued.
-                    await asyncio.sleep(claim_retry_delay)
+                    await _queue_worker_sleep(claim_retry_delay)
                     claim_retry_delay = min(claim_retry_delay * 2, 30.0)
                     continue
 
