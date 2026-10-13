@@ -3,7 +3,7 @@
 - [x] Admin UI smoke selector fix merged by PR #95 at `93144ba83e0c5690089316404c71be4bcda9877d`: [PR #95](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/95).
 - [x] Main CI passed backend, frontend, agents, and security: [run #38344770156](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770156).
 - [x] Python and JavaScript/TypeScript CodeQL passed: [run #38344770188](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770188).
-- [ ] Production Admin UI browser verification remains pending until the manual `Production Admin UI Smoke` workflow is run against `main` and passes. It requires production environment secrets `PRODUCTION_FRONTEND_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `PRODUCTION_ADMIN_EMAIL`, and `PRODUCTION_ADMIN_PASSWORD`.
+- [x] Production Admin UI core browser verification passed in [run #38379930389](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38379930389): admin login, authenticated dashboard render, AI Brain navigation, and Brain page render. The smoke workflow validates required production secrets without exposing their values.
 - [ ] A successful `/health` synthetic probe does not establish request-level SLO/error-budget compliance. Alert-path testing, request/error telemetry, and the defined observation window remain required.
 - Overall status remains **PENDING FINAL EVIDENCE**; CI/CodeQL success does not substitute for production workflow, publishing, recovery, SLO, or rollback evidence.
 
@@ -29,7 +29,7 @@ Release certification requires repository CI/security validation, live provider 
 - Google Drive upload/read round-trip: VERIFIED by run #14 and included in all-provider run #15; broader export semantics only if directly covered by a dedicated test.
 - Live workflow retry/stale-claim/failure recovery: PENDING.
 - Production authentication/API smoke: VERIFIED by Production Auth Smoke run #11 on 2026-10-09; password-grant authentication, `/api/auth/me` admin-role assertion, and admin RAG metrics request passed. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474.
-- Full authenticated Admin UI browser verification: PENDING. Existing checks prove login page rendering, unauthenticated protection, and API auth, but do not prove the authenticated dashboard renders and navigates correctly.
+- Full authenticated Admin UI core verification: VERIFIED by [run #38379930389](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38379930389). It passed login, dashboard render, AI Brain navigation, and Brain page render. Responsive viewport/accessibility coverage was not asserted by this smoke.
 - Production RAG ingestion/retrieval/citation gate: VERIFIED by Production Auth Smoke run #38227390320, attempt 4. It reported 7 sources, 7 valid Voyage 512-D chunks, zero ingestion errors, 5 retrieval matches, and a non-empty citation title/URL. Broader RAG→Agent→Brain→Publish and provider failover journeys remain PENDING.
 - Newsletter/failover: PENDING.
 - Application-schema backup/restore drill: VERIFIED on 2026-10-09 (run #6); managed Auth/Storage and object-storage recovery remain separate pending gates.
