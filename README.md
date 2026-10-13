@@ -4,7 +4,7 @@
 
 > Owner: Project / Engineering
 > Update when: project identity, quick-start, documentation map, or high-level snapshot changes
-> Last Updated: 2026-10-11
+> Last Updated: 2026-10-14
 > Do NOT put here: detailed deployment, security, API, database, or provider runbooks.
 
 ## What is Logixa Flow?
@@ -43,7 +43,7 @@ Live production Supabase migration head: **20261011_0013** (verified 2026-10-11)
 
 Public AI default: disabled. Admin AI default: enabled in repository configuration. Provider implementation/configuration/live health are tracked separately.
 
-Release status is **PENDING FINAL EVIDENCE**. Verified live evidence includes Cloudinary, Supabase Storage upload/read/cleanup, private Backblaze B2/S3 plus deployed application upload → private download/readback → cleanup (run #38049146602), Google Drive upload/read, QStash US-region signature validation, production auth/API smoke, authenticated Admin UI core navigation (run #38379930389), and isolated public-schema backup/restore. Durable QStash workflow delivery/completion/idempotency, workflow recovery, Agent→Brain→Publish, SLO/alerting, rollback/DR, newsletter/provider failover, and scheduler observation remain pending. Remaining gates and exact blockers are tracked in `CURRENT_STATE.md`, `ROADMAP.md`, `docs/RELEASE_CERTIFICATION.md`, and `docs/RELEASE_EVIDENCE.md`. Do not infer full certification from provider tests or repository CI alone.
+Release status is **PENDING FINAL EVIDENCE**. Verified evidence includes Cloudinary, Supabase Storage upload/read/cleanup, private Backblaze B2/S3 plus deployed application upload → private download/readback → cleanup (run #38049146602), Google Drive upload/read, production auth/API smoke, authenticated Admin Brain API/UI smoke (run #38418481082), and production RAG ingestion → Voyage embedding → retrieval/citation (run #38227390320 attempt 4). The historical isolated public-schema restore tested migration `20261008_0012`; current production migration is `20261011_0013`, so current-schema restore readiness remains pending. Durable QStash workflow delivery/completion/idempotency, workflow recovery, Agent→Brain→Publish, SLO/alerting, rollback/DR, newsletter/provider failover, and scheduler observation remain pending. GitHub branch search currently returns `main` only, with no open PRs. Remaining gates and blockers are tracked in `CURRENT_STATE.md`, `ROADMAP.md`, `docs/RELEASE_CERTIFICATION.md`, and `docs/RELEASE_EVIDENCE.md`. Do not infer full certification from provider tests or repository CI alone.
 
 ## Documentation map
 
