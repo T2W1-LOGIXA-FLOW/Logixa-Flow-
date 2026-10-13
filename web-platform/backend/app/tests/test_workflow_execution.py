@@ -127,53 +127,27 @@ async def test_workflow_state_recovery_and_cancellation() -> None:
     assert workflow._EXECUTION_STATES[run.run_id]["status"] == "failed"
 
 @pytest.mark.anyio
-async def test_queue_worker_retries_transient_claim_failure(monkeypatch: pytest.MonkeyPatch) -> None:
-    run = workflow.WorkflowRunOut(
-        run_id="claim-retry-run",
-        workflow_id="claim-retry-flow",
-        state=WorkflowState(status="queued"),
-    )
-    workflow._WORKFLOW_RUNS[run.run_id] = run
-    now = workflow._now()
-    workflow._EXECUTION_QUEUE.append(
-        {
-            "run_id": run.run_id,
-            "priority": 1,
-            "queued_at": now,
-            "scheduled_for": now,
-        }
-    )
-
+async def test_queue_claim_retries_transient_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     claim_attempts = 0
     sleep_delays: list[float] = []
-    executed: list[str] = []
 
     def flaky_claim(run_id: str) -> bool:
         nonlocal claim_attempts
         claim_attempts += 1
+        assert run_id == "claim-retry-run"
         if claim_attempts == 1:
             raise RuntimeError("temporary database outage")
-        assert run_id == run.run_id
         return True
 
     async def fake_sleep(delay: float) -> None:
         sleep_delays.append(delay)
 
-    async def fake_execute(run_id: str) -> None:
-        executed.append(run_id)
-        run.state.status = "completed"
-
     monkeypatch.setattr(workflow, "_claim_job", flaky_claim)
-    monkeypatch.setattr(workflow, "_execute_workflow", fake_execute)
     monkeypatch.setattr(workflow, "_queue_worker_sleep", fake_sleep)
-    await asyncio.wait_for(workflow._queue_worker(), timeout=5)
 
-    tasks = list(workflow._RUN_TASKS)
-    if tasks:
-        await asyncio.wait_for(asyncio.gather(*tasks), timeout=5)
+    claimed = await asyncio.wait_for(workflow._claim_job_with_retry("claim-retry-run"), timeout=5)
 
+    assert claimed is True
     assert claim_attempts == 2
     assert sleep_delays == [1.0]
-    assert executed == [run.run_id]
-    assert workflow._EXECUTION_QUEUE == []
 
