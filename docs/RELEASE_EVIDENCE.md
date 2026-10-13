@@ -168,7 +168,7 @@ Release remains PENDING for the independent non-RAG gates. Health checks, schema
 
 - [x] Baseline full frontend `npm audit` had 8 findings (7 high, 1 moderate) in development/tooling dependencies. The `postcss-selector-parser` advisory was patched with an override to version 7.1.6.
 - [x] Current full frontend audit: 7 high, 0 moderate, 0 critical. Production-only `npm audit --omit=dev`: 0 findings.
-- [x] Exact dependency tree local validation passed: `npm ci --ignore-scripts`, 35 test files / 83 tests, and `npm run build`. CI validation for the PR is still pending until its workflow run completes.
+- [x] Exact dependency tree local validation passed: `npm ci --ignore-scripts`, 35 test files / 83 tests, and `npm run build`. PR CI [#38424382717](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424382717) passed backend, agents, frontend tests/build, and security; CodeQL [#38424382721](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424382721) passed Python and JavaScript/TypeScript analyses.
 - [ ] Seven high findings remain in development tooling, primarily Tailwind 3's `braces`/Chokidar/fast-glob/micromatch chain and the Next ESLint plugin. npm's suggested fixes require a major Tailwind 4 migration and a compatible Next ESLint toolchain decision; no forced major upgrade/downgrade was made.
 
 
