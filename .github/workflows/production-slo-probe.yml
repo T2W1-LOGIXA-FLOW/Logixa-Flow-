@@ -48,21 +48,46 @@ jobs:
           mkdir -p slo-evidence
           timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           body_file="$(mktemp)"
-          metrics="$(curl --silent --show-error --max-time 20 -o "$body_file" -w '%{http_code} %{time_total}' "${PRODUCTION_API_URL%/}/health" 2>&1)"
-          curl_exit=$?
-          http_code="$(awk '{print $1}' <<<"$metrics")"
-          latency="$(awk '{print $2}' <<<"$metrics")"
-          [[ "$http_code" =~ ^[0-9]{3}$ ]] || http_code="000"
-          [[ "$latency" =~ ^[0-9]+([.][0-9]+)?$ ]] || latency="0"
-          if [[ "$curl_exit" -eq 0 && "$http_code" == "200" ]]; then result="success"; else result="failure"; fi
-          jq -n --arg timestamp "$timestamp" --arg result "$result" --arg http_code "$http_code" --arg latency_seconds "$latency" --arg run_url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" '{timestamp:$timestamp,result:$result,http_code:$http_code,latency_seconds:($latency_seconds|tonumber),run_url:$run_url}' > slo-evidence/probe.json
+          curl_error_file="$(mktemp)"
+          result="failure"
+          http_code="000"
+          latency="0"
+          curl_exit=0
+          attempts=0
+
+          # Render's free web service may need time to wake after an idle period.
+          # Retry boundedly so a cold start is distinguishable from a persistent outage.
+          for attempt in 1 2 3; do
+            attempts="$attempt"
+            if metrics="$(curl --silent --show-error --max-time 25 -o "$body_file" -w '%{http_code} %{time_total}' "${PRODUCTION_API_URL%/}/health" 2>"$curl_error_file")"; then
+              curl_exit=0
+            else
+              curl_exit=$?
+            fi
+            http_code="$(awk '{print $1}' <<<"$metrics")"
+            latency="$(awk '{print $2}' <<<"$metrics")"
+            [[ "$http_code" =~ ^[0-9]{3}$ ]] || http_code="000"
+            [[ "$latency" =~ ^[0-9]+([.][0-9]+)?$ ]] || latency="0"
+            if [[ "$curl_exit" -eq 0 && "$http_code" == "200" ]]; then
+              result="success"
+              break
+            fi
+            if [[ "$attempt" -lt 3 ]]; then sleep 5; fi
+          done
+
+          jq -n --arg timestamp "$timestamp" --arg result "$result" --arg http_code "$http_code" --arg latency_seconds "$latency" --arg attempts "$attempts" --arg run_url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" '{timestamp:$timestamp,result:$result,http_code:$http_code,latency_seconds:($latency_seconds|tonumber),attempts:($attempts|tonumber),run_url:$run_url}' > slo-evidence/probe.json
           echo "result=$result" >> "$GITHUB_OUTPUT"
           echo "http_code=$http_code" >> "$GITHUB_OUTPUT"
           echo "latency=$latency" >> "$GITHUB_OUTPUT"
+          echo "attempts=$attempts" >> "$GITHUB_OUTPUT"
           cat slo-evidence/probe.json
-          rm -f "$body_file"
+          if [[ -s "$curl_error_file" ]]; then
+            echo "curl diagnostic (URL and response body omitted):"
+            tail -c 500 "$curl_error_file" || true
+          fi
+          rm -f "$body_file" "$curl_error_file"
           if [[ "$result" != "success" ]]; then
-            echo "::error::Production /health probe failed (HTTP $http_code; curl exit $curl_exit)."
+            echo "::error::Production /health probe failed after $attempts attempt(s) (HTTP $http_code; curl exit $curl_exit)."
             exit 1
           fi
       - name: Send configured alert notification
