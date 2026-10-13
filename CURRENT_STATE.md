@@ -10,6 +10,18 @@ This section is the current release-status summary and supersedes older conflict
 
 **Overall status: PENDING — NOT RELEASE-CERTIFIED.** Documentation reconciliation does not close any unverified production gate.
 
+## Documentation reconciliation — 2026-10-14
+
+This section is the current release-status summary and supersedes older conflicting checklist statements lower in this historical log.
+
+- **GitHub housekeeping:** the current branch search returns `main` only, and the repository search returns no open pull requests. The previously reviewed topic branches are no longer present. Merged fixes remain in `main`; no branch deletion was performed as part of this documentation update.
+- **Verified production paths:** RAG ingestion → Voyage 512-D embedding → retrieval/citation passed in [Production Auth Smoke #38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320); authenticated Admin Brain API response validation and Admin UI smoke passed in [#38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082); main CI [#38417257244](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257244) and CodeQL [#38417257528](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257528) passed for the Brain response fix. Frontend PR #114 checks passed in CI [#38424954202](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954202) and CodeQL [#38424954119](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954119).
+- **Verified provider evidence:** Cloudinary, Supabase Storage, B2/S3, and Google Drive provider-level round trips have evidence; deployed private B2 application upload → download/readback → cleanup passed in [#38049146602](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602). Production authentication/API smoke passed in [#37899971474](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474). The isolated database restore is historical evidence for the then-current migration `20261008_0012`, not a restore drill against current migration `20261011_0013`.
+- **Still not release-certified:** durable QStash workflow delivery/completion/idempotency, live retry/stale-claim/failure recovery, Agent → Brain → approval → Publish/resume, request/error telemetry and alert-path plus full SLO observation, newsletter delivery/provider failover, managed Auth/Storage and object-storage recovery, current-schema backup/restore, application rollback/DR rehearsal, and 24-hour scheduler observation.
+- **Security/cost constraints:** full dev-inclusive npm audit has 7 high development-tooling findings and 0 moderate/critical after PR #114; `npm audit --omit=dev` has 0 findings. Supabase leaked-password protection remains a documented Free-plan limitation. OpenRouter HTTP 429 remains a provider-capacity risk. Vercel remediation and paid AI fallback remain paused pending explicit owner approval.
+
+**Overall status: PENDING — NOT RELEASE-CERTIFIED.** Documentation reconciliation does not close any unverified production gate.
+
 ## Latest release closure update (2026-10-13)
 
 ## Production Admin Brain response-validation finding — VERIFIED (2026-10-13)
