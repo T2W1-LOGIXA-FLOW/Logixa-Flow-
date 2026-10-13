@@ -2,7 +2,7 @@
 
 > Owner: Security / Engineering
 > Update when: threat model, authorization boundaries, secrets, dependency policy, or incident procedures change
-> Last Updated: 2026-10-12
+> Last Updated: 2026-10-14
 > Do NOT put here: release status details that belong in CURRENT_STATE.md or domain implementation details that belong in docs/.
 
 ## Scope
@@ -47,7 +47,7 @@ Sanitize provider/database errors before returning or logging them. Preserve cor
 
 ## Dependency security
 
-Dependabot and CI security checks are part of the repository security process. Major framework upgrades require compatibility review rather than automatic acceptance. Next.js is aligned to the patched 15.5.27 line. The latest Vercel production build still reports 9 npm audit findings (2 moderate, 7 high); these remain an open supply-chain gate until package-level root causes are resolved or explicitly accepted.
+Dependabot and CI security checks are part of the repository security process. Major framework upgrades require compatibility review rather than automatic acceptance. Next.js is aligned to the patched 15.5.27 line. After PR #114 merged as `d943cb66390f324eaee39cd3bf9d0c3a993bef3c`, the latest recorded full dev-inclusive `npm audit` has 7 high development-tooling findings and 0 moderate/critical findings; `npm audit --omit=dev` has 0 findings. The remaining high findings need a compatible Tailwind 4 / Next ESLint toolchain decision. Do not repeat the older 9-finding snapshot as current.
 
 ## AI safety
 
