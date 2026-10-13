@@ -3,7 +3,7 @@
 - [x] PR #95 fixed the Playwright Email textbox selector and was merged to `main` as `93144ba83e0c5690089316404c71be4bcda9877d`: [PR #95](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/95).
 - [x] Main CI backend/frontend/agents/security jobs passed: [run #38344770156](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770156).
 - [x] Python and JavaScript/TypeScript CodeQL passed: [run #38344770188](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770188).
-- [ ] Re-run [Production Admin UI Smoke workflow](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/workflows/production-admin-ui-smoke.yml) manually on `main`. Required production environment secrets: `PRODUCTION_FRONTEND_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `PRODUCTION_ADMIN_EMAIL`, `PRODUCTION_ADMIN_PASSWORD`. Do not record their values in this file.
+- [x] [Production Admin UI Smoke run #38379930389](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38379930389) passed on `main` commit `108f3beb267f0b2443a94fdaac9f45903f12a514`: admin login, authenticated dashboard render, AI Brain navigation, and Brain page render. The workflow retains manual dispatch and now also triggers on changes to its smoke harness; secret values are not recorded.
 - [ ] Keep SLO certification pending until alert-path evidence, request/error telemetry, and the required observation window are available; `/health` probes alone are synthetic availability/latency evidence only.
 
 # Logixa Flow — Release Evidence Index
@@ -21,7 +21,7 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 - [x] Feed sync: 1 feed processed, 0 new imports. Ingestion: 7 sources, 7 chunks, 0 Brain items, 0 errors, 1 attempt.
 - [x] Post-run status: embedding version 2, 7 Voyage chunks, 0 legacy-vector chunks. Read-only DB query confirms 7 source records and 7 valid Voyage 512-D vectors; all 125 Brain records remain pending.
 - [x] Retrieval returned 5 matches and a non-empty first citation title/URL. The prior HTTP 422 was traced to a 5-second application search budget conflicting with 21-second Voyage request pacing; PR #90 exposed safe error class/status fields in JSON logs, and PR #91 raised the configurable timeout budget to 75 seconds and classified timeouts as 503. Both changes are merged/deployed.
-- [ ] Release certification remains pending for independent gates listed below (workflow recovery, Agent→Brain→Publish, authenticated Admin UI, SLO/alerting, rollback/DR, newsletter delivery, provider failover, and 24-hour scheduler observation).
+- [ ] Release certification remains pending for independent gates listed below (workflow recovery, Agent→Brain→Publish, SLO/alerting, rollback/DR, newsletter delivery, provider failover, and 24-hour scheduler observation). Authenticated Admin UI core smoke is VERIFIED by run #38379930389.
 
 ## Repository
 - [ ] Vercel integration check is green on the current main head. **Paused by owner direction on 2026-10-09**: do not attempt build-quota, deployment-refresh, or Vercel-integration remediation until the owner explicitly resumes it. This is an open release exception/gate, not authorization to make Vercel changes.
@@ -92,7 +92,7 @@ Certification is NOT CERTIFIED while any required production gate remains unchec
 - [ ] Workflow retry/recovery, stale-claim reclamation, controlled failure recovery, and recovery observability in live production.
 - [x] RAG ingest→embed→search/citation: VERIFIED by run #38227390320 attempt 4. [ ] Agent→Brain→publish; approval→resume→completion; scheduled workflow across a real time boundary.
 - [ ] Newsletter delivery (currently HTTP 501 until a transactional email provider is connected) and controlled provider failover.
-- [ ] Full authenticated Admin UI browser test.
+- [x] Full authenticated Admin UI core browser test: [run #38379930389](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38379930389) passed admin login, dashboard render, AI Brain navigation, and Brain page render.
 - [ ] Managed Supabase Auth/Storage and object-storage disaster recovery; application rollback rehearsal. Existing isolated public-schema restore does not cover these systems.
 - [ ] Production SLO/error-budget calculation and alert-path evidence. Render HTTP request/latency datapoints were unavailable in the inspected window; no SLO pass is implied.
 - [ ] Dependency/license/security refresh review and owner-controlled remediation of the Supabase Auth leaked-password-protection warning.

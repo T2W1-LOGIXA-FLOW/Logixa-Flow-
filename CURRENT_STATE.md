@@ -2,9 +2,9 @@
 
 - PR #95 was merged to `main` as `93144ba83e0c5690089316404c71be4bcda9877d`. It fixes the production Admin UI smoke test's ambiguous Email selector by targeting the textbox role explicitly. [PR #95](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/95).
 - Main-branch CI run [#38344770156](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770156) passed backend, frontend, agents, and security jobs. CodeQL run [#38344770188](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770188) passed Python and JavaScript/TypeScript analyses.
-- The production Admin UI smoke has **not** yet been rerun after the selector fix. Run it manually from Actions → Production Admin UI Smoke → Run workflow on `main`. Required production environment secrets: `PRODUCTION_FRONTEND_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `PRODUCTION_ADMIN_EMAIL`, and `PRODUCTION_ADMIN_PASSWORD`. Never put secret values in issues, logs, or chat.
+- [x] Production Admin UI smoke passed on `main` commit `108f3beb267f0b2443a94fdaac9f45903f12a514` in [run #38379930389](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38379930389): admin login, authenticated dashboard render, AI Brain navigation, and Brain page render all passed. PR #98 added bounded failure diagnostics; PR #99 added a path-scoped push trigger while retaining manual dispatch; PRs #100 and #101 fixed Playwright waits that incorrectly awaited a document `load` event after Next.js client-side navigation. Production secrets were validated by the workflow and their values were not exposed.
 - The scheduled/manual health probe measures only `/health` availability and latency; it is not sufficient by itself to certify request-level SLO/error-budget compliance. Alert-path test and longer observation evidence remain required.
-- **Overall release remains PENDING — NOT RELEASE-CERTIFIED.** Workflow retry/stale-claim recovery, Agent→Brain→Publish, authenticated Admin UI, measurable SLO/error budget, rollback/DR rehearsal, newsletter delivery/provider failover, and scheduler observation remain independent gates.
+- **Overall release remains PENDING — NOT RELEASE-CERTIFIED.** Workflow retry/stale-claim recovery, Agent→Brain→Publish, measurable SLO/error budget, rollback/DR rehearsal, newsletter delivery/provider failover, and scheduler observation remain independent gates. The core authenticated Admin UI smoke is now VERIFIED by run #38379930389.
 
 ## Latest production RAG status (2026-10-12 10:10 UTC)
 
@@ -14,7 +14,7 @@
 - Citation search returned `total=5`; the first result included a non-empty citation title and URL (Supply Chain Orchestration Is Becoming the Control Layer Between Decisions and Execution — Logistics Viewpoints). This closes the production ingest→embedding→retrieval→citation gate.
 - The HTTP 422 root cause was verified from safe structured logs: `TimeoutError` because the search budget was 5 seconds while Voyage calls are intentionally paced at 21 seconds. PR #90 fixed the logging allowlist; PR #91 raised the configurable search budget to 75 seconds and maps timeout errors to HTTP 503 instead of misclassifying them as HTTP 422. Both changes are merged and the latest Render deployment is live.
 - Read-only production counts: `ai_memory_brain=125`, `pending Brain=125`, `intelligence_sources=7`, `document_embeddings=7`, valid `voyage-3-lite` 512-D vectors=7, legacy vectors=0. Pending/private Brain drafts remain untouched.
-- **Overall release remains PENDING — not release-certified.** Workflow retry/stale-claim recovery, RAG→Agent→Brain→Publish, authenticated Admin UI, measurable SLO/alerting, rollback/DR rehearsal, newsletter delivery, provider failover, and the 24-hour scheduler observation remain independent open gates. Vercel remediation remains paused by owner direction; no Vercel changes were made.
+- **Overall release remains PENDING — not release-certified.** Workflow retry/stale-claim recovery, RAG→Agent→Brain→Publish, measurable SLO/alerting, rollback/DR rehearsal, newsletter delivery, provider failover, and the 24-hour scheduler observation remain independent open gates. Authenticated Admin UI core navigation is VERIFIED by run #38379930389. Vercel remediation remains paused by owner direction; no Vercel changes were made.
 
 # Logixa Flow — Current State
 
@@ -33,7 +33,7 @@ Phase 13 — Release certification and maintenance.
 
 ## 3. Overall Status
 
-**PENDING — NOT RELEASE-CERTIFIED.** Production migration `20261011_0013` is applied. The production RAG ingest→embedding→retrieval→citation gate is VERIFIED by run #38227390320 attempt 4; live workflow recovery, RAG→Agent→Brain→Publish, authenticated Admin UI, measurable SLO/alerting, rollback/DR, newsletter delivery, provider failover, and the 24-hour scheduler observation remain open gates.
+**PENDING — NOT RELEASE-CERTIFIED.** Production migration `20261011_0013` is applied. The production RAG ingest→embedding→retrieval→citation gate is VERIFIED by run #38227390320 attempt 4 and the core authenticated Admin UI smoke is VERIFIED by run #38379930389; live workflow recovery, RAG→Agent→Brain→Publish, measurable SLO/alerting, rollback/DR, newsletter delivery, provider failover, and the 24-hour scheduler observation remain open gates.
 
 Repository and live production Alembic revision are **20261011_0013**. Migration `20261011_0013` adds the versioned Voyage 512-D embedding path without replacing the legacy 768-D path. Current production configuration is `RAG_EMBEDDING_VERSION=2`, `rag_v2_ingestion_mode=voyage_only`. Read-only counts are `document_embeddings=7`, `intelligence_sources=7`, `stored_files=0`, and `ai_memory_brain=125` (pending=125); all 7 embedding rows are valid Voyage 512-D vectors, with zero legacy vectors. The pending Brain records remain untouched. OpenRouter HTTP 429 remains a separate scheduled AI preview/provider-failover risk.
 
@@ -117,7 +117,7 @@ Current active closure tracks:
 3. Production RAG and AI publishing E2E verification.
 4. Scheduled workflow, newsletter, and controlled provider-failover verification.
 5. Object-storage recovery, rollback rehearsal, and post-rollback smoke verification.
-6. Full authenticated Admin UI browser verification.
+6. Authenticated Admin UI core browser verification — VERIFIED by run #38379930389.
 
 ## 7. PENDING
 
@@ -132,7 +132,7 @@ Current active closure tracks:
 - Newsletter delivery E2E; current newsletter endpoints return HTTP 501 until a transactional email provider is connected.
 - Controlled external-provider failover test.
 - Object-storage recovery, rollback rehearsal, data-integrity reconciliation, and post-rollback smoke.
-- Full authenticated Admin UI browser verification; login route and unauthenticated protection are verified, but authenticated dashboard rendering/navigation/responsive behavior are not.
+- Authenticated Admin UI core smoke is VERIFIED by run #38379930389 (login, dashboard render, AI Brain navigation, Brain page render). Responsive viewport coverage was not part of this smoke and is not claimed.
 
 ## 8. BLOCKED
 
