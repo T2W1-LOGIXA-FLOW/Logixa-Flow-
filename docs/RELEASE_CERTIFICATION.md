@@ -1,3 +1,12 @@
+## Latest repository validation and immediate owner action (2026-10-13)
+
+- [x] Admin UI smoke selector fix merged by PR #95 at `93144ba83e0c5690089316404c71be4bcda9877d`: [PR #95](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/95).
+- [x] Main CI passed backend, frontend, agents, and security: [run #38344770156](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770156).
+- [x] Python and JavaScript/TypeScript CodeQL passed: [run #38344770188](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770188).
+- [ ] Production Admin UI browser verification remains pending until the manual `Production Admin UI Smoke` workflow is run against `main` and passes. It requires production environment secrets `PRODUCTION_FRONTEND_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `PRODUCTION_ADMIN_EMAIL`, and `PRODUCTION_ADMIN_PASSWORD`.
+- [ ] A successful `/health` synthetic probe does not establish request-level SLO/error-budget compliance. Alert-path testing, request/error telemetry, and the defined observation window remain required.
+- Overall status remains **PENDING FINAL EVIDENCE**; CI/CodeQL success does not substitute for production workflow, publishing, recovery, SLO, or rollback evidence.
+
 # Logixa Flow — Release Certification
 
 > Owner: Engineering / Release
