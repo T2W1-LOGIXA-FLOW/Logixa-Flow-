@@ -9,14 +9,6 @@ Production RAG ingestion → Voyage embedding → retrieval/citation is verified
 > Last Updated: 2026-10-14
 > Do NOT put here: secrets or unverified incident claims.
 
-## Current operational status (2026-10-14)
-
-- Production RAG ingestion → Voyage embedding → retrieval/citation is verified by [#38227390320 attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320). The authenticated Admin Brain API/UI smoke is verified by [#38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082).
-- Provider-level Cloudinary, Supabase Storage, B2/S3, Google Drive, production auth/API, and the deployed private B2 application proxy have evidence. This does not imply workflow completion or disaster-recovery readiness.
-- Pending: durable QStash delivery/completion/idempotency; live retry/stale-claim/failure recovery; Agent → Brain → approval → Publish/resume; alert-path and request/error telemetry/SLO observation; newsletter delivery/failover; managed Auth/Storage and object-storage recovery; current-schema restore validation; rollback/DR; 24-hour scheduler boundary.
-- The historical public-schema restore was validated against migration `20261008_0012`, not current `20261011_0013`. Do not claim current-schema restore readiness until a new isolated restore is verified.
-- GitHub branch search returned `main` only and no open PRs were found. OpenRouter HTTP 429 remains a provider-capacity issue. Vercel changes and paid AI fallback remain owner-approval gated.
-
 ## Principles
 
 PostgreSQL is durable workflow/run state. Preserve the local canonical workflow recovery path until QStash and recovery are live-verified. Never infer provider health from credentials alone. Use correlation IDs and sanitized errors for RAG investigation. Keep Vercel locked when operationally disabled.
