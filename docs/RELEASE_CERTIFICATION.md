@@ -1,17 +1,21 @@
-## Latest repository validation and immediate owner action (2026-10-13)
+## Latest repository and production validation (2026-10-13)
 
 - [x] Admin UI smoke selector fix merged by PR #95 at `93144ba83e0c5690089316404c71be4bcda9877d`: [PR #95](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/95).
-- [x] Main CI passed backend, frontend, agents, and security: [run #38344770156](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770156).
-- [x] Python and JavaScript/TypeScript CodeQL passed: [run #38344770188](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770188).
-- [x] Production Admin UI core browser verification passed in [run #38379930389](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38379930389): admin login, authenticated dashboard render, AI Brain navigation, and Brain page render. The smoke workflow validates required production secrets without exposing their values.
-- [x] Post-PR #105 synthetic `/health` probe [#38412066986](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38412066986) passed with HTTP 200 in 5.962 seconds on attempt 1. Earlier run #38384976632 remains a failed observation. [ ] A successful synthetic probe does not establish request-level SLO/error-budget compliance; alert-path testing, request/error telemetry, and the defined observation window remain required.
-- Overall status remains **PENDING FINAL EVIDENCE**; CI/CodeQL success does not substitute for production workflow, publishing, recovery, SLO, or rollback evidence.
+- [x] Main CI backend/frontend/agents/security passed for Admin Brain category fix in [run #38417257244](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257244); CodeQL Python and JavaScript/TypeScript analyses passed in [run #38417257528](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257528).
+- [x] Admin Brain response serialization fix is deployed on Render commit `d826ad9105434acd3621c1df9e7469247da0129a`, deployment `dep-db74borm8hqs73fasbf0` (deploy succeeded at `2026-10-13T14:54:35Z`).
+- [x] Production Admin UI smoke [#38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082) verified login, dashboard render, AI Brain navigation/page render, and authenticated `/api/admin/brain` HTTP success with a JSON-array payload.
+- [x] Post-PR #105 synthetic `/health` probe [#38412066986](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38412066986) passed HTTP 200 in 5.962 seconds on attempt 1. A separate direct health request during the 2026-10-13 audit returned HTTP 200 in 1.943 seconds. Neither result establishes request-level SLO/error-budget compliance.
+- [ ] QStash durable delivery/completion/idempotency and live stale-claim recovery remain pending. The available logs contain EU-region HTTP 401 `Invalid QStash signature`; the US-region empty-run-ID smoke returned HTTP 400 at payload validation. No durable Workflow runs or schedules were returned in either region.
+- [ ] Agent→Brain→approval→Publish/resume, request/error telemetry and auditable SLO/error-budget window, newsletter delivery/provider failover, managed Auth/Storage and object-storage recovery, rollback/DR rehearsal, and 24-hour scheduler observation remain pending.
+- [ ] Dependency/license/security refresh review remains pending. Vercel remediation and paid AI fallback remain paused pending explicit owner approval.
+
+Overall status remains **PENDING FINAL EVIDENCE — NOT RELEASE-CERTIFIED**.
 
 # Logixa Flow — Release Certification
 
 > Owner: Engineering / Release
 > Status: PENDING FINAL EVIDENCE
-> Last Updated: 2026-10-12
+> Last Updated: 2026-10-13
 
 ## Certification rule
 
@@ -35,7 +39,7 @@ Release certification requires repository CI/security validation, live provider 
 - Application-schema backup/restore drill: VERIFIED on 2026-10-09 (run #6); managed Auth/Storage and object-storage recovery remain separate pending gates.
 - DR/rollback rehearsal: PENDING — runbook/gate staged; live rehearsal required.
 - SLO/error-budget review: PENDING; Render HTTP request-count/latency datapoints were unavailable for the inspected window. A bounded event inspection alone cannot calculate availability or an error budget. Request/error telemetry, an auditable measurement query/export, alert-path test, and required observation window are still required.
-- Dependency/license/security refresh review: PENDING. Supabase Auth leaked-password protection is disabled per the last advisor review and requires dashboard-level action/owner decision.
+- Dependency/license/security refresh review: PENDING. Supabase Auth leaked-password protection is disabled; repo hardening issue #56 records this control as unavailable on the current Free plan, so it is a documented plan limitation rather than an actionable blocker unless the plan/settings change.
 - Newsletter delivery: PENDING; newsletter endpoints return HTTP 501 until a transactional email provider is connected.
 - Vercel deployment/check remediation remains paused by owner direction; do not resume without explicit approval. This does not authorize changing Vercel build quota or deployment settings.
 
@@ -43,7 +47,7 @@ Release certification requires repository CI/security validation, live provider 
 
 - Production database remains at Alembic revision `20261011_0013`. Latest counts: `ai_memory_brain=125` (pending=125), `intelligence_sources=7`, `document_embeddings=7`, valid Voyage 512-D chunks=7, legacy vectors=0, and `stored_files=0`. All pending Brain drafts remain untouched.
 - Production RAG ingestion/retrieval/citation is VERIFIED by [run #38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320). Overall certification remains PENDING for the other open gates above.
-- Supabase security advisors report 34 informational RLS-enabled/no-policy findings and one warning for disabled leaked-password protection. A read-only privilege audit found no table grants to `anon`, `authenticated`, or `PUBLIC`; no broad policy or grant was added. Leaked-password protection still requires dashboard-level action/verification.
+- Supabase security advisors report 34 informational RLS-enabled/no-policy findings and one warning for disabled leaked-password protection. A read-only privilege audit found no table grants to `anon`, `authenticated`, or `PUBLIC`; no broad policy or grant was added. The leaked-password warning is a documented Free-plan limitation per issue #56 and should be revisited only if the plan/settings change.
 - Performance advisors report 88 unused-index notices. No indexes were dropped because low observed use does not establish that an index is unnecessary for the intended workload.
 - Latest frontend local validation: 35 test files / 83 tests passed; production build passed. Production-only npm audit reports zero findings; full dev-inclusive audit still has 8 findings (7 high, 1 moderate) in development/tooling dependencies.
 - CI/CodeQL and the live health endpoint are not evidence of authenticated RAG ingestion, retrieval/citations, live workflow recovery, or a complete DR/rollback drill. Release status remains PENDING.
