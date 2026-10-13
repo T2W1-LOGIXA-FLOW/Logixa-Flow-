@@ -1,13 +1,14 @@
-## Current status (2026-10-14)
-
-Production RAG ingestion → Voyage embedding → retrieval/citation is verified by [run #38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320), and authenticated Admin Brain API/UI smoke is verified by [run #38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082). Durable QStash delivery/completion/idempotency, live workflow recovery, Agent → Brain → Publish, request/error telemetry and alert-path/SLO evidence, newsletter/failover, managed Auth/Storage and object-storage recovery, current-schema restore, rollback/DR, and the 24-hour scheduler boundary remain pending. The 2026-10-09 isolated public-schema restore used migration `20261008_0012`; current production migration is `20261011_0013`, so it is not current-schema restore evidence. GitHub branch search returns `main` only and no open PRs were found. Vercel remediation and paid AI fallback remain owner-approval gated.
-
 # Logixa Flow — Operations
 
 > Owner: Operations
 > Update when: monitoring, recovery, or provider verification changes
 > Last Updated: 2026-10-14
 > Do NOT put here: secrets or unverified incident claims.
+
+## Current status (2026-10-14)
+
+Production RAG ingestion → Voyage embedding → retrieval/citation is verified by [run #38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320), and authenticated Admin Brain API/UI smoke is verified by [run #38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082). Durable QStash delivery/completion/idempotency, live workflow recovery, Agent → Brain → Publish, request/error telemetry and alert-path/SLO evidence, newsletter/failover, managed Auth/Storage and object-storage recovery, current-schema restore, rollback/DR, and the 24-hour scheduler boundary remain pending. The 2026-10-09 isolated public-schema restore used migration `20261008_0012`; current production migration is `20261011_0013`, so it is not current-schema restore evidence. GitHub branch search returns `main` only and no open PRs were found. Vercel remediation and paid AI fallback remain owner-approval gated.
+
 
 ## Principles
 
