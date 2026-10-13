@@ -1,17 +1,21 @@
-## Latest repository validation and immediate owner action (2026-10-13)
+## Latest repository and production validation (2026-10-13)
 
 - [x] Admin UI smoke selector fix merged by PR #95 at `93144ba83e0c5690089316404c71be4bcda9877d`: [PR #95](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/95).
-- [x] Main CI passed backend, frontend, agents, and security: [run #38344770156](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770156).
-- [x] Python and JavaScript/TypeScript CodeQL passed: [run #38344770188](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770188).
-- [x] Production Admin UI core browser verification passed in [run #38379930389](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38379930389): admin login, authenticated dashboard render, AI Brain navigation, and Brain page render. The smoke workflow validates required production secrets without exposing their values.
-- [x] Post-PR #105 synthetic `/health` probe [#38412066986](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38412066986) passed with HTTP 200 in 5.962 seconds on attempt 1. Earlier run #38384976632 remains a failed observation. [ ] A successful synthetic probe does not establish request-level SLO/error-budget compliance; alert-path testing, request/error telemetry, and the defined observation window remain required.
-- Overall status remains **PENDING FINAL EVIDENCE**; CI/CodeQL success does not substitute for production workflow, publishing, recovery, SLO, or rollback evidence.
+- [x] Main CI backend/frontend/agents/security passed for Admin Brain category fix in [run #38417257244](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257244); CodeQL Python and JavaScript/TypeScript analyses passed in [run #38417257528](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257528).
+- [x] Admin Brain response serialization fix is deployed on Render commit `d826ad9105434acd3621c1df9e7469247da0129a`, deployment `dep-db74borm8hqs73fasbf0` (deploy succeeded at `2026-10-13T14:54:35Z`).
+- [x] Production Admin UI smoke [#38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082) verified login, dashboard render, AI Brain navigation/page render, and authenticated `/api/admin/brain` HTTP success with a JSON-array payload.
+- [x] Post-PR #105 synthetic `/health` probe [#38412066986](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38412066986) passed HTTP 200 in 5.962 seconds on attempt 1. A separate direct health request during the 2026-10-13 audit returned HTTP 200 in 1.943 seconds. Neither result establishes request-level SLO/error-budget compliance.
+- [ ] QStash durable delivery/completion/idempotency and live stale-claim recovery remain pending. The available logs contain EU-region HTTP 401 `Invalid QStash signature`; the US-region empty-run-ID smoke returned HTTP 400 at payload validation. No durable Workflow runs or schedules were returned in either region.
+- [ ] Agent→Brain→approval→Publish/resume, request/error telemetry and auditable SLO/error-budget window, newsletter delivery/provider failover, managed Auth/Storage and object-storage recovery, rollback/DR rehearsal, and 24-hour scheduler observation remain pending.
+- [ ] Dependency/license/security refresh review remains pending. Vercel remediation and paid AI fallback remain paused pending explicit owner approval.
+
+Overall status remains **PENDING FINAL EVIDENCE — NOT RELEASE-CERTIFIED**.
 
 # Logixa Flow — Release Certification
 
 > Owner: Engineering / Release
 > Status: PENDING FINAL EVIDENCE
-> Last Updated: 2026-10-12
+> Last Updated: 2026-10-13
 
 ## Certification rule
 

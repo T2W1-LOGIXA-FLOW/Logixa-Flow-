@@ -1,8 +1,11 @@
-## Production Admin Brain response-validation finding (2026-10-13)
+## Production Admin Brain response-validation finding — VERIFIED (2026-10-13)
 
-- [ ] Render application logs at `2026-10-13T09:57:43Z` contain a `fastapi.exceptions.ResponseValidationError` with 43 category-field validation errors from the Admin Brain list response. The persisted Brain labels include editorial/internal values outside the public-post category enum.
-- [ ] PR #110 changes the Brain response schema to accept internal category labels and normalizes categories at the public-post creation boundary. The regression tests and CI/CodeQL must pass, then the deployed `GET /api/admin/brain` route must be rechecked before this production gate is marked verified.
-- No production data was mutated to diagnose the failure. Release certification remains pending.
+- [x] The original production failure was observed in Render logs at `2026-10-13T09:57:43Z`: `ResponseValidationError` with 43 category-field validation errors on `GET /api/admin/brain`.
+- [x] Fix is on `main` commit `d826ad9105434acd3621c1df9e7469247da0129a`; internal Brain labels are preserved in the admin response and mapped to the public-post taxonomy only at publication. Main CI [#38417257244](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257244) and CodeQL [#38417257528](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257528) passed.
+- [x] Render deployment `dep-db74borm8hqs73fasbf0` succeeded for that SHA at `2026-10-13T14:54:35Z`.
+- [x] Production Admin UI smoke [#38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082) passed on `main` commit `35f54b2e95118d2a1248f2c1dbccc762f00b839f`; the authenticated `/api/admin/brain` request returned HTTP success and a JSON-array payload. This verifies the specific response-serialization failure is resolved in production.
+- PR #112 was closed as redundant after the same assertion landed on `main`; its tree had no diff from `main`. Its PR-head CI [#38418503996](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418503996) and CodeQL analysis [#38418504242](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418504242) passed.
+- No production Brain rows were changed during diagnosis or verification. Overall release certification remains pending for independent gates below.
 
 ## Latest closure evidence (2026-10-13)
 
@@ -16,7 +19,7 @@
 
 > Owner: Engineering / Release
 > Status: ACTIVE — RAG E2E VERIFIED; OVERALL RELEASE PENDING
-> Last Updated: 2026-10-12
+> Last Updated: 2026-10-13
 
 This is the canonical evidence checklist for the Phase 7–13 release candidate. Evidence must identify the exact SHA, environment, timestamp, and observed durable outcome where applicable.
 

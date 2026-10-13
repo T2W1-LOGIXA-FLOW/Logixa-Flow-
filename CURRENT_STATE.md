@@ -1,17 +1,24 @@
 ## Latest release closure update (2026-10-13)
 
-## Production Admin Brain response-validation finding (2026-10-13)
+## Production Admin Brain response-validation finding — VERIFIED (2026-10-13)
 
-- Render logs at `2026-10-13T09:57:43Z` show the Admin Brain response failing serialization with 43 Pydantic validation errors: stored Brain labels such as `Logixa Flow Insight` and `Supply Chain Insight` are not members of the public-post `PostCategory` literal. This is a production API failure, not merely a test concern.
-- PR #110 broadens `AiMemoryOut.category` to preserve internal Brain labels and maps Brain labels to the public taxonomy only when creating a public post. Regression tests cover both behaviors. CI/CodeQL and production post-deploy verification are required before marking this gate fixed.
-- No production rows or settings were changed during diagnosis. Overall release remains PENDING — NOT RELEASE-CERTIFIED.
+- Render logs at `2026-10-13T09:57:43Z` recorded 43 Pydantic validation errors on `GET /api/admin/brain` because persisted editorial/internal Brain labels were outside the public-post category enum.
+- Fix is on `main` commit `d826ad9105434acd3621c1df9e7469247da0129a`: `AiMemoryOut.category` accepts internal Brain labels, while the public-post creation boundary maps them to the fixed public taxonomy. Regression coverage is included in the main tree.
+- Main CI [#38417257244](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257244) passed backend, frontend, agents, and security. CodeQL [#38417257528](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257528) passed Python and JavaScript/TypeScript analysis jobs.
+- Render deployment `dep-db74borm8hqs73fasbf0` completed successfully for `d826ad9105434acd3621c1df9e7469247da0129a` at `2026-10-13T14:54:35Z`.
+- Production Admin UI smoke [#38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082) passed on `main` commit `35f54b2e95118d2a1248f2c1dbccc762f00b839f`. It now asserts the authenticated `/api/admin/brain` response is successful and returns a JSON array, in addition to login, dashboard, navigation, and page rendering. This closes the observed Brain response-serialization gate.
+- The redundant PR #112 was closed because the same smoke assertion was already present on `main`; no additional merge was needed. Its PR-head CI run [#38418503996](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418503996) and CodeQL analysis [#38418504242](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418504242) passed.
 
-- PR #95 was merged to `main` as `93144ba83e0c5690089316404c71be4bcda9877d`. It fixes the production Admin UI smoke test's ambiguous Email selector by targeting the textbox role explicitly. [PR #95](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/95).
-- Main-branch CI run [#38344770156](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770156) passed backend, frontend, agents, and security jobs. CodeQL run [#38344770188](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770188) passed Python and JavaScript/TypeScript analyses.
-- [x] Production Admin UI smoke passed on `main` commit `108f3beb267f0b2443a94fdaac9f45903f12a514` in [run #38379930389](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38379930389): admin login, authenticated dashboard render, AI Brain navigation, and Brain page render all passed. PR #98 added bounded failure diagnostics; PR #99 added a path-scoped push trigger while retaining manual dispatch; PRs #100 and #101 fixed Playwright waits that incorrectly awaited a document `load` event after Next.js client-side navigation. Production secrets were validated by the workflow and their values were not exposed.
-- Production SLO probe run [#38384976632](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38384976632) failed after a 20-second curl timeout (exit 28) while Render logs showed application startup. PR #105 (`e13ed68`) added bounded retries and reliable failure-artifact handling. The post-merge [probe run #38412066986](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38412066986) passed `/health` with HTTP 200, latency 5.962 seconds, and one attempt. This verifies synthetic health only; request-level SLO/error-budget, alert-path test, and longer observation evidence remain required.
-- PR #107 (`d950ae79509a42ef846083385e4759c5d579dde9`) is merged with CI and CodeQL passing; Render deployment `dep-db73qe6q1p3s73evdap0` is LIVE. The in-process worker now retries transient claim failures with capped exponential backoff, and its regression test plus CI runtime guard passed. Live QStash delivery/completion/idempotency and production stale-claim recovery remain unverified.
-- **Overall release remains PENDING — NOT RELEASE-CERTIFIED.** Live workflow recovery, Agent→Brain→Publish, measurable request-level SLO/error budget, rollback/DR rehearsal, newsletter delivery/provider failover, and scheduler observation remain independent gates. The core authenticated Admin UI smoke is VERIFIED by run #38379930389.
+## Current release blockers — not certified
+
+- QStash: US-region signature validation reaches payload validation, but no durable Workflow runs or QStash schedules were returned in either region. The US smoke message with an intentionally empty `run_id` returned HTTP 400 as expected; older EU deliveries returned HTTP 401 `Invalid QStash signature`. Live persisted-run delivery, completion, duplicate-delivery/idempotency, and stale-claim recovery remain unverified.
+- Production Agent → Brain → approval → Publish/resume remains unverified end to end.
+- Synthetic `/health` probe [#38412066986](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38412066986) passed HTTP 200 in 5.962 seconds on attempt 1. Direct production `/health` also returned HTTP 200 in 1.943 seconds during this audit. Render HTTP request-count and latency metrics returned empty datapoints, so request-level SLO/error-budget, alert-path, and the full observation window remain pending.
+- Newsletter endpoints still return HTTP 501 until a transactional email provider and credentials are configured; no email was sent.
+- Managed Auth/Storage and object-storage recovery, live rollback/DR rehearsal, and the 24-hour scheduler boundary observation remain pending.
+- Dependency/license/security refresh review remains pending. Vercel remediation and paid AI fallback remain paused pending explicit owner approval.
+
+**Overall release remains PENDING — NOT RELEASE-CERTIFIED.**
 
 ## Latest production RAG status (2026-10-12 10:10 UTC)
 
@@ -27,7 +34,7 @@
 
 > Owner: Project / Engineering
 > Update when: release state, verification evidence, blockers, or next actions change
-> Last Updated: 2026-10-12
+> Last Updated: 2026-10-13
 > Do NOT put here: detailed architecture, implementation reference, or step-by-step runbooks; use `PROJECT_OVERVIEW.md` and `docs/*`.
 
 ## 1. Current Release
