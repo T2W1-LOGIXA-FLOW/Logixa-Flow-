@@ -39,7 +39,7 @@ Release certification requires repository CI/security validation, live provider 
 - Application-schema backup/restore drill: VERIFIED on 2026-10-09 (run #6); managed Auth/Storage and object-storage recovery remain separate pending gates.
 - DR/rollback rehearsal: PENDING — runbook/gate staged; live rehearsal required.
 - SLO/error-budget review: PENDING; Render HTTP request-count/latency datapoints were unavailable for the inspected window. A bounded event inspection alone cannot calculate availability or an error budget. Request/error telemetry, an auditable measurement query/export, alert-path test, and required observation window are still required.
-- Dependency/license/security refresh review: PENDING. Supabase Auth leaked-password protection is disabled per the last advisor review and requires dashboard-level action/owner decision.
+- Dependency/license/security refresh review: PENDING. Supabase Auth leaked-password protection is disabled; repo hardening issue #56 records this control as unavailable on the current Free plan, so it is a documented plan limitation rather than an actionable blocker unless the plan/settings change.
 - Newsletter delivery: PENDING; newsletter endpoints return HTTP 501 until a transactional email provider is connected.
 - Vercel deployment/check remediation remains paused by owner direction; do not resume without explicit approval. This does not authorize changing Vercel build quota or deployment settings.
 
@@ -47,7 +47,7 @@ Release certification requires repository CI/security validation, live provider 
 
 - Production database remains at Alembic revision `20261011_0013`. Latest counts: `ai_memory_brain=125` (pending=125), `intelligence_sources=7`, `document_embeddings=7`, valid Voyage 512-D chunks=7, legacy vectors=0, and `stored_files=0`. All pending Brain drafts remain untouched.
 - Production RAG ingestion/retrieval/citation is VERIFIED by [run #38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320). Overall certification remains PENDING for the other open gates above.
-- Supabase security advisors report 34 informational RLS-enabled/no-policy findings and one warning for disabled leaked-password protection. A read-only privilege audit found no table grants to `anon`, `authenticated`, or `PUBLIC`; no broad policy or grant was added. Leaked-password protection still requires dashboard-level action/verification.
+- Supabase security advisors report 34 informational RLS-enabled/no-policy findings and one warning for disabled leaked-password protection. A read-only privilege audit found no table grants to `anon`, `authenticated`, or `PUBLIC`; no broad policy or grant was added. The leaked-password warning is a documented Free-plan limitation per issue #56 and should be revisited only if the plan/settings change.
 - Performance advisors report 88 unused-index notices. No indexes were dropped because low observed use does not establish that an index is unnecessary for the intended workload.
 - Latest frontend local validation: 35 test files / 83 tests passed; production build passed. Production-only npm audit reports zero findings; full dev-inclusive audit still has 8 findings (7 high, 1 moderate) in development/tooling dependencies.
 - CI/CodeQL and the live health endpoint are not evidence of authenticated RAG ingestion, retrieval/citations, live workflow recovery, or a complete DR/rollback drill. Release status remains PENDING.

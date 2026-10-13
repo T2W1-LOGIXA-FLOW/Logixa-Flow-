@@ -47,7 +47,7 @@ This is the canonical evidence checklist for the Phase 7–13 release candidate.
 - [x] Supabase migration `20261008_0012_rag_observability` applied on 2026-10-08.
 - [x] Production migration `20261011_0013` applied and independently verified on 2026-10-11; Voyage v2 JSON/model/512-D vector columns and HNSW index exist. The earlier empty-table snapshot is superseded by the verified production RAG E2E at the top of this file: 7 stored Voyage 512-D chunks, 7 sources, 0 ingestion errors, and citation-bearing retrieval.
 - [x] Production RLS/privilege check: RLS enabled; service_role SELECT allowed; anon/authenticated SELECT denied.
-- [x] Supabase security/performance advisors reviewed 2026-10-08. Existing RLS-without-policy INFO findings are consistent with service-role-only internal tables; 96 unused-index INFO findings require workload-based review. One WARN remains: Auth leaked-password protection is disabled and requires dashboard-level action.
+- [x] Supabase security/performance advisors reviewed 2026-10-08. Existing RLS-without-policy INFO findings are consistent with service-role-only internal tables; 96 unused-index INFO findings require workload-based review. One WARN remains: Auth leaked-password protection is disabled. Repo hardening issue #56 records that the control is unavailable/enforceable on the current Supabase Free plan; treat it as a documented plan limitation, not an actionable release blocker while that plan remains in use. Revisit if the plan changes.
 
 ## Provider gates
 - [x] Cloudinary upload/read/delete live evidence.
@@ -104,7 +104,7 @@ Certification is NOT CERTIFIED while any required production gate remains unchec
 - [x] Full authenticated Admin UI core browser test: [run #38379930389](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38379930389) passed admin login, dashboard render, AI Brain navigation, and Brain page render.
 - [ ] Managed Supabase Auth/Storage and object-storage disaster recovery; application rollback rehearsal. Existing isolated public-schema restore does not cover these systems.
 - [ ] Production SLO/error-budget calculation and alert-path evidence. Render HTTP request/latency datapoints were unavailable in the inspected window; no SLO pass is implied.
-- [ ] Dependency/license/security refresh review and owner-controlled remediation of the Supabase Auth leaked-password-protection warning.
+- [ ] Dependency/license/security refresh review. The Supabase Auth leaked-password-protection warning is a documented Free-plan limitation per issue #56, not an actionable blocker unless the plan/settings change.
 - [ ] Resolve OpenRouter free-tier HTTP 429 without paid fallback unless explicitly approved.
 - [ ] Vercel integration check remains paused by owner direction; no remediation without explicit approval.
 
@@ -174,7 +174,7 @@ Release remains PENDING for the independent non-RAG gates. Health checks, schema
 ## Latest production advisor and frontend verification (2026-10-12)
 
 - [x] Read-only production query at approximately 2026-10-12 04:00 UTC: Alembic `20261011_0013`, `ai_memory_brain=124` (pending=124), `document_embeddings=0`, `intelligence_sources=0`, and `stored_files=0`.
-- [x] Supabase security advisors reviewed: 34 informational `RLS enabled, no policy` findings and one warning for disabled leaked-password protection. A read-only grant query found no table privileges for `anon`, `authenticated`, or `PUBLIC`; no broad policies/grants were added.
+- [x] Supabase security advisors reviewed: 34 informational `RLS enabled, no policy` findings and one warning for disabled leaked-password protection. A read-only grant query found no table privileges for `anon`, `authenticated`, or `PUBLIC`; no broad policies/grants were added. The leaked-password warning is recorded as a Free-plan limitation in issue #56, not fixed or an actionable release blocker while that plan remains in use.
 - [x] Supabase performance advisors reviewed: 88 unused-index notices. No index was dropped because this evidence alone does not establish that the indexes are unnecessary.
 - [x] Frontend clean install and tests passed: 35 test files, 83 tests. Next.js production build passed after bounding build workers to 2; the RAG index page's missing hook dependency warning was fixed.
 - [x] Production-only frontend audit: 0 findings.

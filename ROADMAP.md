@@ -5,6 +5,7 @@
 - [x] The redundant PR #112 was closed because its complete tree was already represented on `main`; its PR-head CI [#38418503996](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418503996) and CodeQL [#38418504242](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418504242) passed.
 - [x] Latest synthetic SLO probe [#38412066986](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38412066986) passed. Render request-count/latency metrics are still empty, so this is not request-level SLO evidence.
 - [ ] Overall release remains PENDING: durable QStash delivery/completion/idempotency and stale-claim recovery, Agent→Brain→Publish/resume, request/error telemetry and 30-day SLO/error-budget evidence, newsletter provider/delivery, managed Auth/Storage and object-storage recovery, rollback/DR rehearsal, dependency review, and 24-hour scheduler observation remain open.
+- [ ] Supabase Auth leaked-password protection is documented as unavailable on the current Free plan in issue #56; do not treat it as an actionable blocker while that plan remains in use.
 - [ ] Vercel remediation and paid AI fallback remain paused until explicit owner approval.
 
 ## 2026-10-12 Production RAG E2E — VERIFIED
@@ -313,7 +314,7 @@ The following are **not yet release-certified** and must not be marked VERIFIED 
 - [ ] Full authenticated Admin UI browser verification (not just login rendering, unauthenticated redirect, or API smoke).
 - [ ] Managed Supabase Auth/Storage recovery, object-storage disaster recovery, and application rollback rehearsal. The successful isolated public-schema restore is narrower than these gates.
 - [x] Synthetic `/health` probe passed after PR #105: run #38412066986 returned HTTP 200 in 5.962 seconds on attempt 1. [ ] Production SLO/error-budget calculation from request/error telemetry, auditable query/export, alert-path test, and required observation window. Render HTTP request/latency metrics remain unavailable, so request-level SLO pass is not evidenced.
-- [ ] Dependency/license/security refresh review and follow-up for the Supabase Auth leaked-password-protection warning.
+- [ ] Dependency/license/security refresh review. Supabase Auth leaked-password protection is a documented Free-plan limitation per issue #56, not an actionable blocker unless the plan/settings change.
 - [ ] Resolve OpenRouter free-tier HTTP 429 without enabling paid fallback unless explicitly authorized.
 - [ ] Vercel integration check/remediation remains owner-paused and requires explicit approval before work resumes.
 
