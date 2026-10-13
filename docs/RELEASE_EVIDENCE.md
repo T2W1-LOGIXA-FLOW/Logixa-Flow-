@@ -1,3 +1,14 @@
+## Evidence reconciliation (2026-10-14)
+
+**Overall release: PENDING — NOT RELEASE-CERTIFIED.** This snapshot supersedes older checklist wording below wherever a historical bullet conflicts with the current evidence.
+
+- Verified: production RAG ingest/embedding/retrieval/citation [#38227390320 attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320); authenticated Admin Brain API/UI smoke [#38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082); main CI [#38417257244](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257244), CodeQL [#38417257528](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257528); frontend PR #114 CI [#38424954202](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954202) and CodeQL [#38424954119](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954119).
+- Verified provider-specific paths: Cloudinary, Supabase Storage, B2/S3, Google Drive, production authentication/API smoke, and deployed private B2 application proxy [#38049146602](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602).
+- Pending live evidence: QStash durable delivery/completion/idempotency; retry/stale-claim/failure recovery; Agent → Brain → approval → Publish/resume; production request/error telemetry, alert path, and SLO/error-budget window; newsletter delivery/provider failover; managed Auth/Storage and object-storage recovery; current-schema backup/restore; rollback/DR rehearsal; 24-hour scheduler observation.
+- The 2026-10-09 public-schema restore was against the then-current migration `20261008_0012`. Current migration is `20261011_0013`; repeat restore validation against the current schema before claiming current-release recovery readiness.
+- Security: 7 high dev-toolchain npm audit findings remain; production-only audit has 0 findings. Supabase Auth leaked-password protection is a documented Free-plan limitation. OpenRouter HTTP 429 remains a provider-capacity risk; no paid fallback without owner approval. Vercel remediation remains paused.
+- GitHub branch search returned `main` only and no open PRs were found during this reconciliation.
+
 ## Production Admin Brain response-validation finding — VERIFIED (2026-10-13)
 
 - [x] The original production failure was observed in Render logs at `2026-10-13T09:57:43Z`: `ResponseValidationError` with 43 category-field validation errors on `GET /api/admin/brain`.
@@ -19,7 +30,7 @@
 
 > Owner: Engineering / Release
 > Status: ACTIVE — RAG E2E VERIFIED; OVERALL RELEASE PENDING
-> Last Updated: 2026-10-13
+> Last Updated: 2026-10-14
 
 This is the canonical evidence checklist for the Phase 7–13 release candidate. Evidence must identify the exact SHA, environment, timestamp, and observed durable outcome where applicable.
 
