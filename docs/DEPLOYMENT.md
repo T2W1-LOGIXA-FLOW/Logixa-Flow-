@@ -2,7 +2,7 @@
 
 > Owner: Operations / Engineering
 > Update when: deployment topology or release gates change
-> Last Updated: 2026-10-08
+> Last Updated: 2026-10-14
 > Do NOT put here: secret values.
 
 ## Current topology
@@ -23,11 +23,15 @@ Use `openrouter/free` for general chat/content generation. The user-supplied lis
 
 ## Migration state
 
-Repository Alembic head: **20261008_0012**. Live production migration head: **20261008_0012**, verified 2026-10-08.
+Repository Alembic head: **20261011_0013**. Live production migration head: **20261011_0013**, verified 2026-10-11. Production RAG configuration was verified as `RAG_EMBEDDING_VERSION=2` with `rag_v2_ingestion_mode=voyage_only`; 7 valid Voyage 512-D chunks were confirmed by the production RAG E2E. The historical 2026-10-09 backup/restore drill used migration `20261008_0012` and must not be treated as current-schema restore evidence.
 
 ## Vercel lock
 
 The removed web-platform/frontend/vercel.json override must not be restored or Vercel re-enabled while locked unless explicitly authorized by the project owner.
+
+## Current release evidence boundary (2026-10-14)
+
+Production RAG ingest → retrieval/citation is verified by [run #38227390320 attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320), and authenticated Admin Brain API/UI smoke by [run #38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082). Durable QStash workflow completion/recovery, current-schema restore, rollback/DR, request-level SLO/alerting, newsletter delivery, provider failover, and the 24-hour scheduler observation remain pending. The current architecture and the Render Free/CELERY_ENABLED=false decision are unchanged.
 
 ## Release gates
 
