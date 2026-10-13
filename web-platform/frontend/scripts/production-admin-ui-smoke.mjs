@@ -37,8 +37,12 @@ try {
   await page.getByRole("textbox", { name: "Email" }).fill(process.env.PRODUCTION_ADMIN_EMAIL);
   await page.getByLabel("Password").fill(process.env.PRODUCTION_ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Login to Dashboard" }).click();
-  await page.waitForURL(
-    (url) => url.pathname.startsWith("/admin/") && url.pathname !== "/admin/login",
+  // Login redirects use Next.js client navigation too; URL changes can
+  // complete before click() resolves, so do not wait for a document load.
+  await page.waitForFunction(
+    () => window.location.pathname === "/admin" ||
+      (window.location.pathname.startsWith("/admin/") && window.location.pathname !== "/admin/login"),
+    null,
     { timeout: 30_000 },
   );
   await page.getByRole("link", { name: /AI Brain/ }).waitFor({ state: "visible" });
