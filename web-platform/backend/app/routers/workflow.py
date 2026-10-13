@@ -817,6 +817,7 @@ def start_queue_worker() -> None:
 
 async def _queue_worker() -> None:
     global _QUEUE_WORKER_RUNNING
+    claim_retry_delay = 1.0
     try:
         while _EXECUTION_QUEUE:
             item = _EXECUTION_QUEUE[0]
@@ -837,15 +838,22 @@ async def _queue_worker() -> None:
                     claimed = _claim_job(run.run_id)
                 except Exception:
                     logger.exception(
-                        "Workflow queue worker failed to claim job",
+                        "Workflow queue worker failed to claim job; retrying with backoff",
                         extra={
                             "run_id": run.run_id,
                             "operation": "queue_worker_claim",
                             "error_type": "database_failure",
+                            "retry_delay_seconds": claim_retry_delay,
                         },
                     )
-                    return
+                    # Keep the durable run at the head of the in-process queue.
+                    # A transient database outage must not strand it until a new
+                    # workflow happens to be enqueued.
+                    await asyncio.sleep(claim_retry_delay)
+                    claim_retry_delay = min(claim_retry_delay * 2, 30.0)
+                    continue
 
+                claim_retry_delay = 1.0
                 _EXECUTION_QUEUE.pop(0)
                 if not claimed:
                     continue
