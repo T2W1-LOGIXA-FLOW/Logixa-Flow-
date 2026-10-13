@@ -1,3 +1,12 @@
+## Release closure and repository inventory (2026-10-14)
+
+- **Branch/PR cleanup:** GitHub branch search currently returns `main` only; no open pull requests were returned. The previously reviewed fix/test branches are no longer present. This docs update does not delete branches or alter application code.
+- **Verified:** production RAG ingestion/embedding/retrieval/citation [#38227390320 attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320); authenticated Admin Brain API smoke [#38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082); main CI [#38417257244](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257244) and CodeQL [#38417257528](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257528); frontend CI [#38424954202](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954202) and CodeQL [#38424954119](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954119).
+- **Still pending:** live QStash delivery/completion/idempotency and workflow recovery; Agent → Brain → approval → Publish/resume; production request/error telemetry, alert-path and SLO window; newsletter delivery and provider failover; managed Auth/Storage and object-storage recovery; current-schema backup/restore; rollback/DR; 24-hour scheduler observation.
+- **Security/cost:** 7 high dev-toolchain npm audit findings remain (0 moderate/critical); production-only audit has 0 findings. Supabase Auth leaked-password protection is a documented Free-plan limitation. Do not resume Vercel remediation or paid AI fallback without explicit owner approval.
+
+**Overall release: PENDING — NOT RELEASE-CERTIFIED.** Do not equate a green CI run, a synthetic health probe, or the RAG-specific E2E with full release certification.
+
 ## Latest release closure update (2026-10-13)
 
 - [x] Admin Brain response-validation defect fixed on `main` commit `d826ad9105434acd3621c1df9e7469247da0129a`; CI [#38417257244](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257244) and CodeQL [#38417257528](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257528) passed.
@@ -21,7 +30,7 @@
 
 > Owner: Project / Engineering
 > Update when: a phase, release gate, deferred item, or backlog item changes status
-> Last Updated: 2026-10-13
+> Last Updated: 2026-10-14
 > Do NOT put here: detailed implementation instructions; use domain docs and runbooks.
 
 ## Completed Phases
@@ -54,18 +63,18 @@ Current verified baseline:
 
 Remaining acceptance criteria:
 - Provider-level Supabase Storage, private B2/S3, Google Drive E2E, and deployed application private-B2 proxy E2E are verified. B2 application proxy evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602.
-- Retry, stale-claim recovery, and failure recovery are verified.
-- Duplicate-delivery protection remains verified.
+- Deterministic retry/recovery tests exist, but live retry, stale-claim reclamation, and controlled failure/recovery remain PENDING until production durable-state evidence is captured.
+- Duplicate-delivery/idempotency has deterministic test coverage, but live QStash duplicate-delivery behavior remains PENDING.
 - QStash US-region signature validation is verified; durable delivery/completion/idempotency remain pending because the historical EU-region message returned HTTP 401 Invalid QStash signature.
 - Cloudinary E2E remains verified.
 - Production authentication/API smoke is VERIFIED by run #11: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37899971474.
-- Monitoring and failure-mode checks pass.
+- Synthetic /health probing has a passing observation, but request/error telemetry, alert-path verification, and SLO/error-budget observation remain PENDING.
 - RAG ingest → embed → search passes.
-- Agent → Brain → publish passes.
-- Approval → resume → completion passes.
-- Scheduled workflow crosses a real time boundary.
-- Newsletter delivery passes.
-- Controlled provider failover passes.
+- Agent → Brain → approval → Publish/resume remains PENDING for production end-to-end evidence.
+- Approval → resume → completion remains PENDING for production end-to-end evidence.
+- A scheduled workflow crossing a real time boundary remains PENDING.
+- Newsletter delivery remains PENDING; endpoints return HTTP 501 until a transactional email provider is configured.
+- Controlled provider failover remains PENDING.
 
 Verification rule: implementation, configuration, or unit tests do not substitute for live evidence.
 
