@@ -388,7 +388,16 @@ async def test_queue_worker_keeps_job_queued_when_claim_database_fails(monkeypat
 
     monkeypatch.setattr(workflow, "_claim_job", failing_claim)
 
-    await workflow._queue_worker()
+    class StopAfterFirstRetry(Exception):
+        pass
+
+    async def stop_after_first_retry(delay: float) -> None:
+        assert delay == 1.0
+        raise StopAfterFirstRetry()
+
+    monkeypatch.setattr(workflow, "_queue_worker_sleep", stop_after_first_retry)
+    with pytest.raises(StopAfterFirstRetry):
+        await workflow._queue_worker()
 
     assert workflow._EXECUTION_QUEUE == [item]
     assert workflow._QUEUE_WORKER_RUNNING is False
