@@ -43,7 +43,9 @@ try {
   );
   await page.getByRole("link", { name: /AI Brain/ }).waitFor({ state: "visible" });
   await page.getByRole("link", { name: /AI Brain/ }).click();
-  await page.waitForURL((url) => url.pathname === "/admin/brain");
+  // Next.js client navigation may update the URL before click() resolves;
+  // wait for the pathname itself rather than a new document load event.
+  await page.waitForFunction(() => window.location.pathname === "/admin/brain", null, { timeout: 30_000 });
 
   try {
     await page.getByText("AI Memory", { exact: true }).waitFor({ state: "visible" });
