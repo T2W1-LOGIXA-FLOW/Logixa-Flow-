@@ -2,8 +2,16 @@
 
 > Owner: Engineering
 > Update when: test strategy, release gates, or evidence requirements change
-> Last Updated: 2026-10-11
+> Last Updated: 2026-10-14
 > Do NOT put here: speculative test results.
+
+## Latest verified evidence (2026-10-14)
+
+- Main CI and CodeQL passed for the Admin Brain response-validation fix: [CI #38417257244](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257244), [CodeQL #38417257528](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257528).
+- The authenticated Admin Brain API/UI smoke passed in [run #38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082).
+- Frontend validation for PR #114 passed: 35 test files / 83 tests and production build; [CI #38424954202](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954202), [CodeQL #38424954119](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954119). The fix was merged as `d943cb66390f324eaee39cd3bf9d0c3a993bef3c`.
+- Production RAG ingestion → embedding → retrieval/citation passed in [run #38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320).
+- These results do **not** verify durable QStash workflow completion/idempotency, live retry/stale-claim recovery, Agent → Brain → Publish, SLO/alerting, newsletter/failover, current-schema restore, rollback/DR, or the 24-hour scheduler boundary. Those gates remain PENDING.
 
 ## Test layers
 
