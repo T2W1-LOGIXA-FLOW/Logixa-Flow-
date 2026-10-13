@@ -165,9 +165,12 @@ async def test_queue_worker_retries_transient_claim_failure(monkeypatch: pytest.
 
     monkeypatch.setattr(workflow, "_claim_job", flaky_claim)
     monkeypatch.setattr(workflow, "_execute_workflow", fake_execute)
-    monkeypatch.setattr(workflow.asyncio, "sleep", fake_sleep)
+    # Scope the global asyncio.sleep patch to the queue-worker call only so
+    # the test runner and task gathering retain real event-loop scheduling.
+    with monkeypatch.context() as sleep_patch:
+        sleep_patch.setattr(workflow.asyncio, "sleep", fake_sleep)
+        await workflow._queue_worker()
 
-    await workflow._queue_worker()
     tasks = list(workflow._RUN_TASKS)
     if tasks:
         await asyncio.gather(*tasks)
