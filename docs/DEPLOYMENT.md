@@ -33,6 +33,10 @@ The removed web-platform/frontend/vercel.json override must not be restored or V
 
 Production RAG ingest → retrieval/citation is verified by [run #38227390320 attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320), and authenticated Admin Brain API/UI smoke by [run #38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082). Durable QStash workflow completion/recovery, current-schema restore, rollback/DR, request-level SLO/alerting, newsletter delivery, provider failover, and the 24-hour scheduler observation remain pending. The current architecture and the Render Free/CELERY_ENABLED=false decision are unchanged.
 
+## Current release evidence boundary (2026-10-14)
+
+Production RAG ingest → retrieval/citation is verified by [run #38227390320 attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320), and authenticated Admin Brain API/UI smoke by [run #38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082). Durable QStash workflow completion/recovery, current-schema restore, rollback/DR, request-level SLO/alerting, newsletter delivery, provider failover, and the 24-hour scheduler observation remain pending. The current architecture and Render Free / `CELERY_ENABLED=false` decision are unchanged.
+
 ## Release gates
 
 Latest-main CI, real provider E2E, signed QStash delivery, workflow completion/recovery, production auth/API smoke, and monitoring/failure-mode checks remain release gates.
