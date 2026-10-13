@@ -3,7 +3,7 @@
 - [x] PR #95 merged: production Admin UI smoke now targets the Email textbox explicitly, removing the observed Playwright strict-mode ambiguity. [PR #95](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/95).
 - [x] Main CI passed backend, frontend tests/build, agents, and security in [run #38344770156](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770156).
 - [x] Python and JavaScript/TypeScript CodeQL passed in [run #38344770188](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770188).
-- [ ] Run the manual Production Admin UI Smoke workflow on `main` with the five required production environment secrets, then inspect authenticated login, dashboard, and AI Brain navigation.
+- [x] Production Admin UI Smoke passed on `main` in [run #38379930389](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38379930389): admin login, authenticated dashboard render, AI Brain navigation, and Brain page render. PRs #100 and #101 fixed client-navigation wait races in the smoke harness.
 - [ ] Keep overall certification pending until live workflow recovery, Agent→Brain→Publish, measurable SLO/alerting, rollback/DR, newsletter/provider failover, and scheduler observation have evidence.
 
 ## 2026-10-12 Production RAG E2E — VERIFIED
@@ -13,7 +13,7 @@
 - [x] Full ingestion passed: 7 RSS sources, 7 Voyage 512-D chunks, 0 errors, 0 Brain items ingested, 0 legacy-vector chunks.
 - [x] Citation retrieval passed: 5 matches returned and the first match had a non-empty citation title/URL. Evidence: [Production Auth Smoke run #38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320).
 - [x] Fixed the production timeout mismatch: Voyage request pacing is 21 seconds, while the previous search budget was 5 seconds. PR #90 made safe diagnostics visible; PR #91 made the search budget configurable (75-second default) and classified timeouts as search/503 rather than unknown/422. Both are merged and deployed.
-- [ ] Overall release remains PENDING: workflow recovery, RAG→Agent→Brain→Publish, authenticated Admin UI, SLO/alerting, rollback/DR rehearsal, newsletter delivery, provider failover, and 24-hour scheduler observation remain open.
+- [ ] Overall release remains PENDING: workflow recovery, RAG→Agent→Brain→Publish, SLO/alerting, rollback/DR rehearsal, newsletter delivery, provider failover, and 24-hour scheduler observation remain open.
 
 # Logixa Flow — Roadmap
 
@@ -28,17 +28,17 @@
 Status: VERIFIED. Evidence: 12 Markdown files were audited and ledgers A–E were built. No orphan file, plan, or decision was identified.
 
 ### Repository hardening and platform foundations
-Status: DONE / VERIFIED at repository level, with overall release certification still pending. Repository/live Alembic revision is `20261011_0013`; the Voyage v2 path is additive and legacy 768-D vectors are retained for rollback. Production RAG ingest→retrieval→citation is VERIFIED by run #38227390320 attempt 4: 7 sources, 7 valid Voyage 512-D chunks, 0 errors, 5 retrieval matches, and a non-empty citation. Current counts are `document_embeddings=7`, `intelligence_sources=7`, and `ai_memory_brain=125` (pending=125). OpenRouter HTTP 429 remains a separate scheduled AI preview risk. Live workflow recovery, RAG→Agent→Brain→Publish, monitoring/SLO, newsletter/failover, managed Auth/Storage and object-storage recovery, rollback, and authenticated Admin UI remain open.
+Status: DONE / VERIFIED at repository level, with overall release certification still pending. Repository/live Alembic revision is `20261011_0013`; the Voyage v2 path is additive and legacy 768-D vectors are retained for rollback. Production RAG ingest→retrieval→citation is VERIFIED by run #38227390320 attempt 4: 7 sources, 7 valid Voyage 512-D chunks, 0 errors, 5 retrieval matches, and a non-empty citation. Current counts are `document_embeddings=7`, `intelligence_sources=7`, and `ai_memory_brain=125` (pending=125). OpenRouter HTTP 429 remains a separate scheduled AI preview risk. Authenticated Admin UI core smoke is VERIFIED by run #38379930389. Live workflow recovery, RAG→Agent→Brain→Publish, monitoring/SLO, newsletter/failover, managed Auth/Storage and object-storage recovery, and rollback remain open.
 
 ## Active Phase
 
-**Release status: PENDING — NOT RELEASE-CERTIFIED.** Production migration `20261011_0013` is applied and RAG v2 is active in `voyage_only` mode. The production ingest→retrieval→citation gate passed in run #38227390320 attempt 4 with 7 valid Voyage chunks and 0 ingestion errors. Keep the no-paid-fallback policy; OpenRouter HTTP 429 still affects the separate scheduled AI preview. Live workflow recovery, RAG→Agent→Brain→Publish, authenticated Admin UI, SLO/alerting, rollback/DR, newsletter, provider failover, and scheduler observation remain open.
+**Release status: PENDING — NOT RELEASE-CERTIFIED.** Production migration `20261011_0013` is applied and RAG v2 is active in `voyage_only` mode. The production ingest→retrieval→citation gate passed in run #38227390320 attempt 4 with 7 valid Voyage chunks and 0 ingestion errors. Keep the no-paid-fallback policy; OpenRouter HTTP 429 still affects the separate scheduled AI preview. Authenticated Admin UI core smoke is VERIFIED by run #38379930389. Live workflow recovery, RAG→Agent→Brain→Publish, SLO/alerting, rollback/DR, newsletter, provider failover, and scheduler observation remain open.
 
 ### Phase 13 — Release certification and maintenance
 
 Objective: close the remaining production/provider/recovery evidence gates and freeze only when the release evidence index is complete.
 
-Current state (2026-10-11): production migration `20261011_0013` is applied; `20261008_0012_rag_observability` remains part of the migration history. Cloudinary, Supabase Storage upload/read/cleanup, private B2/S3 provider and deployed application proxy, Google Drive upload/read, QStash US-region signature-only smoke, production auth smoke, and public-schema logical backup/restore have live evidence. Remaining gates are workflow recovery, RAG/AI business journeys, newsletter/failover, object-storage/managed Auth-Storage recovery, rollback, monitoring/SLO, and full authenticated Admin UI verification.
+Current state (2026-10-11): production migration `20261011_0013` is applied; `20261008_0012_rag_observability` remains part of the migration history. Cloudinary, Supabase Storage upload/read/cleanup, private B2/S3 provider and deployed application proxy, Google Drive upload/read, QStash US-region signature-only smoke, production auth smoke, and public-schema logical backup/restore have live evidence. Remaining gates are workflow recovery, RAG/AI business journeys, newsletter/failover, object-storage/managed Auth-Storage recovery, rollback, and monitoring/SLO. Authenticated Admin UI core smoke is VERIFIED by run #38379930389.
 
 ### Final live-infrastructure verification
 
