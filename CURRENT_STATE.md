@@ -1,3 +1,11 @@
+## Latest release closure update (2026-10-13)
+
+- PR #95 was merged to `main` as `93144ba83e0c5690089316404c71be4bcda9877d`. It fixes the production Admin UI smoke test's ambiguous Email selector by targeting the textbox role explicitly. [PR #95](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/95).
+- Main-branch CI run [#38344770156](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770156) passed backend, frontend, agents, and security jobs. CodeQL run [#38344770188](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770188) passed Python and JavaScript/TypeScript analyses.
+- The production Admin UI smoke has **not** yet been rerun after the selector fix. Run it manually from Actions → Production Admin UI Smoke → Run workflow on `main`. Required production environment secrets: `PRODUCTION_FRONTEND_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `PRODUCTION_ADMIN_EMAIL`, and `PRODUCTION_ADMIN_PASSWORD`. Never put secret values in issues, logs, or chat.
+- The scheduled/manual health probe measures only `/health` availability and latency; it is not sufficient by itself to certify request-level SLO/error-budget compliance. Alert-path test and longer observation evidence remain required.
+- **Overall release remains PENDING — NOT RELEASE-CERTIFIED.** Workflow retry/stale-claim recovery, Agent→Brain→Publish, authenticated Admin UI, measurable SLO/error budget, rollback/DR rehearsal, newsletter delivery/provider failover, and scheduler observation remain independent gates.
+
 ## Latest production RAG status (2026-10-12 10:10 UTC)
 
 - **RAG production gate: VERIFIED.** Production Auth Smoke workflow run [#38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320) passed end-to-end against Render commit `3476848877c080d2f76441bd844c8efec3f37751`.
