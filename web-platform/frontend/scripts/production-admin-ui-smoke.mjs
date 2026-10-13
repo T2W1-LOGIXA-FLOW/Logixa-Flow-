@@ -59,16 +59,16 @@ try {
   const brainApiResponse = await brainApiResponsePromise;
   const brainApiUrl = new URL(brainApiResponse.url());
   if (!brainApiResponse.ok()) {
-    throw new Error(\`Admin Brain API returned HTTP \${brainApiResponse.status()} for \${brainApiUrl.origin}\${brainApiUrl.pathname}\`);
+    throw new Error(`Admin Brain API returned HTTP ${brainApiResponse.status()} for ${brainApiUrl.origin}${brainApiUrl.pathname}`);
   }
   let brainRecords;
   try {
     brainRecords = await brainApiResponse.json();
   } catch {
-    throw new Error(\`Admin Brain API returned a non-JSON response for \${brainApiUrl.origin}\${brainApiUrl.pathname}\`);
+    throw new Error(`Admin Brain API returned a non-JSON response for ${brainApiUrl.origin}${brainApiUrl.pathname}`);
   }
   if (!Array.isArray(brainRecords)) {
-    throw new Error(\`Admin Brain API returned a non-array payload for \${brainApiUrl.origin}\${brainApiUrl.pathname}\`);
+    throw new Error(`Admin Brain API returned a non-array payload for ${brainApiUrl.origin}${brainApiUrl.pathname}`);
   }
 
   try {
