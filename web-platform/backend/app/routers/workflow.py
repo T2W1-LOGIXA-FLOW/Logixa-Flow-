@@ -815,6 +815,30 @@ def start_queue_worker() -> None:
     asyncio.create_task(_queue_worker())
 
 
+async def _queue_worker_sleep(delay: float) -> None:
+    await asyncio.sleep(delay)
+
+
+async def _claim_job_with_retry(run_id: str) -> bool:
+    """Retry transient claim failures without dropping the queued workflow run."""
+    retry_delay = 1.0
+    while True:
+        try:
+            return _claim_job(run_id)
+        except Exception:
+            logger.exception(
+                "Workflow queue worker failed to claim job; retrying with backoff",
+                extra={
+                    "run_id": run_id,
+                    "operation": "queue_worker_claim",
+                    "error_type": "database_failure",
+                    "retry_delay_seconds": retry_delay,
+                },
+            )
+            await _queue_worker_sleep(retry_delay)
+            retry_delay = min(retry_delay * 2, 30.0)
+
+
 async def _queue_worker() -> None:
     global _QUEUE_WORKER_RUNNING
     try:
@@ -829,23 +853,13 @@ async def _queue_worker() -> None:
                 _EXECUTION_QUEUE.pop(0)
                 continue
             if _as_utc(item["scheduled_for"]) > now:
-                await asyncio.sleep(max((_as_utc(item["scheduled_for"]) - now).total_seconds(), 0))
+                await _queue_worker_sleep(max((_as_utc(item["scheduled_for"]) - now).total_seconds(), 0))
                 continue
 
             if run.state.status == "queued":
-                try:
-                    claimed = _claim_job(run.run_id)
-                except Exception:
-                    logger.exception(
-                        "Workflow queue worker failed to claim job",
-                        extra={
-                            "run_id": run.run_id,
-                            "operation": "queue_worker_claim",
-                            "error_type": "database_failure",
-                        },
-                    )
-                    return
-
+                # Keep the run at the queue head while a transient claim failure
+                # is retried; only dequeue after the claim result is known.
+                claimed = await _claim_job_with_retry(run.run_id)
                 _EXECUTION_QUEUE.pop(0)
                 if not claimed:
                     continue
