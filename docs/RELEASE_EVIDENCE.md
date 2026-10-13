@@ -4,7 +4,7 @@
 - [x] Main CI backend/frontend/agents/security jobs passed: [run #38344770156](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770156).
 - [x] Python and JavaScript/TypeScript CodeQL passed: [run #38344770188](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770188).
 - [x] [Production Admin UI Smoke run #38379930389](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38379930389) passed on `main` commit `108f3beb267f0b2443a94fdaac9f45903f12a514`: admin login, authenticated dashboard render, AI Brain navigation, and Brain page render. The workflow retains manual dispatch and now also triggers on changes to its smoke harness; secret values are not recorded.
-- [ ] Keep SLO certification pending until alert-path evidence, request/error telemetry, and the required observation window are available; `/health` probes alone are synthetic availability/latency evidence only. Probe run [#38384976632](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38384976632) timed out after 20 seconds during a Render startup window. PR #105 (`e13ed68`) adds bounded retry and failure-artifact handling; the next scheduled probe must validate it.
+- [x] Post-PR #105 synthetic health probe [#38412066986](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38412066986) passed with HTTP 200, 5.962-second latency, one attempt. Earlier run #38384976632 remains a failed observation (20-second timeout). [ ] Keep request-level SLO certification pending until alert-path evidence, request/error telemetry, and the required observation window are available; `/health` alone is synthetic availability/latency evidence.
 
 # Logixa Flow — Release Evidence Index
 
@@ -89,7 +89,7 @@ Certification is NOT CERTIFIED while any required production gate remains unchec
 
 
 ## Consolidated open gates (2026-10-11)
-- [ ] Workflow retry/recovery, stale-claim reclamation, controlled failure recovery, and recovery observability in live production.
+- [x] In-process workflow claim retry implementation merged by PR #107 and deployed to Render (`dep-db73qe6q1p3s73evdap0`); CI and CodeQL passed. [ ] Live QStash delivery/completion/idempotency, stale-claim reclamation, controlled failure recovery, and recovery observability remain unverified in production.
 - [x] RAG ingest→embed→search/citation: VERIFIED by run #38227390320 attempt 4. [ ] Agent→Brain→publish; approval→resume→completion; scheduled workflow across a real time boundary.
 - [ ] Newsletter delivery (currently HTTP 501 until a transactional email provider is connected) and controlled provider failover.
 - [x] Full authenticated Admin UI core browser test: [run #38379930389](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38379930389) passed admin login, dashboard render, AI Brain navigation, and Brain page render.

@@ -305,13 +305,13 @@ CI #535 / CodeQL #282 passed on merged diagnostics SHA `896c3d0b1086799883b4128b
 
 The following are **not yet release-certified** and must not be marked VERIFIED without direct evidence:
 
-- [ ] Live workflow retry/recovery, stale-claim reclamation, controlled failure recovery, and recovery observability.
+- [x] In-process queue claim transient-retry implementation and regression test merged by PR #107 (`d950ae7`); CI/CodeQL passed and Render deployment `dep-db73qe6q1p3s73evdap0` is live. [ ] Verify durable QStash delivery/completion/idempotency and live stale-claim/failure recovery in production.
 - [x] Production RAG ingest → embed → search/citation, verified by run #38227390320 attempt 4. [ ] Agent → Brain → publish, with durable final state and provenance.
 - [ ] Approval → resume → completion and scheduled execution across a real time boundary.
 - [ ] Newsletter delivery and controlled provider failover. Newsletter endpoints currently return HTTP 501 until a transactional email provider is connected.
 - [ ] Full authenticated Admin UI browser verification (not just login rendering, unauthenticated redirect, or API smoke).
 - [ ] Managed Supabase Auth/Storage recovery, object-storage disaster recovery, and application rollback rehearsal. The successful isolated public-schema restore is narrower than these gates.
-- [ ] Production SLO/error-budget calculation from request/error telemetry, auditable query/export, alert-path test, and required observation window. Probe run #38384976632 timed out during a Render startup window; PR #105 adds bounded cold-start retries and artifact-safe timeout handling, pending the next scheduled run. Current Render HTTP request/latency metrics were unavailable, so no SLO pass is evidenced.
+- [x] Synthetic `/health` probe passed after PR #105: run #38412066986 returned HTTP 200 in 5.962 seconds on attempt 1. [ ] Production SLO/error-budget calculation from request/error telemetry, auditable query/export, alert-path test, and required observation window. Render HTTP request/latency metrics remain unavailable, so request-level SLO pass is not evidenced.
 - [ ] Dependency/license/security refresh review and follow-up for the Supabase Auth leaked-password-protection warning.
 - [ ] Resolve OpenRouter free-tier HTTP 429 without enabling paid fallback unless explicitly authorized.
 - [ ] Vercel integration check/remediation remains owner-paused and requires explicit approval before work resumes.
