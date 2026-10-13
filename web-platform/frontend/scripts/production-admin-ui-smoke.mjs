@@ -22,7 +22,7 @@ page.on("pageerror", (error) => errors.push(error.message));
 
 try {
   await page.goto(new URL("/admin/login", baseUrl).toString(), { waitUntil: "domcontentloaded" });
-  await page.getByLabel("Email").fill(process.env.PRODUCTION_ADMIN_EMAIL);
+  await page.getByRole("textbox", { name: "Email" }).fill(process.env.PRODUCTION_ADMIN_EMAIL);
   await page.getByLabel("Password").fill(process.env.PRODUCTION_ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Login to Dashboard" }).click();
   await page.waitForURL((url) => url.pathname === "/admin" || url.pathname.startsWith("/admin/"), { timeout: 30_000 });
