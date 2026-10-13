@@ -95,7 +95,7 @@ The latest production RAG gate is live-verified, not inferred from CI: run #3822
 
 - PR #79's bounded readiness wait is deployed in Render deploy `dep-db66a5tckfvc73c9usc0` for commit `1a3085f610cf7376b72e14f4e995c28618f9d430`; deploy reached live at 2026-10-12 04:43:06 UTC.
 - The updated backend startup completed, and logs show the scheduler cooldown guard skipped an immediate preview. A public health request during the rollout briefly returned HTTP 502, then returned HTTP 200 after startup completed.
-- The workflow now waits up to five minutes for the authenticated RAG status schema before calling the admin-only, non-persisting Voyage smoke. A successful provider-smoke response is not yet independently confirmed in the available evidence, so provider verification remains PENDING.
+- The workflow now waits up to five minutes for the authenticated RAG status schema before calling the admin-only, non-persisting Voyage smoke. Historical status note from the rollout stage: this provider-smoke uncertainty was superseded by the later production RAG E2E recorded at the top of this file ([run #38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320)).
 - Historical workflow behavior while `RAG_EMBEDDING_VERSION=1`: feed sync and ingestion were skipped. Current production uses version 2 and `voyage_only`; the authenticated RAG E2E passed, while overall release remains pending for other gates.
 
 ## 4. COMPLETED
@@ -121,7 +121,7 @@ The latest production RAG gate is live-verified, not inferred from CI: run #3822
 - QStash duplicate-delivery protection remains PENDING. The terminal-run guard exists in code (commit 3c3e1ca8b7d8e8c07cc6eb53cfe5640d3cd4163a), but the historical live message evidence conflicts with delivery logs and must be re-run with a valid signed delivery before certification.
 - Historical repository migration `20261008_0012_rag_observability` follows `20261007_0011_agent_step_execution_metadata`; the current repository/live revision is `20261011_0013`.
 - Deterministic stale-claim reclamation coverage is now present in commit `34137b30527bbce0975d78ca4b554cb2291af68c`; live production stale-claim recovery remains pending.
-- **Live production Supabase migration history contains `20261008_0012_rag_observability` as the latest migration**, verified from the connected Supabase project on 2026-10-08. Evidence: Supabase project `ephrnmigiwjhdjksreos`, migration listing observed 2026-10-08; dashboard: `https://supabase.com/dashboard/project/ephrnmigiwjhdjksreos/database/migrations`.
+- **Historical live production migration observation on 2026-10-08:** `20261008_0012_rag_observability` was latest at that time. This was superseded by the verified current production migration `20261011_0013`. Evidence: Supabase project `ephrnmigiwjhdjksreos`, migration listing observed 2026-10-08; dashboard: `https://supabase.com/dashboard/project/ephrnmigiwjhdjksreos/database/migrations`.
 - Render configuration contains one Free Web Service and `CELERY_ENABLED=false`.
 - Frontend declares Next.js `^15.5.27`; **package-lock.json resolves Next.js to `15.5.27`**, verified from the committed lockfile on 2026-10-08.
 - Admin AI defaults are represented as enabled while public AI defaults are represented as disabled.
