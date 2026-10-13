@@ -1,5 +1,11 @@
 ## Latest release closure update (2026-10-13)
 
+## Production Admin Brain response-validation finding (2026-10-13)
+
+- Render logs at `2026-10-13T09:57:43Z` show the Admin Brain response failing serialization with 43 Pydantic validation errors: stored Brain labels such as `Logixa Flow Insight` and `Supply Chain Insight` are not members of the public-post `PostCategory` literal. This is a production API failure, not merely a test concern.
+- PR #110 broadens `AiMemoryOut.category` to preserve internal Brain labels and maps Brain labels to the public taxonomy only when creating a public post. Regression tests cover both behaviors. CI/CodeQL and production post-deploy verification are required before marking this gate fixed.
+- No production rows or settings were changed during diagnosis. Overall release remains PENDING — NOT RELEASE-CERTIFIED.
+
 - PR #95 was merged to `main` as `93144ba83e0c5690089316404c71be4bcda9877d`. It fixes the production Admin UI smoke test's ambiguous Email selector by targeting the textbox role explicitly. [PR #95](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/95).
 - Main-branch CI run [#38344770156](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770156) passed backend, frontend, agents, and security jobs. CodeQL run [#38344770188](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770188) passed Python and JavaScript/TypeScript analyses.
 - [x] Production Admin UI smoke passed on `main` commit `108f3beb267f0b2443a94fdaac9f45903f12a514` in [run #38379930389](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38379930389): admin login, authenticated dashboard render, AI Brain navigation, and Brain page render all passed. PR #98 added bounded failure diagnostics; PR #99 added a path-scoped push trigger while retaining manual dispatch; PRs #100 and #101 fixed Playwright waits that incorrectly awaited a document `load` event after Next.js client-side navigation. Production secrets were validated by the workflow and their values were not exposed.
