@@ -4,7 +4,7 @@
 - [x] Main CI backend/frontend/agents/security jobs passed: [run #38344770156](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770156).
 - [x] Python and JavaScript/TypeScript CodeQL passed: [run #38344770188](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770188).
 - [x] [Production Admin UI Smoke run #38379930389](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38379930389) passed on `main` commit `108f3beb267f0b2443a94fdaac9f45903f12a514`: admin login, authenticated dashboard render, AI Brain navigation, and Brain page render. The workflow retains manual dispatch and now also triggers on changes to its smoke harness; secret values are not recorded.
-- [ ] Keep SLO certification pending until alert-path evidence, request/error telemetry, and the required observation window are available; `/health` probes alone are synthetic availability/latency evidence only.
+- [ ] Keep SLO certification pending until alert-path evidence, request/error telemetry, and the required observation window are available; `/health` probes alone are synthetic availability/latency evidence only. Probe run [#38384976632](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38384976632) timed out after 20 seconds during a Render startup window. PR #105 (`e13ed68`) adds bounded retry and failure-artifact handling; the next scheduled probe must validate it.
 
 # Logixa Flow — Release Evidence Index
 
