@@ -7,6 +7,15 @@
 
 **Overall release: PENDING — NOT RELEASE-CERTIFIED.** Do not equate a green CI run, a synthetic health probe, or the RAG-specific E2E with full release certification.
 
+## Release closure and repository inventory (2026-10-14)
+
+- **Branch/PR cleanup:** GitHub branch search currently returns `main` only; no open pull requests were returned. The previously reviewed fix/test branches are no longer present. This docs update does not delete branches or alter application code.
+- **Verified:** production RAG ingestion/embedding/retrieval/citation [#38227390320 attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320); authenticated Admin Brain API smoke [#38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082); main CI [#38417257244](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257244) and CodeQL [#38417257528](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257528); frontend CI [#38424954202](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954202) and CodeQL [#38424954119](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954119).
+- **Still pending:** live QStash delivery/completion/idempotency and workflow recovery; Agent → Brain → approval → Publish/resume; production request/error telemetry, alert-path and SLO window; newsletter delivery and provider failover; managed Auth/Storage and object-storage recovery; current-schema backup/restore; rollback/DR; 24-hour scheduler observation.
+- **Security/cost:** 7 high dev-toolchain npm audit findings remain (0 moderate/critical); production-only audit has 0 findings. Supabase Auth leaked-password protection is a documented Free-plan limitation. Do not resume Vercel remediation or paid AI fallback without explicit owner approval.
+
+**Overall release: PENDING — NOT RELEASE-CERTIFIED.** Do not equate a green CI run, a synthetic health probe, or the RAG-specific E2E with full release certification.
+
 ## Latest release closure update (2026-10-13)
 
 - [x] Admin Brain response-validation defect fixed on `main` commit `d826ad9105434acd3621c1df9e7469247da0129a`; CI [#38417257244](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257244) and CodeQL [#38417257528](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257528) passed.
