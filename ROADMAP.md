@@ -202,7 +202,7 @@ Status: ACTIVE — final evidence closure.
 
 - [x] Frontend dependency install from the updated lockfile passed; frontend tests passed (35 files, 83 tests).
 - [x] Production build passed with bounded Next.js build workers (`experimental.cpus=2`), avoiding worker-spawn exhaustion in constrained build containers; the RAG index page hook-dependency warning was fixed using `useCallback`.
-- [x] Production-only npm audit: 0 findings. Full dev-inclusive audit still reports 8 findings (7 high, 1 moderate), predominantly the Tailwind 3 / Next ESLint tooling dependency chain. No forced Tailwind 4 major migration was applied.
+- [x] Production-only npm audit: 0 findings. After PR #114, full dev-inclusive audit reports 7 findings (7 high, 0 moderate), predominantly the Tailwind 3 / Next ESLint tooling dependency chain. CI #38424954202, CodeQL #38424954119, and Vercel preview check passed on the merged PR head. No forced Tailwind 4 major migration was applied.
 - [ ] Dev-toolchain advisories need a compatible major-version remediation plan and full validation.
 - [ ] QStash live durable workflow completion/idempotency needs a new successful signed run; the 2026-10-12 signature-only smoke did not create workflow state.
 
@@ -220,7 +220,7 @@ Status: ACTIVE — final evidence closure.
 - [x] Cross-check repository, Render, Vercel, and Supabase live state; see `docs/REPO_INFRA_AUDIT.md`.
 - [x] Reconcile stale migration-head and RAG telemetry statements in canonical docs.
 - [x] Patch production dependency `fflate` 0.6.10 → 0.6.11; production npm audit and backend pip-audit are clean, and CI #452 / CodeQL #199 passed.
-- [x] Reviewed the remaining dev-inclusive npm audit findings on 2026-10-12. Baseline full audit reports 8 findings (7 high, 1 moderate); the CI production-only audit remains green. The Tailwind 3 dependency chain includes vulnerable `braces`/`chokidar`/`micromatch`, and npm proposes Tailwind 4 as a major-version remediation. No forced Tailwind 4 upgrade was applied; compatible remediation and frontend regression testing remain a separate open security task.
+- [x] Reviewed the remaining dev-inclusive npm audit findings on 2026-10-13. Baseline full audit reported 8 findings (7 high, 1 moderate); PR #114 fixed the moderate parser advisory, leaving 7 high dev-tooling findings. Production-only audit remains clean. The Tailwind 3 dependency chain includes vulnerable `braces`/`chokidar`/`micromatch`, and npm proposes Tailwind 4 as a major-version remediation. No forced Tailwind 4 upgrade was applied; compatible remediation and frontend regression testing remain a separate open security task.
 - [ ] Configure the missing GitHub `production` environment auth secrets identified by the failed preflight (`SUPABASE_PUBLISHABLE_KEY`, `PRODUCTION_ADMIN_EMAIL`, `PRODUCTION_ADMIN_PASSWORD`, `PRODUCTION_API_URL`), then rerun the auth smoke.
 - [ ] Set backup source/restore URLs to TLS-enabled shared Session Pooler URLs on port 5432; validate production identity `ephrnmigiwjhdjksreos` and isolated restore identity `bxvykaijlrqjvlhtumpg`; rerun the backup/restore gate.
 - [x] Historical configuration check: live health reported upload_storage_configured=true and missing_env=[] after the prior public-base setting; this did not prove B2 file delivery.
