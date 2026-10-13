@@ -4,17 +4,6 @@
 
 Still pending: durable QStash delivery/completion/idempotency and live workflow recovery; Agent → Brain → Publish/resume; request/error telemetry, alert path, and SLO observation; newsletter/failover; managed Auth/Storage and object-storage recovery; current-schema backup/restore; rollback/DR; and the 24-hour scheduler boundary. The historical public-schema restore used migration `20261008_0012`; current production migration is `20261011_0013`, so current-schema restore readiness is not yet verified. Full dev-inclusive npm audit has 7 high development-tooling findings and 0 moderate/critical; production-only audit has 0 findings. Vercel remediation and paid AI fallback remain owner-approval gated. GitHub branch search returned `main` only, with no open PRs found.
 
-## Evidence reconciliation (2026-10-14)
-
-**Overall release: PENDING — NOT RELEASE-CERTIFIED.** This snapshot supersedes older checklist wording below wherever a historical bullet conflicts with the current evidence.
-
-- Verified: production RAG ingest/embedding/retrieval/citation [#38227390320 attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320); authenticated Admin Brain API/UI smoke [#38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082); main CI [#38417257244](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257244), CodeQL [#38417257528](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257528); frontend PR #114 CI [#38424954202](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954202) and CodeQL [#38424954119](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954119).
-- Verified provider-specific paths: Cloudinary, Supabase Storage, B2/S3, Google Drive, production authentication/API smoke, and deployed private B2 application proxy [#38049146602](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602).
-- Pending live evidence: QStash durable delivery/completion/idempotency; retry/stale-claim/failure recovery; Agent → Brain → approval → Publish/resume; production request/error telemetry, alert path, and SLO/error-budget window; newsletter delivery/provider failover; managed Auth/Storage and object-storage recovery; current-schema backup/restore; rollback/DR rehearsal; 24-hour scheduler observation.
-- The 2026-10-09 public-schema restore was against the then-current migration `20261008_0012`. Current migration is `20261011_0013`; repeat restore validation against the current schema before claiming current-release recovery readiness.
-- Security: 7 high dev-toolchain npm audit findings remain; production-only audit has 0 findings. Supabase Auth leaked-password protection is a documented Free-plan limitation. OpenRouter HTTP 429 remains a provider-capacity risk; no paid fallback without owner approval. Vercel remediation remains paused.
-- GitHub branch search returned `main` only and no open PRs were found during this reconciliation.
-
 ## Production Admin Brain response-validation finding — VERIFIED (2026-10-13)
 
 - [x] The original production failure was observed in Render logs at `2026-10-13T09:57:43Z`: `ResponseValidationError` with 43 category-field validation errors on `GET /api/admin/brain`.
