@@ -164,11 +164,12 @@ Release remains PENDING for the independent non-RAG gates. Health checks, schema
 - [ ] Live workflow retry/recovery, stale-claim reclamation, controlled failure recovery, and all production RAG/publish journeys remain pending. Local tests and CI are not live production evidence.
 
 
-## Dev-inclusive dependency audit review (2026-10-12)
+## Dev-inclusive dependency audit review (2026-10-13)
 
-- [x] Full frontend `npm audit` was reviewed: 8 findings in the baseline lockfile (7 high, 1 moderate); CI's production-only npm audit remains green.
-- [x] Findings are in the development/tooling dependency tree, including the Tailwind 3 `braces`/Chokidar/micromatch chain and `postcss-selector-parser`.
-- [ ] Compatible remediation and full frontend regression validation remain open. npm proposes Tailwind 4 for the Tailwind 3 dependency chain, which is a major upgrade; no forced major upgrade was made.
+- [x] Baseline full frontend `npm audit` had 8 findings (7 high, 1 moderate) in development/tooling dependencies. The `postcss-selector-parser` advisory was patched with an override to version 7.1.6.
+- [x] Current full frontend audit: 7 high, 0 moderate, 0 critical. Production-only `npm audit --omit=dev`: 0 findings.
+- [x] Exact dependency tree local validation passed: `npm ci --ignore-scripts`, 35 test files / 83 tests, and `npm run build`. PR CI [#38424382717](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424382717) passed backend, agents, frontend tests/build, and security; CodeQL [#38424382721](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424382721) passed Python and JavaScript/TypeScript analyses.
+- [ ] Seven high findings remain in development tooling, primarily Tailwind 3's `braces`/Chokidar/fast-glob/micromatch chain and the Next ESLint plugin. npm's suggested fixes require a major Tailwind 4 migration and a compatible Next ESLint toolchain decision; no forced major upgrade/downgrade was made.
 
 
 ## Latest production advisor and frontend verification (2026-10-12)
@@ -178,8 +179,8 @@ Release remains PENDING for the independent non-RAG gates. Health checks, schema
 - [x] Supabase performance advisors reviewed: 88 unused-index notices. No index was dropped because this evidence alone does not establish that the indexes are unnecessary.
 - [x] Frontend clean install and tests passed: 35 test files, 83 tests. Next.js production build passed after bounding build workers to 2; the RAG index page's missing hook dependency warning was fixed.
 - [x] Production-only frontend audit: 0 findings.
-- [ ] Full dev-inclusive frontend audit still reports 8 findings (7 high, 1 moderate), mainly in Tailwind 3 / Next ESLint tooling. A compatible remediation is pending; no forced Tailwind 4 major upgrade was made.
-- [ ] Leaked-password protection requires dashboard-level action and independent verification. Production RAG, authenticated workflow recovery, SLO/alerting, managed Auth/Storage recovery, and rollback gates remain pending.
+- [x] Full dev-inclusive frontend audit now reports 7 findings (7 high, 0 moderate) after the `postcss-selector-parser` 7.1.6 override; production-only audit remains at 0 findings. Local clean install, 83 tests, and production build pass. Seven high dev-tooling findings still require major toolchain compatibility work.
+- [ ] Supabase Auth leaked-password protection is a documented Free-plan limitation per issue #56, not an actionable blocker while that plan remains in use. Production RAG, authenticated workflow recovery, SLO/alerting, managed Auth/Storage recovery, and rollback gates remain pending.
 
 
 ## QStash signature and delivery evidence reconciliation (2026-10-12)

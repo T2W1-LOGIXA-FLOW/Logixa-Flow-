@@ -16,7 +16,7 @@
 - Synthetic `/health` probe [#38412066986](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38412066986) passed HTTP 200 in 5.962 seconds on attempt 1. Direct production `/health` also returned HTTP 200 in 1.943 seconds during this audit. Render HTTP request-count and latency metrics returned empty datapoints, so request-level SLO/error-budget, alert-path, and the full observation window remain pending.
 - Newsletter endpoints still return HTTP 501 until a transactional email provider and credentials are configured; no email was sent.
 - Managed Auth/Storage and object-storage recovery, live rollback/DR rehearsal, and the 24-hour scheduler boundary observation remain pending.
-- Dependency/license/security refresh review remains pending. Supabase Auth leaked-password protection is a documented Free-plan limitation per hardening issue #56, not an actionable blocker while that plan remains in use; revisit if the plan/settings change. Vercel remediation and paid AI fallback remain paused pending explicit owner approval.
+- Full dev-inclusive npm audit still has 7 high development-toolchain advisories after the moderate parser advisory was fixed; production-only audit has 0 findings. Major Tailwind v4 / Next ESLint compatibility work remains open. Supabase Auth leaked-password protection is a documented Free-plan limitation per issue #56, not an actionable blocker while that plan remains in use. Vercel remediation and paid AI fallback remain paused pending explicit owner approval.
 
 **Overall release remains PENDING — NOT RELEASE-CERTIFIED.**
 
