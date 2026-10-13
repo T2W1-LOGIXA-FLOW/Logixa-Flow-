@@ -1,6 +1,10 @@
 name: Production SLO Synthetic Probe
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/production-slo-probe.yml"
   workflow_dispatch:
     inputs:
       test_alert:
