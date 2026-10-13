@@ -166,11 +166,11 @@ async def test_queue_worker_retries_transient_claim_failure(monkeypatch: pytest.
     monkeypatch.setattr(workflow, "_claim_job", flaky_claim)
     monkeypatch.setattr(workflow, "_execute_workflow", fake_execute)
     monkeypatch.setattr(workflow, "_queue_worker_sleep", fake_sleep)
-    await workflow._queue_worker()
+    await asyncio.wait_for(workflow._queue_worker(), timeout=5)
 
     tasks = list(workflow._RUN_TASKS)
     if tasks:
-        await asyncio.gather(*tasks)
+        await asyncio.wait_for(asyncio.gather(*tasks), timeout=5)
 
     assert claim_attempts == 2
     assert sleep_delays == [1.0]
