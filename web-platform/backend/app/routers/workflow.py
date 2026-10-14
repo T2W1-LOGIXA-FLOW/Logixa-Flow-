@@ -993,9 +993,26 @@ async def qstash_dispatch(request: Request) -> dict[str, str]:
         }
 
     # QStash can redeliver a message after a successful request. Terminal runs
-    # must be idempotent: acknowledge the delivery without executing the run again.
+    # must be idempotent: repair the durable job status (a prior process may have
+    # persisted the run result but failed before updating the job) and never rerun
+    # the workflow's side effects.
     run = _WORKFLOW_RUNS[run_id]
     if run.state.status in {"completed", "failed"}:
+        try:
+            _mark_job_terminal(run_id, run.state.status)
+        except Exception as exc:
+            logger.exception(
+                "Failed to reconcile terminal workflow job on redelivery",
+                extra={
+                    "run_id": run_id,
+                    "operation": "qstash_dispatch_terminal_reconcile",
+                    "error_type": type(exc).__name__,
+                },
+            )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Workflow status is temporarily unavailable; delivery may be retried",
+            ) from exc
         return {"status": run.state.status, "run_id": run_id}
 
     # Claim the durable scheduled job before execution. A fresh claim prevents
@@ -1015,7 +1032,37 @@ async def qstash_dispatch(request: Request) -> dict[str, str]:
 
     # Free Render mode: keep execution inside the QStash request so QStash owns
     # retry/delivery and can wake the sleeping Web Service for scheduled runs.
-    await _execute_workflow(run_id)
+    try:
+        await _execute_workflow(run_id)
+    except Exception as exc:
+        # A process-level failure (for example, a persistence error) must not
+        # leave the durable job claimed until the lease expires. Release our
+        # claim before returning non-2xx so QStash can redeliver and resume from
+        # the last persisted node checkpoint. The release itself can fail during
+        # a database outage; preserve the retry signal in that case as well.
+        logger.exception(
+            "Workflow dispatch failed before a terminal result was recorded",
+            extra={
+                "run_id": run_id,
+                "operation": "qstash_dispatch_execute",
+                "error_type": type(exc).__name__,
+            },
+        )
+        try:
+            _release_job_claim(run_id)
+        except Exception:
+            logger.exception(
+                "Failed to release workflow claim after dispatch error",
+                extra={
+                    "run_id": run_id,
+                    "operation": "qstash_dispatch_release_claim",
+                    "error_type": "database_failure",
+                },
+            )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Workflow execution is temporarily unavailable; delivery may be retried",
+        ) from exc
     run = _WORKFLOW_RUNS.get(run_id)
     return {"status": run.state.status if run is not None else "completed", "run_id": run_id}
 
