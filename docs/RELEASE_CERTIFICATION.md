@@ -1,3 +1,9 @@
+# Logixa Flow — Release Certification
+
+> Owner: Engineering / Release
+> Status: PENDING FINAL EVIDENCE
+> Last Updated: 2026-10-14
+
 ## Current certification snapshot (2026-10-14)
 
 **Status: PENDING FINAL EVIDENCE — NOT RELEASE-CERTIFIED.**
@@ -27,12 +33,6 @@ Do not mark any pending gate complete based on implementation, CI, or unrelated 
 - [ ] Dependency/license/security refresh review remains pending. Vercel remediation and paid AI fallback remain paused pending explicit owner approval.
 
 Overall status remains **PENDING FINAL EVIDENCE — NOT RELEASE-CERTIFIED**.
-
-# Logixa Flow — Release Certification
-
-> Owner: Engineering / Release
-> Status: PENDING FINAL EVIDENCE
-> Last Updated: 2026-10-14
 
 ## Certification rule
 
