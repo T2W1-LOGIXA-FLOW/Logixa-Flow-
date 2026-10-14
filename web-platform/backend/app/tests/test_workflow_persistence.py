@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import sys
+from types import ModuleType
 
 import pytest
 from fastapi import HTTPException
@@ -539,5 +540,155 @@ async def test_claim_reclaims_running_job_without_claim_timestamp() -> None:
         assert job.status == "running"
         assert job.claimed_by == workflow._WORKER_ID
         assert job.claimed_at is not None
+    finally:
+        db.close()
+
+
+@pytest.mark.anyio
+async def test_qstash_dispatch_releases_claim_and_returns_retryable_status_on_execution_exception(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    await workflow.store_workflow(
+        WorkflowStorageCreate(
+            id="qstash-recovery-flow",
+            name="QStash recovery flow",
+            nodes=[WorkflowNode(id="step", name="Step")],
+        ),
+        _admin={"role": "admin"},
+    )
+    run = WorkflowRunOut(
+        run_id="qstash-recovery-run",
+        workflow_id="qstash-recovery-flow",
+        state=WorkflowState(status="queued"),
+    )
+    workflow._WORKFLOW_RUNS[run.run_id] = run
+    workflow._persist_run_state(run)
+    db = workflow.SessionLocal()
+    try:
+        db.add(
+            models.ScheduledWorkflowJob(
+                id="job-qstash-recovery",
+                run_id=run.run_id,
+                workflow_id=run.workflow_id,
+                priority=1,
+                scheduled_for=workflow._now(),
+                status="queued",
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    class FakeReceiver:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+        def verify(self, **kwargs):
+            return None
+
+    qstash_module = ModuleType("qstash")
+    qstash_module.Receiver = FakeReceiver
+    monkeypatch.setitem(sys.modules, "qstash", qstash_module)
+    monkeypatch.setenv("QSTASH_CURRENT_SIGNING_KEY", "current-test-key")
+    monkeypatch.setenv("QSTASH_NEXT_SIGNING_KEY", "next-test-key")
+    monkeypatch.setenv("QSTASH_DESTINATION_URL", "https://example.invalid")
+    monkeypatch.setenv("CELERY_ENABLED", "false")
+
+    async def fail_execution(run_id: str) -> None:
+        raise RuntimeError("simulated persistence interruption")
+
+    monkeypatch.setattr(workflow, "_execute_workflow", fail_execution)
+
+    class FakeRequest:
+        headers = {"Upstash-Signature": "signed-test-payload"}
+
+        async def body(self) -> bytes:
+            return json.dumps({"run_id": run.run_id}).encode("utf-8")
+
+    with pytest.raises(HTTPException) as raised:
+        await workflow.qstash_dispatch(FakeRequest())
+
+    assert raised.value.status_code == 503
+    db = workflow.SessionLocal()
+    try:
+        job = db.query(models.ScheduledWorkflowJob).filter(
+            models.ScheduledWorkflowJob.run_id == run.run_id
+        ).one()
+        assert job.status == "queued"
+        assert job.claimed_by is None
+        assert job.claimed_at is None
+    finally:
+        db.close()
+
+
+@pytest.mark.anyio
+async def test_qstash_terminal_redelivery_repairs_job_status_without_reexecution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    await workflow.store_workflow(
+        WorkflowStorageCreate(
+            id="qstash-terminal-flow",
+            name="QStash terminal flow",
+            nodes=[WorkflowNode(id="step", name="Step")],
+        ),
+        _admin={"role": "admin"},
+    )
+    run = WorkflowRunOut(
+        run_id="qstash-terminal-run",
+        workflow_id="qstash-terminal-flow",
+        state=WorkflowState(status="completed", completed_nodes=["step"]),
+    )
+    workflow._WORKFLOW_RUNS[run.run_id] = run
+    workflow._persist_run_state(run)
+    db = workflow.SessionLocal()
+    try:
+        db.add(
+            models.ScheduledWorkflowJob(
+                id="job-qstash-terminal",
+                run_id=run.run_id,
+                workflow_id=run.workflow_id,
+                priority=1,
+                scheduled_for=workflow._now(),
+                status="queued",
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    class FakeReceiver:
+        def __init__(self, **kwargs):
+            pass
+
+        def verify(self, **kwargs):
+            return None
+
+    qstash_module = ModuleType("qstash")
+    qstash_module.Receiver = FakeReceiver
+    monkeypatch.setitem(sys.modules, "qstash", qstash_module)
+    monkeypatch.setenv("QSTASH_CURRENT_SIGNING_KEY", "current-test-key")
+    monkeypatch.setenv("QSTASH_NEXT_SIGNING_KEY", "next-test-key")
+    monkeypatch.setenv("QSTASH_DESTINATION_URL", "https://example.invalid")
+
+    async def unexpected_execution(run_id: str) -> None:
+        raise AssertionError("terminal workflow must not execute twice")
+
+    monkeypatch.setattr(workflow, "_execute_workflow", unexpected_execution)
+
+    class FakeRequest:
+        headers = {"Upstash-Signature": "signed-test-payload"}
+
+        async def body(self) -> bytes:
+            return json.dumps({"run_id": run.run_id}).encode("utf-8")
+
+    result = await workflow.qstash_dispatch(FakeRequest())
+    assert result == {"status": "completed", "run_id": run.run_id}
+
+    db = workflow.SessionLocal()
+    try:
+        job = db.query(models.ScheduledWorkflowJob).filter(
+            models.ScheduledWorkflowJob.run_id == run.run_id
+        ).one()
+        assert job.status == "completed"
     finally:
         db.close()
