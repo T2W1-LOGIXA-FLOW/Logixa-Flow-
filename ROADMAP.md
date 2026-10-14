@@ -7,6 +7,12 @@
 
 **Overall release: PENDING — NOT RELEASE-CERTIFIED.** Do not equate a green CI run, a synthetic health probe, or the RAG-specific E2E with full release certification.
 
+## Latest code-level recovery hardening (2026-10-14)
+
+- Patch branch: `fix/qstash-dispatch-exception-recovery`. It releases a durable claim after an uncaught execution exception and responds HTTP 503 for QStash retry; terminal redelivery repairs job status without replaying side effects.
+- Local validation passed: backend 236 passed / 5 skipped; agents 5 passed; frontend 83 tests passed and production build passed; backend `pip-audit` found no known vulnerabilities; production-only npm audit found 0 vulnerabilities.
+- Next gate: open PR and let GitHub CI/CodeQL run. Production QStash delivery/recovery remains pending until real persisted-run evidence is captured.
+
 ## Latest release closure update (2026-10-13)
 
 - [x] Admin Brain response-validation defect fixed on `main` commit `d826ad9105434acd3621c1df9e7469247da0129a`; CI [#38417257244](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257244) and CodeQL [#38417257528](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257528) passed.
