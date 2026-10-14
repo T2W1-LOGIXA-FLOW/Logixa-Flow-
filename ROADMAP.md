@@ -1,6 +1,6 @@
 ## Release closure and repository inventory (2026-10-14)
 
-- **Branch/PR cleanup:** the initial 2026-10-14 reconciliation found `main` only and no open PRs. Current recovery hardening is proposed in [PR #115](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/115); no remote branches were deleted.
+- **Branch/PR cleanup:** the initial 2026-10-14 reconciliation found `main` only and no open PRs. Recovery hardening PR #115 merged as `ede412e03dad4ab1cd15ee436c722c0f1581ea4e`. The topic branch remains on GitHub for owner cleanup; no remote branch was deleted.
 - **Verified:** production RAG ingestion/embedding/retrieval/citation [#38227390320 attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320); authenticated Admin Brain API smoke [#38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082); main CI [#38417257244](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257244) and CodeQL [#38417257528](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257528); frontend CI [#38424954202](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954202) and CodeQL [#38424954119](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954119).
 - **Still pending:** live QStash delivery/completion/idempotency and workflow recovery; Agent → Brain → approval → Publish/resume; production request/error telemetry, alert-path and SLO window; newsletter delivery and provider failover; managed Auth/Storage and object-storage recovery; current-schema backup/restore; rollback/DR; 24-hour scheduler observation.
 - **Security/cost:** 7 high dev-toolchain npm audit findings remain (0 moderate/critical); production-only audit has 0 findings. Supabase Auth leaked-password protection is a documented Free-plan limitation. Do not resume Vercel remediation or paid AI fallback without explicit owner approval.
@@ -11,7 +11,7 @@
 
 - Patch branch: `fix/qstash-dispatch-exception-recovery`. It releases a durable claim after an uncaught execution exception, requeues cancelled runs and responds HTTP 503 for QStash retry; terminal redelivery repairs job status without replaying side effects.
 - Local validation passed: backend 237 passed / 5 skipped; agents 5 passed; frontend 83 tests passed and production build passed; backend `pip-audit` found no known vulnerabilities; production-only npm audit found 0 vulnerabilities.
-- Next gate: PR [#115](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/115) is open; review CI/CodeQL results before merging. Production QStash delivery/recovery remains pending until real persisted-run evidence is captured.
+- CI [#38504093229](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38504093229) and CodeQL [#38504093130](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38504093130) passed; Render deploy [dep-db7f2d5bedkc738hnkr0](https://dashboard.render.com/web/srv-d9172fe8bjmc739pd600/deploys/dep-db7f2d5bedkc738hnkr0) is live and GET /health returned HTTP 200 in 2.073 seconds. Production QStash delivery/recovery remains pending until real persisted-run evidence is captured.
 
 ## Latest release closure update (2026-10-13)
 
