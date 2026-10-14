@@ -177,7 +177,7 @@ Status: ACTIVE — final evidence closure.
 ## 2026-10-12 production smoke deployment race
 
 - [x] Run #12 exposed a race between the push-triggered workflow and Render deployment; PR #79 waits for the new RAG status schema before calling the provider-smoke endpoint.
-- [ ] A successful live Voyage smoke is still pending; keep RAG_EMBEDDING_VERSION=1 and do not ingest production data until it passes.
+- [x] Historical rollout gate closed by Production Auth Smoke #38227390320 attempt 4: Voyage 512-D ingestion/retrieval/citation verified. Current production is `RAG_EMBEDDING_VERSION=2`, mode `voyage_only`; overall release remains pending for independent gates.
 
 ## 2026-10-12 production Voyage smoke and approved-source gate
 
@@ -185,14 +185,14 @@ Status: ACTIVE — final evidence closure.
 - [x] Added a production-auth workflow trigger for RAG code/workflow changes. It uses existing production environment secrets, logs only sanitized model/dimension metadata, and skips all ingestion while embedding version is 1.
 - [x] Bulk RAG ingestion now indexes only approved/published Brain records; direct ingestion of pending/rejected drafts returns HTTP 409. The workflow can sync configured public RSS feeds without implicit ingestion, then ingest once and verify Voyage chunks plus citation-bearing search results when version 2 is enabled.
 - [x] Local backend suite: 168 passed, 2 non-failing warnings; workflow YAML and shell syntax validation passed.
-- [ ] PR #78 merge/deploy, first live provider smoke, authenticated source ingestion, 512-D stored-vector verification, and citation E2E remain pending. Production currently has 125 pending Brain drafts and zero embeddings; no data was ingested by this patch.
+- [x] These rollout gates were later closed by Production Auth Smoke run #38227390320 attempt 4 (7 sources, 7 valid Voyage chunks, 5 retrieval matches, non-empty citation). The 125 pending/private Brain drafts remain untouched.
 
 ## 2026-10-12 RAG v2 fallback-vector safety
 
 - [x] Identified a code-path gap: with RAG_EMBEDDING_VERSION=2, a legacy hash:fallback vector could still be written to the legacy 768-D column even when the Voyage 512-D vector succeeded.
 - [x] PR #77 changes v2-only rows to store no legacy vector, skips the legacy pgvector write, and keeps retrieval model-space-safe.
 - [x] Local backend suite: 164 passed, 2 non-failing warnings.
-- [ ] PR CI/CodeQL and production deployment verification pending. Keep RAG_EMBEDDING_VERSION=1 until deployed Voyage smoke, authenticated ingestion, vector/model/dimension checks, retrieval/citations E2E are complete.
+- [x] Historical rollout gate closed: PR #77 and follow-up fixes are merged/deployed; production E2E run #38227390320 attempt 4 verified 7 valid Voyage 512-D chunks and citation-bearing retrieval. Current production is v2 / `voyage_only`; do not roll back to v1 without a deliberate re-embedding plan.
 
 ## 2026-10-12 scheduler cadence follow-up
 
@@ -204,7 +204,7 @@ Status: ACTIVE — final evidence closure.
 
 - [x] Bounded five-minute wait for the deployed admin RAG status schema merged and deployed: Render deploy `dep-db66a5tckfvc73c9usc0`, commit `1a3085f610cf7376b72e14f4e995c28618f9d430`.
 - [x] Render startup completed and public `/health` returned HTTP 200 after a brief HTTP 502 during the deployment window.
-- [ ] A successful authenticated Voyage provider smoke result has not yet been independently confirmed. Keep `RAG_EMBEDDING_VERSION=1`; ingestion and retrieval/citation E2E remain pending.
+- [x] Later Production Auth Smoke run #38227390320 attempt 4 verified provider smoke, ingestion, vector shape/model, retrieval, and citation. Current RAG E2E gate is VERIFIED; overall release remains pending for other gates.
 
 ## 2026-10-12 scheduler restart duplicate-preview fix
 
