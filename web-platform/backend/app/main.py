@@ -18,7 +18,7 @@ from .database import SessionLocal
 from .db_bootstrap import bootstrap_database, database_profile
 from .logging_config import setup_logging
 from .middleware import rate_limit_middleware, request_observability_middleware, security_headers_middleware, stealth_mode_middleware
-from .routers import admin, agent, analytics, auth, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, workflow, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads, knowledge
+from .routers import admin, agent, analytics, auth, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, workflow, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads, knowledge, telegram
 from .scheduler import scheduler_status, start_scheduler
 
 logger = logging.getLogger(__name__)
@@ -263,6 +263,7 @@ app.include_router(email_templates.router, prefix="/api/admin/email-templates", 
 app.include_router(submissions.router, prefix="/api/admin/submissions", tags=["submissions"])
 app.include_router(diagnostics.router, prefix="/api", tags=["diagnostics"])
 app.include_router(workflow.router)
+app.include_router(telegram.router, prefix="/api", tags=["telegram"])
 
 
 @app.get("/")

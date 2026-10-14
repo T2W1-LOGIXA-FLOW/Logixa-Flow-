@@ -67,3 +67,10 @@ def admin_usage_trend(
     if end:
         items = [it for it in items if it["date"] <= end]
     return {"daily": items}
+
+
+@router.get("/ai/usage")
+def ai_usage_summary() -> dict:
+    """Consolidated endpoint for AI key usage, status, and active provider chains."""
+    from ..services.ai_usage_tracker import get_ai_usage_summary
+    return get_ai_usage_summary("Logixa-Flow")

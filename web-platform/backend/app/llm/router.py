@@ -5,8 +5,13 @@ from decimal import Decimal, InvalidOperation
 
 from sqlalchemy.orm import Session
 from .providers import (
+    CohereProvider,
     FallbackLocalProvider,
+    GeminiProvider,
+    GroqProvider,
     LLMProvider,
+    MistralProvider,
+    NvidiaNimProvider,
     OpenRouterProvider,
     clean_env_value,
 )
@@ -48,20 +53,24 @@ class LLMRouter:
     def __init__(self, db: Session, role: str = "admin"):
         self.db = db
         self.role = (role or "admin").strip().lower()
-        # Cost policy: production AI generation uses only OpenRouter's free-model
-        # router. No paid-provider fallback is allowed, even if other API keys exist.
         self.providers = {
+            "groq": GroqProvider(role=self.role),
             "openrouter-free": OpenRouterProvider(model="openrouter/free", role=self.role),
+            "gemini": GeminiProvider(role=self.role),
+            "mistral": MistralProvider(role=self.role),
+            "cohere": CohereProvider(role=self.role),
+            "nvidia": NvidiaNimProvider(role=self.role),
             "local": FallbackLocalProvider(),
         }
 
     def _selected_provider_name(self, task: str | None = None) -> str:
-        # Ignore legacy database/task provider selections: they may point to
-        # paid providers. OpenRouter's free router is the sole remote provider.
-        return "openrouter-free" if self.providers["openrouter-free"].is_available() else "local"
+        for name in ["groq", "openrouter-free", "gemini", "mistral", "cohere", "nvidia"]:
+            if self.providers[name].is_available():
+                return name
+        return "local"
 
     def _provider_order(self, task: str | None = None) -> list[tuple[str, LLMProvider]]:
-        names = ["openrouter-free", "local"]
+        names = ["groq", "openrouter-free", "gemini", "mistral", "cohere", "nvidia", "local"]
         allow_local_fallback = os.getenv(
             "ALLOW_LOCAL_LLM_FALLBACK",
             "true" if os.getenv("ENVIRONMENT", "development").lower() not in {"production", "prod"} else "false",
@@ -143,8 +152,19 @@ class LLMRouter:
                     except Exception:
                         pass
 
+                try:
+                    from app.services.ai_usage_tracker import record_ai_usage
+                    record_ai_usage(name, task=task or "generate", success=True)
+                except Exception:
+                    pass
+
                 return response, model_name
             except Exception as exc:
+                try:
+                    from app.services.ai_usage_tracker import record_ai_usage
+                    record_ai_usage(name, task=task or "generate", success=False, error=str(exc))
+                except Exception:
+                    pass
                 error_summary = sanitize_provider_error(
                     f"{name}: {exc.__class__.__name__}: {str(exc)[:300]}"
                 )

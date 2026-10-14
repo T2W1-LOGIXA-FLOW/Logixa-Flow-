@@ -147,6 +147,14 @@ def validate_env() -> list[str]:
     return missing
 
 
+def telegram_configured() -> bool:
+    return bool(clean_env_value("TELEGRAM_BOT_TOKEN") and clean_env_value("TELEGRAM_CHAT_ID"))
+
+
+def telegram_enabled() -> bool:
+    return clean_env_value("TELEGRAM_ENABLED").lower() in {"1", "true", "yes", "on"}
+
+
 def provider_env_status() -> list[dict[str, str | bool]]:
     """Return safe, redacted provider configuration status for admin UI."""
     providers = [
@@ -230,6 +238,13 @@ def provider_env_status() -> list[dict[str, str | bool]]:
             "label": "Scheduler",
             "env": "ENABLE_SCHEDULER",
             "required": False,
+        },
+        {
+            "key": "telegram",
+            "label": "Telegram Bot Alerts",
+            "env": "TELEGRAM_BOT_TOKEN",
+            "required": False,
+            "configured_override": telegram_configured(),
         },
     ]
 
