@@ -7,11 +7,11 @@
 - Pending: durable QStash run delivery/completion/idempotency; live retry/stale-claim/failure recovery; Agent → Brain → approval → Publish/resume; request/error telemetry, alert path, and SLO window; newsletter/provider failover; managed Auth/Storage and object-storage recovery; current-schema backup/restore; application rollback/DR; 24-hour scheduler observation.
 - The 2026-10-09 isolated public-schema restore verified migration `20261008_0012` at that time. It does not certify restore readiness for current migration `20261011_0013` or managed Auth/Storage/object storage.
 - Full dev-inclusive npm audit has 7 high development-toolchain findings and 0 moderate/critical; production-only audit has 0 findings. Supabase Auth leaked-password protection remains a Free-plan limitation. Vercel remediation and paid AI fallback remain owner-approval gated.
-- The initial branch reconciliation found only `main`; recovery hardening is now proposed in [PR #115](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/115).
+- The initial branch reconciliation found only `main`; recovery hardening later merged in [PR #115](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/115) as `ede412e03dad4ab1cd15ee436c722c0f1581ea4e`.
 
 ## Code-level recovery patch — not yet certified (2026-10-14)
 
-Local regression tests for `fix/qstash-dispatch-exception-recovery` passed (backend 237 passed / 5 skipped; agents 5 passed; frontend 83 passed; production build passed). `pip-audit` reported no known backend dependency vulnerabilities and production-only npm audit reported 0 vulnerabilities. PR [#115](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/115) CI/CodeQL and live QStash delivery/recovery evidence are still required; overall release status remains PENDING.
+Local regression tests for `fix/qstash-dispatch-exception-recovery` passed (backend 237 passed / 5 skipped; agents 5 passed; frontend 83 passed; production build passed). `pip-audit` reported no known backend dependency vulnerabilities and production-only npm audit reported 0 vulnerabilities. CI [#38504093229](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38504093229) and CodeQL [#38504093130](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38504093130) passed, and Render deploy [dep-db7f2d5bedkc738hnkr0](https://dashboard.render.com/web/srv-d9172fe8bjmc739pd600/deploys/dep-db7f2d5bedkc738hnkr0) is live. Live QStash delivery/recovery evidence is still required and overall release status remains PENDING.
 
 Do not mark any pending gate complete based on implementation, CI, or unrelated provider evidence.
 
