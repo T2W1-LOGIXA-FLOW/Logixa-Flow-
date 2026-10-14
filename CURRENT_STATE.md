@@ -13,7 +13,7 @@ This section is the current release-status summary and supersedes older conflict
 ## Latest code-level recovery hardening (2026-10-14)
 
 - A code change is proposed in [PR #115](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/115) on `fix/qstash-dispatch-exception-recovery`: QStash execution exceptions now release the worker-owned durable job claim and return HTTP 503 so delivery can retry; redelivery of an already-terminal run repairs the durable job status without rerunning workflow side effects.
-- Regression coverage verifies exception recovery and terminal-redelivery reconciliation. Local validation: backend 236 passed / 5 skipped; agents 5 passed; frontend 35 files / 83 tests passed; Next.js production build passed; `pip-audit` found no known backend dependency vulnerabilities; `npm audit --omit=dev` found 0 vulnerabilities. PR #115 GitHub CI/CodeQL results are pending; no new production live test has run.
+- Regression coverage verifies exception recovery, cancellation requeue/release, and terminal-redelivery reconciliation. Local validation: backend 237 passed / 5 skipped; agents 5 passed; frontend 35 files / 83 tests passed; Next.js production build passed; `pip-audit` found no known backend dependency vulnerabilities; `npm audit --omit=dev` found 0 vulnerabilities. PR #115 GitHub CI/CodeQL results are pending; no new production live test has run.
 - This patch improves deterministic recovery behavior but does not close the live QStash delivery/completion/idempotency or production stale-claim gate.
 
 ## Latest release closure update (2026-10-13)
