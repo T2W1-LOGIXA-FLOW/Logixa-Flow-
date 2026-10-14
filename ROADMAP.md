@@ -11,7 +11,7 @@
 
 - Patch branch: `fix/qstash-dispatch-exception-recovery`. It releases a durable claim after an uncaught execution exception and responds HTTP 503 for QStash retry; terminal redelivery repairs job status without replaying side effects.
 - Local validation passed: backend 236 passed / 5 skipped; agents 5 passed; frontend 83 tests passed and production build passed; backend `pip-audit` found no known vulnerabilities; production-only npm audit found 0 vulnerabilities.
-- Next gate: open PR and let GitHub CI/CodeQL run. Production QStash delivery/recovery remains pending until real persisted-run evidence is captured.
+- Next gate: PR [#115](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/115) is open; review CI/CodeQL results before merging. Production QStash delivery/recovery remains pending until real persisted-run evidence is captured.
 
 ## Latest release closure update (2026-10-13)
 
