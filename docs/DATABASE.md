@@ -7,7 +7,7 @@
 
 ## Current production database status (2026-10-14)
 
-Repository and live production Alembic head are `20261011_0013`. Production RAG configuration is `RAG_EMBEDDING_VERSION=2` with `rag_v2_ingestion_mode=voyage_only`; Production Auth Smoke [#38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320) verified 7 valid Voyage 512-D chunks from 7 public RSS sources and citation-bearing retrieval. `ai_memory_brain=125` (all 125 remain pending/private), `intelligence_sources=7`, `document_embeddings=7`, and `stored_files=0`. The historical 2026-10-09 restore drill targeted migration `20261008_0012`; current-schema restore against `20261011_0013` remains unverified.
+Repository and live production Alembic head are `20261011_0013`. Production RAG configuration is `RAG_EMBEDDING_VERSION=2` with `rag_v2_ingestion_mode=voyage_only`; Production Auth Smoke [#38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320) verified 7 valid Voyage 512-D chunks from 7 public RSS sources and citation-bearing retrieval. `ai_memory_brain=127` (all 127 remain pending/private), `intelligence_sources=7`, `document_embeddings=7`, `stored_files=0`, `workflow_runs=0`, and `scheduled_workflow_jobs=0` in the latest read-only query at `2026-10-14T11:26Z`. The historical 2026-10-09 restore drill targeted migration `20261008_0012`; current-schema restore against `20261011_0013` remains unverified.
 
 ## Database role
 
