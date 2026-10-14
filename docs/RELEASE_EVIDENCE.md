@@ -6,8 +6,8 @@ Still pending: durable QStash delivery/completion/idempotency and live workflow 
 
 ## Code-level recovery patch — local validation only (2026-10-14)
 
-- Branch `fix/qstash-dispatch-exception-recovery` releases the durable job claim after an uncaught QStash execution exception and returns HTTP 503 for retry. A redelivery of an already-terminal run reconciles the durable job status without rerunning workflow side effects.
-- Local tests: backend 236 passed / 5 skipped; agents 5 passed; frontend 83 passed; production build passed. Backend `pip-audit` reported no known vulnerabilities; `npm audit --omit=dev` reported 0 vulnerabilities.
+- Branch `fix/qstash-dispatch-exception-recovery` releases the durable job claim after an uncaught QStash execution exception and returns HTTP 503 for retry. A redelivery of an already-terminal run reconciles the durable job status without rerunning workflow side effects; cancellation persists the last checkpoint, requeues the run, releases the claim, and propagates cancellation for delivery retry.
+- Local tests: backend 237 passed / 5 skipped; agents 5 passed; frontend 83 passed; production build passed. Backend `pip-audit` reported no known vulnerabilities; `npm audit --omit=dev` reported 0 vulnerabilities.
 - PR [#115](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/115) is open; GitHub CI/CodeQL results for the patch are pending. No new production QStash message or workflow was dispatched; live delivery, completion, idempotency, and stale-claim recovery remain PENDING.
 
 ## Production Admin Brain response-validation finding — VERIFIED (2026-10-13)
