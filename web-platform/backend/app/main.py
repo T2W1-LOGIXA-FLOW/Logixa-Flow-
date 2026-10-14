@@ -17,7 +17,7 @@ from .config import ai_feature_status, ai_provider_configured, upload_storage_co
 from .database import SessionLocal
 from .db_bootstrap import bootstrap_database, database_profile
 from .logging_config import setup_logging
-from .middleware import rate_limit_middleware, security_headers_middleware, stealth_mode_middleware
+from .middleware import rate_limit_middleware, request_observability_middleware, security_headers_middleware, stealth_mode_middleware
 from .routers import admin, agent, analytics, auth, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, workflow, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads, knowledge
 from .scheduler import scheduler_status, start_scheduler
 
@@ -228,6 +228,11 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
 )
+
+# Keep request telemetry outside CORS and access-control middleware so it observes
+# preflight, rejected, successful, and failed HTTP responses consistently.
+app.middleware("http")(request_observability_middleware)
+
 
 uploads_dir = Path(__file__).resolve().parents[1] / "uploads"
 uploads_dir.mkdir(parents=True, exist_ok=True)

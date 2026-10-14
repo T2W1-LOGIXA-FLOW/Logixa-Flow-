@@ -1,11 +1,55 @@
 from __future__ import annotations
 
+import logging
 import os
+import time
+import uuid
 
 from fastapi import Request
 from fastapi.responses import JSONResponse, Response
 
 from .cache import rate_limiter
+
+logger = logging.getLogger(__name__)
+
+
+async def request_observability_middleware(request: Request, call_next):
+    """Emit one structured, privacy-conscious log record for each HTTP request."""
+    request_id = str(uuid.uuid4())
+    started_at = time.perf_counter()
+    try:
+        response: Response = await call_next(request)
+    except Exception as exc:
+        duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
+        logger.exception(
+            "HTTP request failed",
+            extra={
+                "request_id": request_id,
+                "path": request.url.path,
+                "method": request.method,
+                "status_code": 500,
+                "duration_ms": duration_ms,
+                "error_type": type(exc).__name__,
+            },
+        )
+        raise
+
+    duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
+    status_code = response.status_code
+    log_level = logging.ERROR if status_code >= 500 else logging.WARNING if status_code >= 400 else logging.INFO
+    logger.log(
+        log_level,
+        "HTTP request completed",
+        extra={
+            "request_id": request_id,
+            "path": request.url.path,
+            "method": request.method,
+            "status_code": status_code,
+            "duration_ms": duration_ms,
+        },
+    )
+    response.headers["X-Request-ID"] = request_id
+    return response
 
 
 PUBLIC_PATH_PREFIXES = ("/health", "/api/posts", "/api/metrics", "/api/contacts", "/api/subscribers", "/api/uploads/files/", "/uploads")
