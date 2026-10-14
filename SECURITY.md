@@ -27,7 +27,7 @@ Admin chat sessions are owner-scoped. Foreign, inactive, and ownerless sessions 
 
 The backend owns application database access. The frontend must not receive service-role credentials. RLS is defense-in-depth and does not replace API authorization. Avoid broad grants or permissive policies solely to silence advisor output.
 
-Schema changes use Alembic. Repository and live production migration head is `20261011_0013`; production parity was independently verified on 2026-10-12. Production Supabase security advisors currently report 34 informational `RLS enabled, no policy` findings across internal application tables and one warning that leaked-password protection is disabled. A read-only grant audit found no table privileges granted to `anon`, `authenticated`, or `PUBLIC`; do not add broad policies/grants merely to silence the informational findings. Leaked-password protection remains a dashboard-level security action and is not yet verified enabled.
+Schema changes use Alembic. Repository and live production migration head is `20261011_0013`; production parity was independently verified on 2026-10-12. Production Supabase security advisors currently report 34 informational `RLS enabled, no policy` findings across internal application tables and one warning that leaked-password protection is disabled. A read-only grant audit found no table privileges granted to `anon`, `authenticated`, or `PUBLIC`; do not add broad policies/grants merely to silence the informational findings. Leaked-password protection is disabled on the current project plan; see Operational security exceptions below. Do not report it as enabled.
 
 ## Service role and secrets
 
@@ -47,7 +47,7 @@ Sanitize provider/database errors before returning or logging them. Preserve cor
 
 ## Dependency security
 
-Dependabot and CI security checks are part of the repository security process. Major framework upgrades require compatibility review rather than automatic acceptance. Next.js is aligned to the patched 15.5.27 line. After PR #114 merged as `d943cb66390f324eaee39cd3bf9d0c3a993bef3c`, the latest recorded full dev-inclusive `npm audit` has 7 high development-tooling findings and 0 moderate/critical findings; `npm audit --omit=dev` has 0 findings. The remaining high findings need a compatible Tailwind 4 / Next ESLint toolchain decision. Do not repeat the older 9-finding snapshot as current.
+Dependabot and CI security checks are part of the repository security process. Major framework upgrades require compatibility review rather than automatic acceptance. Next.js is aligned to the patched 15.5.27 line. After PR #114 merged as `d943cb66390f324eaee39cd3bf9d0c3a993bef3c`, the latest recorded full dev-inclusive `npm audit` has 7 high development-tooling findings and 0 moderate/critical findings; `npm audit --omit=dev` has 0 findings. The remaining high findings need a compatible Tailwind 4 / Next ESLint toolchain decision. A local `pip-audit -r web-platform/backend/requirements.txt` run on the QStash recovery patch branch found no known backend dependency vulnerabilities; GitHub CI security validation for that patch is pending. Do not repeat the older 9-finding snapshot as current.
 
 ## AI safety
 
