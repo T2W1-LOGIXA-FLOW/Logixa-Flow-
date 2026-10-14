@@ -4,6 +4,12 @@
 
 Still pending: durable QStash delivery/completion/idempotency and live workflow recovery; Agent → Brain → Publish/resume; request/error telemetry, alert path, and SLO observation; newsletter/failover; managed Auth/Storage and object-storage recovery; current-schema backup/restore; rollback/DR; and the 24-hour scheduler boundary. The historical public-schema restore used migration `20261008_0012`; current production migration is `20261011_0013`, so current-schema restore readiness is not yet verified. Full dev-inclusive npm audit has 7 high development-tooling findings and 0 moderate/critical; production-only audit has 0 findings. Vercel remediation and paid AI fallback remain owner-approval gated. GitHub branch search returned `main` only, with no open PRs found.
 
+## Code-level recovery patch — local validation only (2026-10-14)
+
+- Branch `fix/qstash-dispatch-exception-recovery` releases the durable job claim after an uncaught QStash execution exception and returns HTTP 503 for retry. A redelivery of an already-terminal run reconciles the durable job status without rerunning workflow side effects.
+- Local tests: backend 236 passed / 5 skipped; agents 5 passed; frontend 83 passed; production build passed. Backend `pip-audit` reported no known vulnerabilities; `npm audit --omit=dev` reported 0 vulnerabilities.
+- GitHub CI/CodeQL has not yet run for this patch. No new production QStash message or workflow was dispatched; live delivery, completion, idempotency, and stale-claim recovery remain PENDING.
+
 ## Production Admin Brain response-validation finding — VERIFIED (2026-10-13)
 
 - [x] The original production failure was observed in Render logs at `2026-10-13T09:57:43Z`: `ResponseValidationError` with 43 category-field validation errors on `GET /api/admin/brain`.
