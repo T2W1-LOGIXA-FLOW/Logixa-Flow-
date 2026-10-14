@@ -7,7 +7,7 @@
 - Pending: durable QStash run delivery/completion/idempotency; live retry/stale-claim/failure recovery; Agent → Brain → approval → Publish/resume; request/error telemetry, alert path, and SLO window; newsletter/provider failover; managed Auth/Storage and object-storage recovery; current-schema backup/restore; application rollback/DR; 24-hour scheduler observation.
 - The 2026-10-09 isolated public-schema restore verified migration `20261008_0012` at that time. It does not certify restore readiness for current migration `20261011_0013` or managed Auth/Storage/object storage.
 - Full dev-inclusive npm audit has 7 high development-toolchain findings and 0 moderate/critical; production-only audit has 0 findings. Supabase Auth leaked-password protection remains a Free-plan limitation. Vercel remediation and paid AI fallback remain owner-approval gated.
-- GitHub branch search currently returns `main` only; no open PRs were returned during this reconciliation.
+- The initial branch reconciliation found only `main`; recovery hardening is now proposed in [PR #115](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/115).
 
 ## Code-level recovery patch — not yet certified (2026-10-14)
 
