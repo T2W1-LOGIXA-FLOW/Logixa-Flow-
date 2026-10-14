@@ -287,12 +287,12 @@ Continue Phase 13 only on genuinely open gates; do not rerun provider checks alr
 - Status remains PENDING for live provider verification: a fresh authenticated B2 upload/read/delete gate and a real deployed application download check have not yet been recorded. Do not mark B2 VERIFIED based only on CI/local tests.
 
 
-## Backup/Restore Gate — 2026-10-09 (run #5)
+## Historical Backup/Restore Failure — 2026-10-09 (run #5)
 
 - **Live restore remains FAILED / PENDING.** Run #5 created the production logical backup, reset only the isolated restore project's `public` schema, restored schema objects, then failed on `COPY users` with a duplicate primary key. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37962624876.
 - Read-only live catalog inspection found the `users` table in the managed `auth` schema (owned by `supabase_auth_admin`) in both production and the isolated restore project; no `public.users` table exists. The isolated target's managed Auth schema is not reset by the workflow, so managed Auth rows must not be replayed as part of the application-schema restore.
 - **Remediation committed to the workflow:** both schema and data dumps are explicitly scoped to `--schema public`; a guard rejects schema-qualified Auth/Storage COPY entries in the data dump. This keeps the gate focused on application-schema recovery and avoids modifying managed Auth data.
-- **Not yet verified:** the fix requires a fresh manual run of `Production Backup Restore Gate`. Do not mark backup/restore VERIFIED or release-certified until the run restores data and passes Alembic head `20261008_0012`, four critical-table assertions, and the RAG event-count check.
+- **Still PENDING:** run `Production Backup Restore Gate` again in the isolated restore project against current migration head `20261011_0013`. The separate 2026-10-09 run #6 passed against then-current migration `20261008_0012`; it does not certify current-schema restore readiness. Do not mark backup/restore VERIFIED until current-schema restore, critical-table assertions, RAG event count, and managed Auth/Storage scope are checked.
 
 
 ## Admin UI and B2 Production Verification — 2026-10-10
@@ -311,14 +311,6 @@ Continue Phase 13 only on genuinely open gates; do not rerun provider checks alr
 - Post-deploy live tests passed: `test_live_b2_s3_round_trip` and `test_live_b2_application_download_proxy_round_trip` — **2 passed in 12.32s**. This confirms direct S3 upload/read/delete and the authenticated production application upload/private-download/cleanup flow for the tested payload.
 - Previous failures were caused by Render-side B2 settings differing from the working CI credentials/configuration; the post-sync live gate now passes. Do not expose credential values in logs or documentation.
 - Re-run the live gate after any future B2 credential, bucket, endpoint, signing-region, or storage-routing change.
-
-
-## Backup/Restore Gate — 2026-10-09 (run #5)
-
-- **Live restore remains FAILED / PENDING.** Run #5 created the production logical backup, reset only the isolated restore project's `public` schema, restored schema objects, then failed on `COPY users` with a duplicate primary key. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/37962624876.
-- Read-only live catalog inspection found the `users` table in the managed `auth` schema (owned by `supabase_auth_admin`) in both production and the isolated restore project; no `public.users` table exists. The isolated target's managed Auth schema is not reset by the workflow, so managed Auth rows must not be replayed as part of the application-schema restore.
-- Remediation committed to the workflow: both schema and data dumps are explicitly scoped to `--schema public`; a guard rejects schema-qualified Auth/Storage COPY entries in the data dump. This keeps the gate focused on application-schema recovery and avoids modifying managed Auth data.
-- **Not yet verified:** the fix requires a fresh manual run of `Production Backup Restore Gate`. Do not mark backup/restore VERIFIED or release-certified until the run restores data and passes Alembic head `20261008_0012`, four critical-table assertions, and the RAG event-count check.
 
 
 ## Admin UI Production Verification — 2026-10-10
