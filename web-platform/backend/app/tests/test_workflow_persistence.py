@@ -692,3 +692,64 @@ async def test_qstash_terminal_redelivery_repairs_job_status_without_reexecution
         assert job.status == "completed"
     finally:
         db.close()
+
+
+@pytest.mark.anyio
+async def test_cancelled_qstash_execution_requeues_run_and_releases_claim(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    await workflow.store_workflow(
+        WorkflowStorageCreate(
+            id="qstash-cancel-flow",
+            name="QStash cancel flow",
+            nodes=[WorkflowNode(id="step", name="Step")],
+        ),
+        _admin={"role": "admin"},
+    )
+    run = WorkflowRunOut(
+        run_id="qstash-cancel-run",
+        workflow_id="qstash-cancel-flow",
+        state=WorkflowState(status="queued"),
+    )
+    workflow._WORKFLOW_RUNS[run.run_id] = run
+    workflow._persist_run_state(run)
+    db = workflow.SessionLocal()
+    try:
+        db.add(
+            models.ScheduledWorkflowJob(
+                id="job-qstash-cancel",
+                run_id=run.run_id,
+                workflow_id=run.workflow_id,
+                priority=1,
+                scheduled_for=workflow._now(),
+                status="queued",
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    assert workflow._claim_job(run.run_id) is True
+
+    async def cancel_execution(self):
+        raise asyncio.CancelledError()
+
+    monkeypatch.setattr(workflow.WorkflowExecutor, "execute", cancel_execution)
+    with pytest.raises(asyncio.CancelledError):
+        await workflow._execute_workflow(run.run_id)
+
+    assert run.state.status == "queued"
+    db = workflow.SessionLocal()
+    try:
+        job = db.query(models.ScheduledWorkflowJob).filter(
+            models.ScheduledWorkflowJob.run_id == run.run_id
+        ).one()
+        assert job.status == "queued"
+        assert job.claimed_by is None
+        assert job.claimed_at is None
+        record = db.query(models.WorkflowRunRecord).filter(
+            models.WorkflowRunRecord.id == run.run_id
+        ).one()
+        assert record.status == "queued"
+    finally:
+        db.close()
