@@ -9,6 +9,10 @@
 - Full dev-inclusive npm audit has 7 high development-toolchain findings and 0 moderate/critical; production-only audit has 0 findings. Supabase Auth leaked-password protection remains a Free-plan limitation. Vercel remediation and paid AI fallback remain owner-approval gated.
 - GitHub branch search currently returns `main` only; no open PRs were returned during this reconciliation.
 
+## Code-level recovery patch — not yet certified (2026-10-14)
+
+Local regression tests for `fix/qstash-dispatch-exception-recovery` passed (backend 236 passed / 5 skipped; agents 5 passed; frontend 83 passed; production build passed). `pip-audit` reported no known backend dependency vulnerabilities and production-only npm audit reported 0 vulnerabilities. GitHub CI/CodeQL and live QStash delivery/recovery evidence are still required; overall release status remains PENDING.
+
 Do not mark any pending gate complete based on implementation, CI, or unrelated provider evidence.
 
 ## Latest repository and production validation (2026-10-13)
