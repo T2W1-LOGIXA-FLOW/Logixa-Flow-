@@ -26,15 +26,15 @@
 | Upstash QStash | Signed delivery, delay/retry dispatch | US-region signature validation reaches payload validation, but the latest empty-run-ID smoke returned HTTP 400 as expected; historical EU deliveries returned HTTP 401 Invalid QStash signature. Workflow-run and schedule lists are empty in both regions, so durable delivery/completion/idempotency and stale-claim recovery are NOT live-verified. |
 | Redis | Optional cache / broker integration | Optional; not a prerequisite for the current Render Free execution path. |
 | Celery | Optional background task execution | CELERY_ENABLED=false in the current Render Free path; do not add a separate worker unless the architecture/plan changes. |
-| Application health / logs / metrics | Render health endpoint, app logs, RAG observability tables | Health and migration checks exist; SLO window, alerts/escalation, and full production monitoring evidence remain pending. |
+| Application health / logs / metrics | Render health endpoint, app logs, RAG observability tables | Post-deploy /health returned HTTP 200 in 2.073 seconds for commit ede412e03dad4ab1cd15ee436c722c0f1581ea4e; startup logged Workflow recovery restored 0 pending run(s). Render http_request_count and http_latency metrics returned empty datapoints for the inspected window; SLO and alert-path evidence remain pending. |
 
 ## 3. File and external service integrations
 
 | Service / tool | Intended use | Evidence and limits |
 | --- | --- | --- |
 | Cloudinary | Small images/thumbnails | Live upload/read/delete passed; included in all-provider run #15. |
-| Supabase Storage | Documents up to 50 MB | Live upload/read passed in run #15. Test now asserts cleanup DELETE is 2xx when the round-trip itself succeeds; run the targeted Supabase gate after this assertion change before claiming strict cleanup verification. |
-| Backblaze B2 via S3-compatible API | Files over 50 MB up to 5 GB; private bucket | Authenticated provider-level upload/read/delete passed in run #12 and run #15. Application opaque download-proxy E2E remains pending. |
+| Supabase Storage | Documents up to 50 MB | Live upload/read/cleanup evidence exists from all-provider run #15; the strict cleanup DELETE assertion was verified by targeted run #17. This does not certify managed Auth recovery or full object-storage DR. |
+| Backblaze B2 via S3-compatible API | Files over 50 MB up to 5 GB; private bucket | Provider-level upload/read/delete passed; deployed application private upload→download/readback→cleanup passed in [run #38049146602](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38049146602). Full object-storage DR and recovery remain pending. |
 | Google Drive API / OAuth | Export reports and workflow backup artifacts | Live upload/read round-trip passed in run #14 and all-provider run #15. Wider export workflow semantics need separate direct evidence. |
 | Email / newsletter | Newsletter and transactional delivery | Newsletter/test-send endpoints are intentionally HTTP 501 until a transactional email provider is integrated and configured; delivery evidence is pending. |
 | RSS / feedparser | Feed/source collection | Feed ingestion implementation/dependency exists; full source-to-publish production journey remains deferred/pending. |
