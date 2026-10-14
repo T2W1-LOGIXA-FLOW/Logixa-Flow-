@@ -153,7 +153,7 @@ Status: PRE-STAGED.
 - Broader supply-chain intelligence coverage.
 - Final release regression, security, dependency, and operational review.
 
-### Phase 13 — Release certification and maintenance
+### Phase 13 — Release certification and maintenance checklist (pre-staged)
 - Freeze only after live evidence index, security/dependency refresh, backup/restore, DR/rollback, SLO/error-budget review, and documentation reconciliation all pass.
 Status: ACTIVE — final evidence closure.
 - Formal release-candidate checklist and evidence index.
