@@ -24,6 +24,20 @@ from .scheduler import scheduler_status, start_scheduler
 logger = logging.getLogger(__name__)
 setup_logging()
 
+if os.getenv("SENTRY_DSN", "").strip():
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        sentry_sdk.init(
+            dsn=os.getenv("SENTRY_DSN").strip(),
+            environment=os.getenv("APP_ENV", "production"),
+            integrations=[FastApiIntegration()],
+            traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.0")),
+        )
+        logger.info("Sentry monitoring initialized successfully.")
+    except Exception as exc:
+        logger.warning("Sentry initialization skipped: %s", exc)
+
 
 def run_startup_tasks() -> None:
     """Verify the externally migrated schema before starting application tasks."""
