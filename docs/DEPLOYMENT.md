@@ -31,11 +31,7 @@ The removed web-platform/frontend/vercel.json override must not be restored or V
 
 ## Current release evidence boundary (2026-10-14)
 
-Production RAG ingest → retrieval/citation is verified by [run #38227390320 attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320), and authenticated Admin Brain API/UI smoke by [run #38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082). Durable QStash workflow completion/recovery, current-schema restore, rollback/DR, request-level SLO/alerting, newsletter delivery, provider failover, and the 24-hour scheduler observation remain pending. The current architecture and the Render Free/CELERY_ENABLED=false decision are unchanged.
-
-## Current release evidence boundary (2026-10-14)
-
-Production RAG ingest → retrieval/citation is verified by [run #38227390320 attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320), and authenticated Admin Brain API/UI smoke by [run #38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082). Durable QStash workflow completion/recovery, current-schema restore, rollback/DR, request-level SLO/alerting, newsletter delivery, provider failover, and the 24-hour scheduler observation remain pending. The current architecture and Render Free / `CELERY_ENABLED=false` decision are unchanged.
+Production RAG ingest → retrieval/citation is verified by [run #38227390320 attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320), and authenticated Admin Brain API/UI smoke by [run #38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082). Durable QStash workflow completion/recovery, current-schema restore, rollback/DR, request-level SLO/alerting, newsletter delivery, provider failover, and the 24-hour scheduler observation remain pending. The current architecture and the Render Free/CELERY_ENABLED=false decision are unchanged. Recovery patch [PR #115](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/115) is merged as `ede412e03dad4ab1cd15ee436c722c0f1581ea4e`; CI and CodeQL passed. Render deployment `dep-db7f2d5bedkc738hnkr0` is live, and two direct `/health` probes returned HTTP 200 in 2.073s and 2.009s. These synthetic probes do not verify durable QStash delivery or current-schema restore readiness.
 
 ## Release gates
 
