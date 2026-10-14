@@ -11,7 +11,7 @@
 
 ## Code-level recovery patch — not yet certified (2026-10-14)
 
-Local regression tests for `fix/qstash-dispatch-exception-recovery` passed (backend 236 passed / 5 skipped; agents 5 passed; frontend 83 passed; production build passed). `pip-audit` reported no known backend dependency vulnerabilities and production-only npm audit reported 0 vulnerabilities. GitHub CI/CodeQL and live QStash delivery/recovery evidence are still required; overall release status remains PENDING.
+Local regression tests for `fix/qstash-dispatch-exception-recovery` passed (backend 236 passed / 5 skipped; agents 5 passed; frontend 83 passed; production build passed). `pip-audit` reported no known backend dependency vulnerabilities and production-only npm audit reported 0 vulnerabilities. PR [#115](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/115) CI/CodeQL and live QStash delivery/recovery evidence are still required; overall release status remains PENDING.
 
 Do not mark any pending gate complete based on implementation, CI, or unrelated provider evidence.
 
