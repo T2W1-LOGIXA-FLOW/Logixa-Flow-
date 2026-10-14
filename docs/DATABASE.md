@@ -2,8 +2,12 @@
 
 > Owner: Backend / Data
 > Update when: schema, migration policy, RLS, grants, or durable-state rules change
-> Last Updated: 2026-10-08
+> Last Updated: 2026-10-14
 > Do NOT put here: credentials.
+
+## Current production database status (2026-10-14)
+
+Repository and live production Alembic head are `20261011_0013`. Production RAG configuration is `RAG_EMBEDDING_VERSION=2` with `rag_v2_ingestion_mode=voyage_only`; Production Auth Smoke [#38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320) verified 7 valid Voyage 512-D chunks from 7 public RSS sources and citation-bearing retrieval. `ai_memory_brain=125` (all 125 remain pending/private), `intelligence_sources=7`, `document_embeddings=7`, and `stored_files=0`. The historical 2026-10-09 restore drill targeted migration `20261008_0012`; current-schema restore against `20261011_0013` remains unverified.
 
 ## Database role
 
@@ -11,7 +15,7 @@ Supabase PostgreSQL is the application database and durable source of truth for 
 
 ## Migration policy
 
-Use Alembic from web-platform/backend with python -m alembic upgrade head. Repository head is **20261008_0012**. Live production head is **20261008_0012**, independently verified from Supabase migration history and alembic_version on 2026-10-09. Migration 20261008_0012 adds durable RAG observability events and revises 20261007_0011.
+Use Alembic from `web-platform/backend` with `python -m alembic upgrade head`. Repository and live production head are **20261011_0013**, verified 2026-10-11. Migration `20261011_0013` adds the versioned Voyage 512-D embedding path while preserving legacy 768-D vectors. Migration `20261008_0012` remains part of the prior RAG observability history.
 
 Forward corrective migrations are preferred where application data must be preserved. Do not use downgrade as routine data repair. Follow the existing inventory/stamp procedure for an unversioned legacy database; never stamp an RLS/grant migration unless its effects have actually been applied.
 
@@ -30,6 +34,6 @@ Workflow definitions, runs, execution state, and recovery metadata persist in Po
 
 ## Versioned RAG vectors — 2026-10-11
 
-Migration `20261011_0013` adds nullable 512-D Voyage embedding storage without altering or dropping the existing 768-D column. The legacy column is the rollback path. Repository head is now `20261011_0013`; production application of this migration has not yet been independently verified.
+Migration `20261011_0013` adds nullable 512-D Voyage embedding storage without altering or dropping the existing 768-D column. The legacy column is retained for rollback. Repository and live production heads are `20261011_0013`, and the migration was applied before the successful production RAG E2E.
 
 Backfill is an explicit application command, not an automatic migration side effect: from `web-platform/backend`, run `python -m app.rag.reembed_v2 --dry-run` and then `python -m app.rag.reembed_v2 --batch-size 50` with `VOYAGE_API_KEY` configured in the secure runtime. The script resumes by processing rows missing v2 vectors and does not rewrite legacy vectors. Keep `RAG_EMBEDDING_VERSION=1` until the migration is applied, the pending count reaches zero, and v2 ingest/search smoke tests pass. Rollback means setting the flag back to `1`; do not drop the v2 columns as a routine rollback.
