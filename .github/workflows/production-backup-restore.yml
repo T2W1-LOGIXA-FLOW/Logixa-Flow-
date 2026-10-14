@@ -90,6 +90,14 @@ jobs:
             echo "::error::Application data dump unexpectedly includes a Supabase-managed schema"
             exit 1
           fi
+          # Capture the current source schema revision; never hard-code an old migration head.
+          source_head="$(psql "$SUPABASE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -Atc "select version_num from public.alembic_version order by version_num desc limit 1")"
+          if [[ -z "$source_head" ]]; then
+            echo "::error::Could not determine the source database Alembic head"
+            exit 1
+          fi
+          echo "SOURCE_ALEMBIC_HEAD=$source_head" >> "$GITHUB_ENV"
+          echo "Captured source Alembic head for restore verification: $source_head"
       - name: Reset isolated restore schema
         shell: bash
         run: |
@@ -105,10 +113,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected_head="20261008_0012"
+          expected_head="${SOURCE_ALEMBIC_HEAD:?Source Alembic head was not captured during backup}"
           restored_head="$(psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -Atc "select version_num from public.alembic_version order by version_num desc limit 1")"
           if [[ "$restored_head" != "$expected_head" ]]; then
-            echo "::error::Restored Alembic head mismatch: expected $expected_head, got ${restored_head:-<empty>}"
+            echo "::error::Restored Alembic head mismatch: expected source head $expected_head, got ${restored_head:-<empty>}"
             exit 1
           fi
           restored_tables="$(psql "$SUPABASE_RESTORE_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -Atc "select concat_ws(',', to_regclass('public.workflows'), to_regclass('public.workflow_runs'), to_regclass('public.scheduled_workflow_jobs'), to_regclass('public.rag_observability_events'))")"
