@@ -1,7 +1,7 @@
 # Logixa Flow — Tools, Infrastructure, and AI/LLM Inventory
 
 > Owner: Engineering / Operations
-> Last Updated: 2026-10-10
+> Last Updated: 2026-10-14
 > Purpose: Distinguish repository integrations from configured, selected, and live-verified services. This inventory intentionally contains no credentials.
 
 ## 1. Application and engineering stack
@@ -11,9 +11,9 @@
 | Frontend | Next.js, React, TypeScript | Main web application; package manifest and lockfile are the source of truth for versions. |
 | UI / workflow canvas | React Flow (@xyflow/react), Radix UI, Tailwind CSS, Framer Motion, GSAP, Recharts, Three.js | UI, workflow visualization, animation, charts, and 3D visualization libraries. |
 | Backend API | Python, FastAPI, Uvicorn, Pydantic | Main API service. |
-| Database / ORM | Supabase PostgreSQL, SQLAlchemy, Alembic | Durable application state and schema migrations; production migration head verified through 20261008_0012. |
-| Vector search | PostgreSQL pgvector | RAG vector storage/retrieval implementation; production end-to-end ingest/embed/search evidence remains pending. |
-| Authentication | Supabase Auth, JWT/admin authorization | Production password-grant/admin API smoke passed in Production Auth Smoke run #11. |
+| Database / ORM | Supabase PostgreSQL, SQLAlchemy, Alembic | Durable application state and schema migrations; repository/live production migration head is `20261011_0013`. Current-schema backup/restore is still unverified. |
+| Vector search | PostgreSQL pgvector | Production RAG ingest/embed/retrieval/citation is VERIFIED by [run #38227390320 attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320): 7 public RSS sources, 7 valid Voyage 512-D chunks, 5 matches, and a non-empty citation. The wider Agent→Brain→approval→Publish journey remains pending. |
+| Authentication | Supabase Auth, JWT/admin authorization | Authenticated Admin Brain API/UI smoke passed in [run #38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082); authenticated RAG ingestion/citation passed in [run #38227390320 attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320). |
 | Tests / quality | pytest, Vitest, GitHub Actions, CodeQL, npm audit, pip-audit | Backend/agent/frontend test suites, CI, static security checks, and dependency audit. |
 | Repository automation | GitHub / GitHub Actions / Dependabot | Source control, workflows, CI, release gates, dependency update automation. |
 
@@ -23,7 +23,7 @@
 | --- | --- | --- |
 | Render | Production FastAPI Docker Web Service | Current production backend host; Free plan path uses one Web Service. |
 | Vercel | Frontend hosting/integration | Existing production deployment serves traffic, but current-head GitHub integration was rate-limited by the Hobby build limit. Owner paused Vercel remediation; do not trigger extra builds until resumed. |
-| Upstash QStash | Signed delivery, delay/retry dispatch | Signed delivery, durable workflow completion, and duplicate-delivery protection have live evidence. Retry/recovery and stale-claim live evidence remain pending. |
+| Upstash QStash | Signed delivery, delay/retry dispatch | US-region signature validation reaches payload validation, but the latest empty-run-ID smoke returned HTTP 400 as expected; historical EU deliveries returned HTTP 401 Invalid QStash signature. Workflow-run and schedule lists are empty in both regions, so durable delivery/completion/idempotency and stale-claim recovery are NOT live-verified. |
 | Redis | Optional cache / broker integration | Optional; not a prerequisite for the current Render Free execution path. |
 | Celery | Optional background task execution | CELERY_ENABLED=false in the current Render Free path; do not add a separate worker unless the architecture/plan changes. |
 | Application health / logs / metrics | Render health endpoint, app logs, RAG observability tables | Health and migration checks exist; SLO window, alerts/escalation, and full production monitoring evidence remain pending. |
