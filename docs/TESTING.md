@@ -13,6 +13,15 @@
 - Production RAG ingestion → embedding → retrieval/citation passed in [run #38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320).
 - These results do **not** verify durable QStash workflow completion/idempotency, live retry/stale-claim recovery, Agent → Brain → Publish, SLO/alerting, newsletter/failover, current-schema restore, rollback/DR, or the 24-hour scheduler boundary. Those gates remain PENDING.
 
+## Local regression run for QStash recovery patch (2026-10-14; GitHub CI pending)
+
+- Backend: `236 passed, 5 skipped`; Alembic migrations applied through `20261011_0013` against an isolated SQLite test database.
+- Agents: `5 passed`.
+- Frontend: `35 test files passed, 83 tests passed`; `npm run build` succeeded. React `act(...)` and intentionally exercised error-path messages were logged by tests but did not fail the suite.
+- Security: `pip-audit -r web-platform/backend/requirements.txt` reported no known vulnerabilities; `npm audit --omit=dev` reported 0 vulnerabilities. Full npm audit still reports 7 high development/tooling findings; major Tailwind/Next ESLint remediation remains owner-approval gated.
+- Regression coverage added for QStash dispatch exceptions releasing the durable claim and returning HTTP 503, plus terminal redelivery reconciling job status without re-execution.
+- These are local test results for the patch branch, not GitHub Actions or production-live evidence. CI/CodeQL and live QStash recovery remain pending.
+
 ## Test layers
 
 1. Repository/static checks.
