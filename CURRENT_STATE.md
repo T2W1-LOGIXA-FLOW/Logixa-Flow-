@@ -1,3 +1,10 @@
+# Logixa Flow — Current State
+
+> Owner: Project / Engineering
+> Update when: release state, verification evidence, blockers, or next actions change
+> Last Updated: 2026-10-14
+> Do NOT put here: detailed architecture, implementation reference, or step-by-step runbooks; use `PROJECT_OVERVIEW.md` and `docs/*`.
+
 ## Documentation reconciliation — 2026-10-14
 
 This section is the current release-status summary and supersedes older conflicting checklist statements lower in this historical log.
@@ -47,13 +54,6 @@ This section is the current release-status summary and supersedes older conflict
 - The HTTP 422 root cause was verified from safe structured logs: `TimeoutError` because the search budget was 5 seconds while Voyage calls are intentionally paced at 21 seconds. PR #90 fixed the logging allowlist; PR #91 raised the configurable search budget to 75 seconds and maps timeout errors to HTTP 503 instead of misclassifying them as HTTP 422. Both changes are merged and the latest Render deployment is live.
 - Read-only production counts: `ai_memory_brain=125`, `pending Brain=125`, `intelligence_sources=7`, `document_embeddings=7`, valid `voyage-3-lite` 512-D vectors=7, legacy vectors=0. Pending/private Brain drafts remain untouched.
 - **Overall release remains PENDING — not release-certified.** Workflow retry/stale-claim recovery, RAG→Agent→Brain→Publish, measurable SLO/alerting, rollback/DR rehearsal, newsletter delivery, provider failover, and the 24-hour scheduler observation remain independent open gates. Authenticated Admin UI core navigation is VERIFIED by run #38379930389. Vercel remediation remains paused by owner direction; no Vercel changes were made.
-
-# Logixa Flow — Current State
-
-> Owner: Project / Engineering
-> Update when: release state, verification evidence, blockers, or next actions change
-> Last Updated: 2026-10-14
-> Do NOT put here: detailed architecture, implementation reference, or step-by-step runbooks; use `PROJECT_OVERVIEW.md` and `docs/*`.
 
 ## 1. Current Release
 
