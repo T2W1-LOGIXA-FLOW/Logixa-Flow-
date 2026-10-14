@@ -1,3 +1,10 @@
+# Logixa Flow — Roadmap
+
+> Owner: Project / Engineering
+> Update when: a phase, release gate, deferred item, or backlog item changes status
+> Last Updated: 2026-10-14
+> Do NOT put here: detailed implementation instructions; use domain docs and runbooks.
+
 ## Release closure and repository inventory (2026-10-14)
 
 - **Branch/PR cleanup:** the initial 2026-10-14 reconciliation found `main` only and no open PRs. Recovery hardening PR #115 merged as `ede412e03dad4ab1cd15ee436c722c0f1581ea4e`. The topic branch remains on GitHub for owner cleanup; no remote branch was deleted.
@@ -31,13 +38,6 @@
 - [x] Citation retrieval passed: 5 matches returned and the first match had a non-empty citation title/URL. Evidence: [Production Auth Smoke run #38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320).
 - [x] Fixed the production timeout mismatch: Voyage request pacing is 21 seconds, while the previous search budget was 5 seconds. PR #90 made safe diagnostics visible; PR #91 made the search budget configurable (75-second default) and classified timeouts as search/503 rather than unknown/422. Both are merged and deployed.
 - [ ] Overall release remains PENDING: workflow recovery, RAG→Agent→Brain→Publish, SLO/alerting, rollback/DR rehearsal, newsletter delivery, provider failover, and 24-hour scheduler observation remain open.
-
-# Logixa Flow — Roadmap
-
-> Owner: Project / Engineering
-> Update when: a phase, release gate, deferred item, or backlog item changes status
-> Last Updated: 2026-10-14
-> Do NOT put here: detailed implementation instructions; use domain docs and runbooks.
 
 ## Completed Phases
 
