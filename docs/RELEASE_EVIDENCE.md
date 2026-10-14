@@ -1,3 +1,11 @@
+# Logixa Flow — Release Evidence Index
+
+> Owner: Engineering / Release
+> Status: ACTIVE — RAG E2E VERIFIED; OVERALL RELEASE PENDING
+> Last Updated: 2026-10-14
+
+This is the canonical evidence checklist for the Phase 7–13 release candidate. Evidence must identify the exact SHA, environment, timestamp, and observed durable outcome where applicable.
+
 ## Current evidence reconciliation (2026-10-14)
 
 **Overall release: PENDING — NOT RELEASE-CERTIFIED.** Verified: production RAG ingest → Voyage embedding → retrieval/citation [#38227390320 attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320); authenticated Admin Brain API/UI smoke [#38418481082](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38418481082); main CI [#38417257244](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257244), CodeQL [#38417257528](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38417257528), and frontend PR #114 checks [#38424954202](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954202) / [#38424954119](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38424954119).
@@ -26,14 +34,6 @@ Still pending: durable QStash delivery/completion/idempotency and live workflow 
 - [x] Python and JavaScript/TypeScript CodeQL passed: [run #38344770188](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38344770188).
 - [x] [Production Admin UI Smoke run #38379930389](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38379930389) passed on `main` commit `108f3beb267f0b2443a94fdaac9f45903f12a514`: admin login, authenticated dashboard render, AI Brain navigation, and Brain page render. The workflow retains manual dispatch and now also triggers on changes to its smoke harness; secret values are not recorded.
 - [x] Post-PR #105 synthetic health probe [#38412066986](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38412066986) passed with HTTP 200, 5.962-second latency, one attempt. Earlier run #38384976632 remains a failed observation (20-second timeout). [ ] Keep request-level SLO certification pending until alert-path evidence, request/error telemetry, and the required observation window are available; `/health` alone is synthetic availability/latency evidence.
-
-# Logixa Flow — Release Evidence Index
-
-> Owner: Engineering / Release
-> Status: ACTIVE — RAG E2E VERIFIED; OVERALL RELEASE PENDING
-> Last Updated: 2026-10-14
-
-This is the canonical evidence checklist for the Phase 7–13 release candidate. Evidence must identify the exact SHA, environment, timestamp, and observed durable outcome where applicable.
 
 ## Latest production RAG E2E — VERIFIED (2026-10-12 10:10 UTC)
 
