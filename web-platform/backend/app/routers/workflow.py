@@ -736,10 +736,26 @@ async def _execute_workflow(run_id: str) -> None:
         await _broadcast(WorkflowTelemetryEvent(event="workflow.status", run_id=run.run_id, workflow_id=run.workflow_id, state=final_state))
     except asyncio.CancelledError:
         run.state = executor.state
+        if executor.state.status in {"completed", "failed", "waiting_approval"}:
+            # Cancellation can arrive after the run reached a durable terminal
+            # or approval-paused state. Reconcile that state and let the caller
+            # propagate cancellation; a QStash redelivery will then be idempotent.
+            _mark_job_terminal(run.run_id, executor.state.status)
+            if executor.state.status != "waiting_approval":
+                _record_controller_result(run.run_id, executor.state.status)
+        else:
+            # A cancelled delivery is not a completed workflow. Persist the last
+            # completed-node checkpoint, release the lease, and let the durable
+            # delivery mechanism retry instead of acknowledging a stuck `running`
+            # job as HTTP 200.
+            run.state.status = "queued"
+            run.state.current_node = None
+            run.state.error = None
+            _persist_run_state(run)
+            _release_job_claim(run.run_id)
         _EXECUTION_STATES[run_id] = executor.snapshot()
-        _mark_job_terminal(run.run_id, executor.state.status)
-        _record_controller_result(run.run_id, executor.state.status)
-        await _broadcast(WorkflowTelemetryEvent(event="workflow.status", run_id=run.run_id, workflow_id=run.workflow_id, state=executor.state))
+        await _broadcast(WorkflowTelemetryEvent(event="workflow.status", run_id=run.run_id, workflow_id=run.workflow_id, state=run.state))
+        raise
 
 
 def restore_pending_workflow_runs() -> int:
