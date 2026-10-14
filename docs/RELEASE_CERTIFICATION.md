@@ -9,7 +9,7 @@
 - Full dev-inclusive npm audit has 7 high development-toolchain findings and 0 moderate/critical; production-only audit has 0 findings. Supabase Auth leaked-password protection remains a Free-plan limitation. Vercel remediation and paid AI fallback remain owner-approval gated.
 - The initial branch reconciliation found only `main`; recovery hardening later merged in [PR #115](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/115) as `ede412e03dad4ab1cd15ee436c722c0f1581ea4e`.
 
-## Code-level recovery patch — not yet certified (2026-10-14)
+## Code-level recovery patch — CI verified; live workflow gate pending (2026-10-14)
 
 Local regression tests for `fix/qstash-dispatch-exception-recovery` passed (backend 237 passed / 5 skipped; agents 5 passed; frontend 83 passed; production build passed). `pip-audit` reported no known backend dependency vulnerabilities and production-only npm audit reported 0 vulnerabilities. CI [#38504093229](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38504093229) and CodeQL [#38504093130](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38504093130) passed, and Render deploy [dep-db7f2d5bedkc738hnkr0](https://dashboard.render.com/web/srv-d9172fe8bjmc739pd600/deploys/dep-db7f2d5bedkc738hnkr0) is live. Live QStash delivery/recovery evidence is still required and overall release status remains PENDING.
 
