@@ -2,8 +2,12 @@
 
 > Owner: AI / Backend
 > Update when: provider routing, AI gates, RAG behavior, or publication controls change
-> Last Updated: 2026-10-08
+> Last Updated: 2026-10-14
 > Do NOT put here: provider secrets or unsupported live-health claims.
+
+## Current production status (2026-10-14)
+
+Production RAG is `RAG_EMBEDDING_VERSION=2` with `rag_v2_ingestion_mode=voyage_only`, on migration `20261011_0013`. Production Auth Smoke [#38227390320, attempt 4](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38227390320) verified ingestion of 7 public RSS sources into 7 valid Voyage `voyage-3-lite` 512-D chunks, 0 errors, and retrieval with 5 matches and a non-empty citation. The 125 pending/private Brain drafts were not ingested. RAG ingest→retrieval→citation is VERIFIED; broader RAG→Agent→Brain→approval→Publish/resume and overall release certification remain PENDING.
 
 ## AI roles
 
@@ -11,7 +15,7 @@ Public/user AI and admin AI are intentionally independent. Repository configurat
 
 ## Provider model
 
-The backend router represents Gemini, OpenRouter Llama, OpenRouter DeepSeek, Groq, Cerebras, Mistral, Cohere, NVIDIA NIM, and local fallback paths. Render configuration selects Mistral with model mistral-small-latest for admin AI. This is configuration, not proof of live provider health.
+Provider adapters exist for several vendors, but the active backend `LLMRouter` currently wires `OpenRouterProvider(model="openrouter/free")` plus a local fallback whose production default is off. Render provider/model settings do not prove those alternate adapters are selected or healthy.
 
 Always distinguish implemented, configured, enabled/selected, and live-tested states.
 
@@ -37,11 +41,11 @@ The owner-supplied `docs/master_result all` report identifies `voyage-3-lite` as
 A versioned 512-D path is now implemented additively:
 - Migration `20261011_0013` adds nullable `embedding_v2_json`, `embedding_v2_model`, and PostgreSQL `embedding_v2 vector(512)`; the legacy 768-D column remains intact for rollback.
 - `embed_text_v2` calls Voyage `voyage-3-lite`, validates exactly 512 dimensions, and fails closed if `VOYAGE_API_KEY` is missing or the provider response is invalid. It never substitutes hash or Cloudflare vectors into the Voyage model space.
-- `RAG_EMBEDDING_VERSION=2` selects the versioned query/ingestion path. Keep it at `1` until migration is applied and the re-embedding backfill completes.
+- Historical rollout instruction: at that time, keep v1 until migration/backfill verification. This gate was later closed by Production Auth Smoke run #38227390320 attempt 4; production is now v2 / `voyage_only` with 7 valid Voyage 512-D chunks. Do not revert to v1 without a deliberate re-embedding plan because legacy search skips v2-only rows.
 - From `web-platform/backend`, run `python -m alembic upgrade head`, then `VOYAGE_API_KEY=... python -m app.rag.reembed_v2 --dry-run`, then `VOYAGE_API_KEY=... python -m app.rag.reembed_v2 --batch-size 50`. Verify remaining rows is zero and test ingest/search before setting `RAG_EMBEDDING_VERSION=2`.
 - The backfill is resumable and does not overwrite legacy vectors. If verification fails, leave the version flag at `1`; the old 768-D path remains available.
 
-Cloudflare BGE-M3 is not configured as an automatic Voyage fallback because its 1,024-D vectors occupy a different embedding space. Using it requires a separate versioned 1,024-D migration/backfill and query route. User-supplied provider smoke notes do not establish production RAG E2E; ingest→search evidence remains pending until run and recorded.
+Cloudflare BGE-M3 is not configured as an automatic Voyage fallback because its 1,024-D vectors occupy a different embedding space. Using it requires a separate versioned 1,024-D migration/backfill and query route. Production RAG E2E is verified by run #38227390320 attempt 4; broader RAG→Agent→Brain→approval→Publish/resume remains pending.
 
 
 ## Actual runtime provider/key behavior (verified from code, 2026-10-11)
@@ -56,12 +60,12 @@ Cloudflare BGE-M3 is not configured as an automatic Voyage fallback because its 
 
 ## Voyage migration deployment update (2026-10-11)
 
-Render deployment dep-db5nf395efls73aqkdi0 for commit 5a359f79f831ca8f0e925d7e1818f67c89659cf1 reached live. Startup logs show Alembic running upgrade 20261008_0012 → 20261011_0013 before Uvicorn started. The backfill has not been run or verified; keep RAG_EMBEDDING_VERSION=1 until pending-row count is zero and production ingest/search E2E passes.
+Historical snapshot from 2026-10-11: deployment dep-db5nf395efls73aqkdi0 applied migration 20261011_0013. The then-pending rollout gate was later superseded by production Auth Smoke run #38227390320 attempt 4, which verified 7 valid Voyage 512-D chunks and citation-bearing retrieval.
 
 
-## Production RAG verification (2026-10-11)
+## Historical production RAG snapshot (2026-10-11; superseded by the E2E below)
 
 - Production Alembic revision is `20261011_0013`. The `document_embeddings` table contains both the preserved legacy `embedding` vector and the added `embedding_v2_json`, `embedding_v2_model`, and `embedding_v2` vector columns; the v2 HNSW index exists.
-- Direct read-only production counts show `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, and `ai_memory_brain=122`. Consequently, the Voyage v2 backfill command would process zero rows today, but the live RAG corpus is empty. Do not call this a successful RAG migration or E2E pass.
-- Required next step: ingest the existing Brain records through the authenticated RAG ingestion route with `RAG_EMBEDDING_VERSION=1` still active, then verify resulting chunk count, query retrieval, and citations. Only after that should Voyage v2 be enabled for a controlled ingestion/backfill test. `VOYAGE_API_KEY` must remain in the server-side secret store.
+- At the time of this historical snapshot, read-only counts were `document_embeddings=0`, `intelligence_sources=0`, `stored_files=0`, and `ai_memory_brain=122`. These counts were superseded by the later verified production ingestion of 7 public RSS sources and 7 valid Voyage chunks.
+- Historical next-step note; superseded by Production Auth Smoke run #38227390320 attempt 4. Current production uses Voyage v2 / `voyage_only`; pending/private Brain drafts remain untouched.
 - Render deployment `dep-db5rei779l7c73frthcg` is live and application startup completed. OpenRouter returned HTTP 429 during a scheduled preview, so generation availability remains degraded; paid provider failover requires owner approval.
