@@ -13,7 +13,8 @@
 - Pending: durable QStash run delivery/completion/idempotency; live retry/stale-claim/failure recovery; Agent → Brain → approval → Publish/resume; request/error telemetry, alert path, and SLO window; newsletter/provider failover; managed Auth/Storage and object-storage recovery; current-schema backup/restore; application rollback/DR; 24-hour scheduler observation.
 - The 2026-10-09 isolated public-schema restore verified migration `20261008_0012` at that time. It does not certify restore readiness for current migration `20261011_0013` or managed Auth/Storage/object storage.
 - Full dev-inclusive npm audit has 7 high development-toolchain findings and 0 moderate/critical; production-only audit has 0 findings. Supabase Auth leaked-password protection remains a Free-plan limitation. Vercel remediation and paid AI fallback remain owner-approval gated.
-- The initial branch reconciliation found only `main`; recovery hardening later merged in [PR #115](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/115) as `ede412e03dad4ab1cd15ee436c722c0f1581ea4e`.
+- Latest GitHub inventory on 2026-10-14 shows only `main` and no open PRs; the PR #115 topic branch is no longer present in the remote branch list. Recovery hardening merged in [PR #115](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/115) as `ede412e03dad4ab1cd15ee436c722c0f1581ea4e`.
+- Latest read-only production query at `2026-10-14T11:26Z`: Alembic `20261011_0013`; `workflow_runs=0`; `scheduled_workflow_jobs=0`; `ai_memory_brain=127` (all pending/private); `intelligence_sources=7`; `document_embeddings=7`; `stored_files=0`. QStash workflow-run lists, schedules, and workflow DLQs are empty in both US and EU regions. No valid persisted workflow was available for live recovery testing.
 
 ## Code-level recovery patch — CI verified; live workflow gate pending (2026-10-14)
 
