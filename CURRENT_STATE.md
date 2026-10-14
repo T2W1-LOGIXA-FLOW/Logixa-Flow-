@@ -17,7 +17,7 @@ This section is the current release-status summary and supersedes older conflict
 
 **Overall status: PENDING — NOT RELEASE-CERTIFIED.** Documentation reconciliation does not close any unverified production gate.
 
-- **Latest read-only production snapshot (2026-10-14 11:26 UTC):** Alembic head `20261011_0013`; `workflow_runs=0`; `scheduled_workflow_jobs=0`; `ai_memory_brain=127` and all 127 rows are pending/private; `intelligence_sources=7`; `document_embeddings=7`; `stored_files=0`. The two newest private pending rows are IDs 126 (created 2026-10-13 04:23 UTC) and 127 (created 2026-10-14 06:41 UTC), both `provider=openrouter` and without a workflow run ID. This is a count update, not evidence of ingestion or publication. QStash workflow runs and schedules are empty in both regions; workflow dead-letter queues are empty.
+- **Latest read-only production snapshot (2026-10-14 11:26 UTC):** Alembic head `20261011_0013`; `workflows=0`; `workflow_nodes=0`; `workflow_runs=0`; `scheduled_workflow_jobs=0`; `ai_memory_brain=127` and all 127 rows are pending/private; `intelligence_sources=7`; `document_embeddings=7`; `stored_files=0`. The two newest private pending rows are IDs 126 (created 2026-10-13 04:23 UTC) and 127 (created 2026-10-14 06:41 UTC), both `provider=openrouter` and without a workflow run ID. This is a count update, not evidence of ingestion or publication. The application database has no workflow definitions, nodes, runs, or scheduled jobs; QStash workflow runs and schedules are empty in both regions, and workflow dead-letter queues are empty. A safe persisted workflow must be created through the authenticated application API before live recovery can be tested.
 
 ## Latest code-level recovery hardening (2026-10-14)
 
