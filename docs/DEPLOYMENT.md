@@ -2,7 +2,7 @@
 
 > Owner: Operations / Engineering
 > Update when: deployment topology or release gates change
-> Last Updated: 2026-10-14
+> Last Updated: 2026-10-15
 > Do NOT put here: secret values.
 
 ## Current topology
@@ -36,3 +36,9 @@ Production RAG ingest → retrieval/citation is verified by [run #38227390320 at
 ## Release gates
 
 Latest-main CI, real provider E2E, signed QStash delivery, workflow completion/recovery, production auth/API smoke, and monitoring/failure-mode checks remain release gates.
+
+## Provider inventory audit — 2026-10-15
+
+See [docs/INFRASTRUCTURE_AUDIT_2026-10-15.md](INFRASTRUCTURE_AUDIT_2026-10-15.md) for the connected provider snapshot and ordered remaining work. Fresh read-only checks show one Render Free Docker Web Service on `main`, root `web-platform/backend`, `/health`, auto-deploy enabled, latest deploy live for `8a1b5ad4bfab817e5e4a56d8cec22b1b035e4215`. Vercel's latest main production deployment is READY, but the project API reports `live=false`; its separate `latestDeployment` pointer is an ERROR Dependabot deployment. Preserve the existing Vercel lock and require owner approval before remediation or promotion.
+
+Supabase production is ACTIVE_HEALTHY with Alembic head `20261011_0013`; live workflow definitions/nodes/runs/scheduled jobs are all zero, so QStash production execution remains uncertified. Cloudflare's connected account lists no zones, Workers, Pages, KV, D1, or Queues; R2 inventory cannot be queried because R2 is not enabled. No deployment, resource, secret, or database changes were made during this audit.
