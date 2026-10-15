@@ -2,7 +2,7 @@
 
 > Owner: Project / Engineering
 > Update when: a phase, release gate, deferred item, or backlog item changes status
-> Last Updated: 2026-10-14
+> Last Updated: 2026-10-15
 > Do NOT put here: detailed implementation instructions; use domain docs and runbooks.
 
 ## Release closure and repository inventory (2026-10-14)
@@ -385,3 +385,9 @@ Production workflow recovery and RAG→Agent→Brain→Publish live journeys are
 - [x] Added 15-minute synthetic `/health` probe, 30-day probe artifacts, and configurable webhook alert delivery/test mode. This is not real-request SLO/error-budget certification; run the manual alert test and collect the complete observation window.
 - [x] Expanded controlled DR/rollback rehearsal steps; no production rollback or destructive restore was executed.
 - [ ] Overall release remains PENDING until live Agent→Brain→Publish, authenticated Admin UI, alert-path, workflow recovery, scheduler boundary, object-storage recovery, rollback/DR, and SLO/error-budget gates have direct evidence.
+
+## Live infrastructure audit backlog — 2026-10-15
+
+The connected provider inventory is now documented in [docs/INFRASTRUCTURE_AUDIT_2026-10-15.md](docs/INFRASTRUCTURE_AUDIT_2026-10-15.md). Prioritize: (1) configure a safe production workflow and verify QStash completion/idempotency/retry/recovery, (2) verify Agent → Brain → approval → Publish/resume, (3) finish measurable SLO observation, (4) rehearse rollback/DR and managed Auth/Storage/object-storage recovery, (5) observe scheduler across a full 24-hour boundary, and (6) configure and test transactional email only after approval. Security/cost backlog includes Cloudflare MFA enforcement review, Supabase RLS/policy intent review, leaked-password protection plan, workload-based review of 82 unused-index advisories, and compatible remediation for 7 high dev-tooling npm findings.
+
+Fresh infrastructure notes: Render's current main deployment is live; Vercel main production deployment is READY but project `live=false` and the `latestDeployment` field points to an ERROR Dependabot deployment (do not bypass the existing owner lock); Supabase production Alembic head is `20261011_0013` and production workflow tables are empty; Cloudflare lists no zones/Workers/Pages/KV/D1/Queues and R2 is not enabled/inspectable. Overall release remains **PENDING — NOT RELEASE-CERTIFIED**.
