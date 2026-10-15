@@ -147,7 +147,7 @@ def embed_text_v2(text: str) -> tuple[list[float], str]:
                     logger.warning("Voyage embedding returned unexpected status %s, attempting Cohere fallback", response.status_code)
                     break
             except requests.HTTPError as exc:
-                status = exc.response.status_code if exc.response is not None else None
+                status = exc.response.status_code if exc.response is not None else response.status_code
                 if status in (429, 500, 502, 503, 504) and attempt < max_attempts:
                     time.sleep(min(15.0, 1.5 ** attempt))
                     continue
