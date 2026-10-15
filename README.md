@@ -71,6 +71,15 @@ Release status is **PENDING FINAL EVIDENCE**. Verified evidence includes Cloudin
 
 ## Quick start
 
+## Repository layout
+
+- `apps/web-platform/frontend/` — Next.js/React web application.
+- `apps/web-platform/backend/` — FastAPI API, services, migrations and tests.
+- `apps/web-platform/backend/agents/` — secondary backend agent pipeline; it is separate from the canonical workflow engine.
+- No `apps/mobile/` surface exists yet. Add it only when mobile development is started.
+
+See [docs/REPOSITORY_STRUCTURE.md](docs/REPOSITORY_STRUCTURE.md) for placement rules.
+
 Backend:
 
     cd apps/web-platform/backend
