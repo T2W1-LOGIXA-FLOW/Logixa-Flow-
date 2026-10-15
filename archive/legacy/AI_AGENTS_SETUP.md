@@ -86,7 +86,7 @@ Provider availability is configuration-dependent. Never document an unavailable 
 ### 4. Workflow / automation layer
 Canonical implementation:
 
-`web-platform/backend/app/routers/workflow.py`
+`apps/web-platform/backend/app/routers/workflow.py`
 
 Capabilities include:
 - Workflow definitions.
@@ -112,13 +112,13 @@ The in-process dictionaries in the workflow module are execution caches/state ho
 - Human approval for publication-sensitive AI output.
 
 ### 6. Background agents
-The `agents/` folder is a secondary content/automation pipeline, separate from the main FastAPI web service. It is not required for the current Render Free production runtime; durable workflow execution is handled by QStash → FastAPI → PostgreSQL.
+The `apps/web-platform/backend/agents/` folder is a secondary content/automation pipeline, separate from the main FastAPI web service. It is not required for the current Render Free production runtime; durable workflow execution is handled by QStash → FastAPI → PostgreSQL.
 
 Conceptual content pipeline:
 
 `Collector → source normalization → Writer/Manager → Publisher → Backend review/publish flow`
 
-The canonical durable workflow engine remains `backend/app/routers/workflow.py`. The `agents/` pipeline should integrate with that engine rather than become a second workflow runtime.
+The canonical durable workflow engine remains `backend/app/routers/workflow.py`. The `apps/web-platform/backend/agents/` pipeline should integrate with that engine rather than become a second workflow runtime.
 
 ### 7. Business and operations
 - Logistics estimator.
@@ -157,29 +157,29 @@ The canonical durable workflow engine remains `backend/app/routers/workflow.py`.
 1. `README.md`
 2. `PROJECT_OVERVIEW.md`
 3. `docs/AI_AGENTS_SETUP.md`
-4. `web-platform/backend/app/main.py`
-5. `web-platform/backend/app/models.py`
-6. `web-platform/backend/app/schemas.py`
-7. `web-platform/backend/app/security.py`
-8. `web-platform/backend/app/llm/router.py`
-9. `web-platform/backend/app/llm/providers.py`
-10. `web-platform/backend/app/rag/`
-11. `web-platform/backend/app/routers/agent.py`
-12. `web-platform/backend/app/routers/chat.py`
-13. `web-platform/backend/app/routers/rag.py`
-14. `web-platform/backend/app/routers/workflow.py`
-15. `web-platform/backend/app/routers/controllers.py`
-16. `web-platform/backend/app/integration_service.py`
-17. `web-platform/backend/app/scheduler.py`
-18. `agents/main_pipeline.py`
-19. `agents/collector.py`
-20. `agents/writer.py`
-21. `agents/manager.py`
-22. `agents/publisher.py`
-23. `agents/bridge.py`
-24. `web-platform/frontend/src/components/admin/AdminSidebar.tsx`
-25. `web-platform/frontend/src/app/admin/workflow/`
-26. `web-platform/frontend/src/components/api.ts`
+4. `apps/web-platform/backend/app/main.py`
+5. `apps/web-platform/backend/app/models.py`
+6. `apps/web-platform/backend/app/schemas.py`
+7. `apps/web-platform/backend/app/security.py`
+8. `apps/web-platform/backend/app/llm/router.py`
+9. `apps/web-platform/backend/app/llm/providers.py`
+10. `apps/web-platform/backend/app/rag/`
+11. `apps/web-platform/backend/app/routers/agent.py`
+12. `apps/web-platform/backend/app/routers/chat.py`
+13. `apps/web-platform/backend/app/routers/rag.py`
+14. `apps/web-platform/backend/app/routers/workflow.py`
+15. `apps/web-platform/backend/app/routers/controllers.py`
+16. `apps/web-platform/backend/app/integration_service.py`
+17. `apps/web-platform/backend/app/scheduler.py`
+18. `apps/web-platform/backend/agents/main_pipeline.py`
+19. `apps/web-platform/backend/agents/collector.py`
+20. `apps/web-platform/backend/agents/writer.py`
+21. `apps/web-platform/backend/agents/manager.py`
+22. `apps/web-platform/backend/agents/publisher.py`
+23. `apps/web-platform/backend/agents/bridge.py`
+24. `apps/web-platform/frontend/src/components/admin/AdminSidebar.tsx`
+25. `apps/web-platform/frontend/src/app/admin/workflow/`
+26. `apps/web-platform/frontend/src/components/api.ts`
 
 ## AI provider setup
 
@@ -237,7 +237,7 @@ Provider routing remains centralized. Agents do not receive separate frontend cr
 
 ## Legacy agent-service pipeline
 
-The repository still contains an optional `agents/` content pipeline for compatibility and local/managed deployments. It is **not part of the current Render Free production runtime**.
+The repository still contains an optional `apps/web-platform/backend/agents/` content pipeline for compatibility and local/managed deployments. It is **not part of the current Render Free production runtime**.
 
 Production workflow execution uses:
 

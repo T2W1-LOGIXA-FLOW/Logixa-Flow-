@@ -38,7 +38,7 @@ def integration_import_drafts(
     db: Session = Depends(get_db),
     _: dict = Depends(require_admin_or_agent_service),
 ) -> dict:
-    """Import recent JSON drafts from agents/data/drafts into brain queue (pending)."""
+    """Import recent JSON drafts from apps/web-platform/backend/agents/data/drafts into brain queue (pending)."""
     return import_drafts_from_folder(db, limit=limit)
 
 

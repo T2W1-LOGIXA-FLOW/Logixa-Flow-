@@ -13,12 +13,12 @@ on:
     branches: [main]
     paths:
       - .github/workflows/production-auth-smoke.yml
-      - web-platform/backend/app/routers/rag.py
-      - web-platform/backend/app/rag/embeddings.py
-      - web-platform/backend/app/rag/ingest.py
-      - web-platform/backend/app/rag/search.py
-      - web-platform/backend/app/routers/integration.py
-      - web-platform/backend/app/integration_service.py
+      - apps/web-platform/backend/app/routers/rag.py
+      - apps/web-platform/backend/app/rag/embeddings.py
+      - apps/web-platform/backend/app/rag/ingest.py
+      - apps/web-platform/backend/app/rag/search.py
+      - apps/web-platform/backend/app/routers/integration.py
+      - apps/web-platform/backend/app/integration_service.py
 
 permissions:
   contents: read

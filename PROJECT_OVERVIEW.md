@@ -27,7 +27,7 @@ IntelligenceSource registry, manual/file/URL/RSS sources, source categories/trus
 
 ### RAG knowledge layer
 
-Ingestion under web-platform/backend/app/rag/, chunking, OpenRouter free embeddings with local hash fallback, PostgreSQL/pgvector, source-aware retrieval, batch ingestion, error/retry handling, correlation IDs, aggregate metrics, alerts, and quality/evaluation hooks.
+Ingestion under apps/web-platform/backend/app/rag/, chunking, OpenRouter free embeddings with local hash fallback, PostgreSQL/pgvector, source-aware retrieval, batch ingestion, error/retry handling, correlation IDs, aggregate metrics, alerts, and quality/evaluation hooks.
 
 ### AI layer
 
@@ -35,7 +35,7 @@ Public chat, admin chat, persisted agent runs/steps, AI Memory/Brain, confidence
 
 ### Workflow orchestration
 
-Canonical implementation: web-platform/backend/app/routers/workflow.py. It covers workflow definitions/nodes, dependency ordering, registered actions, retry/timeout behavior, approval nodes, pause/resume, queues/priorities, durable run records, scheduled jobs, controller-triggered execution, execution history/metrics, and restart/pending-run recovery.
+Canonical implementation: apps/web-platform/backend/app/routers/workflow.py. It covers workflow definitions/nodes, dependency ordering, registered actions, retry/timeout behavior, approval nodes, pause/resume, queues/priorities, durable run records, scheduled jobs, controller-triggered execution, execution history/metrics, and restart/pending-run recovery.
 
 PostgreSQL is the durable source of truth. Do not create a second workflow engine.
 
@@ -49,7 +49,7 @@ Posts, drafts, categories, publication state, Brain-to-draft flows, review, and 
 
 ### Background agent pipeline
 
-The agents/ directory contains a secondary collector → writer → manager → publisher pipeline. It is separate from the canonical workflow engine.
+The apps/web-platform/backend/agents/ directory contains a secondary collector → writer → manager → publisher pipeline. It is separate from the canonical workflow engine.
 
 ### Business and operations
 
@@ -73,7 +73,7 @@ Data: PostgreSQL/Supabase, pgvector, Alembic.
 
 AI: Gemini and multi-provider LLM routing, embeddings, RAG, Brain, agent runs, usage/cost telemetry.
 
-Automation: canonical workflow engine, scheduler/controllers, optional agents/ pipeline.
+Automation: canonical workflow engine, scheduler/controllers, optional apps/web-platform/backend/agents/ pipeline.
 
 Storage/integrations: Cloudinary, Supabase Storage, Backblaze B2/S3-compatible storage, Google Drive, QStash, optional Celery/Redis, RSS, and email integrations.
 

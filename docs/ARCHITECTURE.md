@@ -11,7 +11,7 @@ Next.js/React frontend → FastAPI backend → Supabase PostgreSQL/pgvector, wit
 
 ## Canonical workflow
 
-The canonical workflow implementation is web-platform/backend/app/routers/workflow.py. Do not create a second workflow engine. Controllers, scheduling, QStash delivery, and optional Celery execution route into it.
+The canonical workflow implementation is apps/web-platform/backend/app/routers/workflow.py. Do not create a second workflow engine. Controllers, scheduling, QStash delivery, and optional Celery execution route into it.
 
 ## Durable state
 
@@ -25,7 +25,7 @@ Render Free intentionally uses CELERY_ENABLED=false. Celery and Redis remain opt
 
 ## Other boundaries
 
-RAG is under web-platform/backend/app/rag/ and uses ingestion, chunking, embeddings, PostgreSQL/pgvector retrieval, source-aware context, search/ranking, and reliability controls. The agents/ pipeline is a secondary collector → writer → manager → publisher path and is separate from the canonical workflow engine. Backend authorization and provider credentials remain server-side; the frontend must not receive service-role database credentials.
+RAG is under apps/web-platform/backend/app/rag/ and uses ingestion, chunking, embeddings, PostgreSQL/pgvector retrieval, source-aware context, search/ranking, and reliability controls. The apps/web-platform/backend/agents/ pipeline is a secondary collector → writer → manager → publisher path and is separate from the canonical workflow engine. Backend authorization and provider credentials remain server-side; the frontend must not receive service-role database credentials.
 
 ## Decisions
 

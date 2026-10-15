@@ -19,7 +19,7 @@ Source / File / User Input → Ingestion → RAG / AI → Review / Decision → 
 
 Next.js / React frontend → FastAPI backend → Supabase PostgreSQL + pgvector, with external AI, storage, QStash, Google Drive, and other integrations.
 
-The canonical workflow implementation is `web-platform/backend/app/routers/workflow.py`. PostgreSQL is the durable workflow/run source of truth. The current Render Free path uses QStash delivery and in-process canonical execution with `CELERY_ENABLED=false`.
+The canonical workflow implementation is `apps/web-platform/backend/app/routers/workflow.py`. PostgreSQL is the durable workflow/run source of truth. The current Render Free path uses QStash delivery and in-process canonical execution with `CELERY_ENABLED=false`.
 
 ## Technology stack
 
@@ -73,13 +73,13 @@ Release status is **PENDING FINAL EVIDENCE**. Verified evidence includes Cloudin
 
 Backend:
 
-    cd web-platform/backend
+    cd apps/web-platform/backend
     python -m pip install -r requirements.txt
     python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 Frontend:
 
-    cd web-platform/frontend
+    cd apps/web-platform/frontend
     npm install
     npm run dev -- -p 3000
 

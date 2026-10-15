@@ -13,8 +13,8 @@ git status --short
 These files and folders must not be committed:
 
 - `.env`
-- `web-platform/backend/.env`
-- `web-platform/frontend/.env.local`
+- `apps/web-platform/backend/.env`
+- `apps/web-platform/frontend/.env.local`
 - `node_modules/`
 - `.next/`
 - `.venv/`
@@ -53,11 +53,11 @@ Settings:
 
 ```text
 Framework: Next.js
-Root directory: web-platform/frontend
+Root directory: apps/web-platform/frontend
 Install command: npm ci
 Build command: npm run build
 
-Do not create or restore `web-platform/frontend/vercel.json`. Vercel-specific overrides are intentionally removed.
+Do not create or restore `apps/web-platform/frontend/vercel.json`. Vercel-specific overrides are intentionally removed.
 ```
 
 Required variables:
@@ -74,7 +74,7 @@ Do not add backend secrets to Vercel.
 Settings:
 
 ```text
-Root directory: web-platform/backend
+Root directory: apps/web-platform/backend
 Runtime: Docker
 Health check path: /health
 ```

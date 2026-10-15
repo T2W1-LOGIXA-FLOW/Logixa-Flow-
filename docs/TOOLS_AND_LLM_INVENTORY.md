@@ -65,7 +65,7 @@
 | Local fallback | Placeholder string response | Test/development fallback only; **not** a deployed local inference engine. |
 | Hugging Face | Token/model configuration and moderation-related flags exist in env templates | Not a text-generation route in the current backend LLMRouter; do not list it as an active LLM provider. |
 
-The provider adapter file contains additional implementations, but only providers included in web-platform/backend/app/llm/router.py are part of that router's actual selection order. Environment keys alone do not mean a provider is active.
+The provider adapter file contains additional implementations, but only providers included in apps/web-platform/backend/app/llm/router.py are part of that router's actual selection order. Environment keys alone do not mean a provider is active.
 
 ### Embeddings and retrieval
 

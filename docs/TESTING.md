@@ -18,7 +18,7 @@
 - Backend: `237 passed, 5 skipped`; Alembic migrations applied through `20261011_0013` against an isolated SQLite test database.
 - Agents: `5 passed`.
 - Frontend: `35 test files passed, 83 tests passed`; `npm run build` succeeded. React `act(...)` and intentionally exercised error-path messages were logged by tests but did not fail the suite.
-- Security: `pip-audit -r web-platform/backend/requirements.txt` reported no known vulnerabilities; `npm audit --omit=dev` reported 0 vulnerabilities. Full npm audit still reports 7 high development/tooling findings; major Tailwind/Next ESLint remediation remains owner-approval gated.
+- Security: `pip-audit -r apps/web-platform/backend/requirements.txt` reported no known vulnerabilities; `npm audit --omit=dev` reported 0 vulnerabilities. Full npm audit still reports 7 high development/tooling findings; major Tailwind/Next ESLint remediation remains owner-approval gated.
 - Regression coverage added for QStash dispatch exceptions releasing the durable claim and returning HTTP 503, cancelled execution requeue/release, and terminal redelivery reconciling job status without re-execution.
 - These local tests are supplemented by passing GitHub CI [#38504093229](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38504093229) and CodeQL [#38504093130](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38504093130). Render deploy is live and GET /health returned HTTP 200 in 2.073 seconds; live QStash delivery/completion/idempotency and stale-claim recovery remain pending.
 
@@ -45,7 +45,7 @@ These results verify repository CI/security automation for that main commit; the
 
 ## Opt-in live provider suite
 
-Set `RUN_LIVE_E2E=1` and provide the required provider environment variables to run `web-platform/backend/tests/test_live_release_gates.py`. The suite performs real upload/read/delete round trips for Cloudinary, Supabase Storage, B2/S3-compatible storage, and Google Drive. Missing provider configuration causes that provider test to skip rather than fabricate a pass.
+Set `RUN_LIVE_E2E=1` and provide the required provider environment variables to run `apps/web-platform/backend/tests/test_live_release_gates.py`. The suite performs real upload/read/delete round trips for Cloudinary, Supabase Storage, B2/S3-compatible storage, and Google Drive. Missing provider configuration causes that provider test to skip rather than fabricate a pass.
 
 ## Required live tests
 

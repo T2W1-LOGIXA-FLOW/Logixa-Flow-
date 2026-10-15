@@ -7,7 +7,7 @@ on:
       - main
     paths:
       - '.github/workflows/production-admin-ui-smoke.yml'
-      - 'web-platform/frontend/scripts/production-admin-ui-smoke.mjs'
+      - 'apps/web-platform/frontend/scripts/production-admin-ui-smoke.mjs'
 
 permissions:
   contents: read
@@ -50,11 +50,11 @@ jobs:
         with:
           node-version: 24
       - name: Install browser smoke dependencies
-        working-directory: web-platform/frontend
+        working-directory: apps/web-platform/frontend
         run: |
           npm ci
           npm install --no-save playwright@1.55.0
           npx playwright install --with-deps chromium
       - name: Authenticate and navigate the production admin UI
-        working-directory: web-platform/frontend
+        working-directory: apps/web-platform/frontend
         run: node scripts/production-admin-ui-smoke.mjs

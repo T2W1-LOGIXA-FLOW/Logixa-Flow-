@@ -29,7 +29,7 @@ Operators can retry failed workflows or pause automation controllers directly fr
 
 ## 3. Environment Variables
 
-Configure these variables in `web-platform/backend/.env` or in the Render Dashboard:
+Configure these variables in `apps/web-platform/backend/.env` or in the Render Dashboard:
 
 | Key | Type | Default | Description |
 |---|---|---|---|
@@ -42,9 +42,9 @@ Configure these variables in `web-platform/backend/.env` or in the Render Dashbo
 
 ## 4. Code Architecture
 
-* **Service Module:** `web-platform/backend/app/services/telegram.py`
-* **Configuration:** `web-platform/backend/app/config.py` (`telegram_configured`, `telegram_enabled`)
-* **Template:** `web-platform/backend/.env.example`
+* **Service Module:** `apps/web-platform/backend/app/services/telegram.py`
+* **Configuration:** `apps/web-platform/backend/app/config.py` (`telegram_configured`, `telegram_enabled`)
+* **Template:** `apps/web-platform/backend/.env.example`
 
 ---
 

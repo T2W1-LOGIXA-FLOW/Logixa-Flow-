@@ -5,9 +5,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY agents/requirements.txt .
+COPY apps/web-platform/backend/agents/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY agents/ .
+COPY apps/web-platform/backend/agents/ .
 
 CMD ["python", "worker_loop.py"]

@@ -1,6 +1,6 @@
 """Backfill versioned Voyage vectors without overwriting the legacy 768-D index.
 
-Run from web-platform/backend:
+Run from apps/web-platform/backend:
     VOYAGE_API_KEY=... python -m app.rag.reembed_v2 --dry-run
     VOYAGE_API_KEY=... python -m app.rag.reembed_v2 --batch-size 50
 

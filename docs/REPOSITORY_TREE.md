@@ -27,7 +27,7 @@ Logixa-Flow-/
 │   │   ├── production-backup-restore.yml
 │   │   └── production-slo-probe.yml
 │   └── dependabot.yml
-├── agents/
+├── apps/web-platform/backend/agents/
 │   ├── .dockerignore
 │   ├── .env.example
 │   ├── bridge.py
@@ -74,7 +74,7 @@ Logixa-Flow-/
 │   ├── TESTING.md
 │   ├── TOOLS_AND_LLM_INVENTORY.md
 │   └── TROUBLESHOOTING.md
-├── web-platform/
+├── apps/web-platform/
 │   ├── backend/
 │   │   ├── app/
 │   │   │   ├── llm/
@@ -254,7 +254,7 @@ Logixa-Flow-/
 │   │   │   │   │   ├── agent-chat/
 │   │   │   │   │   │   ├── page.test.tsx
 │   │   │   │   │   │   └── page.tsx
-│   │   │   │   │   ├── agents/
+│   │   │   │   │   ├── apps/web-platform/backend/agents/
 │   │   │   │   │   │   ├── agent-theme.module.css
 │   │   │   │   │   │   └── page.tsx
 │   │   │   │   │   ├── analytics/

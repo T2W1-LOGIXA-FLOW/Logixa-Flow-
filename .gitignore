@@ -11,6 +11,8 @@ out/
 dist/
 build/
 *.tsbuildinfo
+apps/web-platform/frontend/public/service-worker.js
+apps/web-platform/frontend/public/workbox-*.js
 
 # Backend Python
 __pycache__/
@@ -34,9 +36,9 @@ ENV/
 !.env.example
 !.env.local.example
 !.env.production.example
-!web-platform/frontend/.env.example
-!web-platform/frontend/.env.local.example
-!web-platform/backend/.env.example
+!apps/web-platform/frontend/.env.example
+!apps/web-platform/frontend/.env.local.example
+!apps/web-platform/backend/.env.example
 *.pem
 *.key
 *.cert
@@ -50,7 +52,7 @@ ENV/
 # Media & uploads
 uploads/
 media/
-web-platform/backend/uploads/
+apps/web-platform/backend/uploads/
 
 # Local generated reports / archives
 *.zip
@@ -69,7 +71,7 @@ backups/
 # IDE & OS
 .vscode/
 .idea/
-.agents/
+apps/web-platform/backend/agents/data/
 .claude/
 .codex/
 .git_corrupt_backup/

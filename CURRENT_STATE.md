@@ -110,7 +110,7 @@ The latest production RAG gate is live-verified, not inferred from CI: run #3822
 
 ## 4. COMPLETED
 
-- Canonical workflow implementation remains `web-platform/backend/app/routers/workflow.py`.
+- Canonical workflow implementation remains `apps/web-platform/backend/app/routers/workflow.py`.
 - PostgreSQL-backed workflow/run persistence and recovery code exist.
 - Render Free deployment is represented as a single Web Service in `render.yaml`.
 - QStash dispatch integration exists for the current Free execution path.
@@ -336,8 +336,8 @@ Evidence limitation: Render event inspection showed no matching failure events i
 ## 2026-10-11 — Workflow recovery and Agent/RAG code hardening
 
 Code fixes committed to main:
-- web-platform/backend/app/routers/workflow.py: resume now seeds executor progress from persisted completed_nodes; a running job with a missing claimed_at is reclaimable instead of becoming stranded.
-- web-platform/backend/app/routers/agent.py: build_steps() now defines its sanitized objective; local draft HTML escapes the objective, title, source titles, and source notes before interpolation.
+- apps/web-platform/backend/app/routers/workflow.py: resume now seeds executor progress from persisted completed_nodes; a running job with a missing claimed_at is reclaimable instead of becoming stranded.
+- apps/web-platform/backend/app/routers/agent.py: build_steps() now defines its sanitized objective; local draft HTML escapes the objective, title, source titles, and source notes before interpolation.
 - Regression tests added for restart-resume without replaying completed nodes, missing-lease reclamation, build_steps(), and HTML escaping.
 
 Validation: CI #564 passed on commit 4f530837fc148e44be2f6cb0ecb0a5f291278be2: backend 199 passed, 5 skipped; agents tests passed, frontend tests/build passed, and dependency security job passed. CodeQL #311 passed for Python and JavaScript/TypeScript. Evidence: https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906548 and https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/38116906581.

@@ -3,8 +3,8 @@ services:
     name: logixa-flow-backend
     runtime: docker
     plan: free
-    dockerfilePath: ./web-platform/backend/Dockerfile
-    dockerContext: ./web-platform/backend
+    dockerfilePath: ./apps/web-platform/backend/Dockerfile
+    dockerContext: ./apps/web-platform/backend
     envVars:
       - key: PORT
         value: 8000

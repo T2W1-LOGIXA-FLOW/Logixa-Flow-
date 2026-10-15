@@ -7,9 +7,9 @@
 
 ## Local setup
 
-Backend: cd web-platform/backend; python -m pip install -r requirements.txt; python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000.
+Backend: cd apps/web-platform/backend; python -m pip install -r requirements.txt; python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000.
 
-Frontend: cd web-platform/frontend; npm install; npm run dev -- -p 3000.
+Frontend: cd apps/web-platform/frontend; npm install; npm run dev -- -p 3000.
 
 ## Checks
 

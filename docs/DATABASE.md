@@ -15,7 +15,7 @@ Supabase PostgreSQL is the application database and durable source of truth for 
 
 ## Migration policy
 
-Use Alembic from `web-platform/backend` with `python -m alembic upgrade head`. Repository and live production head are **20261011_0013**, verified 2026-10-11. Migration `20261011_0013` adds the versioned Voyage 512-D embedding path while preserving legacy 768-D vectors. Migration `20261008_0012` remains part of the prior RAG observability history.
+Use Alembic from `apps/web-platform/backend` with `python -m alembic upgrade head`. Repository and live production head are **20261011_0013**, verified 2026-10-11. Migration `20261011_0013` adds the versioned Voyage 512-D embedding path while preserving legacy 768-D vectors. Migration `20261008_0012` remains part of the prior RAG observability history.
 
 Forward corrective migrations are preferred where application data must be preserved. Do not use downgrade as routine data repair. Follow the existing inventory/stamp procedure for an unversioned legacy database; never stamp an RLS/grant migration unless its effects have actually been applied.
 
@@ -25,7 +25,7 @@ Backend owns application DB access. Frontend must not receive service-role crede
 
 ## Legacy schema artifact
 
-web-platform/frontend/src/lib/migrations.sql is unreferenced legacy material and is not an active schema source.
+apps/web-platform/frontend/src/lib/migrations.sql is unreferenced legacy material and is not an active schema source.
 
 ## Durable workflow state
 

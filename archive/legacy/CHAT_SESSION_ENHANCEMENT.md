@@ -1,4 +1,4 @@
-<!-- Historical source archived from web-platform/docs/CHAT_SESSION_ENHANCEMENT.md on 2026-10-08. -->
+<!-- Historical source archived from apps/web-platform/docs/CHAT_SESSION_ENHANCEMENT.md on 2026-10-08. -->
 
 # Chat Session Enhancement
 
