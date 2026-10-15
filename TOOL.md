@@ -133,3 +133,7 @@ Do not remove the local recovery path until live evidence exists for signed QSta
 ## Final decision rule
 
 Preserve the PostgreSQL-backed recovery path and QStash dispatch until the complete signed QStash → workflow execution and recovery scenarios are verified in production.
+
+## Provider audit record — 2026-10-15
+
+For the latest connected-provider inventory and ordered worklist, see [docs/INFRASTRUCTURE_AUDIT_2026-10-15.md](docs/INFRASTRUCTURE_AUDIT_2026-10-15.md). Fresh live state must supersede stale snapshots: Render current deploy, Vercel main deployment versus project-level `live` metadata, Supabase live Alembic head/table counts, and Cloudflare account resource inventory are recorded there. Never change Vercel state while the owner lock is active; do not infer an empty R2 bucket inventory when R2 cannot be queried; and do not clear Supabase RLS/index advisories with broad schema changes. Keep release gates PENDING until direct evidence exists.
