@@ -137,11 +137,27 @@ def embed_text_v2(text: str) -> tuple[list[float], str]:
                     if attempt < max_attempts:
                         time.sleep(min(15.0, 1.5 ** attempt))
                         continue
-                logger.warning("Voyage embedding failed with status %s, attempting Cohere fallback", response.status_code)
+                    logger.warning("Voyage embedding exhausted retryable status %s, attempting Cohere fallback", response.status_code)
+                    break
+                elif response.status_code >= 400:
+                    # A permanent client error usually means the request/model/config
+                    # is invalid. Do not hide it behind a different provider.
+                    response.raise_for_status()
+                else:
+                    logger.warning("Voyage embedding returned unexpected status %s, attempting Cohere fallback", response.status_code)
+                    break
+            except requests.HTTPError as exc:
+                status = exc.response.status_code if exc.response is not None else None
+                if status in (429, 500, 502, 503, 504) and attempt < max_attempts:
+                    time.sleep(min(15.0, 1.5 ** attempt))
+                    continue
+                if status is not None and 400 <= status < 500 and status != 429:
+                    raise
+                logger.warning("Voyage embedding request failed, attempting Cohere fallback")
                 break
             except Exception as exc:
                 if attempt >= max_attempts:
-                    logger.warning("Voyage embedding request exception: %s, attempting Cohere fallback", exc)
+                    logger.warning("Voyage embedding request exception: %s, attempting Cohere fallback", type(exc).__name__)
                     break
                 time.sleep(1.0 * attempt)
 
@@ -168,8 +184,11 @@ def embed_text_v2(text: str) -> tuple[list[float], str]:
         except Exception as exc:
             logger.warning("Cohere embedding fallback failed: %s", exc)
 
-    logger.warning("Using deterministic hash fallback for 512-D embedding")
-    return _hash_embedding(text, dimensions=VOYAGE_EMBEDDING_DIMENSIONS), "hash:512-fallback"
+    # Version 2 vectors are used for semantic retrieval. A hash vector is not
+    # semantically compatible with Voyage/Cohere vectors, even when dimensions
+    # match, so never persist or search with a synthetic fallback in this path.
+    logger.error("No semantic embedding provider succeeded for the 512-D RAG path")
+    raise RuntimeError("Semantic embedding unavailable: configure a working VOYAGE_API_KEY or COHERE_API_KEY")
 
 
 def embedding_to_json(values: list[float]) -> str:
