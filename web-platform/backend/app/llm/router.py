@@ -5,13 +5,8 @@ from decimal import Decimal, InvalidOperation
 
 from sqlalchemy.orm import Session
 from .providers import (
-    CohereProvider,
     FallbackLocalProvider,
-    GeminiProvider,
-    GroqProvider,
     LLMProvider,
-    MistralProvider,
-    NvidiaNimProvider,
     OpenRouterProvider,
     clean_env_value,
 )
@@ -53,24 +48,20 @@ class LLMRouter:
     def __init__(self, db: Session, role: str = "admin"):
         self.db = db
         self.role = (role or "admin").strip().lower()
+        # Production cost policy is free-only: never route admin or user
+        # generation through legacy paid providers merely because their keys exist.
         self.providers = {
-            "groq": GroqProvider(role=self.role),
             "openrouter-free": OpenRouterProvider(model="openrouter/free", role=self.role),
-            "gemini": GeminiProvider(role=self.role),
-            "mistral": MistralProvider(role=self.role),
-            "cohere": CohereProvider(role=self.role),
-            "nvidia": NvidiaNimProvider(role=self.role),
             "local": FallbackLocalProvider(),
         }
 
     def _selected_provider_name(self, task: str | None = None) -> str:
-        for name in ["groq", "openrouter-free", "gemini", "mistral", "cohere", "nvidia"]:
-            if self.providers[name].is_available():
-                return name
+        if self.providers["openrouter-free"].is_available():
+            return "openrouter-free"
         return "local"
 
     def _provider_order(self, task: str | None = None) -> list[tuple[str, LLMProvider]]:
-        names = ["groq", "openrouter-free", "gemini", "mistral", "cohere", "nvidia", "local"]
+        names = ["openrouter-free", "local"]
         allow_local_fallback = os.getenv(
             "ALLOW_LOCAL_LLM_FALLBACK",
             "true" if os.getenv("ENVIRONMENT", "development").lower() not in {"production", "prod"} else "false",

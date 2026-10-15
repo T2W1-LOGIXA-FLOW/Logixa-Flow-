@@ -75,12 +75,13 @@ def test_voyage_v2_embedding_uses_tested_512_dimension_model(monkeypatch) -> Non
 
 def test_voyage_v2_embedding_fails_closed_without_key(monkeypatch) -> None:
     monkeypatch.delenv("VOYAGE_API_KEY", raising=False)
+    monkeypatch.delenv("COHERE_API_KEY", raising=False)
     monkeypatch.setattr(embeddings.requests, "post", Mock(side_effect=AssertionError("must not call external API")))
 
     try:
         embeddings.embed_text_v2("supply chain context")
     except RuntimeError as exc:
-        assert "VOYAGE_API_KEY is required" in str(exc)
+        assert "Semantic embedding unavailable" in str(exc)
     else:
         raise AssertionError("version 2 must not silently fall back to hash embeddings")
 
@@ -114,6 +115,7 @@ def test_voyage_v2_retries_rate_limit_using_retry_after(monkeypatch) -> None:
 def test_voyage_v2_does_not_retry_permanent_bad_request(monkeypatch) -> None:
     monkeypatch.setenv("VOYAGE_EMBEDDING_MIN_INTERVAL_SECONDS", "0")
     monkeypatch.setenv("VOYAGE_API_KEY", "test-voyage-key")
+    monkeypatch.delenv("COHERE_API_KEY", raising=False)
     response = Mock()
     response.status_code = 400
     response.headers = {}

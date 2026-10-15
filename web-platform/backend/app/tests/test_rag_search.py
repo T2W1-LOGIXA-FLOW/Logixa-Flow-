@@ -355,3 +355,28 @@ def test_v2_search_rolls_back_failed_pgvector_query_before_json_fallback(monkeyp
     assert len(matches) == 1
     assert matches[0]["citation"]["title"] == "Voyage fallback source"
 
+def test_ingest_all_sources_updates_source_indexing_status(monkeypatch, db: Session):
+    monkeypatch.setenv("RAG_EMBEDDING_VERSION", "1")
+    monkeypatch.setattr(
+        "app.rag.ingest.embed_text",
+        lambda text: ([1.0] + [0.0] * 767, "test-embedding"),
+    )
+    source = models.IntelligenceSource(
+        title="Bulk indexing status",
+        source_type="manual",
+        category="Supply Chain",
+        trust_level="standard",
+        content_text="A source used to verify bulk ingestion status updates.",
+    )
+    db.add(source)
+    db.commit()
+    db.refresh(source)
+
+    result = ingest_all_sources(db, limit=10)
+    db.refresh(source)
+
+    assert result["chunks"] >= 1
+    assert source.indexing_status == "indexed"
+    assert source.indexed_at is not None
+    assert source.indexing_error is None
+

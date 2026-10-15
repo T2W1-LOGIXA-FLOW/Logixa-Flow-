@@ -106,7 +106,34 @@ def ingest_all_sources(db: Session, limit: int = 200) -> dict[str, int]:
     sources = db.query(models.IntelligenceSource).order_by(models.IntelligenceSource.updated_at.desc()).limit(limit).all()
     total_chunks = 0
     for source in sources:
-        total_chunks += ingest_intelligence_source(db, source)
+        try:
+            source.indexing_status = "processing"
+            source.indexing_error = None
+            db.commit()
+
+            total_chunks += ingest_intelligence_source(db, source)
+
+            source.indexing_status = "indexed"
+            source.indexed_at = models.utc_now()
+            source.indexing_error = None
+            db.commit()
+        except Exception as exc:
+            db.rollback()
+            # Keep the source's operational state accurate for the bulk RAG
+            # endpoint as well as the dedicated knowledge-import endpoint.
+            try:
+                failed_source = (
+                    db.query(models.IntelligenceSource)
+                    .filter(models.IntelligenceSource.id == source.id)
+                    .first()
+                )
+                if failed_source is not None:
+                    failed_source.indexing_status = "failed"
+                    failed_source.indexing_error = str(exc)[:1000]
+                    db.commit()
+            except Exception:
+                db.rollback()
+            raise
     memories = (
         db.query(models.AiMemoryBrain)
         .filter(models.AiMemoryBrain.status.in_({"approved", "published"}))
