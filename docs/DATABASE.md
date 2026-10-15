@@ -2,7 +2,7 @@
 
 > Owner: Backend / Data
 > Update when: schema, migration policy, RLS, grants, or durable-state rules change
-> Last Updated: 2026-10-14
+> Last Updated: 2026-10-15
 > Do NOT put here: credentials.
 
 ## Current production database status (2026-10-14)
@@ -37,3 +37,9 @@ Workflow definitions, runs, execution state, and recovery metadata persist in Po
 Migration `20261011_0013` adds nullable 512-D Voyage embedding storage without altering or dropping the existing 768-D column. The legacy column is retained for rollback. Repository and live production heads are `20261011_0013`, and the migration was applied before the successful production RAG E2E.
 
 The resumable re-embedding command remains available for deliberate recovery/backfill work; it is not required to repeat the already-verified public RSS ingest E2E. The production RAG gate was closed by run #38227390320 attempt 4, which verified 7 valid Voyage 512-D chunks and citation-bearing retrieval. Do not switch to `RAG_EMBEDDING_VERSION=1` without a deliberate re-embedding plan because v1 search skips v2-only rows. Never drop the v2 columns as a routine rollback.
+
+## Live database and advisor reconciliation — 2026-10-15
+
+A fresh read-only query against production project `ephrnmigiwjhdjksreos` returned `public.alembic_version=20261011_0013`, 34 public tables, 8 `rag_observability_events`, and zero `workflows`, `workflow_nodes`, `workflow_runs`, and `scheduled_workflow_jobs`. This agrees with the current application Alembic head and confirms that live durable workflow tests cannot proceed until a safe workflow definition/run is configured.
+
+Current Supabase advisors report 34 RLS-enabled tables without policies (INFO), leaked-password protection disabled (WARN), and 82 unused indexes (INFO). Existing documentation records the backend-only access model and a prior grant scan found no client-role table grants; review table-by-table access intent before adding policies or grants. Do not drop indexes based only on unused-index advice. The restore target project API is ACTIVE_HEALTHY; its Supabase CLI migration list is empty, which may reflect Alembic-managed schema history rather than proving a failed restore. Use the evidence-linked application-schema restore gate and keep managed Auth/Storage and object-storage recovery as separate gates. Full inventory: [docs/INFRASTRUCTURE_AUDIT_2026-10-15.md](INFRASTRUCTURE_AUDIT_2026-10-15.md).
