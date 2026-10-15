@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from .analytics import log_analytics_event
 
 from .database import SessionLocal
-from .models import AiMemoryBrain, AgentRun, AppSetting, IntelligenceSource
+from .models import AiMemoryBrain, AgentRun, AppSetting, BrainContext, BrainSynthesis, FeedSource, IntelligenceSource
 from .agent_graph import execute_content_graph
 from .routers.agent import score_source_grounding
 
@@ -256,10 +256,250 @@ def scheduler_status() -> dict[str, object]:
     }
 
 
+# ---------------------------------------------------------------------------
+# Brain Layer — Auto RSS Feed Pull
+# ---------------------------------------------------------------------------
+
+_FEED_PULL_INTERVAL_HOURS = 6
+_FEED_PULL_BATCH = 10
+
+
+def run_auto_feed_pull() -> dict[str, int]:
+    """
+    Pull RSS feeds that have not been scraped in the last FEED_PULL_INTERVAL_HOURS.
+
+    Returns a summary dict: {"pulled": n, "skipped": n, "errors": n}.
+    """
+    from .integration_service import import_rss_feed
+
+    logger = logging.getLogger(__name__)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=_FEED_PULL_INTERVAL_HOURS)
+    summary = {"pulled": 0, "skipped": 0, "errors": 0}
+
+    db = SessionLocal()
+    try:
+        stale_feeds = (
+            db.query(FeedSource)
+            .filter(
+                FeedSource.is_active == True,  # noqa: E712
+                (FeedSource.last_scrape_at == None)  # noqa: E711
+                | (FeedSource.last_scrape_at < cutoff),
+            )
+            .order_by(FeedSource.last_scrape_at.asc().nullsfirst())
+            .limit(_FEED_PULL_BATCH)
+            .all()
+        )
+
+        if not stale_feeds:
+            logger.info(
+                "Auto feed pull: no stale feeds found",
+                extra={"operation": "auto_feed_pull"},
+            )
+            return summary
+
+        for feed in stale_feeds:
+            try:
+                import_rss_feed(db, feed.url, feed.category, feed.trust_level)
+                feed.last_scrape_at = datetime.now(timezone.utc)
+                feed.last_scrape_status = "success"
+                feed.scrape_count = (feed.scrape_count or 0) + 1
+                summary["pulled"] += 1
+                logger.info(
+                    "Auto feed pull: success",
+                    extra={"operation": "auto_feed_pull", "feed_url": feed.url},
+                )
+            except Exception as exc:
+                feed.last_scrape_at = datetime.now(timezone.utc)
+                feed.last_scrape_status = "error"
+                summary["errors"] += 1
+                logger.warning(
+                    "Auto feed pull: failed for %s — %s",
+                    feed.url,
+                    exc,
+                    extra={"operation": "auto_feed_pull", "feed_url": feed.url},
+                )
+
+        db.commit()
+        log_analytics_event(db, "auto_feed_pull", summary)
+    except Exception as exc:
+        logger.exception(
+            "Auto feed pull: unexpected error — %s",
+            exc,
+            extra={"operation": "auto_feed_pull"},
+        )
+    finally:
+        db.close()
+
+    return summary
+
+
+# ---------------------------------------------------------------------------
+# Brain Layer — Weekly Brain Synthesis
+# ---------------------------------------------------------------------------
+
+_SYNTHESIS_MIN_MEMORIES = 3
+_SYNTHESIS_MAX_MEMORIES = 40
+
+
+def run_weekly_brain_synthesis(category: str = "Supply Chain") -> int | None:
+    """
+    Synthesise approved AiMemoryBrain entries from the past 7 days into a
+    single BrainSynthesis snapshot for the given category.
+
+    Returns the new BrainSynthesis.id, or None if skipped / not enough data.
+    """
+    logger = logging.getLogger(__name__)
+    now = datetime.now(timezone.utc)
+    period_label = now.strftime("%Y-W%W")
+    week_ago = now - timedelta(days=7)
+
+    db = SessionLocal()
+    try:
+        # Skip if a synthesis for this week + category already exists
+        existing = (
+            db.query(BrainSynthesis)
+            .filter(
+                BrainSynthesis.period_label == period_label,
+                BrainSynthesis.category == category,
+            )
+            .first()
+        )
+        if existing:
+            logger.info(
+                "Weekly synthesis already exists for %s / %s — skipping",
+                period_label,
+                category,
+                extra={"operation": "weekly_brain_synthesis"},
+            )
+            return None
+
+        approved_memories = (
+            db.query(AiMemoryBrain)
+            .filter(
+                AiMemoryBrain.status == "approved",
+                AiMemoryBrain.category == category,
+                AiMemoryBrain.created_at >= week_ago,
+            )
+            .order_by(AiMemoryBrain.created_at.desc())
+            .limit(_SYNTHESIS_MAX_MEMORIES)
+            .all()
+        )
+
+        if len(approved_memories) < _SYNTHESIS_MIN_MEMORIES:
+            logger.info(
+                "Weekly synthesis: only %s approved memories for %s — need %s, skipping",
+                len(approved_memories),
+                category,
+                _SYNTHESIS_MIN_MEMORIES,
+                extra={"operation": "weekly_brain_synthesis"},
+            )
+            return None
+
+        # Build a compact summary block for the LLM prompt
+        combined_lines = []
+        for m in approved_memories:
+            snippet = (m.summary or m.content or "")[:300].replace("\n", " ")
+            combined_lines.append(f"[{m.category}] {m.source_title}: {snippet}")
+        combined = "\n".join(combined_lines)
+
+        synthesis_prompt = (
+            f"You are a supply chain intelligence analyst. "
+            f"Based on the {len(approved_memories)} intelligence items below "
+            f"(category: {category}, period: past 7 days), write a concise synthesis "
+            f"(300–500 words) that covers:\n"
+            f"1. Key trends observed this week\n"
+            f"2. Notable changes or disruptions\n"
+            f"3. What to watch in the coming week\n\n"
+            f"Intelligence items:\n{combined}\n\n"
+            f"Write in clear, professional English. No bullet overload — use short paragraphs."
+        )
+
+        # Use LLM router (same pattern as agent router)
+        try:
+            from .llm.router import LLMRouter
+            lm = LLMRouter(db, role="admin")
+            synthesis_text, provider = lm.generate_with_provider(synthesis_prompt)
+            synthesis_text = synthesis_text.strip()
+            token_usage = max(1, (len(synthesis_prompt) + len(synthesis_text)) // 4)
+        except Exception as llm_exc:
+            logger.warning(
+                "Weekly synthesis: LLM call failed — %s; using extractive fallback",
+                llm_exc,
+                extra={"operation": "weekly_brain_synthesis"},
+            )
+            # Extractive fallback: concatenate summaries
+            synthesis_text = "\n\n".join(
+                f"• {m.source_title}: {(m.summary or m.content or '')[:200]}"
+                for m in approved_memories[:10]
+            )
+            provider = "extractive_fallback"
+            token_usage = 0
+
+        if not synthesis_text:
+            logger.warning(
+                "Weekly synthesis: empty result for %s — skipping",
+                category,
+                extra={"operation": "weekly_brain_synthesis"},
+            )
+            return None
+
+        synthesis = BrainSynthesis(
+            period_label=period_label,
+            period_start=week_ago,
+            period_end=now,
+            category=category,
+            synthesis_text=synthesis_text,
+            source_memory_ids=json.dumps([m.id for m in approved_memories]),
+            memory_count=len(approved_memories),
+            provider=provider,
+            token_usage=token_usage,
+        )
+        db.add(synthesis)
+        db.commit()
+        db.refresh(synthesis)
+
+        log_analytics_event(
+            db,
+            "weekly_brain_synthesis",
+            {
+                "synthesis_id": synthesis.id,
+                "period_label": period_label,
+                "category": category,
+                "memory_count": len(approved_memories),
+                "provider": provider,
+            },
+        )
+        logger.info(
+            "Weekly synthesis created: id=%s period=%s category=%s memories=%s",
+            synthesis.id,
+            period_label,
+            category,
+            len(approved_memories),
+            extra={"operation": "weekly_brain_synthesis"},
+        )
+        return synthesis.id
+
+    except Exception as exc:
+        logger.exception(
+            "Weekly brain synthesis failed — %s",
+            exc,
+            extra={"operation": "weekly_brain_synthesis"},
+        )
+        return None
+    finally:
+        db.close()
+
+
+# ---------------------------------------------------------------------------
+# Scheduler main loop
+# ---------------------------------------------------------------------------
+
 def start_scheduler() -> None:
     if os.getenv("ENABLE_SCHEDULER", "true").lower() != "true":
         return
     interval_hours = max(int(os.getenv("SCHEDULER_INTERVAL_HOURS", "24")), 1)
+    feed_interval_seconds = _FEED_PULL_INTERVAL_HOURS * 3600
+    synthesis_interval_seconds = 7 * 24 * 3600  # weekly
 
     def loop() -> None:
         logger = logging.getLogger(__name__)
@@ -267,7 +507,13 @@ def start_scheduler() -> None:
             logger.warning("Scheduler instance already active; skipping duplicate worker")
             return
         try:
+            last_feed_pull: datetime | None = None
+            last_synthesis: datetime | None = None
+
             while True:
+                now = datetime.now(timezone.utc)
+
+                # --- Daily agent preview (existing) ---
                 try:
                     generate_daily_agent_preview()
                 except Exception:
@@ -275,6 +521,38 @@ def start_scheduler() -> None:
                         "Scheduled daily preview failed; scheduler will continue",
                         extra={"operation": "scheduled_daily_preview"},
                     )
+
+                # --- Auto RSS feed pull (every 6 h) ---
+                if last_feed_pull is None or (now - last_feed_pull).total_seconds() >= feed_interval_seconds:
+                    try:
+                        summary = run_auto_feed_pull()
+                        logger.info(
+                            "Auto feed pull complete: %s",
+                            summary,
+                            extra={"operation": "auto_feed_pull"},
+                        )
+                        last_feed_pull = now
+                    except Exception:
+                        logger.exception(
+                            "Auto feed pull failed; scheduler will continue",
+                            extra={"operation": "auto_feed_pull"},
+                        )
+
+                # --- Weekly brain synthesis (every 7 days) ---
+                if last_synthesis is None or (now - last_synthesis).total_seconds() >= synthesis_interval_seconds:
+                    categories = ["Supply Chain", "Logistics", "Procurement", "Operations Excellence"]
+                    for cat in categories:
+                        try:
+                            run_weekly_brain_synthesis(cat)
+                        except Exception:
+                            logger.exception(
+                                "Weekly brain synthesis failed for %s; continuing",
+                                cat,
+                                extra={"operation": "weekly_brain_synthesis"},
+                            )
+                    last_synthesis = now
+
+                # Sleep until next daily preview check
                 try:
                     delay_seconds = _seconds_until_next_scheduled_preview(interval_hours)
                 except Exception:
@@ -288,3 +566,4 @@ def start_scheduler() -> None:
             _SCHEDULER_LOCK.release()
 
     Thread(target=loop, name="logixa-scheduler", daemon=True).start()
+

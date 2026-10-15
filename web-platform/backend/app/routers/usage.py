@@ -73,4 +73,83 @@ def admin_usage_trend(
 def ai_usage_summary() -> dict:
     """Consolidated endpoint for AI key usage, status, and active provider chains."""
     from ..services.ai_usage_tracker import get_ai_usage_summary
-    return get_ai_usage_summary("Logixa-Flow")
+    return get_ai_usage_summary("Logixa-Flow")
+
+
+@router.get("/admin/usage/brain-dashboard")
+def admin_brain_dashboard(
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_admin),
+) -> dict:
+    """Combined brain status and AI usage dashboard for admins."""
+    from datetime import datetime, date
+    from ..services.ai_usage_tracker import get_ai_usage_summary
+
+    # --- AI usage summary ---
+    ai_usage = get_ai_usage_summary("Logixa-Flow")
+
+    # --- BrainContext: soul file entries ---
+    soul_count: int = db.query(models.BrainContext).count()
+
+    # --- BrainSynthesis stats ---
+    total_syntheses: int = db.query(models.BrainSynthesis).count()
+
+    latest_synthesis = (
+        db.query(models.BrainSynthesis)
+        .order_by(models.BrainSynthesis.created_at.desc())
+        .first()
+    )
+    latest_synthesis_period: Optional[str] = None
+    latest_synthesis_at: Optional[str] = None
+    latest_synthesis_snippet: Optional[str] = None
+    if latest_synthesis:
+        latest_synthesis_period = getattr(latest_synthesis, "period", None)
+        if latest_synthesis.created_at:
+            latest_synthesis_at = latest_synthesis.created_at.astimezone(timezone.utc).isoformat()
+        raw_text = getattr(latest_synthesis, "synthesis_text", None) or ""
+        latest_synthesis_snippet = raw_text[:300] if raw_text else None
+
+    # --- AiMemoryBrain: approved memories ---
+    approved_memories: int = (
+        db.query(models.AiMemoryBrain)
+        .filter(models.AiMemoryBrain.approved == True)  # noqa: E712
+        .count()
+    )
+
+    # --- Today's synthesis token usage ---
+    today_midnight = datetime.combine(date.today(), datetime.min.time()).replace(tzinfo=timezone.utc)
+    synthesis_tokens_today: int = (
+        db.query(models.BrainSynthesis)
+        .filter(models.BrainSynthesis.created_at >= today_midnight)
+        .with_entities(models.BrainSynthesis.token_usage)
+        .all()
+    )
+    synthesis_tokens_today = sum(
+        int(row.token_usage or 0) for row in synthesis_tokens_today
+    )
+
+    # --- Feed last pulled at ---
+    feed_ctx = (
+        db.query(models.BrainContext)
+        .filter(models.BrainContext.context_key == "last_feed_pull_at")
+        .first()
+    )
+    feed_last_pulled_at: Optional[str] = (
+        getattr(feed_ctx, "context_value", None) if feed_ctx else None
+    )
+
+    return {
+        "project": "Logixa-Flow",
+        "timestamp": datetime.now(tz=timezone.utc).isoformat(),
+        "ai_usage": ai_usage,
+        "brain": {
+            "soul_file_entries": soul_count,
+            "total_syntheses": total_syntheses,
+            "latest_synthesis_period": latest_synthesis_period,
+            "latest_synthesis_at": latest_synthesis_at,
+            "latest_synthesis_snippet": latest_synthesis_snippet,
+            "approved_memories": approved_memories,
+            "synthesis_tokens_today": synthesis_tokens_today,
+            "feed_last_pulled_at": feed_last_pulled_at,
+        },
+    }

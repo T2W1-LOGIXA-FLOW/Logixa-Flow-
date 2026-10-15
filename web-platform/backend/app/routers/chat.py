@@ -174,6 +174,51 @@ def public_chat_query(
     }
 
 
+def _build_brain_system_prompt(db: Session) -> str:
+    """
+    Build a system-prompt prefix from BrainContext entries (Soul File) and
+    the latest BrainSynthesis snapshot.
+
+    Called once per admin chat query.  Returns an empty string when no brain
+    data is configured so the existing default prompt is used unchanged.
+    """
+    try:
+        ctx_entries = (
+            db.query(models.BrainContext)
+            .filter(models.BrainContext.is_active == True)  # noqa: E712
+            .order_by(models.BrainContext.context_key)
+            .all()
+        )
+        latest_synthesis = (
+            db.query(models.BrainSynthesis)
+            .order_by(models.BrainSynthesis.created_at.desc())
+            .first()
+        )
+    except Exception:
+        # Brain tables may not exist yet on older deployments — degrade silently
+        return ""
+
+    if not ctx_entries and not latest_synthesis:
+        return ""
+
+    parts: list[str] = [
+        "=== BRAIN CONTEXT (operator Soul File) ===",
+    ]
+    for entry in ctx_entries:
+        label = entry.description or entry.context_key
+        parts.append(f"• {label}: {entry.context_value}")
+
+    if latest_synthesis:
+        parts.append(
+            f"\n=== LATEST WEEKLY SYNTHESIS ({latest_synthesis.period_label} · "
+            f"{latest_synthesis.category}) ===\n"
+            f"{latest_synthesis.synthesis_text[:800]}"
+        )
+
+    parts.append("=== END BRAIN CONTEXT ===\n")
+    return "\n".join(parts)
+
+
 def generate_ai_response(
     query: str,
     context: list[schemas.ChatMessageBase],
@@ -184,24 +229,37 @@ def generate_ai_response(
     """
     Generate AI response using the agent system.
     Uses the configured LLM router when provider keys are available, with a local fallback.
+
+    For admin sessions the brain context (Soul File + latest weekly synthesis)
+    is prepended to the system prompt so the AI always has accumulated knowledge.
     """
     import os
-    
+
     model_used = os.getenv("AI_AGENT_MODEL", "local-planner")
     agent_id = agent_id or "default"
     context_lines = []
     for message in context[-6:]:
         context_lines.append(f"{message.role}: {message.content}")
 
-    prompt = (
+    # Build brain-aware system prompt for admin sessions
+    brain_prefix = _build_brain_system_prompt(db) if role == "admin" else ""
+
+    base_instruction = (
         "You are Logixa Flow's AI assistant for Myanmar supply-chain intelligence. "
         "Answer clearly and practically for logistics, procurement, manufacturing, retail, and SME teams. "
         "Match the user's language: if they write in Burmese/Myanmar, reply in natural Myanmar business language. "
         "If they write in English, reply in English. "
         "Use natural Myanmar business terminology when responding in Burmese. "
         "Only use information supported by the prompt or general supply-chain knowledge. "
+        "When the Brain Context section is present, use it to give more personalised, "
+        "context-aware answers without the user needing to re-explain background. "
         "If the user asks whether Burmese is supported, confirm that yes, you can respond in Burmese. "
         "If the user asks for operational next steps, give concise steps.\n\n"
+    )
+
+    prompt = (
+        f"{brain_prefix}"
+        f"{base_instruction}"
         f"Agent ID: {agent_id}\n"
         f"Recent context:\n{chr(10).join(context_lines) if context_lines else 'No previous context.'}\n\n"
         f"User question: {query}"
@@ -215,7 +273,7 @@ def generate_ai_response(
             "AI provider is not available yet. Configure a valid OPENROUTER_API_KEY for the free-model route, then redeploy. "
             f"Received query: '{query}'."
         )
-    
+
     return {
         "role": "agent",
         "content": response_text,
@@ -224,6 +282,7 @@ def generate_ai_response(
         "tokens_used": 0,
         "cost_estimate": Decimal("0"),
     }
+
 
 
 @router.get("/sessions", response_model=list[schemas.ChatSessionOut])

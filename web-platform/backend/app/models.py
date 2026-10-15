@@ -471,3 +471,55 @@ class CompanyBudget(Base):
     spent_amount = Column(Numeric(18, 6, asdecimal=True), default=Decimal("0"), nullable=False)
     currency = Column(String(10), default="USD", nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
+
+
+# ---------------------------------------------------------------------------
+# Brain Layer — Personal Intelligence Context
+# ---------------------------------------------------------------------------
+
+class BrainContext(Base):
+    """
+    Persistent key-value store for the operator's Soul File.
+
+    Each entry describes one aspect of the operator's identity, preferences,
+    domain focus, or accumulated knowledge about this system.  All active
+    entries are injected as system-prompt context at the start of every admin
+    chat session so the AI always "knows" who it is talking to.
+    """
+
+    __tablename__ = "brain_context"
+
+    id = Column(Integer, primary_key=True, index=True)
+    context_key = Column(String(120), unique=True, nullable=False, index=True)
+    context_value = Column(Text, nullable=False)
+    description = Column(String(500), nullable=False, default="")
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    last_updated_by = Column(String(40), nullable=False, default="system")
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+
+class BrainSynthesis(Base):
+    """
+    Weekly snapshot that merges approved AiMemoryBrain entries into a single
+    coherent intelligence digest.
+
+    When the operator asks "what changed this week in supply chain?", the
+    latest BrainSynthesis for the matching category is injected into the chat
+    context so the AI can answer without re-reading dozens of individual
+    memory entries.
+    """
+
+    __tablename__ = "brain_syntheses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    period_label = Column(String(40), nullable=False, index=True)
+    period_start = Column(DateTime(timezone=True), nullable=False)
+    period_end = Column(DateTime(timezone=True), nullable=False)
+    category = Column(String(80), nullable=False, default="Supply Chain", index=True)
+    synthesis_text = Column(Text, nullable=False)
+    source_memory_ids = Column(Text, nullable=False, default="[]")
+    memory_count = Column(Integer, nullable=False, default=0)
+    provider = Column(String(120), nullable=True)
+    token_usage = Column(Integer, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)

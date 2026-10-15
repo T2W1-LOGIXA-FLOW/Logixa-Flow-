@@ -19,7 +19,7 @@ from .database import SessionLocal
 from .db_bootstrap import bootstrap_database, database_profile
 from .logging_config import setup_logging
 from .middleware import rate_limit_middleware, request_observability_middleware, security_headers_middleware, stealth_mode_middleware
-from .routers import admin, agent, analytics, auth, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, workflow, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads, knowledge, telegram
+from .routers import admin, agent, analytics, auth, brain, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, workflow, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads, knowledge, telegram
 from .scheduler import scheduler_status, start_scheduler
 
 logger = logging.getLogger(__name__)
@@ -79,6 +79,7 @@ def run_startup_tasks() -> None:
     if os.getenv("SKIP_SEEDING", "false").lower() != "true":
         seed_app_settings()
         seed_sample_posts()
+        seed_brain_context()
     else:
         logger.info("Skipping seeding (SKIP_SEEDING=true)")
 
@@ -193,6 +194,77 @@ def seed_sample_posts() -> None:
         db.close()
 
 
+def seed_brain_context() -> None:
+    """
+    Insert default Soul File entries on first startup.
+
+    These entries tell the AI who is operating Logixa Flow and what the
+    system is for.  Admins can update or add entries via the Brain API.
+    Existing entries are never overwritten by this seed.
+    """
+    default_entries = [
+        (
+            "operator_domain",
+            "Supply Chain and Logistics intelligence for Myanmar and ASEAN markets",
+            "Primary domain focus of this platform",
+        ),
+        (
+            "operator_language",
+            "Burmese (Myanmar) primary, English secondary",
+            "Operator language preference",
+        ),
+        (
+            "content_style",
+            "Analytical, evidence-based, practical insights for business operators and SME teams",
+            "Content writing and response style",
+        ),
+        (
+            "brain_purpose",
+            (
+                "Accumulate supply chain knowledge from RSS feeds and manual sources, "
+                "surface weekly trends, and assist the admin in creating blog content "
+                "and answering domain questions without repeating context each session"
+            ),
+            "Core purpose of the brain layer",
+        ),
+        (
+            "target_audience",
+            "Myanmar logistics operators, procurement managers, SME business owners, and supply chain analysts",
+            "Primary audience for published content",
+        ),
+    ]
+
+    db = SessionLocal()
+    try:
+        seeded = 0
+        for key, value, description in default_entries:
+            exists = (
+                db.query(models.BrainContext)
+                .filter(models.BrainContext.context_key == key)
+                .first()
+            )
+            if exists:
+                continue
+            db.add(
+                models.BrainContext(
+                    context_key=key,
+                    context_value=value,
+                    description=description,
+                    is_active=True,
+                    last_updated_by="system",
+                )
+            )
+            seeded += 1
+        if seeded:
+            db.commit()
+            logger.info("Brain context seeded: %s new entries", seeded)
+    except Exception as exc:
+        logger.warning("Brain context seeding failed: %s", exc)
+        db.rollback()
+    finally:
+        db.close()
+
+
 app = FastAPI(
     title="Logixa Flow API",
     description="CMS and engagement API for Logixa Flow.",
@@ -294,6 +366,7 @@ app.include_router(submissions.router, prefix="/api/admin/submissions", tags=["s
 app.include_router(diagnostics.router, prefix="/api", tags=["diagnostics"])
 app.include_router(workflow.router)
 app.include_router(telegram.router, prefix="/api", tags=["telegram"])
+app.include_router(brain.router, prefix="/api/admin/brain", tags=["brain"])
 
 
 @app.get("/")

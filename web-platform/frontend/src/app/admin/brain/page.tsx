@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -10,13 +10,92 @@ import Skeleton from "@/components/shadcn/Skeleton";
 import Citations, { Match } from "@/components/Citations";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { sanitizeHtml } from "@/lib/sanitize-html";
+import { getAdminSessionToken } from "@/lib/adminSession";
 
 const filters: Array<AiMemory["status"] | "all"> = ["pending", "approved", "rejected", "published", "all"];
+
+// ─── Pastel colors ──────────────────────────────────────────────────
+const P = { lav: "#b4a4cc", green: "#7ec4a0", blue: "#7eb8d4", amber: "#c9a96a", border: "rgba(255,255,255,0.08)", dim: "rgba(255,255,255,0.3)" };
+function fmtD(iso: string | null) { if (!iso) return "—"; return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); }
+
+// ─── Brain Soul Mini Panel ──────────────────────────────────────────
+interface BSData { total_syntheses?: number; soul_file_entries?: number; latest_synthesis_period?: string; latest_synthesis_at?: string; approved_memories?: number; synthesis_tokens_today?: number; }
+
+function BrainSoulMini() {
+  const [data, setData] = useState<BSData | null>(null);
+  const [synthesizing, setSynthesizing] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    const token = await getAdminSessionToken();
+    if (!token) return;
+    try {
+      const res = await adminFetch("/api/admin/usage/brain-dashboard", token);
+      if (res.ok) { const d = await res.json(); setData(d.brain); }
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  async function synthesize() {
+    const token = await getAdminSessionToken();
+    if (!token) return;
+    setSynthesizing(true); setMsg(null);
+    try {
+      const res = await adminFetch("/api/admin/brain/synthesize", token, { method: "POST" });
+      setMsg(res.ok ? "Synthesis started." : "Synthesis failed."); void load();
+    } catch { setMsg("Error."); } finally { setSynthesizing(false); }
+  }
+
+  return (
+    <div style={{ background: "rgba(22,25,34,0.8)", border: `1px solid ${P.border}`, borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+      <style>{`@keyframes breathe{0%,100%{opacity:.4}50%{opacity:1}}`}</style>
+      <div>
+        <div style={{ fontSize: 10, letterSpacing: ".8px", textTransform: "uppercase", color: P.lav, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: P.lav, display: "inline-block", animation: "breathe 4s ease-in-out infinite" }} />
+          Brain Soul Layer
+        </div>
+        <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+          {[
+            { label: "Syntheses", value: data?.total_syntheses ?? "—", color: P.green },
+            { label: "Soul Entries", value: data?.soul_file_entries ?? "—", color: P.blue },
+            { label: "Memories", value: data?.approved_memories ?? "—", color: P.lav },
+            { label: "Tokens Today", value: data?.synthesis_tokens_today !== undefined ? data.synthesis_tokens_today.toLocaleString() : "—", color: P.amber },
+          ].map(({ label, value, color }) => (
+            <div key={label}>
+              <div style={{ fontSize: 10, color: P.dim }}>{label}</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color }}>{value}</div>
+            </div>
+          ))}
+          {data?.latest_synthesis_period && (
+            <div>
+              <div style={{ fontSize: 10, color: P.dim }}>Period</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: P.lav, marginTop: 2 }}>{data.latest_synthesis_period}</div>
+            </div>
+          )}
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
+        {msg && <div style={{ fontSize: 11, color: P.green }}>{msg}</div>}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={synthesize} disabled={synthesizing} style={{ fontSize: 12, color: P.green, background: "transparent", border: `1px solid ${P.green}`, borderRadius: 6, padding: "5px 12px", cursor: synthesizing ? "not-allowed" : "pointer", opacity: synthesizing ? 0.5 : 1 }}>
+            {synthesizing ? "Running…" : "Synthesize Now"}
+          </button>
+          <Link href="/admin/usage" style={{ fontSize: 12, color: P.blue, border: `1px solid ${P.blue}`, borderRadius: 6, padding: "5px 12px", textDecoration: "none" }}>
+            Usage Dashboard
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 export default function BrainReviewPage() {
   const { token, isAuthenticated, isCheckingAuth } = useAdminAuth();
   const [items, setItems] = useState<AiMemory[]>([]);
   const [filter, setFilter] = useState<AiMemory["status"] | "all">("pending");
+
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [matches] = useState<Match[]>([]);
   const [sourcesList] = useState<IntelligenceSource[]>([]);
@@ -140,6 +219,7 @@ export default function BrainReviewPage() {
 
   return (
     <main className="page-shell brain-review-page">
+      <BrainSoulMini />
       <section className="agent-header">
         <div>
           <p className="eyebrow">Human Review</p>
