@@ -111,7 +111,7 @@ def embed_text(text: str) -> tuple[list[float], str]:
 
 
 def embed_text_v2(text: str) -> tuple[list[float], str]:
-    """Create a versioned 512-D vector: 1. Voyage AI -> 2. Cohere embed-v4.0 -> 3. Deterministic hash fallback."""
+    """Create a versioned 512-D semantic vector via Voyage then Cohere; fail closed if neither succeeds."""
     api_key = os.getenv("VOYAGE_API_KEY", "").strip()
     if api_key:
         max_attempts = max(1, int(os.getenv("VOYAGE_EMBEDDING_MAX_ATTEMPTS", "3")))
