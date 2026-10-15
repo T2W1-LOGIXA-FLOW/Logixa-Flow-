@@ -2,7 +2,7 @@
 
 > Owner: Operations
 > Update when: monitoring, recovery, or provider verification changes
-> Last Updated: 2026-10-14
+> Last Updated: 2026-10-15
 > Do NOT put here: secrets or unverified incident claims.
 
 ## Current status (2026-10-14)
@@ -134,3 +134,9 @@ Preserve evidence, correlation IDs, sanitized logs, affected run/session IDs, an
 - **Synthetic health/SLO probe:** `Production SLO Synthetic Probe` runs every 15 minutes and records a timestamp, HTTP status, and request latency in a 30-day Actions artifact. Set `PRODUCTION_API_URL` and `OPS_ALERT_WEBHOOK_URL` in the `production` environment. Manually dispatch with `test_alert=true` to verify the external notification path. The probe only measures synthetic `/health`; it does not certify real user-request availability, workflow completion SLOs, or the 30-day error budget.
 - **Agent → Brain → Publish:** backend integration tests exercise agent-run creation, private pending Brain state, explicit approval, publication, and soft-unpublish. This proves application-path behavior under a test database only; production business-journey evidence remains a separate release gate.
 - **Rollback/DR:** follow `docs/DR_ROLLBACK.md`. No production rollback, destructive restore, or publication mutation is run automatically by these checks.
+
+## Live infrastructure audit — 2026-10-15
+
+The read-only provider inventory is in [docs/INFRASTRUCTURE_AUDIT_2026-10-15.md](INFRASTRUCTURE_AUDIT_2026-10-15.md). Production SQL confirms Alembic head `20261011_0013`, 8 durable RAG observability events, and zero workflow definitions/nodes/runs/scheduled jobs. A safe no-side-effect workflow must be created through authenticated admin access before testing the full QStash delivery → execution → persisted completion → duplicate idempotency → retry/stale-claim recovery chain.
+
+The Render service is live on main commit `8a1b5ad4bfab817e5e4a56d8cec22b1b035e4215`. Vercel main production deployment is READY, but project API `live=false` and ERROR latestDeployment metadata need careful scope-aware review under the existing owner lock. Cloudflare account inventory has no zones/Workers/Pages/KV/D1/Queues; R2 is not enabled/inspectable. Cloudflare `enforce_twofactor=false`, Supabase RLS/no-policy findings (34 tables), leaked-password warning, and 82 unused-index advisories are tracked as review items; do not make broad policy/index changes without evidence. Release certification remains pending.
