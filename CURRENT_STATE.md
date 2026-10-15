@@ -2,7 +2,7 @@
 
 > Owner: Project / Engineering
 > Update when: release state, verification evidence, blockers, or next actions change
-> Last Updated: 2026-10-14
+> Last Updated: 2026-10-15
 > Do NOT put here: detailed architecture, implementation reference, or step-by-step runbooks; use `PROJECT_OVERVIEW.md` and `docs/*`.
 
 ## Documentation reconciliation — 2026-10-14
@@ -409,3 +409,9 @@ These are code, regression-test, CI, security-scan, and deployment results. They
 ## Release closure implementation (2026-10-12)
 
 PR #93 merged as `053891cfa7bd9e970566e9b598f507c6af53792f`. CI #641 passed backend, frontend, agents, and security; CodeQL #389 passed Python and JavaScript/TypeScript. PR #92 merged as `8eb11fa80852dcceb4b7b11a764af910426bacd4`; CI #640 and CodeQL #388 passed. The repository now includes an Agent → Brain → approval → publish → soft-unpublish API integration test, a manual authenticated production Admin UI browser smoke, and a 15-minute synthetic `/health` probe with a configurable webhook alert path. `docs/SLO_ERROR_BUDGET.md` explicitly limits the probe to synthetic availability; a 30-day error-budget pass is not implied. `docs/DR_ROLLBACK.md` specifies a controlled isolated recovery rehearsal and read-only post-rollback smoke. These changes are code/runbook readiness, not production evidence. Release remains PENDING until required production secrets are confirmed, manual UI and alert-path runs pass, and live business-journey, workflow recovery, 24-hour scheduler, object-storage recovery, and rollback/DR evidence is collected.
+
+## Live infrastructure audit update — 2026-10-15
+
+Read-only provider inventory and production SQL verification are recorded in [docs/INFRASTRUCTURE_AUDIT_2026-10-15.md](docs/INFRASTRUCTURE_AUDIT_2026-10-15.md). Key fresh observations: Render's single Free web service is live on main commit `8a1b5ad4bfab817e5e4a56d8cec22b1b035e4215`; Vercel's latest main production deployment is READY, but the project API reports `live=false` and its `latestDeployment` field points at an ERROR Dependabot deployment, so retain the existing Vercel lock and investigate only with owner approval. Supabase production is ACTIVE_HEALTHY at Alembic head `20261011_0013`, with 34 public tables, 8 RAG observability events, and zero workflow definitions/nodes/runs/scheduled jobs. Cloudflare inventory has no zones, Workers, Pages, KV, D1, or Queues; R2 cannot be listed because it is not enabled. Cloudflare account `enforce_twofactor=false` is an owner-level security follow-up.
+
+Supabase advisors report 34 RLS-enabled tables without policies (INFO), leaked-password protection disabled (WARN), and 82 unused-index findings (INFO). Do not mass-create policies, broaden grants, or drop indexes without workload and access-model review. No production infrastructure or application data was mutated during this audit. Release remains **PENDING — NOT RELEASE-CERTIFIED**; ordered gates are in the audit document.
