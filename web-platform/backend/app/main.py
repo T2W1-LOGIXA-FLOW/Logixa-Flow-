@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from . import models
+from .agent_recovery import recover_stale_agent_runs
 from .cache import cache_client, rate_limiter
 from .config import ai_feature_status, ai_provider_configured, upload_storage_configured, validate_env
 from .database import SessionLocal
@@ -59,6 +60,21 @@ def run_startup_tasks() -> None:
                 exc,
             )
             time.sleep(retry_delay)
+
+    # Reconcile only interrupted AgentRun rows older than the configured stale threshold.
+    recovery_db = SessionLocal()
+    try:
+        stale_count = recover_stale_agent_runs(recovery_db)
+        if stale_count:
+            logger.warning(
+                "Marked %s stale agent run(s) failed after interrupted execution",
+                stale_count,
+                extra={"operation": "agent_run_stale_recovery", "recovered_count": stale_count},
+            )
+    except Exception as exc:
+        logger.warning("Stale agent run recovery skipped: %s", type(exc).__name__)
+    finally:
+        recovery_db.close()
 
     if os.getenv("SKIP_SEEDING", "false").lower() != "true":
         seed_app_settings()
