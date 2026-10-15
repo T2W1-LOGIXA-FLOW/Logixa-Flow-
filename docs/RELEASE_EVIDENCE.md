@@ -2,7 +2,7 @@
 
 > Owner: Engineering / Release
 > Status: ACTIVE — RAG E2E VERIFIED; OVERALL RELEASE PENDING
-> Last Updated: 2026-10-14
+> Last Updated: 2026-10-15
 
 This is the canonical evidence checklist for the Phase 7–13 release candidate. Evidence must identify the exact SHA, environment, timestamp, and observed durable outcome where applicable.
 
@@ -285,3 +285,9 @@ Release remains PENDING for the independent non-RAG gates. Health checks, schema
 - [x] The 125 pending private Brain drafts remain untouched; bulk ingestion now selects only approved/published Brain records.
 - [x] PR #81 adds bounded retries for transient Voyage 429/5xx and connection/timeouts, while permanent 4xx remains fail-closed.
 - [x] This intermediate failure was superseded by Production Auth Smoke run #38227390320 attempt 4, which completed ingestion and citation retrieval successfully. The deployed flag is now version 2; overall release certification remains pending for other independent gates.
+
+## Infrastructure evidence snapshot — 2026-10-15
+
+Fresh read-only observations are indexed in [docs/INFRASTRUCTURE_AUDIT_2026-10-15.md](INFRASTRUCTURE_AUDIT_2026-10-15.md): Render's latest main deployment is live; Vercel's latest main production deployment is READY but project metadata reports `live=false` and a separate ERROR Dependabot deployment as `latestDeployment`; Supabase production is ACTIVE_HEALTHY with Alembic head `20261011_0013`; and Cloudflare's listed zones/Workers/Pages/KV/D1/Queues inventory is empty, with R2 unavailable because the product is not enabled. These provider-level states do not close application E2E gates.
+
+A fresh production SQL count confirms 8 RAG observability events and zero workflow definitions/nodes/runs/scheduled jobs. Keep QStash execution/idempotency/recovery pending until a safe persisted workflow is run in production and durable outcomes are captured. Supabase advisor findings (34 RLS-enabled tables without policies, leaked-password protection disabled, 82 unused-index advisories) and Cloudflare MFA enforcement disabled are tracked for scoped review. No infrastructure or production data was mutated during the audit.
