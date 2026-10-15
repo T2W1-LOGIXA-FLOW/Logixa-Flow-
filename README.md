@@ -4,7 +4,7 @@
 
 > Owner: Project / Engineering
 > Update when: project identity, quick-start, documentation map, or high-level snapshot changes
-> Last Updated: 2026-10-14
+> Last Updated: 2026-10-15
 > Do NOT put here: detailed deployment, security, API, database, or provider runbooks.
 
 ## What is Logixa Flow?
@@ -37,6 +37,8 @@ Frontend dependency declaration: Next.js `^15.5.27`; committed `package-lock.jso
 
 ## Current snapshot
 
+Latest connected-provider audit: [docs/INFRASTRUCTURE_AUDIT_2026-10-15.md](docs/INFRASTRUCTURE_AUDIT_2026-10-15.md). Provider resource states and remaining release gates were reconciled on 2026-10-15; release remains pending and no infrastructure was mutated during the audit.
+
 Repository Alembic head: **20261011_0013**.
 
 Live production Supabase migration head: **20261011_0013** (verified 2026-10-11).
@@ -46,6 +48,8 @@ Public AI default: disabled. Admin AI default: enabled in repository configurati
 Release status is **PENDING FINAL EVIDENCE**. Verified evidence includes Cloudinary, Supabase Storage upload/read/cleanup, private Backblaze B2/S3 plus deployed application upload → private download/readback → cleanup (run #38049146602), Google Drive upload/read, production auth/API smoke, authenticated Admin Brain API/UI smoke (run #38418481082), and production RAG ingestion → Voyage embedding → retrieval/citation (run #38227390320 attempt 4). The historical isolated public-schema restore tested migration `20261008_0012`; current production migration is `20261011_0013`, so current-schema restore readiness remains pending. Durable QStash workflow delivery/completion/idempotency, workflow recovery, Agent→Brain→Publish, SLO/alerting, rollback/DR, newsletter/provider failover, and scheduler observation remain pending. The QStash recovery patch was merged in [PR #115](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/115) as `ede412e03dad4ab1cd15ee436c722c0f1581ea4e`; CI and CodeQL passed, and the Render deployment is live. Live QStash workflow recovery remains pending. Remaining gates and blockers are tracked in `CURRENT_STATE.md`, `ROADMAP.md`, `docs/RELEASE_CERTIFICATION.md`, and `docs/RELEASE_EVIDENCE.md`. Do not infer full certification from provider tests or repository CI alone.
 
 ## Documentation map
+
+- docs/INFRASTRUCTURE_AUDIT_2026-10-15.md — live provider inventory, security observations, and ordered remaining work.
 
 - PROJECT_OVERVIEW.md — product and architecture overview.
 - CURRENT_STATE.md — current status, gates, blockers, deferred work, and next action.
