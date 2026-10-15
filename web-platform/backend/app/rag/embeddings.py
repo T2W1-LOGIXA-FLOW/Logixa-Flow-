@@ -135,7 +135,7 @@ def embed_text_v2(text: str) -> tuple[list[float], str]:
                         return [float(value) for value in values], VOYAGE_EMBEDDING_MODEL
                 elif response.status_code in (429, 500, 502, 503, 504):
                     if attempt < max_attempts:
-                        time.sleep(min(15.0, 1.5 ** attempt))
+                        time.sleep(min(15.0, 2.0 ** (attempt - 1)))
                         continue
                     logger.warning("Voyage embedding exhausted retryable status %s, attempting Cohere fallback", response.status_code)
                     break
@@ -149,7 +149,7 @@ def embed_text_v2(text: str) -> tuple[list[float], str]:
             except requests.HTTPError as exc:
                 status = exc.response.status_code if exc.response is not None else response.status_code
                 if status in (429, 500, 502, 503, 504) and attempt < max_attempts:
-                    time.sleep(min(15.0, 1.5 ** attempt))
+                    time.sleep(min(15.0, 2.0 ** (attempt - 1)))
                     continue
                 if status is not None and 400 <= status < 500 and status != 429:
                     raise

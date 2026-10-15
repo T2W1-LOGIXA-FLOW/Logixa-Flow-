@@ -81,7 +81,7 @@ def test_voyage_v2_embedding_fails_closed_without_key(monkeypatch) -> None:
     try:
         embeddings.embed_text_v2("supply chain context")
     except RuntimeError as exc:
-        assert "VOYAGE_API_KEY is required" in str(exc)
+        assert "Semantic embedding unavailable" in str(exc)
     else:
         raise AssertionError("version 2 must not silently fall back to hash embeddings")
 
