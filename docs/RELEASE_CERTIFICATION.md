@@ -2,7 +2,7 @@
 
 > Owner: Engineering / Release
 > Status: PENDING FINAL EVIDENCE
-> Last Updated: 2026-10-14
+> Last Updated: 2026-10-15
 
 ## Current certification snapshot (2026-10-14)
 
@@ -164,3 +164,9 @@ Live workflow retry/stale-claim/failure recovery and production RAG→Agent→Br
 - DR/rollback rehearsal procedure is documented, but no production deployment rollback, managed Auth/Storage recovery, or object-storage recovery is claimed as complete. The full SLO observation window and error-budget calculation remain pending.
 
 Release status remains **PENDING — NOT RELEASE-CERTIFIED**.
+
+## Live provider audit — 2026-10-15
+
+The connected provider API and production SQL snapshot is recorded in [docs/INFRASTRUCTURE_AUDIT_2026-10-15.md](INFRASTRUCTURE_AUDIT_2026-10-15.md). Fresh checks confirm Render's current main deployment is live and Vercel's latest main production deployment is READY, while Vercel project metadata reports `live=false` and a separate ERROR Dependabot deployment as `latestDeployment`; no Vercel remediation was performed due to the owner lock. Supabase production is ACTIVE_HEALTHY at Alembic head `20261011_0013`, but workflow definitions/nodes/runs/scheduled jobs remain zero. Cloudflare lists no zones, Workers, Pages, KV, D1, or Queues; R2 is not enabled/inspectable.
+
+Security/performance review items: Cloudflare account MFA enforcement is disabled; Supabase reports 34 RLS-enabled tables without policies, leaked-password protection disabled, and 82 unused-index advisories. These require scoped review and are not automatic authorization to change grants, policies, or indexes. All previously listed production release gates remain open unless directly evidenced; overall status is **PENDING — NOT RELEASE-CERTIFIED**.
