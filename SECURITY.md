@@ -2,7 +2,7 @@
 
 > Owner: Security / Engineering
 > Update when: threat model, authorization boundaries, secrets, dependency policy, or incident procedures change
-> Last Updated: 2026-10-14
+> Last Updated: 2026-10-15
 > Do NOT put here: release status details that belong in CURRENT_STATE.md or domain implementation details that belong in docs/.
 
 ## Scope
@@ -83,3 +83,7 @@ Live provider/storage verification, full durable RAG operations, broader retenti
 - Storage provider E2E is tested with real infrastructure before release claims.
 - Logs do not expose secrets.
 - Vercel remains locked unless explicitly authorized.
+
+## Provider security review — 2026-10-15
+
+The live provider audit in [docs/INFRASTRUCTURE_AUDIT_2026-10-15.md](docs/INFRASTRUCTURE_AUDIT_2026-10-15.md) found Cloudflare account `enforce_twofactor=false`, Supabase leaked-password protection disabled, and 34 Supabase tables with RLS enabled but no policies (INFO). Existing database notes record a backend-only access model and a prior read-only scan without `anon`, `authenticated`, or `PUBLIC` table grants. These findings require explicit access-model review; do not respond by broadly granting table access or creating generic permissive policies. Enable MFA only through owner-controlled account settings after recovery methods are confirmed. Supabase's password-protection limitation should be revisited if the plan changes. No account security setting or database policy was changed during this audit.
