@@ -19,13 +19,7 @@ def upgrade() -> None:
     bind = op.get_bind()
 
     # ── brain_context  (Soul File key-value store) ──────────────────────────
-    result = bind.execute(
-        sa.text(
-            "SELECT 1 FROM information_schema.tables "
-            "WHERE table_schema = 'public' AND table_name = 'brain_context'"
-        )
-    )
-    if result.fetchone() is None:
+    if not sa.inspect(bind).has_table("brain_context"):
         op.create_table(
             "brain_context",
             sa.Column("id", sa.Integer(), nullable=False, autoincrement=True),
@@ -38,13 +32,13 @@ def upgrade() -> None:
                 "created_at",
                 sa.DateTime(timezone=True),
                 nullable=False,
-                server_default=sa.text("NOW()"),
+                server_default=sa.text("CURRENT_TIMESTAMP"),
             ),
             sa.Column(
                 "updated_at",
                 sa.DateTime(timezone=True),
                 nullable=False,
-                server_default=sa.text("NOW()"),
+                server_default=sa.text("CURRENT_TIMESTAMP"),
             ),
             sa.PrimaryKeyConstraint("id"),
         )
@@ -56,13 +50,7 @@ def upgrade() -> None:
         )
 
     # ── brain_syntheses  (weekly LLM snapshot) ─────────────────────────────
-    result = bind.execute(
-        sa.text(
-            "SELECT 1 FROM information_schema.tables "
-            "WHERE table_schema = 'public' AND table_name = 'brain_syntheses'"
-        )
-    )
-    if result.fetchone() is None:
+    if not sa.inspect(bind).has_table("brain_syntheses"):
         op.create_table(
             "brain_syntheses",
             sa.Column("id", sa.Integer(), nullable=False, autoincrement=True),
@@ -79,7 +67,7 @@ def upgrade() -> None:
                 "created_at",
                 sa.DateTime(timezone=True),
                 nullable=False,
-                server_default=sa.text("NOW()"),
+                server_default=sa.text("CURRENT_TIMESTAMP"),
             ),
             sa.PrimaryKeyConstraint("id"),
         )
@@ -104,25 +92,13 @@ def downgrade() -> None:
     bind = op.get_bind()
 
     # Drop indexes + brain_syntheses
-    result = bind.execute(
-        sa.text(
-            "SELECT 1 FROM information_schema.tables "
-            "WHERE table_schema = 'public' AND table_name = 'brain_syntheses'"
-        )
-    )
-    if result.fetchone() is not None:
+    if sa.inspect(bind).has_table("brain_syntheses"):
         op.drop_index("idx_brain_syntheses_created", table_name="brain_syntheses")
         op.drop_index("idx_brain_syntheses_category", table_name="brain_syntheses")
         op.drop_index("idx_brain_syntheses_period", table_name="brain_syntheses")
         op.drop_table("brain_syntheses")
 
     # Drop indexes + brain_context
-    result = bind.execute(
-        sa.text(
-            "SELECT 1 FROM information_schema.tables "
-            "WHERE table_schema = 'public' AND table_name = 'brain_context'"
-        )
-    )
-    if result.fetchone() is not None:
+    if sa.inspect(bind).has_table("brain_context"):
         op.drop_index("idx_brain_context_key", table_name="brain_context")
         op.drop_table("brain_context")
