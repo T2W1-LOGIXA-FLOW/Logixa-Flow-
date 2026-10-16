@@ -47,15 +47,16 @@ jobs:
           python scripts/production_migrate.py
 
       - name: Execute Backend Tests
+        working-directory: apps/web-platform/backend
         env:
           JWT_SECRET: ci-production-jwt-test-secret-at-least-32-chars
           ENVIRONMENT: test
           DATABASE_URL: sqlite:///./ci_test.db
           SKIP_SEEDING: "true"
           ENABLE_SCHEDULER: "false"
-          PYTHONPATH: apps/web-platform/backend
+          PYTHONPATH: .
         run: |
-          python -m pytest apps/web-platform/backend/tests -q --maxfail=5
+          python -m pytest tests -q --maxfail=5
 
   frontend-build:
     name: Next.js Production Build
