@@ -69,7 +69,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: apps/web-platform/frontend/package-lock.json
 
@@ -81,7 +81,7 @@ jobs:
         working-directory: apps/web-platform/frontend
         env:
           NODE_ENV: production
-          NEXT_PUBLIC_API_URL: https://logixa.yourdomain.com/api
+          NEXT_PUBLIC_API_URL: https://logixa-flow.onrender.com
         run: npm run build
 
   production-gate:
@@ -90,4 +90,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Confirm Build Readiness
-        run: echo "Logixa-Flow passes all standalone production gate checks. Ready for native zero-downtime deployment."
+        run: echo "Automated CI checks passed. Production readiness still requires deployment health, end-to-end workflow, and rollback verification."
