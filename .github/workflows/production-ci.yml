@@ -47,15 +47,16 @@ jobs:
           python scripts/production_migrate.py
 
       - name: Execute Backend Tests
+        working-directory: apps/web-platform/backend
         env:
           JWT_SECRET: ci-production-jwt-test-secret-at-least-32-chars
           ENVIRONMENT: test
           DATABASE_URL: sqlite:///./ci_test.db
           SKIP_SEEDING: "true"
           ENABLE_SCHEDULER: "false"
-          PYTHONPATH: apps/web-platform/backend
+          PYTHONPATH: .
         run: |
-          python -m pytest apps/web-platform/backend/tests -q --maxfail=5
+          python -m pytest tests -q --maxfail=5
 
   frontend-build:
     name: Next.js Production Build
@@ -69,7 +70,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: apps/web-platform/frontend/package-lock.json
 
@@ -81,7 +82,7 @@ jobs:
         working-directory: apps/web-platform/frontend
         env:
           NODE_ENV: production
-          NEXT_PUBLIC_API_URL: https://logixa.yourdomain.com/api
+          NEXT_PUBLIC_API_URL: https://logixa-flow.onrender.com
         run: npm run build
 
   production-gate:
@@ -90,4 +91,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Confirm Build Readiness
-        run: echo "Logixa-Flow passes all standalone production gate checks. Ready for native zero-downtime deployment."
+        run: echo "Automated CI checks passed. Production readiness still requires deployment health, end-to-end workflow, and rollback verification."

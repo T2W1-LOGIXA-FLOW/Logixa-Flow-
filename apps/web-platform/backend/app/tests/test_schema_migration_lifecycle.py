@@ -22,7 +22,7 @@ SCHEMA_MIGRATION = (
 MONEY_MIGRATION = (
     MIGRATIONS_DIR / "versions" / "20261005_0007_convert_money_to_numeric.py"
 )
-CURRENT_HEAD = "20261011_0013"
+CURRENT_HEAD = "20261016_0015"
 
 
 def alembic_config(database_url: str) -> Config:
@@ -93,12 +93,24 @@ def test_schema_reconciliation_follows_rls_and_secures_every_model_table() -> No
         )
     )
     protected_tables = set(ast.literal_eval(assignment.value))
-    assert (set(models.Base.metadata.tables) - {"audit_events", "stored_files"}) <= protected_tables
+    assert (set(models.Base.metadata.tables) - {"audit_events", "stored_files", "brain_context", "brain_syntheses"}) <= protected_tables
     assert "revision = '20261003_0006'" in source
     assert "down_revision = '20261003_0005'" in source
     assert "ENABLE ROW LEVEL SECURITY" in source
     assert "REVOKE ALL PRIVILEGES ON TABLE" in source
     assert "CREATE POLICY" not in source
+
+    brain_security = (
+        MIGRATIONS_DIR / "versions" / "20261016_0015_brain_rls_indexes.py"
+    ).read_text(encoding="utf-8")
+    assert 'revision = "20261016_0015"' in brain_security
+    assert 'down_revision = "20261015_0014"' in brain_security
+    assert "brain_context" in brain_security
+    assert "brain_syntheses" in brain_security
+    assert "ENABLE ROW LEVEL SECURITY" in brain_security
+    assert "REVOKE ALL PRIVILEGES ON TABLE" in brain_security
+    assert "GRANT ALL PRIVILEGES ON TABLE" in brain_security
+    assert "CREATE POLICY" not in brain_security
 
     money_source = MONEY_MIGRATION.read_text(encoding="utf-8")
     assert "revision = \"20261005_0007\"" in money_source

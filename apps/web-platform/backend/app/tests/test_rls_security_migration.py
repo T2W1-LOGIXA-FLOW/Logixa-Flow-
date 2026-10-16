@@ -46,7 +46,7 @@ def test_rls_migration_covers_all_application_tables_and_legacy_sql_tables() -> 
         "admin_activity_logs",
     }
 
-    assert (model_tables - {"audit_events", "stored_files"}) <= covered_tables
+    assert (model_tables - {"audit_events", "stored_files", "brain_context", "brain_syntheses"}) <= covered_tables
     assert stale_sql_tables <= covered_tables
 
     audit_source = AUDIT_MIGRATION.read_text(encoding="utf-8")
@@ -75,6 +75,20 @@ def test_rls_migration_enables_rls_and_revokes_direct_client_table_and_sequence_
     assert "TO SERVICE_ROLE" in source
     assert "TO ANON" not in source
     assert "TO AUTHENTICATED" not in source
+
+    brain_security = (
+        Path(__file__).resolve().parents[2]
+        / "migrations"
+        / "versions"
+        / "20261016_0015_brain_rls_indexes.py"
+    ).read_text(encoding="utf-8").upper()
+    assert "BRAIN_CONTEXT" in brain_security
+    assert "BRAIN_SYNTHESES" in brain_security
+    assert "ENABLE ROW LEVEL SECURITY" in brain_security
+    assert "REVOKE ALL PRIVILEGES ON TABLE" in brain_security
+    assert "GRANT ALL PRIVILEGES ON TABLE" in brain_security
+    assert "TO SERVICE_ROLE" in brain_security
+    assert "CREATE POLICY" not in brain_security
 
 
 def test_rls_migration_downgrade_does_not_reopen_direct_client_access() -> None:

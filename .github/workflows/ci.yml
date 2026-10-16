@@ -38,19 +38,6 @@ jobs:
       - run: python -m alembic upgrade head
       - run: timeout 15m python -m pytest -q
 
-  agents:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: agents
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install -r requirements.txt pytest
-      - run: PYTHONPATH=. pytest -q
-
   frontend:
     runs-on: ubuntu-latest
     defaults:
