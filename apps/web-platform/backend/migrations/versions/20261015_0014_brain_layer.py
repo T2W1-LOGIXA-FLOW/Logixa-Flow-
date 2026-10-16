@@ -42,12 +42,9 @@ def upgrade() -> None:
             ),
             sa.PrimaryKeyConstraint("id"),
         )
-        op.create_index(
-            "idx_brain_context_key",
-            "brain_context",
-            ["context_key"],
-            unique=True,
-        )
+        op.create_index("ix_brain_context_id", "brain_context", ["id"], unique=False)
+        op.create_index("ix_brain_context_context_key", "brain_context", ["context_key"], unique=False)
+        op.create_index("ix_brain_context_is_active", "brain_context", ["is_active"], unique=False)
 
     # ── brain_syntheses  (weekly LLM snapshot) ─────────────────────────────
     if not sa.inspect(bind).has_table("brain_syntheses"):
@@ -71,21 +68,10 @@ def upgrade() -> None:
             ),
             sa.PrimaryKeyConstraint("id"),
         )
-        op.create_index(
-            "idx_brain_syntheses_period",
-            "brain_syntheses",
-            ["period_label"],
-        )
-        op.create_index(
-            "idx_brain_syntheses_category",
-            "brain_syntheses",
-            ["category"],
-        )
-        op.create_index(
-            "idx_brain_syntheses_created",
-            "brain_syntheses",
-            ["created_at"],
-        )
+        op.create_index("ix_brain_syntheses_id", "brain_syntheses", ["id"], unique=False)
+        op.create_index("ix_brain_syntheses_period_label", "brain_syntheses", ["period_label"], unique=False)
+        op.create_index("ix_brain_syntheses_category", "brain_syntheses", ["category"], unique=False)
+        op.create_index("ix_brain_syntheses_created_at", "brain_syntheses", ["created_at"], unique=False)
 
 
 def downgrade() -> None:
@@ -93,12 +79,15 @@ def downgrade() -> None:
 
     # Drop indexes + brain_syntheses
     if sa.inspect(bind).has_table("brain_syntheses"):
-        op.drop_index("idx_brain_syntheses_created", table_name="brain_syntheses")
-        op.drop_index("idx_brain_syntheses_category", table_name="brain_syntheses")
-        op.drop_index("idx_brain_syntheses_period", table_name="brain_syntheses")
+        op.drop_index("ix_brain_syntheses_created_at", table_name="brain_syntheses")
+        op.drop_index("ix_brain_syntheses_category", table_name="brain_syntheses")
+        op.drop_index("ix_brain_syntheses_period_label", table_name="brain_syntheses")
+        op.drop_index("ix_brain_syntheses_id", table_name="brain_syntheses")
         op.drop_table("brain_syntheses")
 
     # Drop indexes + brain_context
     if sa.inspect(bind).has_table("brain_context"):
-        op.drop_index("idx_brain_context_key", table_name="brain_context")
+        op.drop_index("ix_brain_context_is_active", table_name="brain_context")
+        op.drop_index("ix_brain_context_context_key", table_name="brain_context")
+        op.drop_index("ix_brain_context_id", table_name="brain_context")
         op.drop_table("brain_context")
