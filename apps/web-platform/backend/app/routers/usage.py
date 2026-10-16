@@ -103,7 +103,7 @@ def admin_brain_dashboard(
     latest_synthesis_at: Optional[str] = None
     latest_synthesis_snippet: Optional[str] = None
     if latest_synthesis:
-        latest_synthesis_period = getattr(latest_synthesis, "period", None)
+        latest_synthesis_period = getattr(latest_synthesis, "period_label", None)
         if latest_synthesis.created_at:
             latest_synthesis_at = latest_synthesis.created_at.astimezone(timezone.utc).isoformat()
         raw_text = getattr(latest_synthesis, "synthesis_text", None) or ""
@@ -112,7 +112,7 @@ def admin_brain_dashboard(
     # --- AiMemoryBrain: approved memories ---
     approved_memories: int = (
         db.query(models.AiMemoryBrain)
-        .filter(models.AiMemoryBrain.approved == True)  # noqa: E712
+        .filter(models.AiMemoryBrain.status == "approved")
         .count()
     )
 
