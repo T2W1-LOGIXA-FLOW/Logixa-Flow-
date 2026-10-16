@@ -87,8 +87,14 @@ If code/configuration changes invalidate a documentation statement, the document
 | Live deployment/runtime | Appropriate provider/API tooling |
 | DNS/email authentication | DNS Doctor |
 | UI design implementation | Figma when explicitly used |
-| Deployment/runtime | Render/Vercel/provider tooling |
 | Tools and AI provider inventory | docs/TOOLS_AND_LLM_INVENTORY.md |
+
+### 5.1 Local Development Ports & Verification
+
+- **Web Command Center (Next.js):** `cd apps/web-platform/frontend && npm install && npm run dev -- -p 3000`
+- **Backend API (FastAPI):** `cd apps/web-platform/backend && uvicorn app.main:app --port 8000 --reload`
+- **Health Verification:** `curl http://localhost:8000/health` (HTTP 200)
+- **Frontend Build Check:** `cd apps/web-platform/frontend && npm run build` (Passing)
 
 Never use a secondary document as proof against current code/configuration when direct repository evidence is available.
 

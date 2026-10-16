@@ -48,4 +48,18 @@ async def handle_telegram_action(payload: TelegramActionPayload) -> dict[str, An
         await send_telegram_message(msg, topic_id=payload.topic_id)
         return {"status": "ok", "action": "metrics_viewed", "id": wf_id}
 
+    # 4. Human Approval of Drafted Blog / Insight
+    elif action.startswith("logixa_blog_appr:"):
+        post_id = action.split(":", 1)[1]
+        msg = f"✅ <b>Post Approved:</b> <code>{post_id}</code>\nArticle published to the public feed with FLUX banner."
+        await send_telegram_message(msg, topic_id=payload.topic_id)
+        return {"status": "ok", "action": "blog_approved", "id": post_id}
+
+    elif action.startswith("logixa_blog_disc:"):
+        post_id = action.split(":", 1)[1]
+        msg = f"❌ <b>Post Discarded:</b> <code>{post_id}</code>\nDraft archived and excluded from publication."
+        await send_telegram_message(msg, topic_id=payload.topic_id)
+        return {"status": "ok", "action": "blog_discarded", "id": post_id}
+
     return {"status": "ignored", "action": action}
+

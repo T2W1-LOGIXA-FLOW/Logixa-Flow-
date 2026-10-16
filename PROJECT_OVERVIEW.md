@@ -13,6 +13,14 @@ Core product loop:
 
 Source / File / User Input → Ingestion → RAG / AI → Review / Decision → Workflow → Action → Analytics
 
+## Standalone Platform Scope & Ports
+
+| Surface | Platform | Local Development Port |
+|---|---|---|
+| **Web Command Center** | Next.js 15+ / React / @xyflow/react | `http://localhost:3000` |
+| **Backend API** | FastAPI / Python / Uvicorn | `http://localhost:8000` |
+| **Observability** | Live Thought Stream Terminal (`AdminConversationMonitor.tsx`) | Embedded in Port 3000 |
+
 ## 2. Product surfaces
 
 Public: supply-chain knowledge/content, published articles, and a feature-gated public AI surface.

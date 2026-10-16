@@ -24,6 +24,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </ThemeProvider>
           </LanguageProvider>
         </div>
+        {/* Privacy-Friendly Cookieless Analytics (Umami) */}
+        {process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID && (
+          <script
+            async
+            defer
+            src={process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL || "https://cloud.umami.is/script.js"}
+            data-website-id={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID}
+          />
+        )}
         <Analytics />
       </body>
     </html>

@@ -317,6 +317,7 @@ class BlogDraftOut(BaseModel):
     outline: str
     intro_paragraph: str
     suggested_tags: list[str]
+    image_url: str | None = None
     source_synthesis_id: int | None
     generated_at: str
 
@@ -328,16 +329,18 @@ def generate_blog_draft(
     admin: dict = Depends(require_admin),
 ):
     """
-    Generate a blog post draft from the latest brain synthesis.
+    Generate a blog post draft from the latest brain synthesis with an AI-generated banner image.
 
     Steps:
     1. Fetch latest BrainSynthesis for given category.
     2. Call LLMRouter to produce title, outline, intro, tags as JSON.
-    3. Save as Post(status='draft') — best-effort, no crash if model differs.
-    4. Return BlogDraftOut.
+    3. Generate AI banner image via Pollinations.ai FLUX model.
+    4. Save as Post(status='draft', image_url=banner_url) — best-effort, no crash if model differs.
+    5. Return BlogDraftOut with image_url.
     """
     import json as _json
     from ..llm.router import LLMRouter
+    from ..services.image_generator import generate_blog_banner
 
     # 1. Latest synthesis for category
     synthesis = (
@@ -392,19 +395,31 @@ def generate_blog_draft(
             "suggested_tags": [category.lower().replace(" ", "-"), "weekly-roundup"],
         }
 
-    # 4. Save as draft Post (best-effort — won't crash if model schema differs)
+    # 4. Generate AI Banner Image URL
+    banner_url: str | None = None
+    try:
+        banner_url = generate_blog_banner(title=data["title"], category=category)
+    except Exception:
+        banner_url = None
+
+    # 5. Save as draft Post (best-effort — won't crash if model schema differs)
     draft_id: int | None = None
     try:
         import re as _re
         slug_base = _re.sub(r"[^a-z0-9]+", "-", data["title"].lower()).strip("-")[:80]
         slug = f"{slug_base}-{synthesis.period_label.replace('/', '-').lower()}"
+
+        img_tag = f'<p><img src="{banner_url}" alt="{data["title"]}" class="w-full rounded-xl my-4 shadow-md" /></p>\n\n' if banner_url else ""
+        content_html = img_tag + data["intro_paragraph"] + "\n\n" + data["outline"]
+
         post = models.Post(
             title=data["title"],
             slug=slug,
             type="blog",
             category=category,
             excerpt=data["intro_paragraph"][:490] if data.get("intro_paragraph") else "",
-            content_html=data["intro_paragraph"] + "\n\n" + data["outline"],
+            content_html=content_html,
+            image_url=banner_url,
             status="draft",
             is_published=False,
         )
@@ -422,6 +437,7 @@ def generate_blog_draft(
         outline=data.get("outline", ""),
         intro_paragraph=data.get("intro_paragraph", ""),
         suggested_tags=data.get("suggested_tags", []),
+        image_url=banner_url,
         source_synthesis_id=synthesis.id,
         generated_at=utc_now().isoformat(),
     )

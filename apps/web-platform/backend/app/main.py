@@ -41,7 +41,12 @@ if os.getenv("SENTRY_DSN", "").strip():
 
 
 def run_startup_tasks() -> None:
-    """Verify the externally migrated schema before starting application tasks."""
+    """Verify the externally migrated schema before starting application tasks.
+    
+    NOTE: This function is called from within lifespan() via run_in_executor to avoid
+    blocking the async event loop. time.sleep() is safe here because this runs in a
+    thread pool, not the main async loop.
+    """
     max_attempts = max(1, int(os.getenv("DB_CONNECT_RETRIES", "5")))
     retry_delay = int(os.getenv("DB_CONNECT_RETRY_DELAY", "3"))
 
@@ -54,10 +59,11 @@ def run_startup_tasks() -> None:
                 logger.error("Database migration verification failed after %s attempts: %s", max_attempts, exc)
                 raise
             logger.warning(
-                "Database migration verification attempt %s/%s failed: %s",
+                "Database migration verification attempt %s/%s failed: %s — retrying in %ss",
                 attempt,
                 max_attempts,
                 exc,
+                retry_delay,
             )
             time.sleep(retry_delay)
 
@@ -101,8 +107,13 @@ def run_startup_tasks() -> None:
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    run_startup_tasks()
+    """Run startup tasks in a thread to avoid blocking the async event loop."""
+    import asyncio
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, run_startup_tasks)
     yield
+
+
 
 
 def seed_app_settings() -> None:

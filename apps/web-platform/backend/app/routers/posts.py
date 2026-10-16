@@ -234,3 +234,28 @@ def bulk_import_posts(
         imported_slugs.append(slug)
     db.commit()
     return schemas.BulkImportOut(imported=len(imported_slugs), slugs=imported_slugs)
+
+
+@router.post("/admin/posts/{post_id}/generate-banner", response_model=schemas.PostOut)
+def generate_post_banner(
+    post_id: int,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_admin),
+) -> models.Post:
+    """Generate or regenerate an AI visual banner for a post using Pollinations FLUX."""
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+
+    from ..services.image_generator import generate_blog_banner
+    banner_url = generate_blog_banner(title=post.title, category=post.category or "Supply Chain", context=post.excerpt)
+    post.image_url = banner_url
+
+    # If content_html does not already have an image, prepend the banner
+    if post.content_html and "<img" not in post.content_html:
+        post.content_html = f'<p><img src="{banner_url}" alt="{post.title}" class="w-full rounded-xl my-4 shadow-md" /></p>\n\n' + post.content_html
+
+    db.commit()
+    db.refresh(post)
+    cache_client.delete_prefix("posts:")
+    return post

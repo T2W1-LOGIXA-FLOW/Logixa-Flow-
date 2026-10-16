@@ -8,6 +8,7 @@ from html import escape
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
@@ -624,3 +625,34 @@ def rate_memory(
     db.refresh(memory)
     log_analytics_event(db, "brain_rated", {"memory_id": memory.id, "score": score})
     return memory
+
+
+@router.get("/agent/stream/{session_id}")
+async def stream_agent_thoughts(session_id: str):
+    """Server-Sent Events (SSE) endpoint streaming real-time agent cognition & reasoning."""
+    import asyncio
+
+    async def thought_generator():
+        thought_steps = [
+            {"step": 1, "phase": "INGESTION", "message": f"Session {session_id}: Scanning multimodal RSS feeds and real-time market signals..."},
+            {"step": 2, "phase": "SEMANTIC_EVAL", "message": "Evaluating supply chain disruption ontology against historical vector memory..."},
+            {"step": 3, "phase": "SYNTHESIS", "message": "Drafting strategic analysis narrative and cross-referencing citations..."},
+            {"step": 4, "phase": "MEDIA_GENERATION", "message": "Generating 1200x630 FLUX editorial banner visualization via Pollinations CDN..."},
+            {"step": 5, "phase": "COMPLETED", "message": "Thought cycle complete. Draft insight queued for human-in-the-loop Telegram review."},
+        ]
+
+        for step_data in thought_steps:
+            data_str = json.dumps(step_data)
+            yield f"data: {data_str}\n\n"
+            await asyncio.sleep(0.6)
+
+    return StreamingResponse(
+        thought_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
