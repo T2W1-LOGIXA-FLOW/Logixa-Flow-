@@ -1,3 +1,18 @@
+## Production conditional sign-off — 2026-10-17
+
+**Current release decision: PRODUCTION READY — CONDITIONAL SIGN-OFF (owner-approved launch with explicitly deferred post-launch work).**
+
+- Render deployment for `2dafd74bd14efdead5da52b5c7f2133e9ecf7cfd` is LIVE: [deploy dep-db9oqg67bikc73durcg0](https://dashboard.render.com/web/srv-d9172fe8bjmc739pd600/deploys/dep-db9oqg67bikc73durcg0). GitHub CI [#39043062949](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39043062949) succeeded.
+- External `GET https://logixa-flow.onrender.com/health` returned HTTP 200 after deploy: `status=ok`, `missing_env=[]`, PostgreSQL `database=ok`, pgvector enabled, 12 RAG chunks, embedding version 2 / Voyage `voyage-3-lite`, Redis cache/rate-limit backends, and `upload_storage_configured=true`.
+- Runtime diagnostics: QStash configured; Telegram configured/enabled (configuration only); Celery disabled by design for this QStash/internal-queue architecture. Sentry initialization and application startup were visible in Render logs; Uvicorn listens on port 8000. Recovery restored 0 pending workflow runs because no active workflow runs are currently configured.
+- Backend test suite: 248 passed, 5 skipped (4 warnings). The latest commit resolves psycopg automatic prepared statements against the Supabase transaction pooler using `prepare_threshold=None`.
+- Owner explicitly moves the following out of initial-launch blockers into the post-launch backlog: (1) Telegram approval handler execution semantics, (2) Google Drive OAuth re-authorization and fresh executive export/readback, (3) QStash live workflow synthetic end-to-end run.
+- This is a **conditional operational sign-off**, not a blanket statement that every production gate is complete. Full SLO observation, rollback/DR rehearsal, managed Auth/Storage recovery, and Agent → Brain → Publish remain separately tracked follow-ups. RAG currently uses Supabase pgvector; no Qdrant integration is configured.
+
+Canonical detailed evidence and backlog: [docs/RELEASE_EVIDENCE.md](docs/RELEASE_EVIDENCE.md).
+
+---
+
 # Logixa Flow — Current State
 
 > Owner: Project / Engineering
