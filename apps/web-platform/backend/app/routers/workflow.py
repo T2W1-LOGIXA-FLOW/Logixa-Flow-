@@ -12,6 +12,7 @@ The ``router`` exported from this module is what ``app/main.py`` includes.
 """
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any
 from uuid import uuid4
 
@@ -33,6 +34,7 @@ from app.security import require_admin
 from app.routers import workflow_persistence, workflow_execution
 from app.routers.workflow_persistence import (
     _CONTROLLER_RUNS,
+    _EXECUTION_HISTORY,
     _EXECUTION_METRICS,
     _EXECUTION_STATES,
     _WORKFLOW_RUNS,
@@ -56,6 +58,7 @@ from app.routers.workflow_execution import (
     _SUBSCRIBERS,
     _RUN_TASKS,
     _WORKER_ID,
+    _queue_worker,
 )
 from app.routers import workflow_qstash
 from app.routers import workflow_websocket
@@ -68,6 +71,7 @@ workflow_telemetry = workflow_websocket.workflow_telemetry
 qstash_dispatch = workflow_qstash.qstash_dispatch
 _execute_workflow = workflow_execution._execute_workflow
 _claim_job = workflow_persistence._claim_job
+_QUEUE_WORKER_RUNNING = workflow_execution._QUEUE_WORKER_RUNNING
 
 # ---------------------------------------------------------------------------
 # Main router — all HTTP routes assembled here
