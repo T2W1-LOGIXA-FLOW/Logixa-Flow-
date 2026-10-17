@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { AlertTriangle, CheckCircle2, XCircle, ShieldAlert } from "lucide-react";
+import { CheckCircle2, XCircle, ShieldAlert } from "lucide-react";
 
 export interface PendingAgentAction {
   id: string;
