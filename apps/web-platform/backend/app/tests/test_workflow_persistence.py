@@ -28,7 +28,7 @@ def reset_persistence_state(monkeypatch: pytest.MonkeyPatch) -> None:
     workflow._EXECUTION_HISTORY.clear()
     workflow._EXECUTION_METRICS.clear()
     workflow._CONTROLLER_RUNS.clear()
-    workflow._QUEUE_WORKER_RUNNING = False
+    workflow_execution._QUEUE_WORKER_RUNNING = False
 
     engine = create_engine("sqlite:///:memory:")
     session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
@@ -46,7 +46,7 @@ def reset_persistence_state(monkeypatch: pytest.MonkeyPatch) -> None:
     workflow._EXECUTION_HISTORY.clear()
     workflow._EXECUTION_METRICS.clear()
     workflow._CONTROLLER_RUNS.clear()
-    workflow._QUEUE_WORKER_RUNNING = False
+    workflow_execution._QUEUE_WORKER_RUNNING = False
 
 
 @pytest.mark.anyio
@@ -134,7 +134,7 @@ async def test_pending_workflow_jobs_restore_after_restart() -> None:
     workflow._WORKFLOW_RUNS.clear()
     workflow._EXECUTION_QUEUE.clear()
     workflow._EXECUTION_STATES.clear()
-    workflow._QUEUE_WORKER_RUNNING = False
+    workflow_execution._QUEUE_WORKER_RUNNING = False
 
     restored = workflow.restore_pending_workflow_runs()
 
@@ -380,7 +380,7 @@ async def test_queue_worker_keeps_job_queued_when_claim_database_fails(monkeypat
 
     logged = {}
     monkeypatch.setattr(
-        workflow,
+        workflow_execution,
         "logger",
         type("Logger", (), {"exception": lambda self, *args, **kwargs: logged.setdefault("called", True)})(),
     )
@@ -486,7 +486,7 @@ async def test_restart_resume_skips_durable_completed_nodes(monkeypatch: pytest.
     workflow._WORKFLOW_RUNS.clear()
     workflow._EXECUTION_QUEUE.clear()
     workflow._EXECUTION_STATES.clear()
-    workflow._QUEUE_WORKER_RUNNING = False
+    workflow_execution._QUEUE_WORKER_RUNNING = False
     assert workflow.restore_pending_workflow_runs() == 1
 
     executed: list[str] = []
