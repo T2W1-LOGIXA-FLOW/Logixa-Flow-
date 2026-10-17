@@ -1,3 +1,25 @@
+# Current conditional production sign-off — 2026-10-17 (UTC)
+
+**Status: PRODUCTION READY — CONDITIONAL SIGN-OFF (owner-approved launch with explicitly deferred post-launch work).** This is an operational launch decision, not a claim that every optional or deferred end-to-end gate is complete.
+
+- Render deployment for commit [2dafd74bd14efdead5da52b5c7f2133e9ecf7cfd](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/commit/2dafd74bd14efdead5da52b5c7f2133e9ecf7cfd) is **LIVE**: [deploy dep-db9oqg67bikc73durcg0](https://dashboard.render.com/web/srv-d9172fe8bjmc739pd600/deploys/dep-db9oqg67bikc73durcg0), finished 2026-10-17 15:00:28 UTC.
+- Post-deploy external `GET https://logixa-flow.onrender.com/health` returned **HTTP 200**. Payload reported `status=ok`, `missing_env=[]`, `database=ok`, `database_profile=postgres`, `pgvector_enabled=true`, `rag_chunks=12`, `rag_embedding_version=2`, `rag_active_embedding_model=voyage-3-lite`, `cache_backend=redis`, `rate_limit_backend=redis`, and `upload_storage_configured=true`. Safe config diagnostics reported `qstash_configured=true`, `telegram_configured=true`, `telegram_enabled=true`; these are configuration signals, not proof of end-to-end action semantics.
+- Render application logs show Sentry initialization succeeded, application startup completed, Uvicorn listening on `0.0.0.0:8000`, and `Workflow recovery restored 0 pending run(s)`. Zero recovered runs is expected from the current empty workflow queue; it is not evidence of a successful live workflow dispatch.
+- GitHub Actions CI run [#39043062949](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39043062949) for the same SHA completed successfully. Backend test suite evidence from the validation run: **248 passed, 5 skipped** (4 warnings).
+- The deployment fixes psycopg automatic prepared-statement compatibility with Supabase transaction pooling by setting `prepare_threshold=None` for the `postgresql+psycopg` driver.
+- Owner decision: Telegram approval execution semantics, Google Drive OAuth re-authorization/current executive export verification, and a QStash live workflow synthetic run are **explicitly deferred post-launch backlog**, not initial launch blockers under this conditional sign-off.
+- Other limits remain disclosed: no Qdrant service is configured (the live RAG vector store is Supabase pgvector); `celery_enabled=false` by design for the current QStash/internal-queue architecture; no live workflow definitions/runs currently exist. Do not interpret configuration checks as delivery/approval/export E2E evidence.
+- This conditional sign-off does not close the independent full SLO observation, rollback/DR, managed Auth/Storage recovery, or Agent → Brain → Publish journey gates previously documented below. Preserve these as follow-up operational risks rather than silently marking them verified.
+
+## Deferred post-launch backlog (owner-approved, 2026-10-17)
+
+1. Connect Telegram approval callbacks to actual background action execution and persist truthful action outcomes; add integration tests for approve/reject/retry/disable semantics.
+2. Re-authorize Google Drive OAuth and verify a fresh executive export with readback; never record tokens or authorization codes in evidence.
+3. Create a safe test workflow through authenticated admin access, then verify signed QStash dispatch, completion, duplicate-delivery idempotency, retry, and recovery in the live environment.
+4. Continue the separate SLO observation and rollback/DR, managed Auth/Storage recovery, and end-to-end Agent → Brain → Publish gates.
+
+---
+
 # Logixa Flow — Release Evidence Index
 
 > Owner: Engineering / Release
