@@ -30,7 +30,7 @@ from app.schemas import (
 from app.security import require_admin
 
 # Sub-module imports
-from app.routers import workflow_persistence
+from app.routers import workflow_persistence, workflow_execution
 from app.routers.workflow_persistence import (
     _CONTROLLER_RUNS,
     _EXECUTION_METRICS,
