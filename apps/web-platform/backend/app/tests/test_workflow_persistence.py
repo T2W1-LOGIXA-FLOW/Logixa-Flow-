@@ -169,7 +169,7 @@ async def test_controller_result_tracks_workflow_terminal_state() -> None:
         _admin={"role": "admin"},
     )
 
-    workflow._QUEUE_WORKER_RUNNING = True
+    workflow_execution._QUEUE_WORKER_RUNNING = True
     run = await workflow.enqueue_workflow_run("controller-flow", controller_id="controller-test")
     await workflow._execute_workflow(run.run_id)
 
@@ -402,7 +402,7 @@ async def test_queue_worker_keeps_job_queued_when_claim_database_fails(monkeypat
         await workflow_execution._queue_worker()
 
     assert workflow._EXECUTION_QUEUE == [item]
-    assert workflow._QUEUE_WORKER_RUNNING is False
+    assert workflow_execution._QUEUE_WORKER_RUNNING is False
     assert logged.get("called") is True
 
 
