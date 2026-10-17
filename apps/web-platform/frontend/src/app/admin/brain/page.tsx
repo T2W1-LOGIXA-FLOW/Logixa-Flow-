@@ -16,7 +16,6 @@ const filters: Array<AiMemory["status"] | "all"> = ["pending", "approved", "reje
 
 // ─── Pastel colors ──────────────────────────────────────────────────
 const P = { lav: "#b4a4cc", green: "#7ec4a0", blue: "#7eb8d4", amber: "#c9a96a", border: "rgba(255,255,255,0.08)", dim: "rgba(255,255,255,0.3)" };
-function fmtD(iso: string | null) { if (!iso) return "—"; return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); }
 
 // ─── Brain Soul Mini Panel ──────────────────────────────────────────
 interface BSData { total_syntheses?: number; soul_file_entries?: number; latest_synthesis_period?: string; latest_synthesis_at?: string; approved_memories?: number; synthesis_tokens_today?: number; }
