@@ -12,7 +12,7 @@ from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 
 from app import models
-from app.routers import admin, workflow
+from app.routers import admin, workflow, workflow_persistence, workflow_execution
 from app.schemas import WorkflowNode, WorkflowRunRequest, WorkflowStorageCreate, WorkflowStorageOut, WorkflowRunOut, WorkflowState
 
 
@@ -34,6 +34,7 @@ def reset_persistence_state(monkeypatch: pytest.MonkeyPatch) -> None:
     session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     models.Base.metadata.create_all(bind=engine)
     monkeypatch.setattr(workflow, "SessionLocal", session_factory)
+    monkeypatch.setattr(workflow_persistence, "SessionLocal", session_factory)
     yield
     workflow._WORKFLOW_STORAGE.clear()
     workflow._WORKFLOW_RUNS.clear()
