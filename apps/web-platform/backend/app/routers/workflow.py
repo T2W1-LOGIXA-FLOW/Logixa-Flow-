@@ -30,6 +30,7 @@ from app.schemas import (
 from app.security import require_admin
 
 # Sub-module imports
+from app.routers import workflow_persistence
 from app.routers.workflow_persistence import (
     _CONTROLLER_RUNS,
     _EXECUTION_METRICS,
@@ -52,9 +53,21 @@ from app.routers.workflow_execution import (
     _sync_execution_metrics,
     _EXECUTION_QUEUE,
     _ERROR_NOTIFICATIONS,
+    _SUBSCRIBERS,
+    _RUN_TASKS,
+    _WORKER_ID,
 )
 from app.routers import workflow_qstash
 from app.routers import workflow_websocket
+
+# Backwards-compatible exports for tests and internal callers during the router split.
+_verify_supabase_token = workflow_websocket._verify_supabase_token
+_WEBSOCKET_AUTH_TIMEOUT_SECONDS = workflow_websocket._WEBSOCKET_AUTH_TIMEOUT_SECONDS
+_WEBSOCKET_AUTH_RECHECK_SECONDS = workflow_websocket._WEBSOCKET_AUTH_RECHECK_SECONDS
+workflow_telemetry = workflow_websocket.workflow_telemetry
+qstash_dispatch = workflow_qstash.qstash_dispatch
+_execute_workflow = workflow_execution._execute_workflow
+_claim_job = workflow_persistence._claim_job
 
 # ---------------------------------------------------------------------------
 # Main router — all HTTP routes assembled here
