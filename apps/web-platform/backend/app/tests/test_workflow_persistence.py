@@ -12,7 +12,7 @@ from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 
 from app import models
-from app.routers import admin, workflow, workflow_persistence, workflow_execution
+from app.routers import admin, workflow, workflow_persistence, workflow_execution, workflow_qstash
 from app.schemas import WorkflowNode, WorkflowRunRequest, WorkflowStorageCreate, WorkflowStorageOut, WorkflowRunOut, WorkflowState
 
 
@@ -205,7 +205,7 @@ async def test_workflow_persistence_surfaces_database_failures() -> None:
         def __call__(self):
             raise RuntimeError("database boom")
     monkeypatch = pytest.MonkeyPatch()
-    monkeypatch.setattr(workflow, "SessionLocal", FailingSessionLocal())
+    monkeypatch.setattr(workflow_persistence, "SessionLocal", FailingSessionLocal())
     try:
         with pytest.raises(RuntimeError, match="database boom"):
             workflow._persist_workflow_definition(workflow_payload)
@@ -313,7 +313,7 @@ def test_schedule_run_does_not_publish_in_memory_queue_when_db_persistence_fails
         def __call__(self):
             raise RuntimeError("database boom")
 
-    monkeypatch.setattr(workflow, "SessionLocal", FailingSessionLocal())
+    monkeypatch.setattr(workflow_persistence, "SessionLocal", FailingSessionLocal())
     with pytest.raises(RuntimeError, match="database boom"):
         workflow._schedule_run(run.run_id)
 
@@ -325,7 +325,7 @@ def test_claim_job_propagates_database_failure(monkeypatch: pytest.MonkeyPatch) 
         def __call__(self):
             raise RuntimeError("database boom")
 
-    monkeypatch.setattr(workflow, "SessionLocal", FailingSessionLocal())
+    monkeypatch.setattr(workflow_persistence, "SessionLocal", FailingSessionLocal())
     with pytest.raises(RuntimeError, match="database boom"):
         workflow._claim_job("claim-db-fail")
 
@@ -335,7 +335,7 @@ def test_mark_job_terminal_propagates_database_failure(monkeypatch: pytest.Monke
         def __call__(self):
             raise RuntimeError("database boom")
 
-    monkeypatch.setattr(workflow, "SessionLocal", FailingSessionLocal())
+    monkeypatch.setattr(workflow_persistence, "SessionLocal", FailingSessionLocal())
     with pytest.raises(RuntimeError, match="database boom"):
         workflow._mark_job_terminal("terminal-db-fail", "failed")
 
@@ -347,7 +347,7 @@ def test_record_controller_result_propagates_database_failure(monkeypatch: pytes
         def __call__(self):
             raise RuntimeError("database boom")
 
-    monkeypatch.setattr(workflow, "SessionLocal", FailingSessionLocal())
+    monkeypatch.setattr(workflow_persistence, "SessionLocal", FailingSessionLocal())
     with pytest.raises(RuntimeError, match="database boom"):
         workflow._record_controller_result("controller-db-fail-run", "failed")
 
@@ -357,7 +357,7 @@ def test_restore_pending_workflow_runs_propagates_database_failure(monkeypatch: 
         def __call__(self):
             raise RuntimeError("database boom")
 
-    monkeypatch.setattr(workflow, "SessionLocal", FailingSessionLocal())
+    monkeypatch.setattr(workflow_persistence, "SessionLocal", FailingSessionLocal())
     with pytest.raises(RuntimeError, match="database boom"):
         workflow.restore_pending_workflow_runs()
 
@@ -388,7 +388,7 @@ async def test_queue_worker_keeps_job_queued_when_claim_database_fails(monkeypat
     def failing_claim(run_id: str) -> bool:
         raise RuntimeError("database boom")
 
-    monkeypatch.setattr(workflow, "_claim_job", failing_claim)
+    monkeypatch.setattr(workflow_execution, "_claim_job", failing_claim)
 
     class StopAfterFirstRetry(Exception):
         pass
@@ -397,9 +397,9 @@ async def test_queue_worker_keeps_job_queued_when_claim_database_fails(monkeypat
         assert delay == 1.0
         raise StopAfterFirstRetry()
 
-    monkeypatch.setattr(workflow, "_queue_worker_sleep", stop_after_first_retry)
+    monkeypatch.setattr(workflow_execution, "_queue_worker_sleep", stop_after_first_retry)
     with pytest.raises(StopAfterFirstRetry):
-        await workflow._queue_worker()
+        await workflow_execution._queue_worker()
 
     assert workflow._EXECUTION_QUEUE == [item]
     assert workflow._QUEUE_WORKER_RUNNING is False
@@ -494,7 +494,7 @@ async def test_restart_resume_skips_durable_completed_nodes(monkeypatch: pytest.
     async def record_action(node, run_id: str) -> None:
         executed.append(node.id)
 
-    monkeypatch.setattr(workflow, "_execute_node_action", record_action)
+    monkeypatch.setattr(workflow_execution, "_execute_node_action", record_action)
     await workflow._execute_workflow(run.run_id)
 
     assert executed == ["second"]
@@ -598,7 +598,7 @@ async def test_qstash_dispatch_releases_claim_and_returns_retryable_status_on_ex
     async def fail_execution(run_id: str) -> None:
         raise RuntimeError("simulated persistence interruption")
 
-    monkeypatch.setattr(workflow, "_execute_workflow", fail_execution)
+    monkeypatch.setattr(workflow_qstash, "_execute_workflow", fail_execution)
 
     class FakeRequest:
         headers = {"Upstash-Signature": "signed-test-payload"}
@@ -674,7 +674,7 @@ async def test_qstash_terminal_redelivery_repairs_job_status_without_reexecution
     async def unexpected_execution(run_id: str) -> None:
         raise AssertionError("terminal workflow must not execute twice")
 
-    monkeypatch.setattr(workflow, "_execute_workflow", unexpected_execution)
+    monkeypatch.setattr(workflow_qstash, "_execute_workflow", unexpected_execution)
 
     class FakeRequest:
         headers = {"Upstash-Signature": "signed-test-payload"}
@@ -735,7 +735,7 @@ async def test_cancelled_qstash_execution_requeues_run_and_releases_claim(
     async def cancel_execution(self):
         raise asyncio.CancelledError()
 
-    monkeypatch.setattr(workflow.WorkflowExecutor, "execute", cancel_execution)
+    monkeypatch.setattr(workflow_execution.WorkflowExecutor, "execute", cancel_execution)
     with pytest.raises(asyncio.CancelledError):
         await workflow._execute_workflow(run.run_id)
 
