@@ -5,6 +5,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 load_dotenv()
@@ -16,6 +17,13 @@ if DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
 else:
     connect_args = {"connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT", "10"))}
+    # Supabase transaction-mode poolers do not support session-bound prepared
+    # statements. Psycopg 3 auto-prepares repeated queries by default, which can
+    # fail during startup seeding with DuplicatePreparedStatement (_pg3_N).
+    # Disable auto-prepare only for the psycopg 3 dialect; psycopg2 does not
+    # accept this connection argument.
+    if make_url(DATABASE_URL).drivername == "postgresql+psycopg":
+        connect_args["prepare_threshold"] = None
 
 engine = create_engine(DATABASE_URL, connect_args=connect_args, pool_pre_ping=True)
 
