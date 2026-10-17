@@ -71,6 +71,8 @@ workflow_telemetry = workflow_websocket.workflow_telemetry
 qstash_dispatch = workflow_qstash.qstash_dispatch
 _execute_workflow = workflow_execution._execute_workflow
 _claim_job = workflow_persistence._claim_job
+_record_execution_history = workflow_persistence._record_execution_history
+_sync_execution_metrics = workflow_persistence._sync_execution_metrics
 _QUEUE_WORKER_RUNNING = workflow_execution._QUEUE_WORKER_RUNNING
 
 # ---------------------------------------------------------------------------
