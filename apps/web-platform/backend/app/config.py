@@ -96,7 +96,16 @@ def upload_storage_configured() -> bool:
     fallbacks = [item.strip().lower() for item in os.getenv("STORAGE_FALLBACK_BACKENDS", "").split(",") if item.strip()]
     if primary == "local":
         return True
-    return all(configured.get(item, False) for item in [primary, *fallbacks] if item != "google_drive") and bool(configured.get(primary, False))
+
+    # S3-compatible services (AWS S3, Backblaze B2, and Cloudflare R2) share
+    # the same credential contract and storage adapter. Normalize aliases so
+    # the health check agrees with validate_env() and the actual storage router.
+    def backend_key(name: str) -> str:
+        return "b2" if name in {"b2", "r2", "s3"} else name
+
+    required_backends = [backend_key(item) for item in [primary, *fallbacks] if item != "google_drive"]
+    primary_key = backend_key(primary)
+    return all(configured.get(item, False) for item in required_backends) and bool(configured.get(primary_key, False))
 
 
 def validate_env() -> list[str]:
