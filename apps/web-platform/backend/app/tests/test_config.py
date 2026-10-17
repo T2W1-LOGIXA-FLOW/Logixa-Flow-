@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..config import ai_enabled_for_role, validate_env
+from ..config import ai_enabled_for_role, upload_storage_configured, validate_env
 
 
 def set_required_secrets(monkeypatch, jwt_secret: str, api_secret: str) -> None:
@@ -94,3 +94,25 @@ def test_require_ai_key_requires_openrouter_not_legacy_paid_provider(monkeypatch
     missing = validate_env()
 
     assert any("OPENROUTER_API_KEY" in item for item in missing)
+
+
+def test_s3_storage_alias_is_reported_configured_when_credentials_exist(monkeypatch):
+    monkeypatch.setenv("UPLOAD_STORAGE_BACKEND", "s3")
+    monkeypatch.delenv("STORAGE_FALLBACK_BACKENDS", raising=False)
+    monkeypatch.setenv("S3_ENDPOINT_URL", "https://s3.example.invalid")
+    monkeypatch.setenv("S3_ACCESS_KEY_ID", "test-access-key")
+    monkeypatch.setenv("S3_SECRET_ACCESS_KEY", "test-secret-key")
+    monkeypatch.setenv("S3_BUCKET", "test-bucket")
+
+    assert upload_storage_configured() is True
+
+
+def test_s3_storage_alias_is_not_configured_when_a_required_credential_is_missing(monkeypatch):
+    monkeypatch.setenv("UPLOAD_STORAGE_BACKEND", "s3")
+    monkeypatch.delenv("STORAGE_FALLBACK_BACKENDS", raising=False)
+    monkeypatch.setenv("S3_ENDPOINT_URL", "https://s3.example.invalid")
+    monkeypatch.setenv("S3_ACCESS_KEY_ID", "test-access-key")
+    monkeypatch.delenv("S3_SECRET_ACCESS_KEY", raising=False)
+    monkeypatch.setenv("S3_BUCKET", "test-bucket")
+
+    assert upload_storage_configured() is False
