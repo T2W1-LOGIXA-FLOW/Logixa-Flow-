@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app import models
-from app.routers import workflow
+from app.routers import workflow, workflow_execution, workflow_persistence
 from app.schemas import WorkflowNode, WorkflowRunRequest, WorkflowState, WorkflowStorageCreate
 
 
@@ -26,6 +26,7 @@ def reset_workflow_execution_state(monkeypatch: pytest.MonkeyPatch) -> None:
     session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     models.Base.metadata.create_all(bind=engine)
     monkeypatch.setattr(workflow, "SessionLocal", session_factory)
+    monkeypatch.setattr(workflow_persistence, "SessionLocal", session_factory)
     yield
     workflow._WORKFLOW_STORAGE.clear()
     workflow._WORKFLOW_RUNS.clear()
@@ -142,10 +143,10 @@ async def test_queue_claim_retries_transient_failure(monkeypatch: pytest.MonkeyP
     async def fake_sleep(delay: float) -> None:
         sleep_delays.append(delay)
 
-    monkeypatch.setattr(workflow, "_claim_job", flaky_claim)
-    monkeypatch.setattr(workflow, "_queue_worker_sleep", fake_sleep)
+    monkeypatch.setattr(workflow_execution, "_claim_job", flaky_claim)
+    monkeypatch.setattr(workflow_execution, "_queue_worker_sleep", fake_sleep)
 
-    claimed = await asyncio.wait_for(workflow._claim_job_with_retry("claim-retry-run"), timeout=5)
+    claimed = await asyncio.wait_for(workflow_execution._claim_job_with_retry("claim-retry-run"), timeout=5)
 
     assert claimed is True
     assert claim_attempts == 2
