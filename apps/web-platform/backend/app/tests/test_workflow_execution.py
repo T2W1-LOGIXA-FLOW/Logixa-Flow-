@@ -21,7 +21,7 @@ def reset_workflow_execution_state(monkeypatch: pytest.MonkeyPatch) -> None:
     workflow._ERROR_NOTIFICATIONS.clear()
     workflow._EXECUTION_STATES.clear()
     workflow._CONTROLLER_RUNS.clear()
-    workflow._QUEUE_WORKER_RUNNING = False
+    workflow_execution._QUEUE_WORKER_RUNNING = False
     engine = create_engine("sqlite:///:memory:")
     session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     models.Base.metadata.create_all(bind=engine)
@@ -35,7 +35,7 @@ def reset_workflow_execution_state(monkeypatch: pytest.MonkeyPatch) -> None:
     workflow._EXECUTION_QUEUE.clear()
     workflow._ERROR_NOTIFICATIONS.clear()
     workflow._EXECUTION_STATES.clear()
-    workflow._QUEUE_WORKER_RUNNING = False
+    workflow_execution._QUEUE_WORKER_RUNNING = False
     engine.dispose()
 
 
