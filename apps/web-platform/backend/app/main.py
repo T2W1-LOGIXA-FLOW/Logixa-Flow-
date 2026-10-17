@@ -14,7 +14,8 @@ from sqlalchemy import text
 from . import models
 from .agent_recovery import recover_stale_agent_runs
 from .cache import cache_client, rate_limiter
-from .config import ai_feature_status, ai_provider_configured, upload_storage_configured, validate_env
+from .config import ai_feature_status, ai_provider_configured, telegram_configured, telegram_enabled, upload_storage_configured, validate_env
+from .qstash import qstash_configured
 from .database import SessionLocal
 from .db_bootstrap import bootstrap_database, database_profile
 from .logging_config import setup_logging
@@ -410,6 +411,12 @@ def health() -> dict[str, object]:
     except Exception:
         embedding_count = 0
     sched = scheduler_status()
+    rag_embedding_version = os.getenv("RAG_EMBEDDING_VERSION", "1").strip()
+    rag_active_embedding_model = (
+        os.getenv("VOYAGE_EMBEDDING_MODEL", "voyage-3-lite")
+        if rag_embedding_version == "2"
+        else os.getenv("EMBEDDING_MODEL", "liquid/lfm-2.5-embedding-350m:free")
+    )
     return {
         "status": "ok" if database_status == "ok" else "degraded",
         "missing_env": missing_env,
@@ -420,6 +427,12 @@ def health() -> dict[str, object]:
         "ai_key_configured": ai_provider_configured(),
         "ai_feature_status": ai_feature_status(),
         "embedding_model": os.getenv("EMBEDDING_MODEL", "liquid/lfm-2.5-embedding-350m:free"),
+        "rag_embedding_version": rag_embedding_version,
+        "rag_active_embedding_model": rag_active_embedding_model,
+        "qstash_configured": qstash_configured(),
+        "celery_enabled": os.getenv("CELERY_ENABLED", "false").lower() == "true",
+        "telegram_configured": telegram_configured(),
+        "telegram_enabled": telegram_enabled(),
         "pgvector_enabled": pgvector_status.get("enabled", False),
         "pgvector_reason": pgvector_status.get("reason"),
         "rag_chunks": embedding_count,
