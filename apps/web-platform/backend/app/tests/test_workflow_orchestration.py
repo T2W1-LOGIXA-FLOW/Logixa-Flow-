@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app import models
-from app.routers import workflow as workflow_router
+from app.routers import workflow as workflow_router, workflow_execution, workflow_persistence
 from app.schemas import WorkflowNode, WorkflowRunOut, WorkflowState, WorkflowStorageCreate, WorkflowStorageOut
 
 
@@ -25,6 +25,7 @@ def reset_workflow_state(monkeypatch: pytest.MonkeyPatch) -> None:
     session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     models.Base.metadata.create_all(bind=engine)
     monkeypatch.setattr(workflow_router, "SessionLocal", session_factory)
+    monkeypatch.setattr(workflow_persistence, "SessionLocal", session_factory)
     yield
     workflow_router._WORKFLOW_STORAGE.clear()
     workflow_router._WORKFLOW_RUNS.clear()
@@ -55,7 +56,7 @@ def test_schedule_run_preserves_delay_and_priority_in_local_queue(monkeypatch: p
         def close(self) -> None:
             pass
 
-    monkeypatch.setattr(workflow_router, "SessionLocal", lambda: FakeDB())
+    monkeypatch.setattr(workflow_persistence, "SessionLocal", lambda: FakeDB())
     workflow_router._WORKFLOW_RUNS["scheduled-run"] = WorkflowRunOut(
         run_id="scheduled-run",
         workflow_id="scheduled-workflow",
@@ -197,7 +198,7 @@ async def test_node_retry_recovers_after_transient_failure(monkeypatch) -> None:
             raise RuntimeError("transient failure")
         return None
 
-    monkeypatch.setattr(workflow_router, "_execute_node_action", flaky_action)
+    monkeypatch.setattr(workflow_execution, "_execute_node_action", flaky_action)
 
     await workflow_router._execute_workflow(run.run_id)
 
@@ -240,7 +241,7 @@ async def test_node_retry_exhaustion_marks_run_failed(monkeypatch) -> None:
         calls += 1
         raise RuntimeError("persistent failure")
 
-    monkeypatch.setattr(workflow_router, "_execute_node_action", always_fails)
+    monkeypatch.setattr(workflow_execution, "_execute_node_action", always_fails)
 
     await workflow_router._execute_workflow(run.run_id)
 
