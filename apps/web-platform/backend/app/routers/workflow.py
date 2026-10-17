@@ -59,6 +59,7 @@ from app.routers.workflow_execution import (
     _RUN_TASKS,
     _WORKER_ID,
     _queue_worker,
+    start_queue_worker,
 )
 from app.routers import workflow_qstash
 from app.routers import workflow_websocket
@@ -240,4 +241,4 @@ async def approve_workflow_run(run_id: str, node_id: str | None = None, _admin=D
 
 
 # Re-export for callers that import from this module (e.g. controllers router)
-__all__ = ["router", "enqueue_workflow_run", "restore_pending_workflow_runs"]
+__all__ = ["router", "enqueue_workflow_run", "restore_pending_workflow_runs", "start_queue_worker"]

@@ -17,3 +17,4 @@ cloudinary>=1.46.2
 
 google-api-python-client>=2.201.0
 google-auth>=2.59.1
+sentry-sdk[fastapi]>=2.0.0
