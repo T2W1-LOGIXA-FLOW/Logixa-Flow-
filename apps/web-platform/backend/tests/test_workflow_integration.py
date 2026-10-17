@@ -160,7 +160,7 @@ async def test_workflow_websocket_closes_after_supabase_session_is_revoked(
             raise HTTPException(status_code=401, detail="Invalid or expired session")
 
     monkeypatch.setattr(workflow_websocket, "_WEBSOCKET_AUTH_RECHECK_SECONDS", 0.001)
-    monkeypatch.setattr(workflow, "_verify_supabase_token", verify_session)
+    monkeypatch.setattr(workflow_websocket, "_verify_supabase_token", verify_session)
     websocket = IdleWebSocket(['{"type":"auth","token":"supabase-session"}'])
 
     await workflow.workflow_telemetry(websocket)  # type: ignore[arg-type]
