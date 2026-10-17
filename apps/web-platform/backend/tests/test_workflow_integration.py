@@ -10,6 +10,7 @@ from sqlalchemy.pool import StaticPool
 
 from app import models
 from app.routers import workflow
+from app.routers import workflow_qstash, workflow_websocket
 from app.schemas import WorkflowRunRequest, WorkflowStorageCreate, WorkflowNode
 
 
@@ -105,7 +106,7 @@ async def test_workflow_orchestration_completes_and_broadcasts() -> None:
 
 @pytest.mark.anyio
 async def test_workflow_websocket_authenticates_supabase_admin_with_first_message(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(workflow, "_verify_supabase_token", lambda token: {"sub": "admin-id", "role": "admin"})
+    monkeypatch.setattr(workflow_websocket, "_verify_supabase_token", lambda token: {"sub": "admin-id", "role": "admin"})
     websocket = FakeWebSocket(['{"type":"auth","token":"supabase-access-token"}'])
 
     await workflow.workflow_telemetry(websocket)  # type: ignore[arg-type]
@@ -118,7 +119,7 @@ async def test_workflow_websocket_authenticates_supabase_admin_with_first_messag
 
 @pytest.mark.anyio
 async def test_workflow_websocket_rejects_missing_authentication(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(workflow, "_WEBSOCKET_AUTH_TIMEOUT_SECONDS", 0.001)
+    monkeypatch.setattr(workflow_websocket, "_WEBSOCKET_AUTH_TIMEOUT_SECONDS", 0.001)
     websocket = IdleWebSocket()
 
     await workflow.workflow_telemetry(websocket)  # type: ignore[arg-type]
@@ -157,7 +158,7 @@ async def test_workflow_websocket_closes_after_supabase_session_is_revoked(
         if verification_count > 1:
             raise HTTPException(status_code=401, detail="Invalid or expired session")
 
-    monkeypatch.setattr(workflow, "_WEBSOCKET_AUTH_RECHECK_SECONDS", 0.001)
+    monkeypatch.setattr(workflow_websocket, "_WEBSOCKET_AUTH_RECHECK_SECONDS", 0.001)
     monkeypatch.setattr(workflow, "_verify_supabase_token", verify_session)
     websocket = IdleWebSocket(['{"type":"auth","token":"supabase-session"}'])
 
@@ -197,14 +198,14 @@ async def test_qstash_dispatch_restores_durable_run_before_execution(monkeypatch
             return b'{"run_id":"durable-run"}'
 
     monkeypatch.setattr("qstash.Receiver", FakeReceiver)
-    monkeypatch.setattr(workflow, "_load_run_state", lambda _: restored)
-    monkeypatch.setattr(workflow, "_load_workflow_definition", lambda _: workflow.WorkflowStorageOut(
+    monkeypatch.setattr(workflow_qstash, "_load_run_state", lambda _: restored)
+    monkeypatch.setattr(workflow_qstash, "_load_workflow_definition", lambda _: workflow.WorkflowStorageOut(
         **definition.model_dump(), created_at=workflow._now(), updated_at=workflow._now()
     ))
     executed: list[str] = []
     async def fake_execute(run_id: str) -> None:
         executed.append(run_id)
-    monkeypatch.setattr(workflow, "_execute_workflow", fake_execute)
+    monkeypatch.setattr(workflow_qstash, "_execute_workflow", fake_execute)
 
     result = await workflow.qstash_dispatch(FakeRequest())  # type: ignore[arg-type]
 
@@ -272,7 +273,7 @@ async def test_qstash_dispatch_does_not_double_claim_a_fresh_run(monkeypatch: py
             return b'{"run_id":"claimed-run"}'
 
     monkeypatch.setattr("qstash.Receiver", FakeReceiver)
-    monkeypatch.setattr(workflow, "_claim_job", lambda _: False)
+    monkeypatch.setattr(workflow_qstash, "_claim_job", lambda _: False)
     executed: list[str] = []
     async def fake_execute(run_id: str) -> None:
         executed.append(run_id)
