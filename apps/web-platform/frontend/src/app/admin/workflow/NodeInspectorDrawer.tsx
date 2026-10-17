@@ -15,7 +15,7 @@ type NodeInspectorDrawerProps = {
   selectedNode: Node<ServiceNodeData> | null;
   onClose: () => void;
   onDeleteNode?: (id: string) => void;
-  onExecuteNode?: (node: Node<ServiceNodeData>) => Promise<any>;
+  onExecuteNode?: (node: Node<ServiceNodeData>) => Promise<unknown>;
 };
 
 export default function NodeInspectorDrawer({
@@ -54,9 +54,10 @@ export default function NodeInspectorDrawer({
           )
         );
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
       setExecutionResult(
-        JSON.stringify({ status: "error", error: err.message || String(err) }, null, 2)
+        JSON.stringify({ status: "error", error: message }, null, 2)
       );
     } finally {
       setExecuting(false);
