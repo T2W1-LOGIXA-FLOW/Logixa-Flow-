@@ -10,7 +10,7 @@ from sqlalchemy.pool import StaticPool
 
 from app import models
 from app.routers import workflow
-from app.routers import workflow_qstash, workflow_websocket
+from app.routers import workflow_qstash, workflow_websocket, workflow_execution, workflow_persistence
 from app.schemas import WorkflowRunRequest, WorkflowStorageCreate, WorkflowNode
 
 
@@ -56,6 +56,7 @@ def reset_workflow_state(monkeypatch: pytest.MonkeyPatch) -> None:
     session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     models.Base.metadata.create_all(bind=engine)
     monkeypatch.setattr(workflow, "SessionLocal", session_factory)
+    monkeypatch.setattr(workflow_persistence, "SessionLocal", session_factory)
     yield
     engine.dispose()
     workflow._SUBSCRIBERS.clear()
@@ -137,7 +138,7 @@ async def test_workflow_websocket_rejects_invalid_or_expired_supabase_auth(
     def reject_token(_: str) -> None:
         raise HTTPException(status_code=status_code, detail="Invalid or expired session")
 
-    monkeypatch.setattr(workflow, "_verify_supabase_token", reject_token)
+    monkeypatch.setattr(workflow_websocket, "_verify_supabase_token", reject_token)
     websocket = FakeWebSocket(['{"type":"auth","token":"invalid-or-expired"}'])
 
     await workflow.workflow_telemetry(websocket)  # type: ignore[arg-type]
@@ -241,7 +242,7 @@ async def test_qstash_dispatch_acknowledges_terminal_run_without_reexecution(mon
     executed: list[str] = []
     async def fake_execute(run_id: str) -> None:
         executed.append(run_id)
-    monkeypatch.setattr(workflow, "_execute_workflow", fake_execute)
+    monkeypatch.setattr(workflow_qstash, "_execute_workflow", fake_execute)
 
     result = await workflow.qstash_dispatch(FakeRequest())  # type: ignore[arg-type]
 
@@ -318,9 +319,9 @@ def test_stale_workflow_claim_is_reclaimable(monkeypatch: pytest.MonkeyPatch) ->
             pass
 
     db = FakeDB()
-    monkeypatch.setattr(workflow, "SessionLocal", lambda: db)
-    monkeypatch.setattr(workflow, "inspect", lambda _: FakeInspector())
-    monkeypatch.setattr(workflow, "_WORKER_ID", "test-worker")
+    monkeypatch.setattr(workflow_persistence, "SessionLocal", lambda: db)
+    monkeypatch.setattr(workflow_persistence, "inspect", lambda _: FakeInspector())
+    monkeypatch.setattr(workflow_execution, "_WORKER_ID", "test-worker")
     monkeypatch.setenv("WORKFLOW_CLAIM_LEASE_SECONDS", "60")
 
     assert workflow._claim_job("stale-run") is True
