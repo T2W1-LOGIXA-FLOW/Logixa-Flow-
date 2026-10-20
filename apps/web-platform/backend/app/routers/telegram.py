@@ -65,13 +65,22 @@ async def handle_telegram_action(
     db: Session = Depends(get_db),
     x_telegram_action_secret: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    """Handle a trusted gateway action; direct calls require a dedicated shared secret."""
+    """Handle trusted gateway actions; direct callers must prove shared-secret possession."""
     expected_action_secret = os.getenv("TELEGRAM_ACTION_SECRET", "").strip()
     if not expected_action_secret:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Telegram action gateway is not configured")
     if not x_telegram_action_secret or not hmac.compare_digest(x_telegram_action_secret, expected_action_secret):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Telegram action credentials")
     _authorize_telegram_actor(user_id=payload.user_id, chat_id=payload.chat_id)
+    return await _execute_telegram_action(payload, db=db)
+
+
+async def _execute_telegram_action(
+    payload: TelegramActionPayload,
+    *,
+    db: Session,
+) -> dict[str, Any]:
+    """Execute a callback after the caller has been authenticated and authorized."""
     action = payload.action
     logger.info("Logixa received Telegram action: %s", action)
 
