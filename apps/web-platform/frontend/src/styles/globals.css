@@ -38,7 +38,8 @@
 body {
   @apply min-h-screen text-foreground;
   background: hsl(var(--background));
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: "Inter", "Noto Sans Myanmar", "Pyidaungsu", "Padauk", system-ui, sans-serif;
+  line-height: 1.6;
 }
 
 /* ************* KEEP ALL EXISTING STYLES BELOW THIS LINE (animations, keyframes, components) ************* */

@@ -33,6 +33,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             data-website-id={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID}
           />
         )}
+        {/* Telegram Web App SDK for seamless Mini App integration */}
+        <script src="https://telegram.org/js/telegram-web-app.js" async />
         <Analytics />
       </body>
     </html>

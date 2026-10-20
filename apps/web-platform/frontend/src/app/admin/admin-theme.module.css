@@ -66,11 +66,11 @@
   align-items: center;
   gap: 0.45rem;
   border-radius: 999px;
-  padding: 0.4rem 0.7rem;
+  padding: 0.45rem 0.85rem;
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.1em;
-  line-height: 1;
+  line-height: 1.4;
   text-transform: uppercase;
 }
 
