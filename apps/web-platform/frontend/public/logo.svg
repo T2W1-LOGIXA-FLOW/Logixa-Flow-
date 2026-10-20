@@ -1,91 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
   <defs>
-    <!-- Tile Background Gradient -->
-    <linearGradient id="lfBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0b1322" />
-      <stop offset="100%" stop-color="#050811" />
-    </linearGradient>
-
-    <!-- Border Dual Gradient: Cyan to Orange -->
-    <linearGradient id="lfBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="lfBorderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#00e5ff" />
-      <stop offset="45%" stop-color="#0284c7" />
-      <stop offset="55%" stop-color="#ea580c" />
+      <stop offset="48%" stop-color="#0284c7" />
+      <stop offset="52%" stop-color="#ea580c" />
       <stop offset="100%" stop-color="#ff5500" />
     </linearGradient>
-
-    <!-- Cyan Conduit Gradient -->
-    <linearGradient id="lfCyan" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00e5ff" />
-      <stop offset="60%" stop-color="#38bdf8" />
-      <stop offset="100%" stop-color="#ffffff" />
-    </linearGradient>
-
-    <!-- Orange Conduit Gradient -->
-    <linearGradient id="lfOrange" x1="100%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ff5500" />
-      <stop offset="60%" stop-color="#f97316" />
-      <stop offset="100%" stop-color="#fed7aa" />
-    </linearGradient>
-
-    <radialGradient id="lfNode" cx="35%" cy="35%" r="65%">
-      <stop offset="0%" stop-color="#334155" />
-      <stop offset="60%" stop-color="#0f172a" />
-      <stop offset="100%" stop-color="#020617" />
-    </radialGradient>
-
-    <!-- Glow Filters -->
-    <filter id="lfGlowCyan" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="3.5" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
-    <filter id="lfGlowOrange" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="3.5" result="blur" />
+    <filter id="lfGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.5" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
   </defs>
 
-  <!-- Squircle App Container Tile -->
-  <rect x="8" y="8" width="184" height="184" rx="44" fill="url(#lfBg)" stroke="url(#lfBorder)" stroke-width="4.5" />
+  <!-- Squircle App Tile -->
+  <rect x="5" y="5" width="90" height="90" rx="24" fill="#08101e" stroke="url(#lfBorderGrad)" stroke-width="3.5" />
 
-  <!-- Outer Metallic X Chassis -->
-  <path d="M 44 44 L 80 44 C 95 62, 105 62, 120 44 L 156 44 L 156 80 C 138 95, 138 105, 156 120 L 156 156 L 120 156 C 105 138, 95 138, 80 156 L 44 156 L 44 120 C 62 105, 62 95, 44 80 Z"
-        fill="#0d1527" stroke="#1e293b" stroke-width="3" stroke-linejoin="round" />
+  <!-- Inner Ambient Glow Fill -->
+  <rect x="5" y="5" width="90" height="90" rx="24" fill="rgba(0, 229, 255, 0.04)" />
 
-  <!-- Left: Electric Cyan Conduits -->
-  <g filter="url(#lfGlowCyan)">
-    <!-- Top-Left Inflow -->
-    <path d="M 50 56 Q 78 78, 90 92" fill="none" stroke="url(#lfCyan)" stroke-width="7" stroke-linecap="round" />
-    <path d="M 50 56 Q 78 78, 90 92" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
-    <!-- Bottom-Left Inflow -->
-    <path d="M 50 144 Q 78 122, 90 108" fill="none" stroke="url(#lfCyan)" stroke-width="7" stroke-linecap="round" />
-    <path d="M 50 144 Q 78 122, 90 108" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
-    <!-- Outer Arc -->
-    <path d="M 52 82 Q 78 100, 52 118" fill="none" stroke="#00e5ff" stroke-width="3" opacity="0.8" />
+  <!-- X-Nexus Geometry -->
+  <g filter="url(#lfGlow)">
+    <!-- Left Conduits (Electric Cyan) -->
+    <path d="M 26 28 Q 42 42, 50 50" fill="none" stroke="#00e5ff" stroke-width="4.5" stroke-linecap="round" />
+    <path d="M 26 72 Q 42 58, 50 50" fill="none" stroke="#00e5ff" stroke-width="4.5" stroke-linecap="round" />
+    <path d="M 25 50 Q 38 50, 48 50" fill="none" stroke="#00e5ff" stroke-width="3" stroke-linecap="round" />
+
+    <!-- Right Conduits (Fiery Orange) -->
+    <path d="M 74 28 Q 58 42, 50 50" fill="none" stroke="#ff5500" stroke-width="4.5" stroke-linecap="round" />
+    <path d="M 74 72 Q 58 58, 50 50" fill="none" stroke="#ff5500" stroke-width="4.5" stroke-linecap="round" />
+    <path d="M 75 50 Q 62 50, 52 50" fill="none" stroke="#ff5500" stroke-width="3" stroke-linecap="round" />
+
+    <!-- Left & Right Inflow Nodes -->
+    <circle cx="26" cy="28" r="4" fill="#00e5ff" />
+    <circle cx="26" cy="72" r="4" fill="#00e5ff" />
+    <circle cx="74" cy="28" r="4" fill="#ff5500" />
+    <circle cx="74" cy="72" r="4" fill="#ff5500" />
+
+    <!-- Central Nexus Hub -->
+    <circle cx="50" cy="50" r="5.5" fill="#0b172a" stroke="#ffffff" stroke-width="2" />
+    <circle cx="50" cy="50" r="2.5" fill="#00e5ff" />
   </g>
-
-  <!-- Right: Fiery Orange Conduits -->
-  <g filter="url(#lfGlowOrange)">
-    <!-- Top-Right Outflow -->
-    <path d="M 150 56 Q 122 78, 110 92" fill="none" stroke="url(#lfOrange)" stroke-width="7" stroke-linecap="round" />
-    <path d="M 150 56 Q 122 78, 110 92" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
-    <!-- Bottom-Right Outflow -->
-    <path d="M 150 144 Q 122 122, 110 108" fill="none" stroke="url(#lfOrange)" stroke-width="7" stroke-linecap="round" />
-    <path d="M 150 144 Q 122 122, 110 108" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
-    <!-- Outer Arc -->
-    <path d="M 148 82 Q 122 100, 148 118" fill="none" stroke="#ff5500" stroke-width="3" opacity="0.8" />
-  </g>
-
-  <!-- Center Matrix Hubs (4 Ports) -->
-  <circle cx="100" cy="78" r="10" fill="url(#lfNode)" stroke="#475569" stroke-width="1.8" />
-  <circle cx="100" cy="78" r="4" fill="#020617" />
-
-  <circle cx="100" cy="122" r="10" fill="url(#lfNode)" stroke="#475569" stroke-width="1.8" />
-  <circle cx="100" cy="122" r="4" fill="#020617" />
-
-  <circle cx="78" cy="100" r="10" fill="url(#lfNode)" stroke="#00e5ff" stroke-width="1.8" />
-  <circle cx="78" cy="100" r="3.5" fill="#00e5ff" />
-
-  <circle cx="122" cy="100" r="10" fill="url(#lfNode)" stroke="#ff5500" stroke-width="1.8" />
-  <circle cx="122" cy="100" r="3.5" fill="#ff5500" />
 </svg>
