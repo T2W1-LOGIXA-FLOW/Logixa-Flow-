@@ -8,6 +8,7 @@ import {
   Workflow, X, Bot, Server,
 } from "lucide-react";
 import styles from "@/app/admin/admin-theme.module.css";
+import { LogixaFlowLogo } from "@/components/LogixaFlowLogo";
 
 const navigationItems = [
   { category: "COMMAND CENTER", items: [{ href: "/admin", label: "Overview", icon: LayoutDashboard }] },
@@ -54,8 +55,7 @@ export default function AdminSidebar({
       <div className="border-b border-slate-800/80 px-4 py-4">
         <div className="flex items-center justify-between gap-3">
           <Link href="/admin" className="flex items-center gap-3" onClick={onClose}>
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 text-sm font-black text-cyan-100">LF</span>
-            <span><span className="block text-base font-bold text-white">Logixa Flow</span><span className="text-xs text-slate-500">Admin command center</span></span>
+            <LogixaFlowLogo size={36} />
           </Link>
           <button type="button" onClick={onClose} className={`${styles.closeButton} text-slate-400 hover:text-white lg:hidden`} aria-label="Close sidebar"><X className="h-5 w-5" /></button>
         </div>
