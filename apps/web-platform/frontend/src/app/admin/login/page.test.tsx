@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import AdminLoginPage from "./page";
 
 const { routerPush, login, validateAdminToken, clearAdminSession } = vi.hoisted(() => ({
   routerPush: vi.fn(),
   login: vi.fn(),
-  validateAdminToken,
-  clearAdminSession,
+  validateAdminToken: vi.fn(),
+  clearAdminSession: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -21,20 +21,23 @@ vi.mock("next/link", () => ({
 
 vi.mock("@/components/api", () => ({
   login,
-  validateAdminToken: vi.fn(),
+  validateAdminToken,
 }));
 
 vi.mock("@/lib/adminSession", () => ({
-  clearAdminSession: vi.fn(),
+  clearAdminSession,
   getAdminSessionToken: vi.fn().mockResolvedValue(""),
 }));
 
 describe("Admin login", () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
+  beforeEach(() => {
     vi.clearAllMocks();
     login.mockResolvedValue({ access_token: "valid-session" });
     validateAdminToken.mockResolvedValue(true);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
     localStorage.clear();
   });
 
