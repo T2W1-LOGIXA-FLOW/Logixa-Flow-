@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <!-- X body gradient: top-left navy → dark -->
+    <linearGradient id="xBody" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#3c5282"/>
+      <stop offset="40%"  stop-color="#1e2d52"/>
+      <stop offset="100%" stop-color="#0b1424"/>
+    </linearGradient>
+
+    <!-- Blue flow line gradient (top → bottom) -->
+    <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#88f0ff"/>
+      <stop offset="45%"  stop-color="#00b4ff"/>
+      <stop offset="100%" stop-color="#0055cc"/>
+    </linearGradient>
+
+    <!-- Orange flow line gradient (top → bottom) -->
+    <linearGradient id="orangeGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#ff8855"/>
+      <stop offset="50%"  stop-color="#ff3300"/>
+      <stop offset="100%" stop-color="#aa1100"/>
+    </linearGradient>
+
+    <!-- Glow filter for blue lines -->
+    <filter id="blueGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <!-- Glow filter for orange lines -->
+    <filter id="orangeGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <!-- X-shape clip path for flow lines -->
+    <clipPath id="xClip">
+      <path d="M 12,56 L 12,12 L 56,12
+               C 70,12 100,60 100,67
+               C 100,60 130,12 144,12
+               L 188,12 L 188,56
+               C 188,70 140,100 133,100
+               C 140,100 188,130 188,144
+               L 188,188 L 144,188
+               C 130,188 100,140 100,133
+               C 100,140 70,188 56,188
+               L 12,188 L 12,144
+               C 12,130 60,100 67,100
+               C 60,100 12,70 12,56 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- X body fill -->
+  <path d="M 12,56 L 12,12 L 56,12
+           C 70,12 100,60 100,67
+           C 100,60 130,12 144,12
+           L 188,12 L 188,56
+           C 188,70 140,100 133,100
+           C 140,100 188,130 188,144
+           L 188,188 L 144,188
+           C 130,188 100,140 100,133
+           C 100,140 70,188 56,188
+           L 12,188 L 12,144
+           C 12,130 60,100 67,100
+           C 60,100 12,70 12,56 Z"
+        fill="url(#xBody)"/>
+
+  <!-- Edge bevel highlights -->
+  <path d="M 12,56 L 12,12 L 56,12 C 70,12 100,60 100,67"
+        stroke="#4a6898" stroke-width="1.5" fill="none" opacity="0.55"/>
+  <path d="M 12,144 C 12,130 60,100 67,100 C 60,100 12,70 12,56"
+        stroke="#3a5070" stroke-width="1" fill="none" opacity="0.35"/>
+
+  <!-- Flow lines (clipped to X shape) -->
+  <g clip-path="url(#xClip)">
+
+    <!-- Blue lines: TL corner → BL corner -->
+    <path d="M 20,20 C 56,58 73,82 73,100 C 73,118 56,142 20,180"
+          stroke="url(#blueGrad)" stroke-width="8" fill="none"
+          stroke-linecap="round" filter="url(#blueGlow)" opacity="0.95"/>
+    <path d="M 34,16 C 65,58 78,84 78,100 C 78,116 65,142 34,184"
+          stroke="#44dcff" stroke-width="4" fill="none"
+          stroke-linecap="round" opacity="0.65"/>
+    <path d="M 48,13 C 74,58 82,86 82,100 C 82,114 74,142 48,187"
+          stroke="#ccf5ff" stroke-width="2" fill="none"
+          stroke-linecap="round" opacity="0.28"/>
+
+    <!-- Orange lines: TR corner → BR corner -->
+    <path d="M 180,20 C 144,58 127,82 127,100 C 127,118 144,142 180,180"
+          stroke="url(#orangeGrad)" stroke-width="8" fill="none"
+          stroke-linecap="round" filter="url(#orangeGlow)" opacity="0.95"/>
+    <path d="M 166,16 C 135,58 122,84 122,100 C 122,116 135,142 166,184"
+          stroke="#ff7744" stroke-width="4" fill="none"
+          stroke-linecap="round" opacity="0.65"/>
+    <path d="M 152,13 C 126,58 118,86 118,100 C 118,114 126,142 152,187"
+          stroke="#ffcc99" stroke-width="2" fill="none"
+          stroke-linecap="round" opacity="0.28"/>
+  </g>
+
+  <!-- 4 hub circles (2×2 grid at center) -->
+  <circle cx="87"  cy="87"  r="9.5" fill="#04070e"/>
+  <circle cx="113" cy="87"  r="9.5" fill="#04070e"/>
+  <circle cx="87"  cy="113" r="9.5" fill="#04070e"/>
+  <circle cx="113" cy="113" r="9.5" fill="#04070e"/>
+
+  <!-- Circle rims -->
+  <circle cx="87"  cy="87"  r="9.5" fill="none" stroke="#1d2c48" stroke-width="2"/>
+  <circle cx="113" cy="87"  r="9.5" fill="none" stroke="#1d2c48" stroke-width="2"/>
+  <circle cx="87"  cy="113" r="9.5" fill="none" stroke="#1d2c48" stroke-width="2"/>
+  <circle cx="113" cy="113" r="9.5" fill="none" stroke="#1d2c48" stroke-width="2"/>
+
+  <!-- Circle glints -->
+  <circle cx="84"  cy="84"  r="3" fill="#243558" opacity="0.8"/>
+  <circle cx="110" cy="84"  r="3" fill="#243558" opacity="0.8"/>
+  <circle cx="84"  cy="110" r="3" fill="#243558" opacity="0.8"/>
+  <circle cx="110" cy="110" r="3" fill="#243558" opacity="0.8"/>
+</svg>
