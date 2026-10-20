@@ -1,233 +1,231 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
   <defs>
-    <!-- Background Tech Glow -->
+    <!-- Background Tech Radial Glow -->
     <radialGradient id="lfGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.2" />
-      <stop offset="45%" stop-color="#ea580c" stop-opacity="0.1" />
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.25" />
+      <stop offset="50%" stop-color="#ea580c" stop-opacity="0.12" />
       <stop offset="100%" stop-color="#030712" stop-opacity="0" />
     </radialGradient>
 
-    <!-- Metallic Frame Gradients (Chiseled 3D Architecture) -->
-    <linearGradient id="metalArmTL" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Metallic Frame Gradients (3D Architectural Gunmetal) -->
+    <linearGradient id="metalTopLeft" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#475569" />
       <stop offset="40%" stop-color="#1e293b" />
-      <stop offset="100%" stop-color="#090d16" />
+      <stop offset="100%" stop-color="#0b1120" />
     </linearGradient>
 
-    <linearGradient id="metalArmTR" x1="100%" y1="0%" x2="0%" y2="100%">
+    <linearGradient id="metalTopRight" x1="100%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#475569" />
       <stop offset="40%" stop-color="#1e293b" />
-      <stop offset="100%" stop-color="#090d16" />
+      <stop offset="100%" stop-color="#0b1120" />
     </linearGradient>
 
-    <linearGradient id="metalArmBL" x1="0%" y1="100%" x2="100%" y2="0%">
+    <linearGradient id="metalBottomLeft" x1="0%" y1="100%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#334155" />
       <stop offset="40%" stop-color="#1e293b" />
-      <stop offset="100%" stop-color="#090d16" />
+      <stop offset="100%" stop-color="#0b1120" />
     </linearGradient>
 
-    <linearGradient id="metalArmBR" x1="100%" y1="100%" x2="0%" y2="0%">
+    <linearGradient id="metalBottomRight" x1="100%" y1="100%" x2="0%" y2="0%">
       <stop offset="0%" stop-color="#334155" />
       <stop offset="40%" stop-color="#1e293b" />
-      <stop offset="100%" stop-color="#090d16" />
+      <stop offset="100%" stop-color="#0b1120" />
     </linearGradient>
 
-    <!-- Bevel Facet Shading Gradients -->
-    <linearGradient id="bevelTop" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#64748b" />
-      <stop offset="100%" stop-color="#1e293b" />
+    <!-- Outer Bevel Edge Highlight Gradients -->
+    <linearGradient id="rimTopHighlight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#94a3b8" />
+      <stop offset="50%" stop-color="#cbd5e1" />
+      <stop offset="100%" stop-color="#94a3b8" />
     </linearGradient>
 
-    <linearGradient id="bevelBottom" x1="0%" y1="100%" x2="0%" y2="0%">
-      <stop offset="0%" stop-color="#475569" />
-      <stop offset="100%" stop-color="#0f172a" />
-    </linearGradient>
-
-    <!-- Cyan Conduit Gradients (Left Flow) -->
-    <linearGradient id="cyanConduit1" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Cyan Stream Conduit Gradients (Left Side) -->
+    <linearGradient id="cyanTubeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0284c7" />
-      <stop offset="40%" stop-color="#00e5ff" />
+      <stop offset="30%" stop-color="#00e5ff" />
       <stop offset="70%" stop-color="#38bdf8" />
       <stop offset="100%" stop-color="#e0f2fe" />
     </linearGradient>
 
-    <linearGradient id="cyanConduit2" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0369a1" />
-      <stop offset="50%" stop-color="#00f2fe" />
-      <stop offset="100%" stop-color="#a5f3fc" />
+    <linearGradient id="cyanCoreLight" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#67e8f9" />
     </linearGradient>
 
-    <!-- Orange Conduit Gradients (Right Flow) -->
-    <linearGradient id="orangeConduit1" x1="100%" y1="0%" x2="0%" y2="100%">
+    <!-- Orange/Fire Stream Conduit Gradients (Right Side) -->
+    <linearGradient id="orangeTubeGrad" x1="100%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#c2410c" />
-      <stop offset="40%" stop-color="#ea580c" />
+      <stop offset="30%" stop-color="#ea580c" />
       <stop offset="70%" stop-color="#f97316" />
       <stop offset="100%" stop-color="#fef08a" />
     </linearGradient>
 
-    <linearGradient id="orangeConduit2" x1="100%" y1="100%" x2="0%" y2="0%">
-      <stop offset="0%" stop-color="#9a3412" />
-      <stop offset="50%" stop-color="#ff6b35" />
+    <linearGradient id="orangeCoreLight" x1="100%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#ea580c" />
+      <stop offset="50%" stop-color="#ffffff" />
       <stop offset="100%" stop-color="#fde047" />
     </linearGradient>
 
     <!-- Port Well Radial Gradient -->
-    <radialGradient id="portWell" cx="40%" cy="40%" r="60%">
+    <radialGradient id="portSocket" cx="40%" cy="40%" r="60%">
       <stop offset="0%" stop-color="#1e293b" />
-      <stop offset="50%" stop-color="#090d16" />
+      <stop offset="45%" stop-color="#0f172a" />
       <stop offset="100%" stop-color="#000000" />
     </radialGradient>
 
-    <!-- Glow Filters -->
-    <filter id="cyanGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="5" result="blur" />
+    <!-- Precision Glow Filters -->
+    <filter id="cyanFlowGlow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
 
-    <filter id="orangeGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="5" result="blur" />
+    <filter id="orangeFlowGlow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
 
-    <filter id="portDrop" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.8" />
+    <filter id="frameShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.75" />
     </filter>
   </defs>
 
   <!-- Ambient Backdrop Glow -->
-  <circle cx="250" cy="250" r="220" fill="url(#lfGlow)" />
+  <circle cx="250" cy="250" r="225" fill="url(#lfGlow)" />
 
   <!-- ================= 3D ARCHITECTURAL 'X' FRAME ================= -->
-  <!-- Outer Chiseled Metallic Silhouette -->
-  <!-- Corner tips: (50, 50), (450, 50), (450, 450), (50, 450) -->
-  <path d="M 50 50 
-           L 125 50 
-           C 175 110, 215 135, 250 135 
-           C 285 135, 325 110, 375 50 
-           L 450 50 
-           L 450 125 
-           C 390 175, 365 215, 365 250 
-           C 365 285, 390 325, 450 375 
-           L 450 450 
-           L 375 450 
-           C 325 390, 285 365, 250 365 
-           C 215 365, 175 390, 125 450 
-           L 50 450 
-           L 50 375 
-           C 110 325, 135 285, 135 250 
-           C 135 215, 110 175, 50 125 
-           Z" 
-        fill="#090d16" 
-        stroke="#1e293b" 
-        stroke-width="2" />
+  <g filter="url(#frameShadow)">
+    <!-- Base Solid Frame Silhouette with Deep Concave Scoops -->
+    <path d="M 52 50 
+             L 126 50 
+             C 175 110, 215 130, 250 130 
+             C 285 130, 325 110, 374 50 
+             L 448 50 
+             L 448 124 
+             C 390 175, 370 215, 370 250 
+             C 370 285, 390 325, 448 376 
+             L 448 450 
+             L 374 450 
+             C 325 390, 285 370, 250 370 
+             C 215 370, 175 390, 126 450 
+             L 52 450 
+             L 52 376 
+             C 110 325, 130 285, 130 250 
+             C 130 215, 110 175, 52 124 
+             Z" 
+          fill="#090d16" 
+          stroke="#1e293b" 
+          stroke-width="2" />
 
-  <!-- 4 Corner Metallic Structural Facets (Giving 3D Depth to the 4 Arms) -->
-  <!-- Top-Left Arm Facet -->
-  <polygon points="50,50 125,50 165,115 115,165 50,125" fill="url(#metalArmTL)" />
-  <polygon points="50,50 125,50 110,75 75,75 50,125" fill="url(#bevelTop)" opacity="0.8" />
+    <!-- 4 Corner Sculpted 3D Metallic Facets -->
+    <!-- Top-Left Arm Facet -->
+    <polygon points="52,50 126,50 168,118 118,168 52,124" fill="url(#metalTopLeft)" />
+    <path d="M 52 50 L 126 50 L 105 76 L 72 76 L 52 124 Z" fill="#64748b" opacity="0.6" />
 
-  <!-- Top-Right Arm Facet -->
-  <polygon points="450,50 375,50 335,115 385,165 450,125" fill="url(#metalArmTR)" />
-  <polygon points="450,50 375,50 390,75 425,75 450,125" fill="url(#bevelTop)" opacity="0.8" />
+    <!-- Top-Right Arm Facet -->
+    <polygon points="448,50 374,50 332,118 382,168 448,124" fill="url(#metalTopRight)" />
+    <path d="M 448 50 L 374 50 L 395 76 L 428 76 L 448 124 Z" fill="#64748b" opacity="0.6" />
 
-  <!-- Bottom-Left Arm Facet -->
-  <polygon points="50,450 125,450 165,385 115,335 50,375" fill="url(#metalArmBL)" />
-  <polygon points="50,450 125,450 110,425 75,425 50,375" fill="url(#bevelBottom)" opacity="0.8" />
+    <!-- Bottom-Left Arm Facet -->
+    <polygon points="52,450 126,450 168,382 118,332 52,376" fill="url(#metalBottomLeft)" />
+    <path d="M 52 450 L 126 450 L 105 424 L 72 424 L 52 376 Z" fill="#334155" opacity="0.6" />
 
-  <!-- Bottom-Right Arm Facet -->
-  <polygon points="450,450 375,450 335,385 385,335 450,375" fill="url(#metalArmBR)" />
-  <polygon points="450,450 375,450 390,425 425,425 450,375" fill="url(#bevelBottom)" opacity="0.8" />
+    <!-- Bottom-Right Arm Facet -->
+    <polygon points="448,450 374,450 332,382 382,332 448,376" fill="url(#metalBottomRight)" />
+    <path d="M 448 450 L 374 450 L 395 424 L 428 424 L 448 376 Z" fill="#334155" opacity="0.6" />
 
-  <!-- Architectural Contour Grooves / Cooling Fins -->
-  <g stroke="#334155" stroke-width="1.2" opacity="0.6" stroke-linecap="round">
-    <!-- Top cavity fins -->
-    <path d="M 210 110 C 230 130, 270 130, 290 110" fill="none" />
-    <path d="M 225 90 C 240 105, 260 105, 275 90" fill="none" />
-    <!-- Bottom cavity fins -->
-    <path d="M 210 390 C 230 370, 270 370, 290 390" fill="none" />
-    <path d="M 225 410 C 240 395, 260 395, 275 410" fill="none" />
-    <!-- Left cavity fins -->
-    <path d="M 110 210 C 130 230, 130 270, 110 290" fill="none" />
-    <!-- Right cavity fins -->
-    <path d="M 390 210 C 370 230, 370 270, 390 290" fill="none" />
+    <!-- Fine Radiating Architectural Grooves / Heat Dissipation Ribs -->
+    <g stroke="#334155" stroke-width="1.2" opacity="0.55" stroke-linecap="round">
+      <!-- Top Scoop Grooves -->
+      <path d="M 205 105 C 225 125, 275 125, 295 105" fill="none" />
+      <path d="M 220 85 C 235 100, 265 100, 280 85" fill="none" />
+      <!-- Bottom Scoop Grooves -->
+      <path d="M 205 395 C 225 375, 275 375, 295 395" fill="none" />
+      <path d="M 220 415 C 235 400, 265 400, 280 415" fill="none" />
+      <!-- Left Scoop Grooves -->
+      <path d="M 105 205 C 125 225, 125 275, 105 295" fill="none" />
+      <!-- Right Scoop Grooves -->
+      <path d="M 395 205 C 375 225, 375 275, 395 295" fill="none" />
+    </g>
+
+    <!-- Outer Edge Specular Bevel Highlights -->
+    <path d="M 52 50 L 126 50 M 374 50 L 448 50" stroke="url(#rimTopHighlight)" stroke-width="2" stroke-linecap="round" />
   </g>
 
-  <!-- ================= GLOWING CONDUITS (DATA / SUPPLY FLOW) ================= -->
+  <!-- ================= GLOWING CONDUIT BUNDLES (FLOW PIPELINES) ================= -->
   
-  <!-- LEFT SIDE: CYAN STREAM CONDUITS (Upper & Lower Streams) -->
-  <g filter="url(#cyanGlow)">
-    <!-- Base Outer Conduit Glow Ribbons -->
-    <!-- Top-Left Stream 1 -> Top Port -->
-    <path d="M 115 165 C 160 185, 210 190, 245 208" fill="none" stroke="#00e5ff" stroke-width="9" stroke-linecap="round" opacity="0.85" />
-    <!-- Top-Left Stream 2 -> Left Port -->
-    <path d="M 140 140 C 170 180, 185 220, 208 245" fill="none" stroke="#0284c7" stroke-width="8" stroke-linecap="round" opacity="0.9" />
-    
-    <!-- Bottom-Left Stream 1 -> Left Port -->
-    <path d="M 140 360 C 170 320, 185 280, 208 255" fill="none" stroke="#0284c7" stroke-width="8" stroke-linecap="round" opacity="0.9" />
-    <!-- Bottom-Left Stream 2 -> Bottom Port -->
-    <path d="M 115 335 C 160 315, 210 310, 245 292" fill="none" stroke="#00e5ff" stroke-width="9" stroke-linecap="round" opacity="0.85" />
+  <!-- LEFT SIDE: ELECTRIC CYAN FLOW BUNDLE -->
+  <g filter="url(#cyanFlowGlow)">
+    <!-- Deep Ambient Glow Base -->
+    <path d="M 118 168 C 160 195, 205 202, 244 216" fill="none" stroke="#00e5ff" stroke-width="11" stroke-linecap="round" opacity="0.8" />
+    <path d="M 145 142 C 175 185, 195 215, 216 244" fill="none" stroke="#0284c7" stroke-width="9" stroke-linecap="round" opacity="0.85" />
+    <path d="M 145 358 C 175 315, 195 285, 216 256" fill="none" stroke="#0284c7" stroke-width="9" stroke-linecap="round" opacity="0.85" />
+    <path d="M 118 332 C 160 305, 205 298, 244 284" fill="none" stroke="#00e5ff" stroke-width="11" stroke-linecap="round" opacity="0.8" />
 
-    <!-- Core Bright Conduit Lines -->
-    <path d="M 115 165 C 160 185, 210 190, 245 208" fill="none" stroke="url(#cyanConduit1)" stroke-width="4.5" stroke-linecap="round" />
-    <path d="M 140 140 C 170 180, 185 220, 208 245" fill="none" stroke="#e0f2fe" stroke-width="3" stroke-linecap="round" />
-    <path d="M 140 360 C 170 320, 185 280, 208 255" fill="none" stroke="#e0f2fe" stroke-width="3" stroke-linecap="round" />
-    <path d="M 115 335 C 160 315, 210 310, 245 292" fill="none" stroke="url(#cyanConduit2)" stroke-width="4.5" stroke-linecap="round" />
+    <!-- Primary Illuminated Conduit Tubes -->
+    <path d="M 118 168 C 160 195, 205 202, 244 216" fill="none" stroke="url(#cyanTubeGrad)" stroke-width="5.5" stroke-linecap="round" />
+    <path d="M 145 142 C 175 185, 195 215, 216 244" fill="none" stroke="url(#cyanTubeGrad)" stroke-width="4.5" stroke-linecap="round" />
+    <path d="M 145 358 C 175 315, 195 285, 216 256" fill="none" stroke="url(#cyanTubeGrad)" stroke-width="4.5" stroke-linecap="round" />
+    <path d="M 118 332 C 160 305, 205 298, 244 284" fill="none" stroke="url(#cyanTubeGrad)" stroke-width="5.5" stroke-linecap="round" />
+
+    <!-- Specular Highlight Threads (Core Glass Sheen) -->
+    <path d="M 118 168 C 160 195, 205 202, 244 216" fill="none" stroke="url(#cyanCoreLight)" stroke-width="2" stroke-linecap="round" />
+    <path d="M 145 142 C 175 185, 195 215, 216 244" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" />
+    <path d="M 145 358 C 175 315, 195 285, 216 256" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" />
+    <path d="M 118 332 C 160 305, 205 298, 244 284" fill="none" stroke="url(#cyanCoreLight)" stroke-width="2" stroke-linecap="round" />
   </g>
 
-  <!-- RIGHT SIDE: FIERY ORANGE STREAM CONDUITS (Upper & Lower Streams) -->
-  <g filter="url(#orangeGlow)">
-    <!-- Base Outer Conduit Glow Ribbons -->
-    <!-- Top-Right Stream 1 -> Top Port -->
-    <path d="M 385 165 C 340 185, 290 190, 255 208" fill="none" stroke="#ff6b35" stroke-width="9" stroke-linecap="round" opacity="0.85" />
-    <!-- Top-Right Stream 2 -> Right Port -->
-    <path d="M 360 140 C 330 180, 315 220, 292 245" fill="none" stroke="#ea580c" stroke-width="8" stroke-linecap="round" opacity="0.9" />
+  <!-- RIGHT SIDE: FIERY ORANGE FLOW BUNDLE -->
+  <g filter="url(#orangeFlowGlow)">
+    <!-- Deep Ambient Glow Base -->
+    <path d="M 382 168 C 340 195, 295 202, 256 216" fill="none" stroke="#ff6b35" stroke-width="11" stroke-linecap="round" opacity="0.8" />
+    <path d="M 355 142 C 325 185, 305 215, 284 244" fill="none" stroke="#ea580c" stroke-width="9" stroke-linecap="round" opacity="0.85" />
+    <path d="M 355 358 C 325 315, 305 285, 284 256" fill="none" stroke="#ea580c" stroke-width="9" stroke-linecap="round" opacity="0.85" />
+    <path d="M 382 332 C 340 305, 295 298, 256 284" fill="none" stroke="#ff6b35" stroke-width="11" stroke-linecap="round" opacity="0.8" />
 
-    <!-- Bottom-Right Stream 1 -> Right Port -->
-    <path d="M 360 360 C 330 320, 315 280, 292 255" fill="none" stroke="#ea580c" stroke-width="8" stroke-linecap="round" opacity="0.9" />
-    <!-- Bottom-Right Stream 2 -> Bottom Port -->
-    <path d="M 385 335 C 340 315, 290 310, 255 292" fill="none" stroke="#ff6b35" stroke-width="9" stroke-linecap="round" opacity="0.85" />
+    <!-- Primary Illuminated Conduit Tubes -->
+    <path d="M 382 168 C 340 195, 295 202, 256 216" fill="none" stroke="url(#orangeTubeGrad)" stroke-width="5.5" stroke-linecap="round" />
+    <path d="M 355 142 C 325 185, 305 215, 284 244" fill="none" stroke="url(#orangeTubeGrad)" stroke-width="4.5" stroke-linecap="round" />
+    <path d="M 355 358 C 325 315, 305 285, 284 256" fill="none" stroke="url(#orangeTubeGrad)" stroke-width="4.5" stroke-linecap="round" />
+    <path d="M 382 332 C 340 305, 295 298, 256 284" fill="none" stroke="url(#orangeTubeGrad)" stroke-width="5.5" stroke-linecap="round" />
 
-    <!-- Core Bright Conduit Lines -->
-    <path d="M 385 165 C 340 185, 290 190, 255 208" fill="none" stroke="url(#orangeConduit1)" stroke-width="4.5" stroke-linecap="round" />
-    <path d="M 360 140 C 330 180, 315 220, 292 245" fill="none" stroke="#fef08a" stroke-width="3" stroke-linecap="round" />
-    <path d="M 360 360 C 330 320, 315 280, 292 255" fill="none" stroke="#fef08a" stroke-width="3" stroke-linecap="round" />
-    <path d="M 385 335 C 340 315, 290 310, 255 292" fill="none" stroke="url(#orangeConduit2)" stroke-width="4.5" stroke-linecap="round" />
+    <!-- Specular Highlight Threads (Core Ember Sheen) -->
+    <path d="M 382 168 C 340 195, 295 202, 256 216" fill="none" stroke="url(#orangeCoreLight)" stroke-width="2" stroke-linecap="round" />
+    <path d="M 355 142 C 325 185, 305 215, 284 244" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" />
+    <path d="M 355 358 C 325 315, 305 285, 284 256" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" />
+    <path d="M 382 332 C 340 305, 295 298, 256 284" fill="none" stroke="url(#orangeCoreLight)" stroke-width="2" stroke-linecap="round" />
   </g>
 
-  <!-- ================= 4 CENTRAL CIRCULAR PORTS (SOCKET MATRIX) ================= -->
-  <!-- Top Port -->
-  <g transform="translate(250, 206)" filter="url(#portDrop)">
-    <circle cx="0" cy="0" r="23" fill="#090d16" stroke="#334155" stroke-width="2.5" />
-    <circle cx="0" cy="0" r="17" fill="url(#portWell)" />
-    <!-- Cyan & Orange Connector Terminals -->
-    <circle cx="-5" cy="0" r="4" fill="#00e5ff" opacity="0.9" />
-    <circle cx="5" cy="0" r="4" fill="#ff6b35" opacity="0.9" />
+  <!-- ================= 4 CENTRAL PORTS (TIGHT CLUSTER MATRIX MATCHING ORIGINAL) ================= -->
+  <!-- Top Port: Center (250, 218) -->
+  <g transform="translate(250, 218)">
+    <circle cx="0" cy="0" r="21" fill="#090d16" stroke="#334155" stroke-width="2" />
+    <circle cx="0" cy="0" r="16" fill="url(#portSocket)" />
+    <!-- Optical Lens Reflection -->
+    <circle cx="-4" cy="-4" r="3" fill="#38bdf8" opacity="0.6" />
   </g>
 
-  <!-- Bottom Port -->
-  <g transform="translate(250, 294)" filter="url(#portDrop)">
-    <circle cx="0" cy="0" r="23" fill="#090d16" stroke="#334155" stroke-width="2.5" />
-    <circle cx="0" cy="0" r="17" fill="url(#portWell)" />
-    <circle cx="-5" cy="0" r="4" fill="#00e5ff" opacity="0.9" />
-    <circle cx="5" cy="0" r="4" fill="#ff6b35" opacity="0.9" />
+  <!-- Bottom Port: Center (250, 282) -->
+  <g transform="translate(250, 282)">
+    <circle cx="0" cy="0" r="21" fill="#090d16" stroke="#334155" stroke-width="2" />
+    <circle cx="0" cy="0" r="16" fill="url(#portSocket)" />
+    <circle cx="-4" cy="-4" r="3" fill="#ea580c" opacity="0.6" />
   </g>
 
-  <!-- Left Port -->
-  <g transform="translate(206, 250)" filter="url(#portDrop)">
-    <circle cx="0" cy="0" r="23" fill="#090d16" stroke="#334155" stroke-width="2.5" />
-    <circle cx="0" cy="0" r="17" fill="url(#portWell)" />
-    <circle cx="0" cy="-5" r="4" fill="#00e5ff" opacity="0.9" />
-    <circle cx="0" cy="5" r="4" fill="#00e5ff" opacity="0.9" />
+  <!-- Left Port: Center (218, 250) -->
+  <g transform="translate(218, 250)">
+    <circle cx="0" cy="0" r="21" fill="#090d16" stroke="#334155" stroke-width="2" />
+    <circle cx="0" cy="0" r="16" fill="url(#portSocket)" />
+    <circle cx="-4" cy="-4" r="3" fill="#00e5ff" opacity="0.7" />
   </g>
 
-  <!-- Right Port -->
-  <g transform="translate(294, 250)" filter="url(#portDrop)">
-    <circle cx="0" cy="0" r="23" fill="#090d16" stroke="#334155" stroke-width="2.5" />
-    <circle cx="0" cy="0" r="17" fill="url(#portWell)" />
-    <circle cx="0" cy="-5" r="4" fill="#ff6b35" opacity="0.9" />
-    <circle cx="0" cy="5" r="4" fill="#ff6b35" opacity="0.9" />
+  <!-- Right Port: Center (282, 250) -->
+  <g transform="translate(282, 250)">
+    <circle cx="0" cy="0" r="21" fill="#090d16" stroke="#334155" stroke-width="2" />
+    <circle cx="0" cy="0" r="16" fill="url(#portSocket)" />
+    <circle cx="-4" cy="-4" r="3" fill="#ff6b35" opacity="0.7" />
   </g>
 
-  <!-- Central Void Opening Highlight (Small diamond reflection between 4 ports) -->
-  <polygon points="250,244 256,250 250,256 244,250" fill="#ffffff" opacity="0.6" />
+  <!-- Central Cross Aperture Void (Exact Center Opening) -->
+  <circle cx="250" cy="250" r="5" fill="#ffffff" opacity="0.9" filter="url(#cyanFlowGlow)" />
 </svg>
