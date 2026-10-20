@@ -54,6 +54,17 @@ export default function AdminLoginPage() {
     try {
       const data = await login(email.trim(), password);
       if (!data.access_token) throw new Error('Authentication did not return an active session');
+
+      // Verify the new Supabase session against the backend before navigating.
+      // This catches accounts that can authenticate with Supabase but lack the admin role.
+      const hasAdminAccess = await validateAdminToken(data.access_token);
+      if (!hasAdminAccess) {
+        await clearAdminSession();
+        throw new Error(
+          'Sign-in succeeded, but admin access could not be verified. Confirm this account has the admin role and try again.',
+        );
+      }
+
       if (rememberMe) {
         localStorage.setItem('adminEmail', email.trim());
       } else {
