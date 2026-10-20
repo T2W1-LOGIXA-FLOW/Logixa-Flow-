@@ -110,7 +110,7 @@ def run_startup_tasks() -> None:
 async def lifespan(_: FastAPI):
     """Run startup tasks in a thread to avoid blocking the async event loop."""
     import asyncio
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     await loop.run_in_executor(None, run_startup_tasks)
     yield
 
@@ -334,10 +334,11 @@ def _get_cors_origins() -> list[str]:
 
 origins = _get_cors_origins()
 
+# NOTE: allow_origin_regex removed — it bypassed the explicit allowlist in non-prod
+# environments and is a security risk. Use CORS_ORIGINS env var to add origins.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex=None if os.getenv("ENVIRONMENT", "development").lower() in {"production", "prod"} else r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
@@ -350,6 +351,9 @@ app.middleware("http")(request_observability_middleware)
 
 uploads_dir = Path(__file__).resolve().parents[1] / "uploads"
 uploads_dir.mkdir(parents=True, exist_ok=True)
+# NOTE (M2): StaticFiles serves /uploads without authentication. For private files,
+# replace this mount with an authenticated route in routers/uploads.py that
+# checks the session token before streaming the file.
 app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 app.include_router(auth.router, prefix="/api", tags=["auth"])
@@ -387,59 +391,22 @@ def root() -> dict[str, str]:
 
 
 @app.get("/health")
-def health() -> dict[str, object]:
-    missing_env = validate_env()
-    database_status = "unknown"
+def health():
+    """Public health check — intentionally minimal to avoid leaking infrastructure details.
+
+    Returns {"status": "ok"} when the database is reachable, {"status": "degraded"} with
+    HTTP 503 otherwise. Full diagnostics are available via the authenticated
+    /api/admin/diagnostics endpoint.
+    """
+    from fastapi.responses import JSONResponse
+    database_ok = False
     try:
         with SessionLocal() as db:
             db.execute(text("SELECT 1"))
-        database_status = "ok"
-    except Exception as exc:
-        database_status = f"error: {exc.__class__.__name__}"
-    embedding_count = 0
-    pgvector_status: dict[str, object] = {"enabled": False, "reason": "not_checked"}
-    try:
-        with SessionLocal() as db:
-            embedding_count = db.query(models.DocumentEmbedding).count()
-            from .rag.pgvector_store import pgvector_enabled
-
-            enabled = pgvector_enabled(db)
-            pgvector_status = {
-                "enabled": enabled,
-                "reason": "ok" if enabled else "fallback_json_scan",
-            }
+        database_ok = True
     except Exception:
-        embedding_count = 0
-    sched = scheduler_status()
-    rag_embedding_version = os.getenv("RAG_EMBEDDING_VERSION", "1").strip()
-    rag_active_embedding_model = (
-        os.getenv("VOYAGE_EMBEDDING_MODEL", "voyage-3-lite")
-        if rag_embedding_version == "2"
-        else os.getenv("EMBEDDING_MODEL", "liquid/lfm-2.5-embedding-350m:free")
-    )
-    return {
-        "status": "ok" if database_status == "ok" else "degraded",
-        "missing_env": missing_env,
-        "database": database_status,
-        "database_profile": database_profile(),
-        "scheduler_enabled": sched["enabled"],
-        "scheduler_interval_hours": sched["interval_hours"],
-        "ai_key_configured": ai_provider_configured(),
-        "ai_feature_status": ai_feature_status(),
-        "embedding_model": os.getenv("EMBEDDING_MODEL", "liquid/lfm-2.5-embedding-350m:free"),
-        "rag_embedding_version": rag_embedding_version,
-        "rag_active_embedding_model": rag_active_embedding_model,
-        "qstash_configured": qstash_configured(),
-        "celery_enabled": os.getenv("CELERY_ENABLED", "false").lower() == "true",
-        "telegram_configured": telegram_configured(),
-        "telegram_enabled": telegram_enabled(),
-        "pgvector_enabled": pgvector_status.get("enabled", False),
-        "pgvector_reason": pgvector_status.get("reason"),
-        "rag_chunks": embedding_count,
-        "cache_backend": cache_client.backend,
-        "rate_limit_backend": rate_limiter.backend,
-        "upload_storage_backend": os.getenv("UPLOAD_STORAGE_BACKEND", "local"),
-        "upload_storage_configured": upload_storage_configured(),
-        "use_slowapi": os.getenv("USE_SLOWAPI", "true").lower() == "true",
-        "integration_feeds": len([item for item in os.getenv("INTEGRATION_RSS_FEEDS", "").split(",") if item.strip()]) or 3,
-    }
+        # Intentionally suppressed — do not leak DB class names or messages
+        pass
+    if database_ok:
+        return {"status": "ok"}
+    return JSONResponse(status_code=503, content={"status": "degraded"})
