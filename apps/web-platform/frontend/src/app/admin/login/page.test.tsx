@@ -2,9 +2,11 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import AdminLoginPage from "./page";
 
-const { routerPush, login } = vi.hoisted(() => ({
+const { routerPush, login, validateAdminToken, clearAdminSession } = vi.hoisted(() => ({
   routerPush: vi.fn(),
   login: vi.fn(),
+  validateAdminToken,
+  clearAdminSession,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -31,6 +33,8 @@ describe("Admin login", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.clearAllMocks();
+    login.mockResolvedValue({ access_token: "valid-session" });
+    validateAdminToken.mockResolvedValue(true);
     localStorage.clear();
   });
 
@@ -58,5 +62,26 @@ describe("Admin login", () => {
     fireEvent.submit(screen.getByRole("button", { name: "Login to Dashboard" }).closest("form")!);
 
     await waitFor(() => expect(login).toHaveBeenCalledWith("admin@example.com", "password"));
+    await waitFor(() => expect(validateAdminToken).toHaveBeenCalledWith("valid-session"));
+    await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/admin"));
+  });
+
+  it("does not enter the dashboard when the backend rejects admin access", async () => {
+    validateAdminToken.mockResolvedValue(false);
+
+    render(<AdminLoginPage />);
+    fireEvent.change(screen.getByLabelText("Email"), {
+      target: { value: "user@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.submit(screen.getByRole("button", { name: "Login to Dashboard" }).closest("form")!);
+
+    await waitFor(() => expect(clearAdminSession).toHaveBeenCalledOnce());
+    expect(routerPush).not.toHaveBeenCalledWith("/admin");
+    expect(
+      await screen.findByText(/admin access could not be verified/i),
+    ).toBeInTheDocument();
   });
 });
