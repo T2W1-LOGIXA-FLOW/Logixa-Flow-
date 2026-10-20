@@ -3,10 +3,17 @@ from __future__ import annotations
 import logging
 import os
 from typing import Any
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy.orm import Session
+
+from .. import models
+from ..cache import cache_client
+from ..database import get_db
+from ..models import utc_now
 from pydantic import BaseModel
 
 from ..services.telegram import send_telegram_message
+from .workflow import enqueue_workflow_run
 
 logger = logging.getLogger("logixa.telegram")
 
@@ -28,43 +35,92 @@ class TelegramActionPayload(BaseModel):
 # 1. ACTION HANDLER (Direct Callback / Gateway)
 # ------------------------------------------------------------------------------
 @router.post("/action")
-async def handle_telegram_action(payload: TelegramActionPayload) -> dict[str, Any]:
+async def handle_telegram_action(
+    payload: TelegramActionPayload,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     """Handle inbound Telegram action callback for Logixa Flow."""
     action = payload.action
     logger.info("Logixa received Telegram action: %s", action)
 
-    # 1. Retry Workflow
+    # Retry only a real, persisted workflow definition. Never report success for a no-op.
     if action.startswith("logixa_wf_retry:"):
-        wf_id = action.split(":", 1)[1]
-        msg = f"🔄 <b>Workflow Retry Triggered:</b> <code>{wf_id}</code>\nDispatched to background execution queue."
-        await send_telegram_message(msg, topic_id=payload.topic_id)
-        return {"status": "ok", "action": "workflow_retry", "id": wf_id}
+        wf_id = action.split(":", 1)[1].strip()
+        try:
+            run = await enqueue_workflow_run(wf_id)
+        except HTTPException as exc:
+            await send_telegram_message(
+                f"⚠️ <b>Workflow retry failed</b>: <code>{wf_id}</code> — {exc.detail}",
+                topic_id=payload.topic_id,
+            )
+            return {"status": "error", "action": "workflow_retry", "id": wf_id, "detail": str(exc.detail)}
+        await send_telegram_message(
+            f"🔄 <b>Workflow queued</b>: <code>{wf_id}</code>\nRun: <code>{run.run_id}</code>",
+            topic_id=payload.topic_id,
+        )
+        return {"status": "ok", "action": "workflow_retry", "id": wf_id, "run_id": run.run_id}
 
-    # 2. Disable Workflow
-    elif action.startswith("logixa_wf_disable:"):
-        wf_id = action.split(":", 1)[1]
-        msg = f"🛑 <b>Workflow Disabled:</b> <code>{wf_id}</code>\nExecution halted by operator."
-        await send_telegram_message(msg, topic_id=payload.topic_id)
-        return {"status": "ok", "action": "workflow_disabled", "id": wf_id}
+    # The workflow schema currently has no enabled/disabled field. Do not pretend
+    # a workflow was disabled when no persistent disable operation exists.
+    if action.startswith("logixa_wf_disable:"):
+        wf_id = action.split(":", 1)[1].strip()
+        await send_telegram_message(
+            f"⚠️ <b>Workflow disable is unavailable</b>: <code>{wf_id}</code>\nNo persisted disable control is configured.",
+            topic_id=payload.topic_id,
+        )
+        return {"status": "unsupported", "action": "workflow_disable", "id": wf_id}
 
-    # 3. View Workflow Metrics
-    elif action.startswith("logixa_wf_metrics:"):
-        wf_id = action.split(":", 1)[1]
-        msg = f"📊 <b>Workflow Metrics ({wf_id}):</b>\nStatus: Active | Latency: 4.1s | Success rate: 98.4%"
-        await send_telegram_message(msg, topic_id=payload.topic_id)
-        return {"status": "ok", "action": "metrics_viewed", "id": wf_id}
+    # Do not display invented metrics as if they were live production measurements.
+    if action.startswith("logixa_wf_metrics:"):
+        wf_id = action.split(":", 1)[1].strip()
+        run_count = db.query(models.WorkflowRunRecord).filter(
+            models.WorkflowRunRecord.workflow_id == wf_id
+        ).count()
+        await send_telegram_message(
+            f"📊 <b>Workflow run count</b>: <code>{wf_id}</code>\nRecorded runs: {run_count}\nLatency and success-rate metrics are not available from this handler.",
+            topic_id=payload.topic_id,
+        )
+        return {"status": "ok", "action": "metrics_viewed", "id": wf_id, "run_count": run_count}
 
-    # 4. Human Approval of Drafted Blog / Insight
-    elif action.startswith("logixa_blog_appr:"):
-        post_id = action.split(":", 1)[1]
-        msg = f"✅ <b>Post Approved:</b> <code>{post_id}</code>\nArticle published to the public feed with FLUX banner."
-        await send_telegram_message(msg, topic_id=payload.topic_id)
+    # Human approval publishes an existing draft only after a successful DB commit.
+    if action.startswith("logixa_blog_appr:"):
+        post_id = action.split(":", 1)[1].strip()
+        if not post_id.isdigit():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="post id must be numeric")
+        post = db.query(models.Post).filter(models.Post.id == int(post_id)).first()
+        if post is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="post not found")
+        if post.status == "published" and post.is_published:
+            return {"status": "already_done", "action": "blog_approved", "id": post_id}
+        post.status = "published"
+        post.is_published = True
+        post.published_at = post.published_at or utc_now()
+        db.commit()
+        db.refresh(post)
+        cache_client.delete_prefix("posts:")
+        await send_telegram_message(
+            f"✅ <b>Post approved and published</b>: <code>{post_id}</code>",
+            topic_id=payload.topic_id,
+        )
         return {"status": "ok", "action": "blog_approved", "id": post_id}
 
-    elif action.startswith("logixa_blog_disc:"):
-        post_id = action.split(":", 1)[1]
-        msg = f"❌ <b>Post Discarded:</b> <code>{post_id}</code>\nDraft archived and excluded from publication."
-        await send_telegram_message(msg, topic_id=payload.topic_id)
+    if action.startswith("logixa_blog_disc:"):
+        post_id = action.split(":", 1)[1].strip()
+        if not post_id.isdigit():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="post id must be numeric")
+        post = db.query(models.Post).filter(models.Post.id == int(post_id)).first()
+        if post is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="post not found")
+        post.status = "rejected"
+        post.is_published = False
+        post.published_at = None
+        db.commit()
+        db.refresh(post)
+        cache_client.delete_prefix("posts:")
+        await send_telegram_message(
+            f"❌ <b>Post rejected and hidden from public feed</b>: <code>{post_id}</code>",
+            topic_id=payload.topic_id,
+        )
         return {"status": "ok", "action": "blog_discarded", "id": post_id}
 
     return {"status": "ignored", "action": action}
@@ -102,8 +158,11 @@ async def send_logixa_morning_digest(topic_id: int | None = None) -> dict[str, A
 # 3. NATIVE TELEGRAM WEBHOOK & SLASH COMMANDS ROUTER
 # ------------------------------------------------------------------------------
 @router.post("/webhook")
-async def telegram_webhook(request: Request) -> dict[str, Any]:
+async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
     """Native Telegram Webhook handler supporting Slash Commands & Mini App."""
+    expected_secret = os.getenv("TELEGRAM_WEBHOOK_SECRET", "").strip()
+    if expected_secret and request.headers.get("X-Telegram-Bot-Api-Secret-Token") != expected_secret:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Telegram webhook secret")
     try:
         update = await request.json()
     except Exception:
@@ -122,7 +181,7 @@ async def telegram_webhook(request: Request) -> dict[str, Any]:
             user_id=cq.get("from", {}).get("id"),
             username=cq.get("from", {}).get("username"),
         )
-        return await handle_telegram_action(payload)
+        return await handle_telegram_action(payload, db=db)
 
     # Case 2: Message Text (Slash Commands)
     if "message" in update:
@@ -185,6 +244,6 @@ async def telegram_webhook(request: Request) -> dict[str, Any]:
         elif text.startswith("/retry"):
             wf_id = text[len("/retry"):].strip() or "manual_trigger"
             payload = TelegramActionPayload(action=f"logixa_wf_retry:{wf_id}", topic_id=topic_id)
-            return await handle_telegram_action(payload)
+            return await handle_telegram_action(payload, db=db)
 
     return {"ok": True, "status": "processed"}
