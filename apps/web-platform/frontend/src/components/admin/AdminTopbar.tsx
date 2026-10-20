@@ -2,6 +2,7 @@
 
 import { Menu } from "lucide-react";
 import AdminStatusBadge from "./AdminStatusBadge";
+import { ModelSelectorDropdown } from "./ModelSelectorDropdown";
 import styles from "@/app/admin/admin-theme.module.css";
 
 export default function AdminTopbar({ onOpenSidebar }: { onOpenSidebar: () => void }) {
@@ -21,7 +22,8 @@ export default function AdminTopbar({ onOpenSidebar }: { onOpenSidebar: () => vo
           <span aria-hidden="true">/</span>
           <span className="truncate">Admin workspace</span>
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-3">
+          <ModelSelectorDropdown />
           <AdminStatusBadge label="Admin workspace" tone="cyan" />
         </div>
       </div>
