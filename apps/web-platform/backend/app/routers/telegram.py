@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import logging
 import os
+import hmac
 from typing import Any
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from .. import models
@@ -20,6 +21,30 @@ logger = logging.getLogger("logixa.telegram")
 router = APIRouter(prefix="/telegram", tags=["telegram"])
 
 FRONTEND_URL = os.getenv("FRONTEND_BASE_URL", "https://logixa-flow-frontend.onrender.com")
+
+def _production_mode() -> bool:
+    return os.getenv("ENVIRONMENT", "development").strip().lower() in {"production", "prod"}
+
+
+def _configured_id_set(env_name: str) -> set[str]:
+    return {part.strip() for part in os.getenv(env_name, "").split(",") if part.strip()}
+
+
+def _authorize_telegram_actor(*, user_id: Any, chat_id: Any) -> None:
+    """Fail closed in production unless Telegram actors are explicitly allowlisted."""
+    allowed_users = _configured_id_set("TELEGRAM_ALLOWED_USER_IDS")
+    allowed_chats = _configured_id_set("TELEGRAM_ALLOWED_CHAT_IDS")
+    if _production_mode() and (not allowed_users or not allowed_chats):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Telegram actor allowlists are not configured",
+        )
+    if allowed_users and str(user_id) not in allowed_users:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Telegram user is not authorized")
+    if allowed_chats and str(chat_id) not in allowed_chats:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Telegram chat is not authorized")
+
+
 
 
 class TelegramActionPayload(BaseModel):
@@ -38,8 +63,15 @@ class TelegramActionPayload(BaseModel):
 async def handle_telegram_action(
     payload: TelegramActionPayload,
     db: Session = Depends(get_db),
+    x_telegram_action_secret: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    """Handle inbound Telegram action callback for Logixa Flow."""
+    """Handle a trusted gateway action; direct calls require a dedicated shared secret."""
+    expected_action_secret = os.getenv("TELEGRAM_ACTION_SECRET", "").strip()
+    if not expected_action_secret:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Telegram action gateway is not configured")
+    if not x_telegram_action_secret or not hmac.compare_digest(x_telegram_action_secret, expected_action_secret):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Telegram action credentials")
+    _authorize_telegram_actor(user_id=payload.user_id, chat_id=payload.chat_id)
     action = payload.action
     logger.info("Logixa received Telegram action: %s", action)
 
@@ -161,7 +193,10 @@ async def send_logixa_morning_digest(topic_id: int | None = None) -> dict[str, A
 async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
     """Native Telegram Webhook handler supporting Slash Commands & Mini App."""
     expected_secret = os.getenv("TELEGRAM_WEBHOOK_SECRET", "").strip()
-    if expected_secret and request.headers.get("X-Telegram-Bot-Api-Secret-Token") != expected_secret:
+    supplied_secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
+    if _production_mode() and not expected_secret:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Telegram webhook secret is not configured")
+    if expected_secret and not hmac.compare_digest(supplied_secret, expected_secret):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Telegram webhook secret")
     try:
         update = await request.json()
@@ -181,13 +216,19 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
             user_id=cq.get("from", {}).get("id"),
             username=cq.get("from", {}).get("username"),
         )
-        return await handle_telegram_action(payload, db=db)
+        _authorize_telegram_actor(user_id=payload.user_id, chat_id=payload.chat_id)
+        return await _execute_telegram_action(payload, db=db)
 
     # Case 2: Message Text (Slash Commands)
     if "message" in update:
         msg = update["message"]
         text = msg.get("text", "").strip()
         topic_id = msg.get("message_thread_id")
+        if text.startswith("/"):
+            _authorize_telegram_actor(
+                user_id=msg.get("from", {}).get("id"),
+                chat_id=msg.get("chat", {}).get("id"),
+            )
 
         if not text:
             return {"ok": True, "note": "No text content"}
