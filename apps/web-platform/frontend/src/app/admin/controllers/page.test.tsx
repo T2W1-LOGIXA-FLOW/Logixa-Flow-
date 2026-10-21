@@ -46,9 +46,11 @@ describe("admin controller management", () => {
         "/api/admin/workflow/admin-command-canvas",
         "test-admin-token",
       );
-    expect(adminFetchMock).toHaveBeenCalledWith("/api/admin/controllers", "test-admin-token", expect.objectContaining({
-        method: "POST",
-      }));
+      expect(adminFetchMock).toHaveBeenCalledWith(
+        "/api/admin/controllers",
+        "test-admin-token",
+        expect.objectContaining({ method: "POST" }),
+      );
     });
     const call = adminFetchMock.mock.calls.find((args) => args[0] === "/api/admin/controllers" && args[2]?.method === "POST");
     expect(call).toBeDefined();
