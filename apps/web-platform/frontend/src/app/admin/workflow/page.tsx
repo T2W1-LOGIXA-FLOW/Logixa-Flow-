@@ -301,6 +301,8 @@ export default function AdminWorkflowPage() {
           current_node?: string | null;
           completed_nodes?: string[];
           error?: string | null;
+          execution_history?: string[];
+          metrics?: { agent_runs?: Array<{ node_id: string; agent_run_id: number; memory_id: number; status: string }> };
         };
         if (cancelled || state.run_id !== lastRunId || !state.status) return;
         const nextState = {
@@ -308,6 +310,8 @@ export default function AdminWorkflowPage() {
           current_node: state.current_node ?? null,
           completed_nodes: Array.isArray(state.completed_nodes) ? state.completed_nodes : [],
           error: state.error ?? null,
+          execution_history: Array.isArray(state.execution_history) ? state.execution_history : [],
+          metrics: state.metrics ?? {},
         };
         setTelemetry({
           event: "workflow.status",
@@ -320,7 +324,7 @@ export default function AdminWorkflowPage() {
           : `${nextState.status.replace("_", " ").toUpperCase()} workflow`);
         setWorkflowNotice(
           nextState.status === "completed"
-            ? `Workflow run ${lastRunId} completed. ${nextState.completed_nodes.length} node(s) completed.`
+            ? (() => { const agentRun = nextState.metrics?.agent_runs?.find((item) => item.status === "completed"); return agentRun ? "Workflow run " + lastRunId + " completed. " + nextState.completed_nodes.length + " node(s) completed. Agent run " + agentRun.agent_run_id + " created private draft " + agentRun.memory_id + "; awaiting admin review." : "Workflow run " + lastRunId + " completed. " + nextState.completed_nodes.length + " node(s) completed."; })()
             : nextState.status === "failed"
               ? `Workflow run ${lastRunId} failed: ${nextState.error ?? "No error details returned."}`
               : nextState.status === "waiting_approval"
