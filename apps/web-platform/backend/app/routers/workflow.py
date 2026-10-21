@@ -202,6 +202,64 @@ async def cancel_workflow_run(run_id: str, _admin=Depends(require_admin)) -> dic
     return {"run_id": run_id, "status": run.state.status}
 
 
+@router.post("/runs/{run_id}/retry")
+async def retry_workflow_run(run_id: str, _admin=Depends(require_admin)) -> dict[str, Any]:
+    """Resume a failed run from its last persisted completed-node checkpoint."""
+    run = _WORKFLOW_RUNS.get(run_id) or _load_run_state(run_id)
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="workflow run not found")
+    if run.state.status != "failed":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="only failed workflow runs can be retried",
+        )
+
+    workflow = _WORKFLOW_STORAGE.get(run.workflow_id) or _load_workflow_definition(run.workflow_id)
+    if workflow is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="workflow not found")
+
+    # Keep completed_nodes as the durable checkpoint; the executor resumes at
+    # the first unfinished node. Reset only the transient failed-run fields.
+    run.state.status = "queued"
+    run.state.current_node = None
+    run.state.error = None
+    run.state.approval_node = None
+    _WORKFLOW_RUNS[run_id] = run
+    _WORKFLOW_STORAGE[run.workflow_id] = workflow
+    _EXECUTION_STATES[run_id] = {
+        "run_id": run_id,
+        "workflow_id": run.workflow_id,
+        "status": "queued",
+        "current_node": None,
+        "completed_nodes": list(run.state.completed_nodes),
+        "error": None,
+        "approval_node": None,
+    }
+    _sync_execution_metrics(run_id, workflow, run.state)
+    _persist_run_state(run)
+
+    priority = 1
+    db = SessionLocal()
+    try:
+        if db.bind and inspect(db.bind).has_table("scheduled_workflow_jobs"):
+            job = db.query(models.ScheduledWorkflowJob).filter(
+                models.ScheduledWorkflowJob.run_id == run_id
+            ).first()
+            if job is not None:
+                priority = int(job.priority)
+    finally:
+        db.close()
+
+    _schedule_run(run_id, priority=priority, delay_seconds=0)
+    _dispatch_workflow_run(run_id, delay_seconds=0)
+    _record_execution_history(run_id, "workflow retry requested; resuming from last completed-node checkpoint")
+    return {
+        "run_id": run_id,
+        "status": "queued",
+        "resumed_from_completed_nodes": list(run.state.completed_nodes),
+    }
+
+
 @router.post("/runs/{run_id}/approve")
 async def approve_workflow_run(run_id: str, node_id: str | None = None, _admin=Depends(require_admin)) -> dict[str, Any]:
     run = _WORKFLOW_RUNS.get(run_id) or _load_run_state(run_id)
