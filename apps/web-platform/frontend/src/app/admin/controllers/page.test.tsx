@@ -1,8 +1,10 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const adminFetchMock = vi.fn();
-const toastMock = { success: vi.fn(), error: vi.fn() };
+const { adminFetchMock, toastMock } = vi.hoisted(() => ({
+  adminFetchMock: vi.fn(),
+  toastMock: { success: vi.fn(), error: vi.fn() },
+}));
 
 vi.mock("@/hooks/useAdminAuth", () => ({
   useAdminAuth: () => ({ token: "test-admin-token", isAuthenticated: true }),
