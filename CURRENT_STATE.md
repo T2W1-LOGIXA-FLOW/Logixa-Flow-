@@ -1,3 +1,26 @@
+# Current production status — 2026-10-21 (supersedes stale summaries below)
+
+## Verified on this audit
+- Current main commit: `49a7d6fa5240895790f085909f0eab92200824c0`.
+- Render service is active and its latest deployment was reported successful. This is evidence of deployment health, not proof that all product workflows are operational.
+- Main-branch production CI/CD, CI, and CodeQL runs on the current commit passed: [Production CI/CD](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39469098643), [CI](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39469098501), [CodeQL](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39469098535).
+- Scheduled production health/SLO probes passed on 2026-10-20/21, but current audit could not retrieve Render native HTTP/CPU/memory metrics. The latest probe did not execute the alert-notification step, so current alert delivery is not verified by that run.
+- Open dependency PRs exist; do not reuse historical statements below that say there are no open PRs.
+
+## Explicitly open release gates
+1. Create a safe authenticated production test workflow and prove QStash delivery, durable completion, idempotent duplicate handling, retry, and stale-claim recovery. Current production evidence previously showed no configured workflow runs or schedules.
+2. Prove the Agent → Brain → Approval → Publish/Resume path end-to-end, including approval enforcement and durable results.
+3. Establish an SLO observation window with measurable request latency/error rate and verify alert delivery; investigate missing Render native metrics.
+4. Rehearse application rollback and managed Supabase Auth/Storage plus object-storage recovery. Existing application schema/data restore evidence does not cover these managed resources.
+5. Complete a 24-hour scheduler observation and verify continuity/duplicate prevention.
+6. Reconcile newsletter delivery/provider failover and documented owner-approval-gated work.
+7. Triage all open Dependabot PRs. PR #151 Stripe 23.0.0 currently fails frontend build because `src/lib/stripe.ts` pins API version `2026-05-27.dahlia`, while the upgraded SDK type expects `2026-09-30.endive`. This is a PR-branch failure, not a demonstrated main-branch failure; resolve with Stripe compatibility review and tests rather than a blind version substitution. PR #150 is a Next.js major upgrade and requires explicit compatibility review.
+
+## Audit boundary
+This update is based on read-only GitHub/Render inspection. No production secrets, service configuration, database records, or deployments were changed. Do not mark release certification complete until the evidence above is recorded.
+
+---
+
 ## Production conditional sign-off — 2026-10-17
 
 **Current release decision: PRODUCTION READY — CONDITIONAL SIGN-OFF (owner-approved launch with explicitly deferred post-launch work).**
