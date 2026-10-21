@@ -143,6 +143,7 @@ export default function AdminWorkflowPage() {
       name: "Admin Command Canvas",
       nodes: nodes.map((node) => {
         const isTelegramGate = node.data.label === "TELEGRAM GATE";
+        const isThoughtStream = node.data.label === "THOUGHT STREAM";
         const canvas = {
           position: node.position,
           detail: node.data.detail,
@@ -151,24 +152,31 @@ export default function AdminWorkflowPage() {
         };
         return {
           id: node.id,
-          type: isTelegramGate ? "notification" : "task",
+          type: isTelegramGate ? "notification" : isThoughtStream ? "agent" : "task",
           name: node.data.label,
           depends_on: incoming.get(node.id) ?? [],
           retry_count: 0,
           timeout_seconds: 30,
-          // Telegram Gate is a real outbound side effect. Other canvas nodes remain
-          // explicitly log-only until their own authenticated adapters are implemented.
+          // Agent execution creates a persisted private Brain draft; it never publishes.
+          // Telegram is an external side effect; unsupported nodes remain log-only.
           config: isTelegramGate
             ? {
                 channel: "telegram",
-                message: `[Logixa Flow] Workflow canvas notification: ${node.data.label}\n${node.data.detail}`,
+                message: "[Logixa Flow] Workflow canvas notification: " + node.data.label + "\n" + node.data.detail,
                 canvas,
               }
-            : {
-                action: "log",
-                message: `Canvas orchestration step: ${node.data.label} — ${node.data.detail}. No external service is invoked.`,
-                canvas,
-              },
+            : isThoughtStream
+              ? {
+                  action: "run_agent",
+                  message: "Create a Myanmar-ready supply chain insight draft for admin review. Context: " + node.data.detail,
+                  max_sources: 8,
+                  canvas,
+                }
+              : {
+                  action: "log",
+                  message: "Canvas orchestration step: " + node.data.label + " — " + node.data.detail + ". No external service is invoked.",
+                  canvas,
+                },
         };
       }),
     };
@@ -355,7 +363,24 @@ export default function AdminWorkflowPage() {
       return await res.json();
     }
     if (label === "THOUGHT STREAM") {
-      throw new Error("THOUGHT STREAM has no authenticated streaming adapter configured. No stream was started.");
+      const token = await getAdminSessionToken();
+      if (!token) throw new Error("Admin session is required to run the content agent.");
+      const response = await adminFetch("/api/agent/run", token, {
+        method: "POST",
+        body: JSON.stringify({
+          message: "Create a Myanmar-ready supply chain insight draft for admin review. Context: " + node.data.detail,
+          source_ids: [],
+        }),
+      });
+      const result = await response.json() as {
+        id?: number;
+        status?: string;
+        final_memory_id?: number | null;
+      };
+      if (result.status !== "completed" || !result.final_memory_id) {
+        throw new Error("Agent did not confirm a completed run with a persisted private draft.");
+      }
+      return { status: "completed", agent_run_id: result.id, memory_id: result.final_memory_id, visibility: "private" };
     }
     if (label === "TELEGRAM GATE") {
       const token = await getAdminSessionToken();
