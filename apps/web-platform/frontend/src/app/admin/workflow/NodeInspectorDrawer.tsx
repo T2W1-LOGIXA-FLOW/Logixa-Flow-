@@ -39,20 +39,7 @@ export default function NodeInspectorDrawer({
         const res = await onExecuteNode(selectedNode);
         setExecutionResult(JSON.stringify(res, null, 2));
       } else {
-        // Default simulated test execution
-        await new Promise((r) => setTimeout(r, 600));
-        setExecutionResult(
-          JSON.stringify(
-            {
-              status: "success",
-              node: data.label,
-              timestamp: new Date().toISOString(),
-              message: `Executed module ${data.label} successfully via zero-cost pipeline.`,
-            },
-            null,
-            2
-          )
-        );
+        throw new Error(`No execution adapter is configured for "${data.label}". Nothing was executed.`);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
