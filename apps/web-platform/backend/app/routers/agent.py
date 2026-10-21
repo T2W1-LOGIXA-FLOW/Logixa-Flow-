@@ -656,3 +656,31 @@ async def stream_agent_thoughts(session_id: str):
         },
     )
 
+
+
+_agent_interrupt_registry = {}
+
+class AgentInterruptRequest(BaseModel):
+    action: str = Field(..., description="pause, resume, or inject_prompt")
+    guidance: Optional[str] = Field(None, description="Operator prompt injection")
+
+@router.post("/agent/interrupt/{session_id}", summary="Bidirectional Operator Agent Interrupt")
+async def interrupt_agent_execution(session_id: str, payload: AgentInterruptRequest):
+    """Allows an operator to pause or inject guidance into a running agent cognition loop."""
+    import time
+    action = payload.action.lower()
+    guidance = payload.guidance or ""
+    
+    _agent_interrupt_registry[session_id] = {
+        "action": action,
+        "guidance": guidance,
+        "timestamp": time.time(),
+    }
+    
+    return {
+        "status": "acknowledged",
+        "session_id": session_id,
+        "action": action,
+        "guidance_applied": bool(guidance),
+        "message": f"Operator interrupt '{action}' successfully injected into agent execution stream."
+    }

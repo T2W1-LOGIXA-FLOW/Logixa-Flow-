@@ -28,6 +28,7 @@ _SECRET_PATTERNS = [
     re.compile(r"([?&](?:key|api_key|token|access_token)=)([^&\s]+)", re.IGNORECASE),
     re.compile(r"(Bearer\s+)[A-Za-z0-9._\-]+", re.IGNORECASE),
     re.compile(r"\bAIza[0-9A-Za-z_\-]{20,}\b"),
+    re.compile(r"\bAQ[0-9A-Za-z._\-]{20,}\b"),
     re.compile(r"\bsk-or-v1-[0-9A-Za-z_\-]{20,}\b"),
     re.compile(r"\bgsk_[0-9A-Za-z_\-]{20,}\b"),
     re.compile(r"\bhf_[0-9A-Za-z_\-]{20,}\b"),
@@ -51,17 +52,23 @@ class LLMRouter:
         # Production cost policy is free-only: never route admin or user
         # generation through legacy paid providers merely because their keys exist.
         self.providers = {
+            "gemini": GeminiProvider(model="gemini-2.5-flash", role=self.role),
+            "groq": GroqProvider(model="llama-3.3-70b-versatile", role=self.role),
             "openrouter-free": OpenRouterProvider(model="openrouter/free", role=self.role),
             "local": FallbackLocalProvider(),
         }
 
     def _selected_provider_name(self, task: str | None = None) -> str:
+        if self.providers["gemini"].is_available():
+            return "gemini"
+        if self.providers["groq"].is_available():
+            return "groq"
         if self.providers["openrouter-free"].is_available():
             return "openrouter-free"
         return "local"
 
     def _provider_order(self, task: str | None = None) -> list[tuple[str, LLMProvider]]:
-        names = ["openrouter-free", "local"]
+        names = ["gemini", "groq", "openrouter-free", "local"]
         allow_local_fallback = os.getenv(
             "ALLOW_LOCAL_LLM_FALLBACK",
             "true" if os.getenv("ENVIRONMENT", "development").lower() not in {"production", "prod"} else "false",

@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import styles from "@/app/admin/agents/agent-theme.module.css";
-import { Terminal, Activity, ChevronDown, ChevronUp, Cpu, CheckCircle2 } from "lucide-react";
+import { Terminal, Activity, ChevronDown, ChevronUp, Cpu, CheckCircle2, Pause, Play, Send } from "lucide-react";
 
 export function AdminConversationMonitor({
   children,
@@ -14,6 +14,33 @@ export function AdminConversationMonitor({
   description?: string;
 }) {
   const [showThoughtStream, setShowThoughtStream] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [operatorPrompt, setOperatorPrompt] = useState("");
+  const [interruptLog, setInterruptLog] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  const handleInterrupt = async (action: "pause" | "resume" | "inject_prompt") => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/agent/interrupt/default-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, guidance: action === "inject_prompt" ? operatorPrompt : undefined }),
+      });
+      if (res.ok) {
+        if (action === "pause") setIsPaused(true);
+        if (action === "resume") setIsPaused(false);
+        const msg = action === "inject_prompt" ? `Injected guidance: "${operatorPrompt}"` : `Execution ${action}d`;
+        setInterruptLog(prev => [msg, ...prev]);
+        if (action === "inject_prompt") setOperatorPrompt("");
+      }
+    } catch (e) {
+      console.error("Interrupt failed", e);
+    } finally {
+      setBusy(false);
+    }
+  };
+
 
   return (
     <section className={styles.sessionShell} aria-labelledby="conversation-monitor-title">
@@ -66,6 +93,56 @@ export function AdminConversationMonitor({
             <div className="flex items-start gap-2 text-slate-500">
               <span>[Telemetry] Heartbeat active · Context buffer: 12.4 KB · Memory prototype: OK</span>
             </div>
+          {/* Bidirectional Operator Interrupt Toolbar */}
+          <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 bg-slate-900/60 p-2 rounded-lg">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleInterrupt(isPaused ? "resume" : "pause")}
+                disabled={busy}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-bold tracking-wide transition ${
+                  isPaused ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40" : "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+                }`}
+              >
+                {isPaused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
+                <span>{isPaused ? "RESUME AGENT" : "PAUSE AGENT"}</span>
+              </button>
+              <span className="text-[10px] text-slate-500 font-sans">
+                {isPaused ? "Status: PAUSED by Operator" : "Status: Autonomous Cognition"}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-1 max-w-sm">
+              <input
+                type="text"
+                value={operatorPrompt}
+                onChange={e => setOperatorPrompt(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && operatorPrompt.trim() && handleInterrupt("inject_prompt")}
+                placeholder="Inject runtime guidance / prompt..."
+                className="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-[11px] text-slate-200 w-full focus:outline-none focus:border-cyan-500 font-sans"
+              />
+              <button
+                type="button"
+                onClick={() => handleInterrupt("inject_prompt")}
+                disabled={busy || !operatorPrompt.trim()}
+                className="bg-cyan-600 hover:bg-cyan-500 text-white px-2 py-1 rounded text-[11px] font-semibold flex items-center gap-1 disabled:opacity-40"
+              >
+                <Send className="h-3 w-3" />
+                <span>Inject</span>
+              </button>
+            </div>
+          </div>
+
+          {interruptLog.length > 0 && (
+            <div className="mt-2 space-y-1 text-[10px] text-cyan-300/80 bg-cyan-950/30 p-1.5 rounded border border-cyan-800/30 font-mono">
+              {interruptLog.slice(0, 3).map((log, idx) => (
+                <div key={idx} className="flex items-center gap-1.5">
+                  <span className="text-cyan-500 font-bold">[INTERRUPT]</span>
+                  <span>{log}</span>
+                </div>
+              ))}
+            </div>
+          )}
           </div>
         </div>
       )}

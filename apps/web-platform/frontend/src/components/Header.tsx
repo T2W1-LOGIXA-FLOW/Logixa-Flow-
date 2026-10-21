@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import LogixaFlowLogo from "./LogixaFlowLogo";
 import LanguageToggle from "./shadcn/LanguageToggle";
 import MobileDrawer from "./shadcn/MobileDrawer";
 import { useLocale } from "@/lib/LanguageContext";
@@ -20,6 +21,7 @@ export default function Header() {
     <header className="w-full px-4 md:px-8 py-4 border-b border-slate-800 relative z-30 sticky top-0 bg-slate-950/50 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group hover:opacity-100 transition-all" aria-label="Logixa Flow home">
+          <LogixaFlowLogo size={32} showText={false} />
           <span className="bg-gradient-to-r from-[#00A3FF] to-[#FF6B00] bg-clip-text text-transparent opacity-95 group-hover:opacity-100 group-hover:drop-shadow-[0_0_12px_rgba(0,163,255,0.5)] transition-all duration-300 font-heading font-extrabold tracking-wide text-lg">
             Logixa Flow
           </span>
