@@ -156,7 +156,7 @@ export default function AdminWorkflowPage() {
           name: node.data.label,
           depends_on: incoming.get(node.id) ?? [],
           retry_count: 0,
-          timeout_seconds: 30,
+          timeout_seconds: isThoughtStream ? 180 : 30,
           // Agent execution creates a persisted private Brain draft; it never publishes.
           // Telegram is an external side effect; unsupported nodes remain log-only.
           config: isTelegramGate
