@@ -63,6 +63,10 @@ describe("unified command canvas", () => {
             current_node: null,
             completed_nodes: ["orchestrator", "research"],
             error: null,
+            execution_history: ["agent:thought-stream: awaiting admin review"],
+            metrics: {
+              agent_runs: [{ node_id: "thought-stream", agent_run_id: 81, memory_id: 206, status: "completed" }],
+            },
           }),
         } as Response;
       }
@@ -76,6 +80,8 @@ describe("unified command canvas", () => {
     await waitFor(() => {
       expect(screen.getByRole("status")).toHaveTextContent(/run-test-123 completed/i);
       expect(screen.getByRole("status")).toHaveTextContent(/2 node\(s\) completed/i);
+      expect(screen.getByRole("status")).toHaveTextContent(/private draft 206/i);
+      expect(screen.getByRole("status")).toHaveTextContent(/awaiting admin review/i);
     });
     expect(adminFetch).toHaveBeenCalledWith(
       "/api/admin/workflow/runs/run-test-123/state",
