@@ -1,3 +1,26 @@
+# Current production status — 2026-10-21 (supersedes stale summaries below)
+
+## Verified on this audit
+- Current main commit: `49a7d6fa5240895790f085909f0eab92200824c0`.
+- Render service is active and its latest deployment was reported successful. This is evidence of deployment health, not proof that all product workflows are operational.
+- Main-branch production CI/CD, CI, and CodeQL runs on the current commit passed: [Production CI/CD](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39469098643), [CI](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39469098501), [CodeQL](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39469098535).
+- Scheduled production health/SLO probes passed on 2026-10-20/21, but current audit could not retrieve Render native HTTP/CPU/memory metrics. The latest probe did not execute the alert-notification step, so current alert delivery is not verified by that run.
+- Open dependency PRs exist; do not reuse historical statements below that say there are no open PRs.
+
+## Explicitly open release gates
+1. Create a safe authenticated production test workflow and prove QStash delivery, durable completion, idempotent duplicate handling, retry, and stale-claim recovery. Current production evidence previously showed no configured workflow runs or schedules.
+2. Prove the Agent → Brain → Approval → Publish/Resume path end-to-end, including approval enforcement and durable results.
+3. Establish an SLO observation window with measurable request latency/error rate and verify alert delivery; investigate missing Render native metrics.
+4. Rehearse application rollback and managed Supabase Auth/Storage plus object-storage recovery. Existing application schema/data restore evidence does not cover these managed resources.
+5. Complete a 24-hour scheduler observation and verify continuity/duplicate prevention.
+6. Reconcile newsletter delivery/provider failover and documented owner-approval-gated work.
+7. Triage all open Dependabot PRs. PR #151 Stripe 23.0.0 currently fails frontend build because `src/lib/stripe.ts` pins API version `2026-05-27.dahlia`, while the upgraded SDK type expects `2026-09-30.endive`. This is a PR-branch failure, not a demonstrated main-branch failure; resolve with Stripe compatibility review and tests rather than a blind version substitution. PR #150 is a Next.js major upgrade and requires explicit compatibility review.
+
+## Audit boundary
+This update is based on read-only GitHub/Render inspection. No production secrets, service configuration, database records, or deployments were changed. Do not mark release certification complete until the evidence above is recorded.
+
+---
+
 ## Production conditional sign-off — 2026-10-17
 
 **Current release decision: PRODUCTION READY — CONDITIONAL SIGN-OFF (owner-approved launch with explicitly deferred post-launch work).**
@@ -440,3 +463,10 @@ PR #93 merged as `053891cfa7bd9e970566e9b598f507c6af53792f`. CI #641 passed back
 Read-only provider inventory and production SQL verification are recorded in [docs/INFRASTRUCTURE_AUDIT_2026-10-15.md](docs/INFRASTRUCTURE_AUDIT_2026-10-15.md). Key fresh observations: Render's single Free web service is live on main commit `8a1b5ad4bfab817e5e4a56d8cec22b1b035e4215`; Vercel's latest main production deployment is READY, but the project API reports `live=false` and its `latestDeployment` field points at an ERROR Dependabot deployment, so retain the existing Vercel lock and investigate only with owner approval. Supabase production is ACTIVE_HEALTHY at Alembic head `20261011_0013`, with 34 public tables, 8 RAG observability events, and zero workflow definitions/nodes/runs/scheduled jobs. Cloudflare inventory has no zones, Workers, Pages, KV, D1, or Queues; R2 cannot be listed because it is not enabled. Cloudflare account `enforce_twofactor=false` is an owner-level security follow-up.
 
 Supabase advisors report 34 RLS-enabled tables without policies (INFO), leaked-password protection disabled (WARN), and 82 unused-index findings (INFO). Do not mass-create policies, broaden grants, or drop indexes without workload and access-model review. No production infrastructure or application data was mutated during this audit. Release remains **PENDING — NOT RELEASE-CERTIFIED**; ordered gates are in the audit document.
+
+## QStash provider audit addendum — 2026-10-21
+- Live QStash account metadata confirms both US and EU regional users exist; schedules are empty in both regions and Workflow-run logs returned zero runs in both regions.
+- US QStash delivery logs include the 2026-10-14 controlled synthetic callback to `/api/admin/workflow/qstash-dispatch` returning HTTP 404 “Workflow run not found” for a deliberately nonexistent run ID. This demonstrates the US signing path reached application payload/run lookup; it does not demonstrate a real workflow execution.
+- Historical QStash delivery logs show HTTP 401 “Invalid QStash signature” in US (2026-10-07) and EU (2026-10-08) tests, followed by failed deliveries. These are historical and do not prove the current US path is still failing; the EU signing path must be revalidated before using EU delivery.
+- QStash DLQ list currently returns empty for Workflow in both regions. This does not erase historical failed delivery events from the logs.
+- Next safe step requires an authenticated admin-created test workflow/run. Do not publish guessed run IDs or change signing secrets to force a pass.

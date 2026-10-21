@@ -1,3 +1,25 @@
+# Current execution status — 2026-10-21 (read this before the historical roadmap)
+
+The roadmap below contains historical local-development assumptions (including SQLite and local ports) that must not be treated as the production topology. Production uses the deployed Render FastAPI service and external Supabase PostgreSQL/pgvector according to the current operational evidence. Celery is intentionally disabled for the QStash/internal-queue design; do not add a separate worker without proving a requirement and checking the free-tier/cost impact.
+
+## Current verified state
+- Main commit `49a7d6fa5240895790f085909f0eab92200824c0` passed production CI/CD, CI, and CodeQL on 2026-10-20.
+- Render deployment is active; latest scheduled health probes passed. Render native metrics were not available in the current audit query, so latency/error SLOs are not certified from native metrics.
+- Frontend build failure exists on Dependabot PR #151 (Stripe SDK/API-version type mismatch), not on the current main commit. PR #150 is a major Next.js upgrade requiring compatibility review.
+
+## Highest-priority unfinished work
+1. Live QStash workflow delivery/completion/idempotency/retry/recovery evidence.
+2. Agent → Brain → human approval → publish/resume end-to-end test.
+3. SLO observation plus verified alert delivery and metrics ingestion.
+4. Application rollback; managed Auth/Storage and object-storage recovery.
+5. 24-hour scheduler observation.
+6. Dependency PR triage and dependency-audit remediation.
+7. Newsletter/provider failover and owner-approval-gated infrastructure work.
+
+Do not mark any item complete based on code existence, a unit test, or an unrelated successful probe. Attach run IDs, logs, timestamps, and result summaries to the release evidence. No production change was made during the 2026-10-21 audit.
+
+---
+
 # Logixa Flow — Master Roadmap & Systematic Execution Plan
 
 **Project Type:** Standalone Web-Only Enterprise AI Orchestration & Workflow Command Center  

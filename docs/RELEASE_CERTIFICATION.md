@@ -1,3 +1,26 @@
+# Audit update — 2026-10-21
+
+**Certification remains: PENDING FINAL EVIDENCE — NOT RELEASE-CERTIFIED.** This audit does not change production state.
+
+## Latest verified checks
+- Main commit `49a7d6fa5240895790f085909f0eab92200824c0`: [Production CI/CD passed](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39469098643), [CI passed](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39469098501), [CodeQL passed](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39469098535).
+- [Latest scheduled Production SLO Synthetic Probe](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39519595283) passed its probe steps. The alert-notification step was skipped in that run; alert delivery must be verified separately.
+- Render service remains active and the latest deployment checked was successful. The current metrics query returned no native HTTP/CPU/memory samples, so this audit does not certify measured latency/error SLOs.
+- Current open PR inventory contains 10 Dependabot PRs. [PR #151](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/151) fails frontend build: Stripe SDK 23 type requires API version `2026-09-30.endive`, while code pins `2026-05-27.dahlia`. This is a PR-branch failure; do not claim main is broken based on it. Review Stripe API compatibility before fixing/merging. [PR #150](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/150) is a Next.js 15 → 16 major update and needs explicit compatibility review.
+
+## Release gates still open
+- Safe authenticated QStash workflow with durable execution, duplicate/idempotency, retry, and stale-claim recovery evidence.
+- Agent → Brain → approval → publish/resume end-to-end evidence.
+- Full SLO observation, native metric ingestion investigation, and verified alert delivery.
+- Application rollback and recovery of Supabase-managed Auth/Storage and object storage; prior schema/data restore is not equivalent to full DR.
+- 24-hour scheduler observation.
+- Newsletter delivery/provider failover and owner-approval-gated changes.
+
+## Audit boundary
+Read-only inspection only. No secrets, production settings, database records, or deployment were changed. Keep certification pending until evidence for each gate is attached.
+
+---
+
 # Logixa Flow — Release Certification
 
 > Owner: Engineering / Release
@@ -170,3 +193,10 @@ Release status remains **PENDING — NOT RELEASE-CERTIFIED**.
 The connected provider API and production SQL snapshot is recorded in [docs/INFRASTRUCTURE_AUDIT_2026-10-15.md](INFRASTRUCTURE_AUDIT_2026-10-15.md). Fresh checks confirm Render's current main deployment is live and Vercel's latest main production deployment is READY, while Vercel project metadata reports `live=false` and a separate ERROR Dependabot deployment as `latestDeployment`; no Vercel remediation was performed due to the owner lock. Supabase production is ACTIVE_HEALTHY at Alembic head `20261011_0013`, but workflow definitions/nodes/runs/scheduled jobs remain zero. Cloudflare lists no zones, Workers, Pages, KV, D1, or Queues; R2 is not enabled/inspectable.
 
 Security/performance review items: Cloudflare account MFA enforcement is disabled; Supabase reports 34 RLS-enabled tables without policies, leaked-password protection disabled, and 82 unused-index advisories. These require scoped review and are not automatic authorization to change grants, policies, or indexes. All previously listed production release gates remain open unless directly evidenced; overall status is **PENDING — NOT RELEASE-CERTIFIED**.
+
+## QStash account evidence — 2026-10-21
+- Live account metadata lists both US and EU regional users. Workflow schedules and workflow-run logs are empty in both regions.
+- US QStash log: controlled synthetic callback on 2026-10-14 returned HTTP 404 “Workflow run not found” for a deliberately nonexistent run ID. Signature validation reached the app-level run lookup, but no real workflow was executed.
+- Historical log entries show HTTP 401 “Invalid QStash signature” for US probes on 2026-10-07 and EU probes on 2026-10-08. The later US 404 indicates that the tested US signing path was accepted on 2026-10-14; EU signing must be revalidated before routing traffic there.
+- Workflow DLQ is currently empty in both regions. Historical failed delivery events remain visible in QStash logs.
+- Required next action: use authenticated admin access to create one safe test workflow/run, then verify delivery, durable completion, duplicate behavior, and retry/recovery. Do not use arbitrary run IDs as a substitute for workflow execution.
