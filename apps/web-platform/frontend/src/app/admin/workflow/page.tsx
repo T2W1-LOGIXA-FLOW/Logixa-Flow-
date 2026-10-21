@@ -277,7 +277,7 @@ export default function AdminWorkflowPage() {
       const response = await adminFetch("/api/admin/telegram/send", token, {
         method: "POST",
         body: JSON.stringify({
-          message: `[Logixa Flow] Workflow canvas test: ${label}\\n${node.data.detail}`,
+          message: `[Logixa Flow] Workflow canvas test: ${label}\n${node.data.detail}`,
         }),
       });
       const result = await response.json() as { delivered?: boolean; message_id?: number };
