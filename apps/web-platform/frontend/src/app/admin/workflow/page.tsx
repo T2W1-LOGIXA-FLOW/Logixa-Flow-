@@ -142,8 +142,9 @@ export default function AdminWorkflowPage() {
     if (label === "TELEGRAM GATE") {
       return { status: "dispatched", target: "Telegram Admin Topic", actions: ["✅ Approve", "❌ Discard"] };
     }
-    // Generic fallback
-    return { status: "ok", node: label, timestamp: new Date().toISOString() };
+    // Do not report success for modules that have no real execution adapter.
+    // A simulated result can be mistaken for a production workflow run.
+    throw new Error(`No real execution adapter is configured for "${label}". This node was not executed.`);
   };
 
   useEffect(() => {
