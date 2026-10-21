@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { toast } from "sonner";
 import Skeleton from "@/components/shadcn/Skeleton";
 import { adminFetch } from "@/components/api";
@@ -241,7 +240,6 @@ export default function AdminControllersPage() {
       ) : filteredControllers.length === 0 ? (
         <AdminEmptyState
           title={searchQuery ? "No controllers found" : "No controllers configured"}
-          description={searchQuery ? "No controllers found matching your search" : "Configure your first automation controller"}
           description={searchQuery ? "No controllers found matching your search" : "Create a controller with New Controller above, then point it at a saved workflow."}
         />
       ) : (
