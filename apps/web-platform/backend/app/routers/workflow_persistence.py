@@ -189,6 +189,18 @@ def _load_run_state(run_id: str) -> WorkflowRunOut | None:
         if record is None:
             return None
         metrics = json.loads(record.metrics_json or "{}")
+        history = json.loads(record.execution_log or "[]")
+        _EXECUTION_METRICS[run_id] = metrics
+        _EXECUTION_HISTORY[run_id] = history
+        _EXECUTION_STATES[run_id] = {
+            "run_id": record.id,
+            "workflow_id": record.workflow_id,
+            "status": record.status,
+            "current_node": record.current_node,
+            "completed_nodes": json.loads(record.completed_nodes or "[]"),
+            "error": record.error,
+            "approval_node": metrics.get("approval_node"),
+        }
         return WorkflowRunOut(
             run_id=record.id,
             workflow_id=record.workflow_id,
