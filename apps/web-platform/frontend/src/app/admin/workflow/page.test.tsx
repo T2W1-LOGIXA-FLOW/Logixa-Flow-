@@ -44,7 +44,6 @@ describe("unified command canvas", () => {
   });
 
   it("polls authenticated run state and reports the backend terminal status", async () => {
-    vi.mocked(getAdminSessionToken).mockResolvedValue("admin-token");
     vi.mocked(adminFetch).mockImplementation(async (path: string) => {
       if (path === "/api/admin/workflow/admin-command-canvas") {
         return { json: async () => ({ nodes: [] }) } as Response;
@@ -71,6 +70,7 @@ describe("unified command canvas", () => {
     });
 
     render(<AdminWorkflowPage />);
+    vi.mocked(getAdminSessionToken).mockResolvedValue("admin-token");
     fireEvent.click(screen.getByRole("button", { name: "Run orchestration test" }));
 
     await waitFor(() => {
@@ -81,6 +81,8 @@ describe("unified command canvas", () => {
       "/api/admin/workflow/runs/run-test-123/state",
       "admin-token"
     );
+    vi.mocked(getAdminSessionToken).mockResolvedValue(null);
+    vi.mocked(adminFetch).mockReset();
   });
 
   it("supports node filtering and sidebar selection", () => {
