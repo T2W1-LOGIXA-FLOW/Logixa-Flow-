@@ -11,7 +11,7 @@ export type ServiceModule = {
 };
 
 export const AVAILABLE_MODULES: ServiceModule[] = [
-  { id: "thought_stream", name: "Live Thought Stream", canvasLabel: "THOUGHT STREAM", detail: "Real-time agent cognition trace", category: "Research", tag: "AI/SSE", endpoint: "/api/agent/stream/demo" },
+  { id: "thought_stream", name: "Live Thought Stream", canvasLabel: "THOUGHT STREAM", detail: "Real-time agent cognition trace", category: "Research", tag: "AGENT", endpoint: "/api/agent/run" },
   { id: "concept_map", name: "Mermaid Mindmap Engine", canvasLabel: "CONCEPT MAP", detail: "Knowledge relation diagram", category: "Research", tag: "GRAPH", endpoint: "/api/admin/workflow/concept-map" },
   { id: "flux_banner", name: "FLUX AI Banner Generator", canvasLabel: "FLUX BANNER", detail: "Pollinations 1200x630 banner", category: "Media", tag: "FLUX", endpoint: "/api/admin/posts/generate-banner" },
   { id: "edge_tts", name: "Edge Neural Voiceover", canvasLabel: "VOICEOVER", detail: "Burmese/English synthetic audio", category: "Media", tag: "AUDIO", endpoint: "/api/v1/episodes/voiceover" },
