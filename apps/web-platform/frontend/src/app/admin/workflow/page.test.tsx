@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/adminSession", () => ({
@@ -27,6 +27,15 @@ describe("unified command canvas", () => {
     expect(screen.getByText("OUTBOUND")).toBeInTheDocument();
     expect(screen.getByText("ORCHESTRATOR")).toBeInTheDocument();
     expect(screen.getByLabelText("Process cost panel")).toBeInTheDocument();
+  });
+
+  it("exposes explicit save and orchestration-only run controls", async () => {
+    render(<AdminWorkflowPage />);
+    expect(screen.getByRole("button", { name: "Save workflow" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Run orchestration test" }));
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent("Admin session is required to run this workflow.");
+    });
   });
 
   it("supports node filtering and sidebar selection", () => {
