@@ -1,9 +1,30 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { adminFetch } from "@/components/api";
 import { getAdminSessionToken } from "@/lib/adminSession";
-import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import {
+  BarChart,
+  Bar,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
+import {
+  BarChart3,
+  Cpu,
+  Database,
+  DollarSign,
+  Layers,
+  Sparkles,
+  RefreshCw,
+  FileText,
+  Activity,
+  Zap,
+} from "lucide-react";
 
 // ─── Brain Dashboard Types ──────────────────────────────────────
 interface BrainStatus {
@@ -21,34 +42,6 @@ interface BrainDashboard {
   project: string;
   timestamp: string;
   brain: BrainStatus;
-}
-
-// ─── Soft pastel color constants ────────────────────────────────
-const C = {
-  blue: "#7eb8d4",
-  green: "#7ec4a0",
-  lav: "#b4a4cc",
-  amber: "#c9a96a",
-  dim: "rgba(255,255,255,0.18)",
-  border: "rgba(255,255,255,0.08)",
-  bg: "#161922",
-};
-
-function dot(color: string) {
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        width: 7,
-        height: 7,
-        borderRadius: "50%",
-        background: color,
-        marginRight: 6,
-        opacity: 0.85,
-        animation: "breathe 4s ease-in-out infinite",
-      }}
-    />
-  );
 }
 
 function fmt(iso: string | null) {
@@ -72,12 +65,15 @@ function BrainSection() {
 
   const load = useCallback(async () => {
     const token = await getAdminSessionToken();
-    if (!token) { setLoading(false); return; }
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const res = await adminFetch("/api/admin/usage/brain-dashboard", token);
       if (!res.ok) throw new Error("Brain dashboard unavailable");
-      const json = await res.json() as BrainDashboard;
+      const json = (await res.json()) as BrainDashboard;
       setData(json);
     } catch {
       setError("Brain dashboard could not be loaded.");
@@ -86,7 +82,9 @@ function BrainSection() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   async function synthesizeNow() {
     const token = await getAdminSessionToken();
@@ -95,10 +93,17 @@ function BrainSection() {
     setActionMsg(null);
     try {
       const res = await adminFetch("/api/admin/brain/synthesize", token, { method: "POST" });
-      if (res.ok) { setActionMsg("Synthesis started."); void load(); }
-      else setActionMsg("Synthesis failed.");
-    } catch { setActionMsg("Synthesis request error."); }
-    finally { setSynthesizing(false); }
+      if (res.ok) {
+        setActionMsg("Synthesis started successfully.");
+        void load();
+      } else {
+        setActionMsg("Synthesis trigger failed.");
+      }
+    } catch {
+      setActionMsg("Synthesis request error.");
+    } finally {
+      setSynthesizing(false);
+    }
   }
 
   async function draftBlog() {
@@ -108,141 +113,117 @@ function BrainSection() {
     setActionMsg(null);
     try {
       const res = await adminFetch("/api/admin/brain/draft-blog", token, { method: "POST" });
-      if (res.ok) { const d = await res.json(); setActionMsg(`Blog draft created: "${d.title}"`); }
-      else setActionMsg("Blog draft failed.");
-    } catch { setActionMsg("Blog draft request error."); }
-    finally { setDrafting(false); }
+      if (res.ok) {
+        const d = await res.json();
+        setActionMsg(`Blog draft created: "${d.title}"`);
+      } else {
+        setActionMsg("Blog draft generation failed.");
+      }
+    } catch {
+      setActionMsg("Blog draft request error.");
+    } finally {
+      setDrafting(false);
+    }
   }
 
   const b = data?.brain;
 
   return (
-    <section
-      style={{
-        borderRadius: 16,
-        border: `1px solid ${C.border}`,
-        background: C.bg,
-        padding: "24px 28px",
-        marginTop: 28,
-      }}
-    >
-      <style>{`@keyframes breathe{0%,100%{opacity:.4}50%{opacity:1}}`}</style>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+    <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 sm:p-6 shadow-xl backdrop-blur-md">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800/80 pb-5 mb-5">
         <div>
-          <p style={{ fontSize: 11, letterSpacing: ".8px", textTransform: "uppercase", color: C.lav, marginBottom: 4 }}>
-            Brain Soul Layer
-          </p>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#f8fafc", margin: 0 }}>Brain Status</h2>
-          <p style={{ fontSize: 12, color: C.dim, marginTop: 3 }}>
-            Context synthesis · memory · feed ingestion
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-violet-500/10 border border-violet-500/20 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-violet-400">
+              Brain Soul Layer
+            </span>
+          </div>
+          <h2 className="mt-1 text-xl sm:text-2xl font-bold text-white">Brain Status</h2>
+          <p className="mt-0.5 text-xs sm:text-sm text-slate-400">
+            Real-time context synthesis · Long-term soul memory · Knowledge feed ingestion
           </p>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={synthesizeNow}
             disabled={synthesizing}
-            style={{
-              background: "transparent",
-              border: `1px solid ${C.green}`,
-              color: C.green,
-              borderRadius: 8,
-              padding: "6px 14px",
-              fontSize: 12,
-              cursor: synthesizing ? "not-allowed" : "pointer",
-              opacity: synthesizing ? 0.5 : 1,
-            }}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 active:scale-95 transition disabled:opacity-50"
           >
+            <Sparkles className="h-3.5 w-3.5" />
             {synthesizing ? "Running…" : "Synthesize Now"}
           </button>
           <button
             onClick={draftBlog}
             disabled={drafting}
-            style={{
-              background: "transparent",
-              border: `1px solid ${C.blue}`,
-              color: C.blue,
-              borderRadius: 8,
-              padding: "6px 14px",
-              fontSize: 12,
-              cursor: drafting ? "not-allowed" : "pointer",
-              opacity: drafting ? 0.5 : 1,
-            }}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3.5 py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/20 active:scale-95 transition disabled:opacity-50"
           >
+            <FileText className="h-3.5 w-3.5" />
             {drafting ? "Drafting…" : "Generate Blog Draft"}
           </button>
         </div>
       </div>
 
       {actionMsg && (
-        <div style={{ marginBottom: 16, padding: "8px 14px", borderRadius: 8, background: "rgba(126,196,160,0.08)", border: `1px solid rgba(126,196,160,0.2)`, fontSize: 12, color: C.green }}>
+        <div className="mb-5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs font-medium text-emerald-300">
           {actionMsg}
         </div>
       )}
 
       {loading ? (
-        <div style={{ color: C.dim, fontSize: 13 }}>Loading brain status…</div>
+        <div className="py-8 text-center text-xs sm:text-sm text-slate-400">Loading brain status…</div>
       ) : error ? (
-        <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>
+        <div className="py-8 text-center text-xs sm:text-sm text-rose-400">{error}</div>
       ) : b ? (
-        <>
-          {/* Stat grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 12, marginBottom: 20 }}>
-            {[
-              { label: "Soul Entries", value: b.soul_file_entries, color: C.blue },
-              { label: "Total Syntheses", value: b.total_syntheses, color: C.green },
-              { label: "Approved Memories", value: b.approved_memories, color: C.lav },
-              { label: "Tokens Today", value: b.synthesis_tokens_today.toLocaleString(), color: C.amber },
-            ].map(({ label, value, color }) => (
-              <div
-                key={label}
-                style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 10,
-                  padding: "14px 16px",
-                }}
-              >
-                <p style={{ fontSize: 11, color: C.dim, marginBottom: 4 }}>{label}</p>
-                <p style={{ fontSize: 22, fontWeight: 700, color }}>{value}</p>
-              </div>
-            ))}
+        <div className="space-y-5">
+          {/* Stat Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 sm:p-4">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Soul Entries</span>
+              <p className="mt-1 text-2xl font-extrabold text-cyan-400">{b.soul_file_entries}</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">Core memory nodes</p>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 sm:p-4">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Syntheses</span>
+              <p className="mt-1 text-2xl font-extrabold text-emerald-400">{b.total_syntheses}</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">Knowledge cycles run</p>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 sm:p-4">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Approved Memories</span>
+              <p className="mt-1 text-2xl font-extrabold text-violet-400">{b.approved_memories}</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">Passed human review</p>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 sm:p-4">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Tokens Today</span>
+              <p className="mt-1 text-2xl font-extrabold text-amber-400">{b.synthesis_tokens_today.toLocaleString()}</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">AI tokens processed</p>
+            </div>
           </div>
 
-          {/* Meta row */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
-            <div style={{ fontSize: 12, color: C.dim }}>
-              <span style={{ color: C.lav, marginRight: 6 }}>Latest Period</span>
-              {b.latest_synthesis_period ?? "—"}
+          {/* Timestamps Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-slate-950/40 border border-slate-800/60 text-xs text-slate-300">
+            <div>
+              <span className="font-semibold text-cyan-400 block mb-0.5">Latest Synthesis Period:</span>
+              <span className="font-mono">{b.latest_synthesis_period ?? "—"}</span>
             </div>
-            <div style={{ fontSize: 12, color: C.dim }}>
-              <span style={{ color: C.lav, marginRight: 6 }}>Synthesized At</span>
-              {fmt(b.latest_synthesis_at)}
+            <div>
+              <span className="font-semibold text-emerald-400 block mb-0.5">Synthesized At:</span>
+              <span className="font-mono">{fmt(b.latest_synthesis_at)}</span>
             </div>
-            <div style={{ fontSize: 12, color: C.dim }}>
-              <span style={{ color: C.amber, marginRight: 6 }}>Feed Pulled At</span>
-              {fmt(b.feed_last_pulled_at)}
+            <div>
+              <span className="font-semibold text-amber-400 block mb-0.5">Feed Last Ingested:</span>
+              <span className="font-mono">{fmt(b.feed_last_pulled_at)}</span>
             </div>
           </div>
 
           {/* Synthesis snippet */}
           {b.latest_synthesis_snippet && (
-            <div
-              style={{
-                background: "rgba(255,255,255,0.02)",
-                border: `1px solid ${C.border}`,
-                borderLeft: `3px solid ${C.lav}`,
-                borderRadius: "0 8px 8px 0",
-                padding: "12px 16px",
-                fontSize: 12,
-                color: C.dim,
-                lineHeight: 1.7,
-              }}
-            >
-              {dot(C.lav)}
-              <span style={{ color: "#cbd5e1" }}>{b.latest_synthesis_snippet}</span>
+            <div className="rounded-xl border border-slate-800/80 bg-slate-950/80 p-4 border-l-4 border-l-violet-500 text-xs sm:text-sm text-slate-300 leading-relaxed">
+              <strong className="block text-violet-300 text-xs font-semibold uppercase tracking-wider mb-1">
+                Latest Memory Synthesis Insight:
+              </strong>
+              {b.latest_synthesis_snippet}
             </div>
           )}
-        </>
+        </div>
       ) : null}
     </section>
   );
@@ -280,46 +261,110 @@ export default function UsagePage() {
     };
   }, []);
 
-  const chartData = rows.map((r) => ({
-    name: (r.api_key_name as string) || (r.provider as string) || "unknown",
-    tokens: Number((r.tokens as number) || 0),
-    cost: Number((r.cost as number) || 0),
-  }));
+  const chartData = useMemo(() => {
+    return rows.map((r) => ({
+      name: (r.api_key_name as string) || (r.provider as string) || "unknown",
+      tokens: Number((r.tokens as number) || 0),
+      cost: Number((r.cost as number) || 0),
+      calls: Number((r.calls as number) || 0),
+    }));
+  }, [rows]);
+
+  const totalTokens = useMemo(() => rows.reduce((acc, r) => acc + Number(r.tokens || 0), 0), [rows]);
+  const totalCost = useMemo(() => rows.reduce((acc, r) => acc + Number(r.cost || 0), 0), [rows]);
+  const totalCalls = useMemo(() => rows.reduce((acc, r) => acc + Number(r.calls || 0), 0), [rows]);
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-white">API Usage</h1>
-        <p className="mt-1 text-sm text-slate-400">Usage and cost by provider and key.</p>
+    <div className="space-y-6 pb-12">
+      {/* Header Bar */}
+      <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800/80 pb-5">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-cyan-400">
+              Operations & Economics
+            </span>
+          </div>
+          <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">API Usage & Costs</h1>
+          <p className="mt-1 text-xs sm:text-sm text-slate-400">
+            Real-time inference tracking, token consumption by provider key, and system economics.
+          </p>
+        </div>
       </header>
 
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 shadow-lg backdrop-blur-md">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Tokens</span>
+          <p className="mt-2 text-2xl font-extrabold text-cyan-400">{totalTokens.toLocaleString()}</p>
+          <p className="mt-0.5 text-xs text-slate-500">All connected models</p>
+        </div>
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 shadow-lg backdrop-blur-md">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Estimated Cost</span>
+          <p className="mt-2 text-2xl font-extrabold text-emerald-400">${totalCost.toFixed(4)}</p>
+          <p className="mt-0.5 text-xs text-slate-500">API inference expense</p>
+        </div>
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 shadow-lg backdrop-blur-md">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total API Calls</span>
+          <p className="mt-2 text-2xl font-extrabold text-violet-400">{totalCalls.toLocaleString()}</p>
+          <p className="mt-0.5 text-xs text-slate-500">Dispatched requests</p>
+        </div>
+      </div>
+
       {loading ? (
-        <div className="text-slate-300">Loading...</div>
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-12 text-center text-sm text-slate-400">
+          <RefreshCw className="mx-auto h-6 w-6 animate-spin text-cyan-400 mb-2" />
+          Loading usage data from database...
+        </div>
       ) : error ? (
-        <div className="text-red-300">{error}</div>
+        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-6 text-center text-sm text-rose-300">
+          {error}
+        </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-            <h2 className="text-lg font-semibold text-white">Usage by key</h2>
-            <div className="mt-4 overflow-x-auto rounded-lg bg-slate-900 p-2">
-              <table className="w-full table-auto text-sm">
+        <div className="grid gap-6 lg:grid-cols-12 items-start">
+          {/* Table: Usage by Key (7 cols on lg) */}
+          <div className="lg:col-span-7 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-xl backdrop-blur-md space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                <Cpu className="h-4 w-4 text-cyan-400" />
+                Usage by API Key
+              </div>
+              <span className="text-xs text-slate-500">{rows.length} keys active</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs sm:text-sm">
                 <thead>
-                  <tr className="text-slate-400">
-                    <th className="px-3 py-2 text-left">Provider</th>
-                    <th className="px-3 py-2 text-left">API Key</th>
-                    <th className="px-3 py-2 text-right">Tokens</th>
-                    <th className="px-3 py-2 text-right">Cost</th>
-                    <th className="px-3 py-2 text-right">Calls</th>
+                  <tr className="border-b border-slate-800/90 bg-slate-950/60 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <th className="py-3 px-3">Provider</th>
+                    <th className="py-3 px-3">API Key Name</th>
+                    <th className="py-3 px-3 text-right">Tokens</th>
+                    <th className="py-3 px-3 text-right">Cost</th>
+                    <th className="py-3 px-3 text-right">Calls</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-800/60">
                   {rows.map((r) => (
-                    <tr key={`${String(r.provider)}-${String(r.api_key_name)}`} className="border-t border-slate-800 hover:bg-slate-800/40 transition">
-                      <td className="px-3 py-2 text-slate-200">{String(r.provider)}</td>
-                      <td className="px-3 py-2 text-slate-200">{String(r.api_key_name)}</td>
-                      <td className="px-3 py-2 text-right text-slate-200">{Number(r.tokens || 0)}</td>
-                      <td className="px-3 py-2 text-right text-slate-200">${Number(r.cost || 0).toFixed(4)}</td>
-                      <td className="px-3 py-2 text-right text-slate-200">{Number(r.calls || 0)}</td>
+                    <tr
+                      key={`${String(r.provider)}-${String(r.api_key_name)}`}
+                      className="hover:bg-slate-800/30 transition-colors"
+                    >
+                      <td className="py-3 px-3">
+                        <span className="inline-block rounded-md bg-slate-800 px-2 py-0.5 text-[11px] font-semibold text-cyan-300">
+                          {String(r.provider)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 font-medium text-slate-200">
+                        {String(r.api_key_name)}
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono text-slate-200">
+                        {Number(r.tokens || 0).toLocaleString()}
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono text-emerald-400 font-semibold">
+                        ${Number(r.cost || 0).toFixed(4)}
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono text-slate-300">
+                        {Number(r.calls || 0).toLocaleString()}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -327,18 +372,38 @@ export default function UsagePage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-            <h2 className="text-lg font-semibold text-white">Token usage & cost</h2>
-            <div style={{ width: '100%', height: 360 }} className="mt-4">
-              <ResponsiveContainer width="100%" height={360}>
-                <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid stroke="#1f2937" />
-                  <XAxis dataKey="name" tick={{ fill: '#94a3b8' }} />
-                  <YAxis tick={{ fill: '#94a3b8' }} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="tokens" fill="#06b6d4" />
-                  <Bar dataKey="cost" fill="#f59e0b" />
+          {/* Chart: Token Usage & Cost (5 cols on lg) */}
+          <div className="lg:col-span-5 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 shadow-xl backdrop-blur-md space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                <BarChart3 className="h-4 w-4 text-amber-400" />
+                Token Distribution
+              </div>
+            </div>
+
+            <div className="w-full h-[320px] pt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 25 }}>
+                  <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: "#94a3b8", fontSize: 11 }}
+                    angle={-20}
+                    textAnchor="end"
+                  />
+                  <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#0f172a",
+                      borderColor: "#334155",
+                      borderRadius: "12px",
+                      fontSize: "12px",
+                      color: "#f8fafc",
+                    }}
+                  />
+                  <Legend wrapperStyle={{ paddingTop: "12px", fontSize: "11px" }} />
+                  <Bar dataKey="tokens" name="Tokens" fill="#22d3ee" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="calls" name="Calls" fill="#a78bfa" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -346,6 +411,7 @@ export default function UsagePage() {
         </div>
       )}
 
+      {/* Brain Soul Layer Section */}
       <BrainSection />
     </div>
   );
