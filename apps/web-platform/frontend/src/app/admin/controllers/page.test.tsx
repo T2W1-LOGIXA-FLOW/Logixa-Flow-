@@ -23,7 +23,10 @@ beforeEach(() => {
   adminFetchMock.mockReset();
   toastMock.success.mockReset();
   toastMock.error.mockReset();
-  adminFetchMock.mockImplementation(async (_path: string, _token: string, options?: RequestInit) => {
+  adminFetchMock.mockImplementation(async (path: string, _token: string, options?: RequestInit) => {
+    if (path === "/api/admin/workflow/admin-command-canvas") {
+      return jsonResponse({ id: "admin-command-canvas", nodes: [{ id: "start" }] });
+    }
     if (options?.method === "POST") return jsonResponse({ id: "ops-runner" });
     return jsonResponse([]);
   });
@@ -39,7 +42,11 @@ describe("admin controller management", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create controller" }));
 
     await waitFor(() => {
-      expect(adminFetchMock).toHaveBeenCalledWith("/api/admin/controllers", "test-admin-token", expect.objectContaining({
+      expect(adminFetchMock).toHaveBeenCalledWith(
+        "/api/admin/workflow/admin-command-canvas",
+        "test-admin-token",
+      );
+    expect(adminFetchMock).toHaveBeenCalledWith("/api/admin/controllers", "test-admin-token", expect.objectContaining({
         method: "POST",
       }));
     });
