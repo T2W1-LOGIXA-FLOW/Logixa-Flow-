@@ -134,7 +134,9 @@ export default function AdminWorkflowPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: "Supply Chain Operations Automation", width: 1200, height: 630 }),
       }).catch(() => null);
-      return res?.ok ? await res.json() : { status: "simulated_success", model: "FLUX", banner_url: "https://image.pollinations.ai/prompt/Logistics%20Tech?width=1200&height=630&model=flux" };
+      if (!res) throw new Error("Banner API request failed; no execution result was received.");
+      if (!res.ok) throw new Error(`Banner API returned HTTP ${res.status}; node execution failed.`);
+      return await res.json();
     }
     if (label === "THOUGHT STREAM") {
       return { status: "connected", stream_url: "/api/agent/stream/demo-session", protocol: "Server-Sent Events (SSE)" };
