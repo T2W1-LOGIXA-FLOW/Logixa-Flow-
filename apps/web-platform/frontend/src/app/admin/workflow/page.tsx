@@ -23,7 +23,7 @@ import WorkflowSidebar, { type ServiceModule } from "./WorkflowSidebar";
 import NodeInspectorDrawer, { type ServiceNodeData } from "./NodeInspectorDrawer";
 import "./page.css";
 
-type WorkflowStatus = "queued" | "running" | "completed" | "failed";
+type WorkflowStatus = "queued" | "running" | "waiting_approval" | "completed" | "failed";
 type ConnectionState = "connecting" | "connected" | "disconnected";
 
 type WorkflowTelemetry = {
@@ -265,6 +265,80 @@ export default function AdminWorkflowPage() {
     void restoreCanvas();
     return () => { cancelled = true; };
   }, [setNodes, setEdges]);
+
+  // Poll the authenticated run-state endpoint as a durable fallback to WebSocket telemetry.
+  // This keeps the dashboard accurate after reconnects and when terminal events are missed.
+  useEffect(() => {
+    if (!lastRunId) return;
+    let cancelled = false;
+    let inFlight = false;
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+
+    const pollRunState = async () => {
+      if (cancelled || inFlight) return;
+      inFlight = true;
+      try {
+        const token = await getAdminSessionToken();
+        if (!token || cancelled) return;
+        const response = await adminFetch(
+          `/api/admin/workflow/runs/${encodeURIComponent(lastRunId)}/state`,
+          token
+        );
+        const state = await response.json() as {
+          run_id?: string;
+          workflow_id?: string;
+          status?: WorkflowStatus;
+          current_node?: string | null;
+          completed_nodes?: string[];
+          error?: string | null;
+        };
+        if (cancelled || state.run_id !== lastRunId || !state.status) return;
+        const nextState = {
+          status: state.status,
+          current_node: state.current_node ?? null,
+          completed_nodes: Array.isArray(state.completed_nodes) ? state.completed_nodes : [],
+          error: state.error ?? null,
+        };
+        setTelemetry({
+          event: "workflow.status",
+          run_id: lastRunId,
+          workflow_id: state.workflow_id ?? "admin-command-canvas",
+          state: nextState,
+        });
+        setSelected(nextState.current_node
+          ? `${nextState.current_node} active`
+          : `${nextState.status.replace("_", " ").toUpperCase()} workflow`);
+        setWorkflowNotice(
+          nextState.status === "completed"
+            ? `Workflow run ${lastRunId} completed. ${nextState.completed_nodes.length} node(s) completed.`
+            : nextState.status === "failed"
+              ? `Workflow run ${lastRunId} failed: ${nextState.error ?? "No error details returned."}`
+              : nextState.status === "waiting_approval"
+                ? `Workflow run ${lastRunId} is waiting for approval at ${nextState.current_node ?? "the approval node"}.`
+                : `Workflow run ${lastRunId}: ${nextState.status}. ${nextState.completed_nodes.length} node(s) completed so far.`
+        );
+        if (["completed", "failed", "waiting_approval"].includes(nextState.status) && intervalId) {
+          clearInterval(intervalId);
+          intervalId = undefined;
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setWorkflowNotice(error instanceof Error
+            ? `Could not refresh workflow run status: ${error.message}`
+            : "Could not refresh workflow run status.");
+        }
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    void pollRunState();
+    intervalId = setInterval(() => { void pollRunState(); }, 2500);
+    return () => {
+      cancelled = true;
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [lastRunId]);
 
   // Execute test call to real backend API endpoints
   const handleExecuteNode = async (node: Node<ServiceNodeData>) => {
