@@ -22,3 +22,9 @@
 .process-cost-metrics { display: flex; gap: 24px; margin: 14px 0; }.process-cost-metrics span { display: block; color: #64748b; font: 10px ui-monospace, monospace; }.process-cost-metrics strong { display: block; margin-top: 4px; color: #f8fafc; }
 .process-log { padding-top: 10px; border-top: 1px solid #263653; font: 10px/1.8 ui-monospace, monospace; }.process-log p { margin: 0; }.log-green { color: #10B981; }.log-amber { color: #F59E0B; }.log-red { color: #EF4444; }
 @media (max-width: 800px) { .workflow-page { display: block; }.workflow-sidebar { width: auto; border-right: 0; border-bottom: 1px solid rgba(34,211,238,.2); }.workflow-main { padding: 18px; }.process-cost-panel { position: static; width: auto; margin-top: 18px; } }
+
+.workflow-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.workflow-actions button { padding: 8px 12px; color: #e2e8f0; background: #101728; border: 1px solid rgba(34,211,238,.45); border-radius: 6px; font-size: 12px; cursor: pointer; }
+.workflow-actions button:disabled { opacity: .55; cursor: wait; }
+.workflow-notice, .workflow-run-id { margin: 6px 0; color: #94a3b8; font-size: 12px; overflow-wrap: anywhere; }
+@media (max-width: 800px) { .workflow-header { flex-wrap: wrap; gap: 12px; } .workflow-actions { width: 100%; } }
