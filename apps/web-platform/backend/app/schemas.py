@@ -755,7 +755,7 @@ class ContentSubmissionOut(ContentSubmissionBase):
     updated_at: datetime
 
 
-WorkflowNodeType = Literal["task", "approval", "notification"]
+WorkflowNodeType = Literal["task", "approval", "notification", "agent"]
 WorkflowRunStatus = Literal["queued", "running", "waiting_approval", "completed", "failed"]
 
 
