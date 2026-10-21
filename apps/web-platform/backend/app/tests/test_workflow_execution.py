@@ -152,3 +152,63 @@ async def test_queue_claim_retries_transient_failure(monkeypatch: pytest.MonkeyP
     assert claim_attempts == 2
     assert sleep_delays == [1.0]
 
+
+
+@pytest.mark.anyio
+async def test_telegram_notification_requires_configured_delivery(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(workflow_execution, "telegram_configured", lambda: False)
+    monkeypatch.setattr(workflow_execution, "telegram_enabled", lambda: True)
+
+    node = WorkflowNode(
+        id="telegram",
+        type="notification",
+        name="Telegram alert",
+        config={"channel": "telegram", "message": "Do not report a dry run as delivered"},
+    )
+    with pytest.raises(RuntimeError, match="not configured and enabled"):
+        await workflow_execution._execute_notification_action(node, "telegram-not-configured")
+
+
+@pytest.mark.anyio
+async def test_telegram_notification_fails_when_api_does_not_confirm_delivery(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(workflow_execution, "telegram_configured", lambda: True)
+    monkeypatch.setattr(workflow_execution, "telegram_enabled", lambda: True)
+
+    async def dry_run(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr(workflow_execution, "send_telegram_message", dry_run)
+    node = WorkflowNode(
+        id="telegram",
+        type="notification",
+        name="Telegram alert",
+        config={"channel": "telegram", "message": "test"},
+    )
+    with pytest.raises(RuntimeError, match="did not confirm notification delivery"):
+        await workflow_execution._execute_notification_action(node, "telegram-dry-run")
+
+
+@pytest.mark.anyio
+async def test_telegram_notification_records_only_confirmed_delivery(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(workflow_execution, "telegram_configured", lambda: True)
+    monkeypatch.setattr(workflow_execution, "telegram_enabled", lambda: True)
+    captured = {}
+
+    async def confirmed_delivery(message, *, topic_id=None):
+        captured["message"] = message
+        captured["topic_id"] = topic_id
+        return {"ok": True, "result": {"message_id": 314}}
+
+    monkeypatch.setattr(workflow_execution, "send_telegram_message", confirmed_delivery)
+    node = WorkflowNode(
+        id="telegram",
+        type="notification",
+        name="Telegram alert",
+        config={"channel": "telegram", "message": "Cost < threshold", "topic_id": 7},
+    )
+    await workflow_execution._execute_notification_action(node, "telegram-confirmed")
+
+    assert captured == {"message": "Cost &lt; threshold", "topic_id": 7}
+    assert workflow_execution._EXECUTION_HISTORY["telegram-confirmed"][-1] == (
+        "notification:telegram: telegram delivered (message_id=314)"
+    )
