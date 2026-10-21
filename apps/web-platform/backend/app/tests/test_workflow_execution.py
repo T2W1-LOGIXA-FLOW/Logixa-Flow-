@@ -270,3 +270,45 @@ async def test_agent_node_rejects_invalid_source_limit() -> None:
     )
     with pytest.raises(ValueError, match="between 1 and 12"):
         await workflow_execution._execute_agent_action(node, "workflow-agent-invalid")
+
+
+@pytest.mark.anyio
+async def test_completed_run_state_restores_history_and_metrics_after_memory_loss() -> None:
+    stored = await workflow.store_workflow(
+        WorkflowStorageCreate(
+            id="durable-state-flow",
+            name="Durable state flow",
+            nodes=[WorkflowNode(id="agent", name="THOUGHT STREAM", type="agent")],
+        ),
+        _admin={"role": "admin"},
+    )
+    run = await workflow.run_workflow(
+        "durable-state-flow",
+        WorkflowRunRequest(workflow_id="durable-state-flow"),
+        _admin={"role": "admin"},
+    )
+    run.state.status = "completed"
+    run.state.completed_nodes = ["agent"]
+    workflow._EXECUTION_HISTORY[run.run_id] = [
+        "agent:agent: completed agent_run_id=91; private_memory_id=207; awaiting admin review"
+    ]
+    workflow._EXECUTION_METRICS[run.run_id] = {
+        "completed": 1,
+        "total_nodes": 1,
+        "agent_runs": [
+            {"node_id": "agent", "agent_run_id": 91, "memory_id": 207, "status": "completed"}
+        ],
+    }
+    workflow_persistence._persist_run_state(run)
+
+    workflow._WORKFLOW_RUNS.clear()
+    workflow._EXECUTION_STATES.clear()
+    workflow._EXECUTION_HISTORY.clear()
+    workflow._EXECUTION_METRICS.clear()
+
+    state = await workflow.workflow_run_state(run.run_id, _admin={"role": "admin"})
+
+    assert state["status"] == "completed"
+    assert state["completed_nodes"] == ["agent"]
+    assert "private_memory_id=207" in state["execution_history"][0]
+    assert state["metrics"]["agent_runs"][0]["memory_id"] == 207
