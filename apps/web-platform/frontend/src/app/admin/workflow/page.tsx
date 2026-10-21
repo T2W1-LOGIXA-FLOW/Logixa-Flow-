@@ -139,10 +139,10 @@ export default function AdminWorkflowPage() {
       return await res.json();
     }
     if (label === "THOUGHT STREAM") {
-      return { status: "connected", stream_url: "/api/agent/stream/demo-session", protocol: "Server-Sent Events (SSE)" };
+      throw new Error("THOUGHT STREAM has no authenticated streaming adapter configured. No stream was started.");
     }
     if (label === "TELEGRAM GATE") {
-      return { status: "dispatched", target: "Telegram Admin Topic", actions: ["✅ Approve", "❌ Discard"] };
+      throw new Error("TELEGRAM GATE has no dispatch adapter configured. No Telegram message was sent.");
     }
     // Do not report success for modules that have no real execution adapter.
     // A simulated result can be mistaken for a production workflow run.
