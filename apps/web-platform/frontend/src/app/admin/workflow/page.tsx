@@ -273,7 +273,17 @@ export default function AdminWorkflowPage() {
       throw new Error("THOUGHT STREAM has no authenticated streaming adapter configured. No stream was started.");
     }
     if (label === "TELEGRAM GATE") {
-      throw new Error("TELEGRAM GATE has no dispatch adapter configured. No Telegram message was sent.");
+      const token = await getAdminSessionToken();
+      if (!token) throw new Error("Admin session is required to dispatch Telegram messages.");
+      const response = await adminFetch("/api/admin/telegram/send", token, {
+        method: "POST",
+        body: JSON.stringify({
+          message: `[Logixa Flow] Workflow canvas test: ${label}\\n${node.data.detail}`,
+        }),
+      });
+      const result = await response.json() as { delivered?: boolean; message_id?: number };
+      if (result.delivered !== true) throw new Error("Telegram API did not confirm message delivery.");
+      return { status: "delivered", message_id: result.message_id };
     }
     // Do not report success for modules that have no real execution adapter.
     // A simulated result can be mistaken for a production workflow run.
