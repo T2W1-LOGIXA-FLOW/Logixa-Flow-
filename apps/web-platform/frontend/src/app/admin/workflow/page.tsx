@@ -319,7 +319,7 @@ export default function AdminWorkflowPage() {
                 ? `Workflow run ${lastRunId} is waiting for approval at ${nextState.current_node ?? "the approval node"}.`
                 : `Workflow run ${lastRunId}: ${nextState.status}. ${nextState.completed_nodes.length} node(s) completed so far.`
         );
-        if (["completed", "failed", "waiting_approval"].includes(nextState.status) && intervalId) {
+        if (["completed", "failed"].includes(nextState.status) && intervalId) {
           clearInterval(intervalId);
           intervalId = undefined;
         }
