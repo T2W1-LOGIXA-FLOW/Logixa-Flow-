@@ -75,6 +75,7 @@ function resolveWorkflowSocketUrl() {
 
 export default function AdminWorkflowPage() {
   const socketRef = useRef<WebSocket | null>(null);
+  const lastRunIdRef = useRef<string | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState(defaultInitialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(defaultInitialEdges);
   const [search, setSearch] = useState("");
@@ -206,6 +207,7 @@ export default function AdminWorkflowPage() {
       });
       const run = await response.json() as { run_id?: string; state?: { status?: string } };
       if (!run.run_id) throw new Error("Backend accepted no identifiable workflow run.");
+      lastRunIdRef.current = run.run_id;
       setLastRunId(run.run_id);
       setWorkflowNotice(`Orchestration run queued (${run.state?.status ?? "queued"}). This executes log-only canvas steps; external service integrations are not invoked.`);
       setSelected("Orchestration run queued");
@@ -402,6 +404,9 @@ export default function AdminWorkflowPage() {
             setLogs((previous) => [`[${new Date().toLocaleTimeString()}] SOCKET CONNECTED`, ...previous].slice(0, 6));
             return;
           }
+          // Once a run is selected, ignore unrelated workflow events so another
+          // controller's activity cannot overwrite the status shown for this run.
+          if (lastRunIdRef.current && data.run_id !== lastRunIdRef.current) return;
           setTelemetry(data);
           setSelected(data.state.current_node ? `${data.state.current_node} active` : `${data.state.status.toUpperCase()} workflow`);
           setLogs((previous) => [
