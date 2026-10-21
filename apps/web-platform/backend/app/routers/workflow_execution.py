@@ -105,6 +105,48 @@ async def _execute_task_action(node: Any, run_id: str) -> None:
     raise ValueError(f"unsupported task action '{action}'")
 
 
+async def _execute_agent_action(node: Any, run_id: str) -> None:
+    """Run the existing content-agent graph and keep its draft private for review."""
+    action = str(node.config.get("action", "run_agent")).strip().lower()
+    if action != "run_agent":
+        raise ValueError(f"unsupported agent action '{action}'")
+
+    message = str(node.config.get("message", node.name)).strip()
+    if len(message) < 8 or len(message) > 4000:
+        raise ValueError("agent message must contain between 8 and 4000 characters")
+    try:
+        max_sources = int(node.config.get("max_sources", 8))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("agent max_sources must be an integer") from exc
+    if max_sources < 1 or max_sources > 12:
+        raise ValueError("agent max_sources must be between 1 and 12")
+
+    # Import lazily to avoid coupling the workflow router to agent startup imports.
+    from app.database import SessionLocal
+    from app.integration_service import run_preview_agent
+
+    db = SessionLocal()
+    try:
+        result = await run_preview_agent(db, message=message, max_sources=max_sources)
+    finally:
+        db.close()
+
+    agent_run_id = result.get("run_id")
+    memory_id = result.get("memory_id")
+    if not agent_run_id or not memory_id:
+        raise RuntimeError("agent graph returned without a persisted run and private draft")
+    _EXECUTION_METRICS.setdefault(run_id, {}).setdefault("agent_runs", []).append({
+        "node_id": node.id,
+        "agent_run_id": agent_run_id,
+        "memory_id": memory_id,
+        "status": "completed",
+    })
+    _record_execution_history(
+        run_id,
+        f"agent:{node.id}: completed agent_run_id={agent_run_id}; private_memory_id={memory_id}; awaiting admin review",
+    )
+
+
 async def _execute_approval_action(node: Any, run_id: str) -> None:
     approved_nodes = set(_EXECUTION_METRICS.setdefault(run_id, {}).get("approved_nodes", []))
     if node.id not in approved_nodes:
@@ -143,6 +185,7 @@ _NODE_ACTIONS = {
     "task": _execute_task_action,
     "approval": _execute_approval_action,
     "notification": _execute_notification_action,
+    "agent": _execute_agent_action,
 }
 
 
