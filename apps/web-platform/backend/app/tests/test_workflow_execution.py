@@ -155,6 +155,63 @@ async def test_queue_claim_retries_transient_failure(monkeypatch: pytest.MonkeyP
 
 
 @pytest.mark.anyio
+async def test_failed_workflow_run_can_be_resumed_from_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
+    stored = await workflow.store_workflow(
+        WorkflowStorageCreate(
+            id="retry-flow",
+            name="Retry flow",
+            nodes=[
+                WorkflowNode(id="first", name="First"),
+                WorkflowNode(id="second", name="Second", depends_on=["first"]),
+            ],
+        ),
+        _admin={"role": "admin"},
+    )
+    monkeypatch.setattr(workflow, "_dispatch_workflow_run", lambda run_id, delay_seconds=0: None)
+    run = await workflow.run_workflow(
+        "retry-flow",
+        WorkflowRunRequest(workflow_id="retry-flow"),
+        _admin={"role": "admin"},
+    )
+    run.state.status = "failed"
+    run.state.completed_nodes = ["first"]
+    run.state.error = "temporary downstream failure"
+    workflow._persist_run_state(run)
+
+    result = await workflow.retry_workflow_run(run.run_id, _admin={"role": "admin"})
+
+    assert result["status"] == "queued"
+    assert result["resumed_from_completed_nodes"] == ["first"]
+    assert run.state.status == "queued"
+    assert run.state.error is None
+    assert workflow._EXECUTION_STATES[run.run_id]["completed_nodes"] == ["first"]
+    assert any(item["run_id"] == run.run_id for item in workflow._EXECUTION_QUEUE)
+    assert workflow._EXECUTION_HISTORY[run.run_id][-1].startswith("workflow retry requested")
+
+
+@pytest.mark.anyio
+async def test_retry_rejects_non_failed_workflow_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    await workflow.store_workflow(
+        WorkflowStorageCreate(
+            id="retry-conflict-flow",
+            name="Retry conflict flow",
+            nodes=[WorkflowNode(id="step", name="Step")],
+        ),
+        _admin={"role": "admin"},
+    )
+    monkeypatch.setattr(workflow, "_dispatch_workflow_run", lambda run_id, delay_seconds=0: None)
+    run = await workflow.run_workflow(
+        "retry-conflict-flow",
+        WorkflowRunRequest(workflow_id="retry-conflict-flow"),
+        _admin={"role": "admin"},
+    )
+
+    with pytest.raises(workflow.HTTPException) as exc:
+        await workflow.retry_workflow_run(run.run_id, _admin={"role": "admin"})
+    assert exc.value.status_code == 409
+
+
+@pytest.mark.anyio
 async def test_telegram_notification_requires_configured_delivery(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(workflow_execution, "telegram_configured", lambda: False)
     monkeypatch.setattr(workflow_execution, "telegram_enabled", lambda: True)
