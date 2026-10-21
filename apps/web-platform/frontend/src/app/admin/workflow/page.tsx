@@ -140,26 +140,36 @@ export default function AdminWorkflowPage() {
     const payload = {
       id: "admin-command-canvas",
       name: "Admin Command Canvas",
-      nodes: nodes.map((node) => ({
-        id: node.id,
-        type: "task",
-        name: node.data.label,
-        depends_on: incoming.get(node.id) ?? [],
-        retry_count: 0,
-        timeout_seconds: 30,
-        // Canvas nodes currently execute as explicit log-only orchestration steps.
-        // Persist visual metadata without pretending that a service integration ran.
-        config: {
-          action: "log",
-          message: `Canvas orchestration step: ${node.data.label} — ${node.data.detail}. No external service is invoked.`,
-          canvas: {
-            position: node.position,
-            detail: node.data.detail,
-            status: node.data.status,
-            endpoint: node.data.endpoint ?? null,
-          },
-        },
-      })),
+      nodes: nodes.map((node) => {
+        const isTelegramGate = node.data.label === "TELEGRAM GATE";
+        const canvas = {
+          position: node.position,
+          detail: node.data.detail,
+          status: node.data.status,
+          endpoint: node.data.endpoint ?? null,
+        };
+        return {
+          id: node.id,
+          type: isTelegramGate ? "notification" : "task",
+          name: node.data.label,
+          depends_on: incoming.get(node.id) ?? [],
+          retry_count: 0,
+          timeout_seconds: 30,
+          // Telegram Gate is a real outbound side effect. Other canvas nodes remain
+          // explicitly log-only until their own authenticated adapters are implemented.
+          config: isTelegramGate
+            ? {
+                channel: "telegram",
+                message: `[Logixa Flow] Workflow canvas notification: ${node.data.label}\n${node.data.detail}`,
+                canvas,
+              }
+            : {
+                action: "log",
+                message: `Canvas orchestration step: ${node.data.label} — ${node.data.detail}. No external service is invoked.`,
+                canvas,
+              },
+        };
+      }),
     };
     await adminFetch("/api/admin/workflow", token, {
       method: "POST",
