@@ -17,6 +17,7 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { getAdminSessionToken } from "@/lib/adminSession";
+import { adminFetch } from "@/components/api";
 import ProcessCostPanel from "./ProcessCostPanel";
 import WorkflowSidebar, { type ServiceModule } from "./WorkflowSidebar";
 import NodeInspectorDrawer, { type ServiceNodeData } from "./NodeInspectorDrawer";
@@ -82,6 +83,9 @@ export default function AdminWorkflowPage() {
   const [connectionState, setConnectionState] = useState<ConnectionState>("connecting");
   const [telemetry, setTelemetry] = useState<WorkflowTelemetry | null>(null);
   const [logs, setLogs] = useState<string[]>(defaultLogs);
+  const [workflowBusy, setWorkflowBusy] = useState<"idle" | "saving" | "running">("idle");
+  const [workflowNotice, setWorkflowNotice] = useState<string | null>(null);
+  const [lastRunId, setLastRunId] = useState<string | null>(null);
 
   const visibleNodes = useMemo(
     () => nodes.filter((node) => !search || node.data.label.toLowerCase().includes(search.toLowerCase())),
@@ -123,6 +127,133 @@ export default function AdminWorkflowPage() {
     setNodes((nds) => nds.filter((n) => n.id !== id));
     setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
     setInspectingNode(null);
+  }, [setNodes, setEdges]);
+
+  const saveCanvasWorkflow = useCallback(async (token: string) => {
+    const incoming = new Map<string, string[]>();
+    for (const node of nodes) incoming.set(node.id, []);
+    for (const edge of edges) {
+      if (incoming.has(edge.target) && incoming.has(edge.source)) {
+        incoming.get(edge.target)?.push(edge.source);
+      }
+    }
+    const payload = {
+      id: "admin-command-canvas",
+      name: "Admin Command Canvas",
+      nodes: nodes.map((node) => ({
+        id: node.id,
+        type: "task",
+        name: node.data.label,
+        depends_on: incoming.get(node.id) ?? [],
+        retry_count: 0,
+        timeout_seconds: 30,
+        // Canvas nodes currently execute as explicit log-only orchestration steps.
+        // Persist visual metadata without pretending that a service integration ran.
+        config: {
+          action: "log",
+          message: `Canvas orchestration step: ${node.data.label} — ${node.data.detail}. No external service is invoked.`,
+          canvas: {
+            position: node.position,
+            detail: node.data.detail,
+            status: node.data.status,
+            endpoint: node.data.endpoint ?? null,
+          },
+        },
+      })),
+    };
+    await adminFetch("/api/admin/workflow", token, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }, [nodes, edges]);
+
+  const handleSaveWorkflow = useCallback(async () => {
+    setWorkflowBusy("saving");
+    setWorkflowNotice(null);
+    try {
+      const token = await getAdminSessionToken();
+      if (!token) throw new Error("Admin session is required to save this workflow.");
+      await saveCanvasWorkflow(token);
+      setWorkflowNotice("Workflow saved to the backend database.");
+    } catch (error) {
+      setWorkflowNotice(error instanceof Error ? error.message : "Workflow save failed.");
+    } finally {
+      setWorkflowBusy("idle");
+    }
+  }, [saveCanvasWorkflow]);
+
+  const handleRunWorkflow = useCallback(async () => {
+    setWorkflowBusy("running");
+    setWorkflowNotice(null);
+    setLastRunId(null);
+    try {
+      const token = await getAdminSessionToken();
+      if (!token) throw new Error("Admin session is required to run this workflow.");
+      await saveCanvasWorkflow(token);
+      const response = await adminFetch("/api/admin/workflow/admin-command-canvas/runs", token, {
+        method: "POST",
+        body: JSON.stringify({ workflow_id: "admin-command-canvas" }),
+      });
+      const run = await response.json() as { run_id?: string; state?: { status?: string } };
+      if (!run.run_id) throw new Error("Backend accepted no identifiable workflow run.");
+      setLastRunId(run.run_id);
+      setWorkflowNotice(`Orchestration run queued (${run.state?.status ?? "queued"}). This executes log-only canvas steps; external service integrations are not invoked.`);
+      setSelected("Orchestration run queued");
+    } catch (error) {
+      setWorkflowNotice(error instanceof Error ? error.message : "Workflow run could not be queued.");
+    } finally {
+      setWorkflowBusy("idle");
+    }
+  }, [saveCanvasWorkflow]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function restoreCanvas() {
+      try {
+        const token = await getAdminSessionToken();
+        if (!token || cancelled) return;
+        const response = await adminFetch("/api/admin/workflow/admin-command-canvas", token);
+        const saved = await response.json() as {
+          nodes?: Array<{ id: string; name: string; depends_on?: string[]; config?: { canvas?: { position?: { x: number; y: number }; detail?: string; status?: ServiceNodeData["status"]; endpoint?: string | null } } }>;
+        };
+        if (cancelled || !Array.isArray(saved.nodes) || saved.nodes.length === 0) return;
+        const restoredNodes: Node<ServiceNodeData>[] = saved.nodes.map((item, index) => ({
+          id: item.id,
+          position: item.config?.canvas?.position ?? { x: 80 + (index % 3) * 270, y: 80 + Math.floor(index / 3) * 200 },
+          data: {
+            label: item.name,
+            detail: item.config?.canvas?.detail ?? item.name,
+            status: item.config?.canvas?.status ?? "green",
+            ...(item.config?.canvas?.endpoint ? { endpoint: item.config.canvas.endpoint } : {}),
+          },
+          sourcePosition: Position.Right,
+          targetPosition: Position.Left,
+          type: "default",
+        }));
+        const restoredEdges: Edge[] = [];
+        for (const item of saved.nodes) {
+          for (const dependency of item.depends_on ?? []) {
+            if (saved.nodes.some((candidate) => candidate.id === dependency)) {
+              restoredEdges.push({
+                id: `saved-${dependency}-${item.id}`,
+                source: dependency,
+                target: item.id,
+                animated: true,
+                style: { stroke: "#22D3EE", strokeWidth: 2 },
+              });
+            }
+          }
+        }
+        setNodes(restoredNodes);
+        setEdges(restoredEdges);
+        setSelected("Saved workflow restored");
+        setWorkflowNotice("Loaded the saved workflow from the backend database.");
+      } catch {
+        // A missing saved definition is expected on first use; keep the editable defaults.
+      }
+    }
+    void restoreCanvas();
+    return () => { cancelled = true; };
   }, [setNodes, setEdges]);
 
   // Execute test call to real backend API endpoints
@@ -230,6 +361,16 @@ export default function AdminWorkflowPage() {
             <span className={`status-dot ${connectionState === "connected" ? "status-green" : connectionState === "connecting" ? "status-amber" : "status-red"}`} />
             {connectionState === "connected" ? "SYSTEM LIVE" : connectionState === "connecting" ? "SYNCING" : "OFFLINE"}
           </div>
+          <div className="workflow-actions">
+            <button type="button" onClick={handleSaveWorkflow} disabled={workflowBusy !== "idle"}>
+              {workflowBusy === "saving" ? "Saving…" : "Save workflow"}
+            </button>
+            <button type="button" onClick={handleRunWorkflow} disabled={workflowBusy !== "idle"}>
+              {workflowBusy === "running" ? "Queueing…" : "Run orchestration test"}
+            </button>
+          </div>
+          {workflowNotice && <p role="status" className="workflow-notice">{workflowNotice}</p>}
+          {lastRunId && <p className="workflow-run-id">Run ID: {lastRunId}</p>}
         </header>
 
         <div className="workflow-canvas-wrap" aria-label="Workflow canvas" style={{ position: "relative" }}>
