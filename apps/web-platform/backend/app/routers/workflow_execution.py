@@ -7,12 +7,16 @@ queue worker, and all async execution helpers. Imports shared state from
 from __future__ import annotations
 
 import asyncio
+import html
 import logging
 import os
 from typing import Any
 from uuid import uuid4
 
 from fastapi import WebSocket
+
+from app.config import telegram_configured, telegram_enabled
+from app.services.telegram import send_telegram_message
 
 from app.schemas import WorkflowRunOut, WorkflowState, WorkflowStorageOut, WorkflowTelemetryEvent
 from app.routers.workflow_persistence import (
@@ -110,9 +114,29 @@ async def _execute_approval_action(node: Any, run_id: str) -> None:
 
 async def _execute_notification_action(node: Any, run_id: str) -> None:
     channel = str(node.config.get("channel", "log")).strip().lower()
-    if channel != "log":
-        raise ValueError(f"unsupported notification channel '{channel}'")
-    _record_execution_history(run_id, f"notification:{node.id}: {str(node.config.get('message', node.name)).strip()}")
+    message = str(node.config.get("message", node.name)).strip()
+    if channel == "log":
+        _record_execution_history(run_id, f"notification:{node.id}: {message}")
+        return
+    if channel == "telegram":
+        if not telegram_configured() or not telegram_enabled():
+            raise RuntimeError("Telegram notification is not configured and enabled")
+        raw_topic_id = node.config.get("topic_id")
+        try:
+            topic_id = int(raw_topic_id) if raw_topic_id is not None else None
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Telegram notification topic_id must be an integer") from exc
+        if topic_id is not None and topic_id < 1:
+            raise ValueError("Telegram notification topic_id must be positive")
+        # The Telegram service uses HTML parse mode by default; escape workflow
+        # text so arbitrary node labels/messages cannot break formatting.
+        result = await send_telegram_message(html.escape(message), topic_id=topic_id)
+        if not isinstance(result, dict) or result.get("ok") is not True:
+            raise RuntimeError("Telegram API did not confirm notification delivery")
+        message_id = result.get("result", {}).get("message_id") if isinstance(result.get("result"), dict) else None
+        _record_execution_history(run_id, f"notification:{node.id}: telegram delivered (message_id={message_id})")
+        return
+    raise ValueError(f"unsupported notification channel '{channel}'")
 
 
 _NODE_ACTIONS = {
