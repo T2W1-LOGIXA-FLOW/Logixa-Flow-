@@ -163,20 +163,22 @@ async def run_workflow(workflow_id: str, payload: WorkflowRunRequest, _admin=Dep
 @router.get("/runs/{run_id}/state")
 async def workflow_run_state(run_id: str, _admin=Depends(require_admin)) -> dict[str, Any]:
     run = _WORKFLOW_RUNS.get(run_id)
-    if run is not None:
-        return {
-            "run_id": run.run_id,
-            "workflow_id": run.workflow_id,
-            "status": run.state.status,
-            "current_node": run.state.current_node,
-            "completed_nodes": run.state.completed_nodes,
-            "error": run.state.error,
-            "approval_node": run.state.approval_node,
-        }
-    state = _EXECUTION_STATES.get(run_id)
-    if state is None:
+    if run is None:
+        # Completed runs may no longer be in process memory after a backend restart.
+        run = _load_run_state(run_id)
+    if run is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="run not found")
-    return state
+    return {
+        "run_id": run.run_id,
+        "workflow_id": run.workflow_id,
+        "status": run.state.status,
+        "current_node": run.state.current_node,
+        "completed_nodes": run.state.completed_nodes,
+        "error": run.state.error,
+        "approval_node": run.state.approval_node,
+        "execution_history": _EXECUTION_HISTORY.get(run_id, []),
+        "metrics": _EXECUTION_METRICS.get(run_id, {}),
+    }
 
 
 @router.post("/runs/{run_id}/cancel")
