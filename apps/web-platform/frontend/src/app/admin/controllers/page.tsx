@@ -78,6 +78,15 @@ export default function AdminControllersPage() {
     }
     setSubmitting(true);
     try {
+      const workflowResponse = await adminFetch(
+        `/api/admin/workflow/${encodeURIComponent(normalizedWorkflowId)}`,
+        token,
+      );
+      const savedWorkflow = await workflowResponse.json() as { id?: string; nodes?: unknown[] };
+      if (savedWorkflow.id !== normalizedWorkflowId || !Array.isArray(savedWorkflow.nodes) || savedWorkflow.nodes.length === 0) {
+        throw new Error("Save a non-empty workflow in the Workflow command center before creating its controller.");
+      }
+
       await adminFetch("/api/admin/controllers", token, {
         method: "POST",
         body: JSON.stringify({
