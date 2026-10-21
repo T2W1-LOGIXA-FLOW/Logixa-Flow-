@@ -260,13 +260,12 @@ export default function AdminWorkflowPage() {
   const handleExecuteNode = async (node: Node<ServiceNodeData>) => {
     const label = node.data.label;
     if (label === "FLUX BANNER") {
-      const res = await fetch("/api/admin/posts/generate-banner", {
+      const token = await getAdminSessionToken();
+      if (!token) throw new Error("Admin session is required to generate a banner.");
+      const res = await adminFetch("/api/admin/posts/generate-banner", token, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: "Supply Chain Operations Automation", width: 1200, height: 630 }),
-      }).catch(() => null);
-      if (!res) throw new Error("Banner API request failed; no execution result was received.");
-      if (!res.ok) throw new Error(`Banner API returned HTTP ${res.status}; node execution failed.`);
+      });
       return await res.json();
     }
     if (label === "THOUGHT STREAM") {
