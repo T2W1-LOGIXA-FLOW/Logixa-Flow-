@@ -1,3 +1,26 @@
+# Audit update — 2026-10-21
+
+**Certification remains: PENDING FINAL EVIDENCE — NOT RELEASE-CERTIFIED.** This audit does not change production state.
+
+## Latest verified checks
+- Main commit `49a7d6fa5240895790f085909f0eab92200824c0`: [Production CI/CD passed](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39469098643), [CI passed](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39469098501), [CodeQL passed](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39469098535).
+- [Latest scheduled Production SLO Synthetic Probe](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39519595283) passed its probe steps. The alert-notification step was skipped in that run; alert delivery must be verified separately.
+- Render service remains active and the latest deployment checked was successful. The current metrics query returned no native HTTP/CPU/memory samples, so this audit does not certify measured latency/error SLOs.
+- Current open PR inventory contains 10 Dependabot PRs. [PR #151](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/151) fails frontend build: Stripe SDK 23 type requires API version `2026-09-30.endive`, while code pins `2026-05-27.dahlia`. This is a PR-branch failure; do not claim main is broken based on it. Review Stripe API compatibility before fixing/merging. [PR #150](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/150) is a Next.js 15 → 16 major update and needs explicit compatibility review.
+
+## Release gates still open
+- Safe authenticated QStash workflow with durable execution, duplicate/idempotency, retry, and stale-claim recovery evidence.
+- Agent → Brain → approval → publish/resume end-to-end evidence.
+- Full SLO observation, native metric ingestion investigation, and verified alert delivery.
+- Application rollback and recovery of Supabase-managed Auth/Storage and object storage; prior schema/data restore is not equivalent to full DR.
+- 24-hour scheduler observation.
+- Newsletter delivery/provider failover and owner-approval-gated changes.
+
+## Audit boundary
+Read-only inspection only. No secrets, production settings, database records, or deployment were changed. Keep certification pending until evidence for each gate is attached.
+
+---
+
 # Logixa Flow — Release Certification
 
 > Owner: Engineering / Release
