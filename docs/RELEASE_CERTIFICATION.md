@@ -1,23 +1,25 @@
 # Audit update — 2026-10-21
 
-**Certification remains: PENDING FINAL EVIDENCE — NOT RELEASE-CERTIFIED.** This audit does not change production state.
+**Certification remains: PENDING FINAL EVIDENCE — NOT RELEASE-CERTIFIED.** This audit is read-only for production; it does not change runtime configuration, secrets, databases, or deployments.
 
 ## Latest verified checks
-- Main commit `49a7d6fa5240895790f085909f0eab92200824c0`: [Production CI/CD passed](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39469098643), [CI passed](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39469098501), [CodeQL passed](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39469098535).
-- [Latest scheduled Production SLO Synthetic Probe](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39519595283) passed its probe steps. The alert-notification step was skipped in that run; alert delivery must be verified separately.
-- Render service remains active and the latest deployment checked was successful. The current metrics query returned no native HTTP/CPU/memory samples, so this audit does not certify measured latency/error SLOs.
-- Current open PR inventory contains 10 Dependabot PRs. [PR #151](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/151) fails frontend build: Stripe SDK 23 type requires API version `2026-09-30.endive`, while code pins `2026-05-27.dahlia`. This is a PR-branch failure; do not claim main is broken based on it. Review Stripe API compatibility before fixing/merging. [PR #150](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/150) is a Next.js 15 → 16 major update and needs explicit compatibility review.
+- Main commit `58716e72e89f1c3892b27deaf94c1b27e9fef49e` — [CI run #39551416728](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/39551416728) completed successfully; backend, frontend, and security jobs all passed.
+- Render service `srv-d9172fe8bjmc739pd600` is active, auto-deploy is enabled for `main`, and the latest live backend deployment is `dep-dbc52m1kqasc73fvmeag` for commit `a54d7e5a4b038d889027a5f97b3a67e72c350bef`. Render logs show repeated `GET /health` responses with HTTP 200 at approximately 0.64–0.66 seconds. This confirms current health responses, not a full SLO window.
+- The Render deployment is on the backend root `apps/web-platform/backend`; main commit `58716e7` changes the frontend dependency tree, so its successful frontend deployment is verified separately below.
+- Vercel production deployment [`dpl_2N5nQBeqcbiAhCeKDTjsagrUpqkc`](https://vercel.com/thuwonaionly-8294s-projects/logixa-flow/2N5nQBeqcbiAhCeKDTjsagrUpqkc) for main commit `58716e72e89f1c3892b27deaf94c1b27e9fef49e` is `READY` and has the `logixa-flow.vercel.app` alias. The earlier deployment for commit `a54d7e5` is `CANCELED`, not a current production failure. No Vercel production error/fatal runtime logs were returned for the latest 30-minute query.
+- Render's native HTTP request/latency metrics returned no samples. Do not certify measured HTTP SLOs from health logs alone.
 
 ## Release gates still open
-- Safe authenticated QStash workflow with durable execution, duplicate/idempotency, retry, and stale-claim recovery evidence.
+- Safe authenticated QStash workflow with durable execution, duplicate/idempotency, retry, and stale-claim recovery evidence; historical US/EU probes do not prove a real workflow completed.
 - Agent → Brain → approval → publish/resume end-to-end evidence.
 - Full SLO observation, native metric ingestion investigation, and verified alert delivery.
-- Application rollback and recovery of Supabase-managed Auth/Storage and object storage; prior schema/data restore is not equivalent to full DR.
+- Application rollback and recovery of Supabase-managed Auth/Storage and object storage; schema/data restore alone is not full disaster recovery.
 - 24-hour scheduler observation.
 - Newsletter delivery/provider failover and owner-approval-gated changes.
+- Held dependency PRs still require compatibility review before merging: Stripe SDK major/API-version compatibility, Next.js 15→16 migration, Node type definitions aligned with the configured Node 24 runtime, and splitting the broad frontend update group into reviewable batches.
 
 ## Audit boundary
-Read-only inspection only. No secrets, production settings, database records, or deployment were changed. Keep certification pending until evidence for each gate is attached.
+This refresh records verified deployment and CI evidence only. No production secrets, settings, database records, or deployment actions were changed. Keep certification pending until evidence for each gate is attached.
 
 ---
 
