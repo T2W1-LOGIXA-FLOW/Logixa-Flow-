@@ -212,3 +212,61 @@ async def test_telegram_notification_records_only_confirmed_delivery(monkeypatch
     assert workflow_execution._EXECUTION_HISTORY["telegram-confirmed"][-1] == (
         "notification:telegram: telegram delivered (message_id=314)"
     )
+
+
+@pytest.mark.anyio
+async def test_agent_node_runs_private_preview_and_records_run_ids(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app import database, integration_service
+
+    class FakeSession:
+        closed = False
+
+        def close(self) -> None:
+            self.closed = True
+
+    fake_db = FakeSession()
+
+    async def fake_preview(db, *, message=None, max_sources=8):
+        assert db is fake_db
+        assert message == "Create a supply chain insight draft for review."
+        assert max_sources == 4
+        return {"run_id": 91, "memory_id": 207, "source_count": 2}
+
+    monkeypatch.setattr(database, "SessionLocal", lambda: fake_db)
+    monkeypatch.setattr(integration_service, "run_preview_agent", fake_preview)
+    node = WorkflowNode(
+        id="thought-stream",
+        type="agent",
+        name="THOUGHT STREAM",
+        config={
+            "action": "run_agent",
+            "message": "Create a supply chain insight draft for review.",
+            "max_sources": 4,
+        },
+    )
+
+    await workflow_execution._execute_agent_action(node, "workflow-agent-test")
+
+    assert fake_db.closed is True
+    assert workflow_execution._EXECUTION_METRICS["workflow-agent-test"]["agent_runs"] == [
+        {
+            "node_id": "thought-stream",
+            "agent_run_id": 91,
+            "memory_id": 207,
+            "status": "completed",
+        }
+    ]
+    assert "private_memory_id=207" in workflow_execution._EXECUTION_HISTORY["workflow-agent-test"][-1]
+    assert "awaiting admin review" in workflow_execution._EXECUTION_HISTORY["workflow-agent-test"][-1]
+
+
+@pytest.mark.anyio
+async def test_agent_node_rejects_invalid_source_limit() -> None:
+    node = WorkflowNode(
+        id="thought-stream",
+        type="agent",
+        name="THOUGHT STREAM",
+        config={"action": "run_agent", "message": "Create a supply chain insight draft for review.", "max_sources": 13},
+    )
+    with pytest.raises(ValueError, match="between 1 and 12"):
+        await workflow_execution._execute_agent_action(node, "workflow-agent-invalid")
