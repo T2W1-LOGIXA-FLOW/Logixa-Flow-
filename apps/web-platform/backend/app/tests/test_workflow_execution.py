@@ -156,7 +156,7 @@ async def test_queue_claim_retries_transient_failure(monkeypatch: pytest.MonkeyP
 
 @pytest.mark.anyio
 async def test_failed_workflow_run_can_be_resumed_from_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
-    stored = await workflow.store_workflow(
+    await workflow.store_workflow(
         WorkflowStorageCreate(
             id="retry-flow",
             name="Retry flow",
