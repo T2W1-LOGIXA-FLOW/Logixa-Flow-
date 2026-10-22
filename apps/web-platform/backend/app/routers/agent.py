@@ -5,10 +5,11 @@ import re
 import json
 from decimal import Decimal, InvalidOperation
 from html import escape
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
