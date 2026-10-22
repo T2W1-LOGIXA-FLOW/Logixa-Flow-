@@ -5,7 +5,7 @@ import re
 import json
 from decimal import Decimal, InvalidOperation
 from html import escape
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import StreamingResponse
@@ -662,26 +662,52 @@ async def stream_agent_thoughts(session_id: str):
 _agent_interrupt_registry = {}
 
 class AgentInterruptRequest(BaseModel):
-    action: str = Field(..., description="pause, resume, or inject_prompt")
-    guidance: Optional[str] = Field(None, description="Operator prompt injection")
+    action: Literal["pause", "resume", "inject_prompt"] = Field(
+        ..., description="Requested operator action"
+    )
+    guidance: Optional[str] = Field(
+        default=None, max_length=2000, description="Operator guidance for a future execution-loop integration"
+    )
 
-@router.post("/agent/interrupt/{session_id}", summary="Bidirectional Operator Agent Interrupt")
-async def interrupt_agent_execution(session_id: str, payload: AgentInterruptRequest):
-    """Allows an operator to pause or inject guidance into a running agent cognition loop."""
+
+@router.post(
+    "/agent/interrupt/{session_id}",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Record an authenticated operator agent-control request",
+)
+async def interrupt_agent_execution(
+    session_id: str,
+    payload: AgentInterruptRequest,
+    admin: dict[str, Any] = Depends(require_admin),
+):
+    """Record an admin request without falsely claiming the runtime has applied it."""
     import time
-    action = payload.action.lower()
-    guidance = payload.guidance or ""
-    
-    _agent_interrupt_registry[session_id] = {
-        "action": action,
+
+    normalized_session_id = session_id.strip()
+    if not normalized_session_id or len(normalized_session_id) > 200:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid session ID")
+
+    guidance = (payload.guidance or "").strip()
+    if payload.action == "inject_prompt" and not guidance:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Guidance is required")
+    if payload.action != "inject_prompt" and guidance:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Guidance is only accepted for inject_prompt",
+        )
+
+    _agent_interrupt_registry[normalized_session_id] = {
+        "action": payload.action,
         "guidance": guidance,
+        "requested_by": str(admin.get("sub", "admin")),
         "timestamp": time.time(),
+        "runtime_applied": False,
     }
-    
+
     return {
-        "status": "acknowledged",
-        "session_id": session_id,
-        "action": action,
-        "guidance_applied": bool(guidance),
-        "message": f"Operator interrupt '{action}' successfully injected into agent execution stream."
+        "status": "recorded",
+        "session_id": normalized_session_id,
+        "action": payload.action,
+        "runtime_applied": False,
+        "message": "Request recorded securely. Runtime pause/resume and prompt injection are not yet connected to an active execution loop.",
     }
