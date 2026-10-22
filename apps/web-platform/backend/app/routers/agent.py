@@ -702,7 +702,7 @@ async def interrupt_agent_execution(
     elif payload.action == "resume":
         paused = False
     else:
-        pending_guidance = "\\n".join(part for part in (pending_guidance, guidance) if part)[-2000:]
+        pending_guidance = "\n".join(part for part in (pending_guidance, guidance) if part)[-2000:]
 
     write_agent_control(db, paused=paused, pending_guidance=pending_guidance)
     return {
