@@ -25,7 +25,7 @@ export function AdminConversationMonitor({
   const handleInterrupt = async (action: "pause" | "resume" | "inject_prompt") => {
     setBusy(true);
     try {
-      if (!isAuthenticated || !token) {
+      if (!token) {
         throw new Error("An authenticated admin session is required.");
       }
       const res = await adminFetch("/api/agent/interrupt/default-session", token, {
