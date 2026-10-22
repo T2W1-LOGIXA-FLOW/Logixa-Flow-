@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-
 from fastapi.testclient import TestClient
 
 from ..database import get_db
@@ -10,7 +8,7 @@ from ..routers import agent as agent_router
 from ..routers import telegram as telegram_router
 
 
-def test_agent_interrupt_requires_admin(monkeypatch):
+def test_agent_interrupt_requires_admin():
     app.dependency_overrides.pop(agent_router.require_admin, None)
     client = TestClient(app)
     try:
@@ -61,7 +59,10 @@ def test_telegram_retry_command_uses_authenticated_webhook_executor(monkeypatch)
         return {"status": "ok", "action": "workflow_retry"}
 
     monkeypatch.setattr(telegram_router, "_execute_telegram_action", fake_execute)
-    app.dependency_overrides[get_db] = lambda: iter([object()])
+    def fake_db():
+        yield object()
+
+    app.dependency_overrides[get_db] = fake_db
     client = TestClient(app)
     try:
         response = client.post(
