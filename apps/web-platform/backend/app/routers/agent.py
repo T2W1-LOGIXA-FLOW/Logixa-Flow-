@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..analytics import log_analytics_event
 from ..agent_graph import execute_content_graph
+from ..agent_control import read_agent_control, write_agent_control
 from ..database import get_db
 from ..integration_service import import_rss_feed
 from ..llm.router import LLMRouter
@@ -659,30 +660,27 @@ async def stream_agent_thoughts(session_id: str):
 
 
 
-_agent_interrupt_registry = {}
-
 class AgentInterruptRequest(BaseModel):
     action: Literal["pause", "resume", "inject_prompt"] = Field(
-        ..., description="Requested operator action"
+        ..., description="Operator action applied to active content-agent graph runs"
     )
     guidance: Optional[str] = Field(
-        default=None, max_length=2000, description="Operator guidance for a future execution-loop integration"
+        default=None, max_length=2000, description="Guidance to prepend to the next agent graph step"
     )
 
 
 @router.post(
     "/agent/interrupt/{session_id}",
     status_code=status.HTTP_202_ACCEPTED,
-    summary="Record an authenticated operator agent-control request",
+    summary="Control active agent graph execution",
 )
 async def interrupt_agent_execution(
     session_id: str,
     payload: AgentInterruptRequest,
+    db: Session = Depends(get_db),
     admin: dict[str, Any] = Depends(require_admin),
 ):
-    """Record an admin request without falsely claiming the runtime has applied it."""
-    import time
-
+    """Persist operator controls so every backend worker can honor them at graph step boundaries."""
     normalized_session_id = session_id.strip()
     if not normalized_session_id or len(normalized_session_id) > 200:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid session ID")
@@ -696,18 +694,30 @@ async def interrupt_agent_execution(
             detail="Guidance is only accepted for inject_prompt",
         )
 
-    _agent_interrupt_registry[normalized_session_id] = {
-        "action": payload.action,
-        "guidance": guidance,
-        "requested_by": str(admin.get("sub", "admin")),
-        "timestamp": time.time(),
-        "runtime_applied": False,
-    }
+    current = read_agent_control(db)
+    paused = current["paused"]
+    pending_guidance = current["pending_guidance"]
+    if payload.action == "pause":
+        paused = True
+    elif payload.action == "resume":
+        paused = False
+    else:
+        pending_guidance = "\\n".join(part for part in (pending_guidance, guidance) if part)[-2000:]
 
+    write_agent_control(db, paused=paused, pending_guidance=pending_guidance)
     return {
-        "status": "recorded",
+        "status": "applied",
+        "scope": "global",
         "session_id": normalized_session_id,
         "action": payload.action,
-        "runtime_applied": False,
-        "message": "Request recorded securely. Runtime pause/resume and prompt injection are not yet connected to an active execution loop.",
+        "runtime_applied": True,
+        "requested_by": str(admin.get("sub", "admin")),
+        "paused": paused,
+        "message": (
+            "All active agent graph runs will pause at the next step boundary."
+            if payload.action == "pause"
+            else "Active agent graph runs are allowed to continue from the next step boundary."
+            if payload.action == "resume"
+            else "Operator guidance is queued for the next active agent graph step."
+        ),
     }
