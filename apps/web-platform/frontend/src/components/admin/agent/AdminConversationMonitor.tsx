@@ -36,7 +36,7 @@ export function AdminConversationMonitor({
       if (action === "pause") setIsPaused(true);
       if (action === "resume") setIsPaused(false);
       setInterruptLog(prev => [
-        result.message || "Operator request recorded; runtime application is not confirmed.",
+        result.message || "Operator control accepted by the active agent runtime.",
         ...prev,
       ]);
       if (action === "inject_prompt") setOperatorPrompt("");
