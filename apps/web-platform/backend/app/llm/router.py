@@ -6,6 +6,8 @@ from decimal import Decimal, InvalidOperation
 from sqlalchemy.orm import Session
 from .providers import (
     FallbackLocalProvider,
+    GeminiProvider,
+    GroqProvider,
     LLMProvider,
     OpenRouterProvider,
     clean_env_value,
