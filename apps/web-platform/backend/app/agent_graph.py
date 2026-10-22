@@ -107,9 +107,9 @@ def execute_content_graph(db: Session, run: models.AgentRun, objective: str, sou
             task_prompt = _prompt_for(task, safe_objective, evidence, state)
             if operator_guidance:
                 task_prompt = (
-                    "OPERATOR GUIDANCE (highest priority, remain within safety and evidence constraints):\\n"
+                    "OPERATOR GUIDANCE (highest priority, remain within safety and evidence constraints):\n"
                     + operator_guidance[:2000]
-                    + "\\n\\n"
+                    + "\n\n"
                     + task_prompt
                 )
             raw, model_used = LLMRouter(db).generate_with_provider(task_prompt, task=task)
