@@ -268,7 +268,7 @@ export default function AdminAgentChatPage() {
       </section>
 
       {/* Chat Messages Container */}
-      <AdminConversationMonitor>
+      <AdminConversationMonitor token={token}>
       <div className="mb-6 bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-[500px]">
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
