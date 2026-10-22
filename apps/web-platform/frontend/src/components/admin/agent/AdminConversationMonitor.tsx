@@ -4,18 +4,18 @@ import { useState, type ReactNode } from "react";
 import styles from "@/app/admin/agents/agent-theme.module.css";
 import { Terminal, Activity, ChevronDown, ChevronUp, Cpu, CheckCircle2, Pause, Play, Send } from "lucide-react";
 import { adminFetch } from "@/components/api";
-import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 export function AdminConversationMonitor({
   children,
+  token,
   title = "Conversation Monitor",
   description = "Admin-only persisted transcript presentation with real-time reasoning telemetry.",
 }: {
   children: ReactNode;
+  token: string;
   title?: string;
   description?: string;
 }) {
-  const { token, isAuthenticated } = useAdminAuth();
   const [showThoughtStream, setShowThoughtStream] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [operatorPrompt, setOperatorPrompt] = useState("");
