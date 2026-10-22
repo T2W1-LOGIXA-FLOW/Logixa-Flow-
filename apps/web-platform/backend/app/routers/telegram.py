@@ -293,7 +293,16 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
         # Command: /retry <id>
         elif text.startswith("/retry"):
             wf_id = text[len("/retry"):].strip() or "manual_trigger"
-            payload = TelegramActionPayload(action=f"logixa_wf_retry:{wf_id}", topic_id=topic_id)
-            return await handle_telegram_action(payload, db=db)
+            payload = TelegramActionPayload(
+                action=f"logixa_wf_retry:{wf_id}",
+                chat_id=msg.get("chat", {}).get("id"),
+                topic_id=topic_id,
+                user_id=msg.get("from", {}).get("id"),
+                username=msg.get("from", {}).get("username"),
+                raw_message=text,
+            )
+            # The webhook secret and actor allowlist were verified above. Execute
+            # directly instead of calling the separate shared-secret gateway route.
+            return await _execute_telegram_action(payload, db=db)
 
     return {"ok": True, "status": "processed"}
