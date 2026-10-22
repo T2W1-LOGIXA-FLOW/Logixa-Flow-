@@ -115,8 +115,8 @@ export function AdminConversationMonitor({
               </button>
               <span className="text-[10px] text-slate-500 font-sans">
                 {isPaused
-                  ? "Pause requested · runtime state not confirmed"
-                  : "Runtime state not connected · requests are recorded only"}
+                  ? "Pause applied · active runs stop at the next step boundary"
+                  : "Controls active agent graph runs at step boundaries"}
               </span>
             </div>
 
