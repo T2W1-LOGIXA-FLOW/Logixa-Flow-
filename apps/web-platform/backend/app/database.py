@@ -22,7 +22,10 @@ else:
     # fail during startup seeding with DuplicatePreparedStatement (_pg3_N).
     # Disable auto-prepare only for the psycopg 3 dialect; psycopg2 does not
     # accept this connection argument.
-    if make_url(DATABASE_URL).drivername == "postgresql+psycopg":
+    database_driver = make_url(DATABASE_URL).drivername
+    # Some hosting providers supply `postgresql://` / `postgres://` URLs while
+    # SQLAlchemy resolves them to Psycopg 3 in this environment.
+    if database_driver in {"postgres", "postgresql", "postgresql+psycopg"}:
         connect_args["prepare_threshold"] = None
 
 engine = create_engine(DATABASE_URL, connect_args=connect_args, pool_pre_ping=True)
