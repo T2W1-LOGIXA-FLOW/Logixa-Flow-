@@ -3,6 +3,8 @@
 import { useState, type ReactNode } from "react";
 import styles from "@/app/admin/agents/agent-theme.module.css";
 import { Terminal, Activity, ChevronDown, ChevronUp, Cpu, CheckCircle2, Pause, Play, Send } from "lucide-react";
+import { adminFetch } from "@/components/api";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 export function AdminConversationMonitor({
   children,
@@ -13,6 +15,7 @@ export function AdminConversationMonitor({
   title?: string;
   description?: string;
 }) {
+  const { token, isAuthenticated } = useAdminAuth();
   const [showThoughtStream, setShowThoughtStream] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [operatorPrompt, setOperatorPrompt] = useState("");
@@ -22,18 +25,21 @@ export function AdminConversationMonitor({
   const handleInterrupt = async (action: "pause" | "resume" | "inject_prompt") => {
     setBusy(true);
     try {
-      const res = await fetch("/api/agent/interrupt/default-session", {
+      if (!isAuthenticated || !token) {
+        throw new Error("An authenticated admin session is required.");
+      }
+      const res = await adminFetch("/api/agent/interrupt/default-session", token, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, guidance: action === "inject_prompt" ? operatorPrompt : undefined }),
       });
-      if (res.ok) {
-        if (action === "pause") setIsPaused(true);
-        if (action === "resume") setIsPaused(false);
-        const msg = action === "inject_prompt" ? `Injected guidance: "${operatorPrompt}"` : `Execution ${action}d`;
-        setInterruptLog(prev => [msg, ...prev]);
-        if (action === "inject_prompt") setOperatorPrompt("");
-      }
+      const result = await res.json() as { message?: string; runtime_applied?: boolean };
+      if (action === "pause") setIsPaused(true);
+      if (action === "resume") setIsPaused(false);
+      setInterruptLog(prev => [
+        result.message || "Operator request recorded; runtime application is not confirmed.",
+        ...prev,
+      ]);
+      if (action === "inject_prompt") setOperatorPrompt("");
     } catch (e) {
       console.error("Interrupt failed", e);
     } finally {
@@ -108,7 +114,9 @@ export function AdminConversationMonitor({
                 <span>{isPaused ? "RESUME AGENT" : "PAUSE AGENT"}</span>
               </button>
               <span className="text-[10px] text-slate-500 font-sans">
-                {isPaused ? "Status: PAUSED by Operator" : "Status: Autonomous Cognition"}
+                {isPaused
+                  ? "Pause requested · runtime state not confirmed"
+                  : "Runtime state not connected · requests are recorded only"}
               </span>
             </div>
 
