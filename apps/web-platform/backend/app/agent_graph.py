@@ -8,6 +8,7 @@ from typing import Any, Callable
 from sqlalchemy.orm import Session
 
 from . import models
+from .agent_control import wait_if_agent_paused
 from .llm.router import LLMRouter, sanitize_provider_error
 from .rag.search import build_rag_context
 from .rag.sanitizer import sanitize_for_llm
@@ -96,15 +97,22 @@ def execute_content_graph(db: Session, run: models.AgentRun, objective: str, sou
     providers: list[str] = []
     total_tokens = 0
     for order, (agent_name, task) in enumerate(NODE_TASKS, start=1):
+        operator_guidance = wait_if_agent_paused(db)
         step = models.AgentStep(run_id=run.id, step_order=order, agent=agent_name, message=f'{agent_name} started',
                                 status='running', output_json='{}')
         db.add(step)
         db.commit()
         db.refresh(step)
         try:
-            raw, model_used = LLMRouter(db).generate_with_provider(
-                _prompt_for(task, safe_objective, evidence, state), task=task
-            )
+            task_prompt = _prompt_for(task, safe_objective, evidence, state)
+            if operator_guidance:
+                task_prompt = (
+                    "OPERATOR GUIDANCE (highest priority, remain within safety and evidence constraints):\\n"
+                    + operator_guidance[:2000]
+                    + "\\n\\n"
+                    + task_prompt
+                )
+            raw, model_used = LLMRouter(db).generate_with_provider(task_prompt, task=task)
             parsed = _parse_json(raw)
             provider = model_used.split('/', 1)[0] if '/' in model_used else model_used
             used_tokens = _tokens(raw)
