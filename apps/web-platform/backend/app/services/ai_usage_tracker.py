@@ -76,14 +76,14 @@ def _dispatch_quota_alert(project: str, provider: str, reason: str):
                 alert_title = "AI Provider Error Alert"
 
             # Provider exceptions can include credentials in URLs or headers.
-            safe_reason = re.sub(r"([?&](?:key|api_key|token)=)[^&\\s]+", r"\\1[redacted]", reason, flags=re.IGNORECASE)
-            safe_reason = re.sub(r"Bearer\\s+[^\\s]+", "Bearer [redacted]", safe_reason, flags=re.IGNORECASE)
-            safe_reason = re.sub(r"\\bAIza[0-9A-Za-z_\\-]{20,}\\b", "[redacted]", safe_reason)
+            safe_reason = re.sub(r"([?&](?:key|api_key|token)=)[^&\s]+", r"\1[redacted]", reason, flags=re.IGNORECASE)
+            safe_reason = re.sub(r"Bearer\s+[^\s]+", "Bearer [redacted]", safe_reason, flags=re.IGNORECASE)
+            safe_reason = re.sub(r"\bAIza[0-9A-Za-z_\-]{20,}\b", "[redacted]", safe_reason)
             msg = (
-                f"⚠️ <b>[{alert_title}]</b>\\n\\n"
-                f"• <b>Project:</b> {project}\\n"
-                f"• <b>Provider:</b> <code>{provider.upper()}</code>\\n"
-                f"• <b>Reason:</b> {safe_reason}\\n"
+                f"⚠️ <b>[{alert_title}]</b>\n\n"
+                f"• <b>Project:</b> {project}\n"
+                f"• <b>Provider:</b> <code>{provider.upper()}</code>\n"
+                f"• <b>Reason:</b> {safe_reason}\n"
                 f"• <b>Status:</b> Fallback attempted; verify the next provider response."
             )
             payload = {
