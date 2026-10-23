@@ -9,9 +9,11 @@ from sqlalchemy.orm import Session
 
 from .. import models
 from ..cache import cache_client
+from ..config import telegram_configured, telegram_enabled
+from ..security import require_admin
 from ..database import get_db
 from ..models import utc_now
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ..services.telegram import send_telegram_message
 from .workflow import enqueue_workflow_run
@@ -57,6 +59,32 @@ class TelegramActionPayload(BaseModel):
     user_id: int | None = None
     username: str | None = None
     raw_message: str | None = None
+
+class AdminTelegramSendPayload(BaseModel):
+    message: str = Field(min_length=1, max_length=4000)
+    topic_id: int | None = Field(default=None, ge=1)
+
+
+@router.post("/admin/telegram/send")
+async def send_admin_telegram_message(
+    payload: AdminTelegramSendPayload,
+    _: dict = Depends(require_admin),
+) -> dict[str, Any]:
+    """Send a deliberate admin-triggered Telegram message and fail closed on dry-run."""
+    if not telegram_configured() or not telegram_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Telegram delivery is not configured and enabled",
+        )
+    result = await send_telegram_message(payload.message, topic_id=payload.topic_id)
+    if not isinstance(result, dict) or result.get("ok") is not True:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Telegram API did not confirm message delivery",
+        )
+    message = result.get("result")
+    message_id = message.get("message_id") if isinstance(message, dict) else None
+    return {"success": True, "delivered": True, "message_id": message_id}
 
 
 # ------------------------------------------------------------------------------
