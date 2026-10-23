@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import threading
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
@@ -66,12 +67,24 @@ def _dispatch_quota_alert(project: str, provider: str, reason: str):
             topic_id = os.getenv("TELEGRAM_TOPIC_ID", "").strip()
             if not token or not chat_id:
                 return
+            reason_lower = reason.lower()
+            if "429" in reason_lower or "quota" in reason_lower or "rate limit" in reason_lower:
+                alert_title = "AI Quota Exhaustion Alert"
+            elif any(marker in reason_lower for marker in ("401", "unauthorized", "403", "forbidden", "authentication", "api key")):
+                alert_title = "AI Provider Authentication Alert"
+            else:
+                alert_title = "AI Provider Error Alert"
+
+            # Provider exceptions can include credentials in URLs or headers.
+            safe_reason = re.sub(r"([?&](?:key|api_key|token)=)[^&\\s]+", r"\\1[redacted]", reason, flags=re.IGNORECASE)
+            safe_reason = re.sub(r"Bearer\\s+[^\\s]+", "Bearer [redacted]", safe_reason, flags=re.IGNORECASE)
+            safe_reason = re.sub(r"\\bAIza[0-9A-Za-z_\\-]{20,}\\b", "[redacted]", safe_reason)
             msg = (
-                f"⚠️ <b>[AI Quota Exhaustion Alert]</b>\n\n"
-                f"• <b>Project:</b> {project}\n"
-                f"• <b>Provider:</b> <code>{provider.upper()}</code>\n"
-                f"• <b>Reason:</b> {reason}\n"
-                f"• <b>Status:</b> Auto-switched to next candidate in Fallback Chain."
+                f"⚠️ <b>[{alert_title}]</b>\\n\\n"
+                f"• <b>Project:</b> {project}\\n"
+                f"• <b>Provider:</b> <code>{provider.upper()}</code>\\n"
+                f"• <b>Reason:</b> {safe_reason}\\n"
+                f"• <b>Status:</b> Fallback attempted; verify the next provider response."
             )
             payload = {
                 "chat_id": chat_id,
