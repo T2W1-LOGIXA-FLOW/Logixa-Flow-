@@ -30,19 +30,22 @@ def _configured_id_set(env_name: str) -> set[str]:
     return {part.strip() for part in os.getenv(env_name, "").split(",") if part.strip()}
 
 
-def _authorize_telegram_actor(*, user_id: Any, chat_id: Any) -> None:
-    """Fail closed in production unless Telegram actors are explicitly allowlisted."""
+def _authorize_telegram_actor(*, user_id: Any, chat_id: Any, topic_id: Any = None) -> None:
+    """Restrict production Telegram actions to configured chats and forum topics."""
     allowed_users = _configured_id_set("TELEGRAM_ALLOWED_USER_IDS")
     allowed_chats = _configured_id_set("TELEGRAM_ALLOWED_CHAT_IDS")
-    if _production_mode() and (not allowed_users or not allowed_chats):
+    allowed_topics = _configured_id_set("TELEGRAM_ALLOWED_TOPIC_IDS")
+    if _production_mode() and (not allowed_chats or not allowed_topics):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Telegram actor allowlists are not configured",
+            detail="Telegram chat/topic allowlists are not configured",
         )
     if allowed_users and str(user_id) not in allowed_users:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Telegram user is not authorized")
     if allowed_chats and str(chat_id) not in allowed_chats:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Telegram chat is not authorized")
+    if allowed_topics and (topic_id is None or str(topic_id) not in allowed_topics):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Telegram topic is not authorized")
 
 
 
@@ -71,7 +74,7 @@ async def handle_telegram_action(
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Telegram action gateway is not configured")
     if not x_telegram_action_secret or not hmac.compare_digest(x_telegram_action_secret, expected_action_secret):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Telegram action credentials")
-    _authorize_telegram_actor(user_id=payload.user_id, chat_id=payload.chat_id)
+    _authorize_telegram_actor(user_id=payload.user_id, chat_id=payload.chat_id, topic_id=payload.topic_id)
     return await _execute_telegram_action(payload, db=db)
 
 
@@ -225,7 +228,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
             user_id=cq.get("from", {}).get("id"),
             username=cq.get("from", {}).get("username"),
         )
-        _authorize_telegram_actor(user_id=payload.user_id, chat_id=payload.chat_id)
+        _authorize_telegram_actor(user_id=payload.user_id, chat_id=payload.chat_id, topic_id=payload.topic_id)
         return await _execute_telegram_action(payload, db=db)
 
     # Case 2: Message Text (Slash Commands)
@@ -237,6 +240,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
             _authorize_telegram_actor(
                 user_id=msg.get("from", {}).get("id"),
                 chat_id=msg.get("chat", {}).get("id"),
+                topic_id=topic_id,
             )
 
         if not text:
