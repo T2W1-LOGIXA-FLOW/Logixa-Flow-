@@ -22,6 +22,7 @@ from .logging_config import setup_logging
 from .middleware import rate_limit_middleware, request_observability_middleware, security_headers_middleware, stealth_mode_middleware
 from .routers import admin, agent, analytics, auth, brain, chat, contacts, controllers, costs, usage, finance, diagnostics, email_templates, estimator, integration, workflow, metrics, moderation, posts, rag, settings, submissions, subscribers, system, uploads, knowledge, telegram
 from .scheduler import scheduler_status, start_scheduler
+from .services.telegram import configure_telegram_webhook
 
 logger = logging.getLogger(__name__)
 setup_logging()
@@ -112,6 +113,7 @@ async def lifespan(_: FastAPI):
     import asyncio
     loop = asyncio.get_running_loop()
     await loop.run_in_executor(None, run_startup_tasks)
+    await configure_telegram_webhook()
     yield
 
 
