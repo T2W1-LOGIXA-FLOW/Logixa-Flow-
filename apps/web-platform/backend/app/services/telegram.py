@@ -143,3 +143,40 @@ async def notify_controller_status(controller_name: str, state: str, reason: str
     if reason:
         details += f"\n💬 {reason}"
     await send_notification("Controller State Update", details, status="INFO")
+
+
+async def configure_telegram_webhook() -> bool:
+    """Register the service webhook with Telegram when production settings permit it."""
+    token = clean_env_value("TELEGRAM_BOT_TOKEN")
+    secret = clean_env_value("TELEGRAM_WEBHOOK_SECRET")
+    if not telegram_enabled():
+        logger.warning("Telegram webhook registration skipped: TELEGRAM_ENABLED is not enabled")
+        return False
+    if not token or not secret:
+        logger.warning("Telegram webhook registration skipped: bot token or webhook secret is not configured")
+        return False
+
+    base_url = clean_env_value("TELEGRAM_WEBHOOK_URL") or clean_env_value("RENDER_EXTERNAL_URL")
+    if not base_url:
+        logger.warning("Telegram webhook registration skipped: TELEGRAM_WEBHOOK_URL and RENDER_EXTERNAL_URL are empty")
+        return False
+    base_url = base_url.rstrip("/")
+    webhook_url = base_url if base_url.endswith("/api/telegram/webhook") else base_url + "/api/telegram/webhook"
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.post(
+                TELEGRAM_API_BASE + "/bot" + token + "/setWebhook",
+                json={"url": webhook_url, "secret_token": secret, "allowed_updates": ["message", "callback_query"]},
+            )
+        if response.status_code != 200:
+            logger.warning("Telegram webhook registration failed with HTTP %s", response.status_code)
+            return False
+        result = response.json()
+        if not result.get("ok"):
+            logger.warning("Telegram webhook registration rejected by Telegram API")
+            return False
+        logger.info("Telegram webhook registered successfully for %s", webhook_url)
+        return True
+    except Exception as exc:
+        logger.warning("Telegram webhook registration failed: %s", type(exc).__name__)
+        return False
