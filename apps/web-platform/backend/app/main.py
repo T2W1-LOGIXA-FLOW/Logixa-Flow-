@@ -26,6 +26,8 @@ from .services.telegram import configure_telegram_webhook
 
 logger = logging.getLogger(__name__)
 setup_logging()
+# httpx logs full request URLs at INFO; Telegram bot tokens are embedded in API paths.
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 if os.getenv("SENTRY_DSN", "").strip():
     try:
