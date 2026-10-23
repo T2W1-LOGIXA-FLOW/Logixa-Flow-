@@ -292,7 +292,13 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
 
         # Command: /retry <id>
         elif text.startswith("/retry"):
-            wf_id = text[len("/retry"):].strip() or "manual_trigger"
+            wf_id = text[len("/retry"):].strip()
+            if not wf_id:
+                await send_telegram_message(
+                    "⚠️ Please supply a workflow ID: <code>/retry [workflow_id]</code>",
+                    topic_id=topic_id,
+                )
+                return {"ok": True, "command": "retry", "status": "missing_workflow_id"}
             payload = TelegramActionPayload(
                 action=f"logixa_wf_retry:{wf_id}",
                 chat_id=msg.get("chat", {}).get("id"),
