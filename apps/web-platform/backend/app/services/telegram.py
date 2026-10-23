@@ -62,7 +62,7 @@ async def send_telegram_message(
                 return None
             return response.json()
     except Exception as exc:
-        logger.warning("Failed to send Telegram message from Logixa Flow: %s", exc)
+        logger.warning("Failed to send Telegram message from Logixa Flow: %s", type(exc).__name__)
         return None
 
 
