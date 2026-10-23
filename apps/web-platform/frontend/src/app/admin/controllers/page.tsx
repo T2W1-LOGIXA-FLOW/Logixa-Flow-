@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { toast } from "sonner";
 import Skeleton from "@/components/shadcn/Skeleton";
 import { adminFetch } from "@/components/api";
@@ -17,7 +16,7 @@ interface Controller {
   name: string;
   trigger_type: string;
   enabled: boolean;
-  last_execution: string;
+  last_execution: string | null;
   success_count: number;
   failure_count: number;
 }
@@ -28,6 +27,11 @@ export default function AdminControllersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [controllerId, setControllerId] = useState("");
+  const [controllerName, setControllerName] = useState("");
+  const [workflowId, setWorkflowId] = useState("admin-command-canvas");
+  const [submitting, setSubmitting] = useState(false);
 
   const loadControllers = useCallback(async () => {
     try {
@@ -64,6 +68,72 @@ export default function AdminControllersPage() {
     }
   }
 
+  async function createController(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalizedId = controllerId.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
+    const normalizedWorkflowId = workflowId.trim();
+    if (normalizedId.length < 2 || !controllerName.trim() || !normalizedWorkflowId) {
+      toast.error("Controller ID, name, and workflow ID are required");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const workflowResponse = await adminFetch(
+        `/api/admin/workflow/${encodeURIComponent(normalizedWorkflowId)}`,
+        token,
+      );
+      const savedWorkflow = await workflowResponse.json() as { id?: string; nodes?: unknown[] };
+      if (savedWorkflow.id !== normalizedWorkflowId || !Array.isArray(savedWorkflow.nodes) || savedWorkflow.nodes.length === 0) {
+        throw new Error("Save a non-empty workflow in the Workflow command center before creating its controller.");
+      }
+
+      await adminFetch("/api/admin/controllers", token, {
+        method: "POST",
+        body: JSON.stringify({
+          id: normalizedId,
+          name: controllerName.trim(),
+          trigger_type: "manual",
+          enabled: true,
+          config: JSON.stringify({ workflow_id: normalizedWorkflowId, priority: 1, delay_seconds: 0 }),
+        }),
+      });
+      toast.success("Controller created");
+      setControllerId("");
+      setControllerName("");
+      setWorkflowId("admin-command-canvas");
+      setShowCreateForm(false);
+      await loadControllers();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create controller");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function executeController(id: string) {
+    try {
+      const response = await adminFetch(`/api/admin/controllers/${encodeURIComponent(id)}/execute`, token, {
+        method: "POST",
+      });
+      const result = await response.json() as { message?: string; run?: { run_id?: string } };
+      toast.success(result.message ?? `Workflow queued${result.run?.run_id ? `: ${result.run.run_id}` : ""}`);
+      await loadControllers();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to queue controller workflow");
+    }
+  }
+
+  async function deleteController(id: string) {
+    if (typeof window !== "undefined" && !window.confirm(`Delete controller "${id}"?`)) return;
+    try {
+      await adminFetch(`/api/admin/controllers/${encodeURIComponent(id)}`, token, { method: "DELETE" });
+      toast.success("Controller deleted");
+      await loadControllers();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete controller");
+    }
+  }
+
   const filteredControllers = controllers.filter(controller =>
     controller.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     controller.trigger_type.toLowerCase().includes(searchQuery.toLowerCase())
@@ -97,11 +167,69 @@ export default function AdminControllersPage() {
           />
           <p className="text-muted">Manage automation workflows and triggers</p>
         </div>
-        <Link className="ghost-button inline-flex items-center gap-2" href="/admin/brain">
+        <button
+          type="button"
+          className="ghost-button inline-flex items-center gap-2"
+          onClick={() => setShowCreateForm((visible) => !visible)}
+          aria-expanded={showCreateForm}
+        >
           <Plus className="h-4 w-4" />
-          New Workflow
-        </Link>
+          {showCreateForm ? "Cancel" : "New Controller"}
+        </button>
       </section>
+
+      {showCreateForm && (
+        <form onSubmit={createController} className="admin-panel space-y-4" aria-label="Create controller">
+          <h2 className="text-lg font-semibold text-primary">Create manual workflow controller</h2>
+          <p className="text-sm text-muted">
+            The workflow must already be saved in the Workflow command center. This controller queues that workflow; it does not create external service integrations.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <label className="block text-sm text-secondary">
+              Controller ID
+              <input
+                required
+                minLength={2}
+                maxLength={100}
+                pattern="[A-Za-z0-9_-]+"
+                value={controllerId}
+                onChange={(event) => setControllerId(event.target.value)}
+                placeholder="daily-ops"
+                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-primary"
+              />
+            </label>
+            <label className="block text-sm text-secondary">
+              Display name
+              <input
+                required
+                minLength={2}
+                maxLength={255}
+                value={controllerName}
+                onChange={(event) => setControllerName(event.target.value)}
+                placeholder="Daily Operations"
+                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-primary"
+              />
+            </label>
+            <label className="block text-sm text-secondary">
+              Workflow ID
+              <input
+                required
+                minLength={1}
+                maxLength={80}
+                pattern="[A-Za-z0-9_-]+"
+                value={workflowId}
+                onChange={(event) => setWorkflowId(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-primary"
+              />
+            </label>
+          </div>
+          <div className="flex justify-end">
+            <button type="submit" disabled={submitting} className="primary-button">
+              {submitting ? "Creating…" : "Create controller"}
+            </button>
+          </div>
+        </form>
+      )}
 
       {error && <p className="admin-status error">{error}</p>}
 
@@ -121,9 +249,7 @@ export default function AdminControllersPage() {
       ) : filteredControllers.length === 0 ? (
         <AdminEmptyState
           title={searchQuery ? "No controllers found" : "No controllers configured"}
-          description={searchQuery ? "No controllers found matching your search" : "Configure your first automation controller"}
-          actionLabel="Configure Controllers"
-          actionHref="/admin"
+          description={searchQuery ? "No controllers found matching your search" : "Create a controller with New Controller above, then point it at a saved workflow."}
         />
       ) : (
         <div className="space-y-4">
@@ -141,7 +267,7 @@ export default function AdminControllersPage() {
                   </div>
                   <p className="text-sm text-secondary">Trigger: {controller.trigger_type}</p>
                   <div className="flex items-center gap-6 mt-3 text-xs text-muted flex-wrap">
-                    <span>Last run: {new Date(controller.last_execution).toLocaleString()}</span>
+                    <span>Last run: {controller.last_execution ? new Date(controller.last_execution).toLocaleString() : "Never"}</span>
                     <span>Success: <span className="text-success font-medium">{controller.success_count}</span></span>
                     <span>Failed: <span className="text-error font-medium">{controller.failure_count}</span></span>
                   </div>
@@ -157,10 +283,19 @@ export default function AdminControllersPage() {
                   >
                     {controller.enabled ? "Active" : "Inactive"}
                   </button>
-                  <Link href={`/admin?edit=controller:${controller.id}`} className="text-accent hover:text-cyan-200 transition font-medium">
-                    Edit
-                  </Link>
-                  <button className="text-error hover:text-red-200 transition font-medium">
+                  <button
+                    type="button"
+                    onClick={() => executeController(controller.id)}
+                    disabled={!controller.enabled}
+                    className="ghost-button disabled:opacity-50"
+                  >
+                    Run now
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteController(controller.id)}
+                    className="text-error hover:text-red-200 transition font-medium"
+                  >
                     Delete
                   </button>
                 </div>
