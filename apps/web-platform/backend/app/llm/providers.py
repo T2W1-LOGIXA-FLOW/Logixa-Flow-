@@ -50,12 +50,12 @@ class GeminiProvider(LLMProvider):
             raise Exception("Gemini API key missing")
         
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent"
-        if not self.api_key.startswith("AQ"):
-            url += f"?key={self.api_key}"
+        # Gemini API keys are API keys, not OAuth bearer tokens. Send them only
+        # through Google's documented x-goog-api-key header to avoid conflicting
+        # authentication mechanisms and leaking the key in the request URL.
         headers = {
             "x-goog-api-key": self.api_key,
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
         
