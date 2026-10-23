@@ -3,8 +3,38 @@ from unittest.mock import MagicMock
 from sqlalchemy.orm import Session
 
 from .. import models
-from ..llm.providers import OpenRouterProvider
+from ..llm.providers import GeminiProvider, OpenRouterProvider
 from ..llm.router import LLMRouter, sanitize_provider_error
+
+
+def test_gemini_provider_uses_api_key_header_without_bearer_or_url_key(monkeypatch):
+    import requests
+
+    captured = {}
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"candidates": [{"content": {"parts": [{"text": "ok"}]}}]}
+
+    def fake_post(url, **kwargs):
+        captured["url"] = url
+        captured.update(kwargs)
+        return FakeResponse()
+
+    monkeypatch.setattr(requests, "post", fake_post)
+    provider = GeminiProvider(model="gemini-2.5-flash", api_key="test-gemini-key")
+
+    assert provider.generate("hello") == "ok"
+    assert captured["url"] == (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        "gemini-2.5-flash:generateContent"
+    )
+    assert captured["headers"]["x-goog-api-key"] == "test-gemini-key"
+    assert "Authorization" not in captured["headers"]
+    assert "key=" not in captured["url"]
 
 
 def _db_with_selection(value: str = "mistral") -> MagicMock:

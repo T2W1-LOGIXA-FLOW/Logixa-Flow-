@@ -6,8 +6,6 @@ from decimal import Decimal, InvalidOperation
 from sqlalchemy.orm import Session
 from .providers import (
     FallbackLocalProvider,
-    GeminiProvider,
-    GroqProvider,
     LLMProvider,
     OpenRouterProvider,
     clean_env_value,
@@ -54,23 +52,20 @@ class LLMRouter:
         # Production cost policy is free-only: never route admin or user
         # generation through legacy paid providers merely because their keys exist.
         self.providers = {
-            "gemini": GeminiProvider(model="gemini-2.5-flash", role=self.role),
-            "groq": GroqProvider(model="llama-3.3-70b-versatile", role=self.role),
+            # This router enforces the free-only production policy. Gemini and
+            # Groq keys may exist in the environment, but are intentionally not
+            # eligible in this path; use the free OpenRouter route or local fallback.
             "openrouter-free": OpenRouterProvider(model="openrouter/free", role=self.role),
             "local": FallbackLocalProvider(),
         }
 
     def _selected_provider_name(self, task: str | None = None) -> str:
-        if self.providers["gemini"].is_available():
-            return "gemini"
-        if self.providers["groq"].is_available():
-            return "groq"
         if self.providers["openrouter-free"].is_available():
             return "openrouter-free"
         return "local"
 
     def _provider_order(self, task: str | None = None) -> list[tuple[str, LLMProvider]]:
-        names = ["gemini", "groq", "openrouter-free", "local"]
+        names = ["openrouter-free", "local"]
         allow_local_fallback = os.getenv(
             "ALLOW_LOCAL_LLM_FALLBACK",
             "true" if os.getenv("ENVIRONMENT", "development").lower() not in {"production", "prod"} else "false",

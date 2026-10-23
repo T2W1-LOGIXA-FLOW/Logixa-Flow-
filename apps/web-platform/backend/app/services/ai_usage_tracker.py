@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import threading
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
@@ -55,6 +56,21 @@ def mark_provider_exhausted(provider: str):
         _dispatch_quota_alert("Logixa-Flow", p, "Provider marked exhausted")
 
 
+def _classify_alert_title(reason: str) -> str:
+    reason_lower = reason.lower()
+    if "429" in reason_lower or "quota" in reason_lower or "rate limit" in reason_lower:
+        return "AI Quota Exhaustion Alert"
+    if any(marker in reason_lower for marker in ("401", "unauthorized", "403", "forbidden", "authentication", "api key")):
+        return "AI Provider Authentication Alert"
+    return "AI Provider Error Alert"
+
+
+def _sanitize_alert_reason(reason: str) -> str:
+    safe_reason = re.sub(r"([?&](?:key|api_key|token)=)[^\s&]+", r"\1[redacted]", reason, flags=re.IGNORECASE)
+    safe_reason = re.sub(r"Bearer\s+[^\s]+", "Bearer [redacted]", safe_reason, flags=re.IGNORECASE)
+    return re.sub(r"\bAIza[0-9A-Za-z_\-]{20,}\b", "[redacted]", safe_reason)
+
+
 def _dispatch_quota_alert(project: str, provider: str, reason: str):
     import threading
 
@@ -66,12 +82,14 @@ def _dispatch_quota_alert(project: str, provider: str, reason: str):
             topic_id = os.getenv("TELEGRAM_TOPIC_ID", "").strip()
             if not token or not chat_id:
                 return
+            alert_title = _classify_alert_title(reason)
+            safe_reason = _sanitize_alert_reason(reason)
             msg = (
-                f"⚠️ <b>[AI Quota Exhaustion Alert]</b>\n\n"
+                f"⚠️ <b>[{alert_title}]</b>\n\n"
                 f"• <b>Project:</b> {project}\n"
                 f"• <b>Provider:</b> <code>{provider.upper()}</code>\n"
-                f"• <b>Reason:</b> {reason}\n"
-                f"• <b>Status:</b> Auto-switched to next candidate in Fallback Chain."
+                f"• <b>Reason:</b> {safe_reason}\n"
+                f"• <b>Status:</b> Fallback attempted; verify the next provider response."
             )
             payload = {
                 "chat_id": chat_id,
