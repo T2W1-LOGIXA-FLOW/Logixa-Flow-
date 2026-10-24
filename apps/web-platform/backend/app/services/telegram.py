@@ -24,15 +24,18 @@ async def send_telegram_message(
     text: str,
     *,
     topic_id: int | None = None,
+    chat_id: int | str | None = None,
+    use_default_topic: bool = True,
     parse_mode: str = "HTML",
     inline_keyboard: list[list[dict[str, str]]] | None = None,
     disable_web_page_preview: bool = False,
 ) -> dict[str, Any] | None:
     """Send an asynchronous message to Telegram group/topic for Logixa Flow."""
-    token, chat_id, default_topic = _get_telegram_credentials()
-    effective_topic = topic_id if topic_id is not None else default_topic
+    token, configured_chat_id, default_topic = _get_telegram_credentials()
+    effective_chat_id = chat_id if chat_id is not None else configured_chat_id
+    effective_topic = topic_id if topic_id is not None else (default_topic if use_default_topic else None)
 
-    if not token or not chat_id:
+    if not token or not effective_chat_id:
         logger.info("[Telegram:Logixa:DryRun] %s", text.replace("\n", " "))
         return None
 
@@ -42,7 +45,7 @@ async def send_telegram_message(
 
     url = f"{TELEGRAM_API_BASE}/bot{token}/sendMessage"
     payload: dict[str, Any] = {
-        "chat_id": chat_id,
+        "chat_id": effective_chat_id,
         "text": text,
         "parse_mode": parse_mode,
         "disable_web_page_preview": disable_web_page_preview,
