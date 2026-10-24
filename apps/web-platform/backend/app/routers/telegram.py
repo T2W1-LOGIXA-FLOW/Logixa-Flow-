@@ -306,7 +306,13 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
             buttons = [
                 [{"text": "📱 Open Flow Dashboard", "url": FRONTEND_URL}]
             ]
-            await send_telegram_message(help_text, topic_id=topic_id, inline_keyboard=buttons)
+            await send_telegram_message(
+                help_text,
+                topic_id=topic_id,
+                chat_id=msg.get("chat", {}).get("id"),
+                use_default_topic=False,
+                inline_keyboard=buttons,
+            )
             return {"ok": True, "command": "help"}
 
         # Command: /status
