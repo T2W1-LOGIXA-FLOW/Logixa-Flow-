@@ -280,7 +280,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
         # from any chat so a user can discover the bot; operational commands
         # and callback actions remain protected by the configured allowlists.
         command = text.split()[0].split("@")[0].lower() if text.startswith("/") else ""
-        if command not in {"/start", "/help"} and command:
+        if command not in {"/start", "/help", "/commands"} and command:
             _authorize_telegram_actor(
                 user_id=msg.get("from", {}).get("id"),
                 chat_id=msg.get("chat", {}).get("id"),
@@ -291,7 +291,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
             return {"ok": True, "note": "No text content"}
 
         # Command: /start or /help
-        if text.startswith("/start") or text.startswith("/help"):
+        if command in {"/start", "/help", "/commands"}:
             help_text = (
                 "🤖 <b>Logixa-Flow Operational Bot Commands:</b>\n\n"
                 "• <code>/status</code> — System health & AI provider readiness\n"
