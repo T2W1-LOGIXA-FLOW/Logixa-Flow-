@@ -294,7 +294,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
         if command in {"/start", "/help", "/commands"}:
             help_text = (
                 "🤖 <b>Logixa-Flow Operational Bot Commands:</b>\n\n"
-                "• <code>/status</code> — System health & AI provider readiness\n"
+                "• <code>/ai_status</code> or <code>/status</code> — System health & AI provider readiness\n"
                 "• <code>/morning_brief</code> — Generate today's AI Morning Digest\n"
                 "• <code>/ask [question]</code> — Ask AI supply-chain intelligence\n"
                 "• <code>/retry [workflow_id]</code> — Trigger workflow re-execution\n\n"
@@ -315,8 +315,8 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
             )
             return {"ok": True, "command": "help"}
 
-        # Command: /status
-        elif text.startswith("/status"):
+        # Command: /ai_status or /status
+        elif command in {"/ai_status", "/status"}:
             status_text = (
                 "🟢 <b>[Logixa-Flow] Live Operational Status:</b>\n\n"
                 "• <b>API Service:</b> <code>Online (Port 8000)</code>\n"
