@@ -217,7 +217,7 @@ async def send_logixa_morning_digest(topic_id: int | None = None) -> dict[str, A
     )
     keyboard = [
         [
-            {"text": "📱 Open Flow Dashboard (Mini App)", "web_app": {"url": FRONTEND_URL}},
+            {"text": "📱 Open Flow Dashboard (Mini App)", "url": FRONTEND_URL},
         ],
         [
             {"text": "📊 View Metrics", "callback_data": "logixa_wf_metrics:all"},
@@ -320,7 +320,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
                 "• <b>Storage Vault:</b> <code>Backblaze B2 + Cloudinary OK</code>"
             )
             buttons = [
-                [{"text": "📱 Open Flow Dashboard", "web_app": {"url": FRONTEND_URL}}]
+                [{"text": "📱 Open Flow Dashboard", "url": FRONTEND_URL}]
             ]
             await send_telegram_message(status_text, topic_id=topic_id, inline_keyboard=buttons)
             return {"ok": True, "command": "status"}
