@@ -176,6 +176,27 @@ async def configure_telegram_webhook() -> bool:
             logger.warning("Telegram webhook registration rejected by Telegram API")
             return False
         logger.info("Telegram webhook registered successfully for %s", webhook_url)
+        # Read back Telegram's effective webhook state without logging credentials.
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                info_response = await client.get(TELEGRAM_API_BASE + "/bot" + token + "/getWebhookInfo")
+            info_payload = info_response.json() if info_response.status_code == 200 else {}
+            info = info_payload.get("result", {}) if info_payload.get("ok") else {}
+            logger.info(
+                "Telegram webhook state: configured=%s pending_updates=%s last_error_date=%s last_error=%s allowed_updates=%s",
+                bool(info.get("url")),
+                info.get("pending_update_count"),
+                info.get("last_error_date"),
+                info.get("last_error_message"),
+                info.get("allowed_updates"),
+            )
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                me_response = await client.get(TELEGRAM_API_BASE + "/bot" + token + "/getMe")
+            me_payload = me_response.json() if me_response.status_code == 200 else {}
+            me = me_payload.get("result", {}) if me_payload.get("ok") else {}
+            logger.info("Telegram bot identity: username=%s can_join_groups=%s", me.get("username"), me.get("can_join_groups"))
+        except Exception as exc:
+            logger.warning("Telegram webhook state check failed: %s", type(exc).__name__)
         return True
     except Exception as exc:
         logger.warning("Telegram webhook registration failed: %s", type(exc).__name__)
