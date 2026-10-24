@@ -276,7 +276,11 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
         msg = update["message"]
         text = msg.get("text", "").strip()
         topic_id = msg.get("message_thread_id")
-        if text.startswith("/"):
+        # /start and /help are non-privileged onboarding commands. Allow them
+        # from any chat so a user can discover the bot; operational commands
+        # and callback actions remain protected by the configured allowlists.
+        command = text.split()[0].split("@")[0].lower() if text.startswith("/") else ""
+        if command not in {"/start", "/help"} and command:
             _authorize_telegram_actor(
                 user_id=msg.get("from", {}).get("id"),
                 chat_id=msg.get("chat", {}).get("id"),
@@ -296,8 +300,11 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
                 "• <code>/retry [workflow_id]</code> — Trigger workflow re-execution\n\n"
                 "👇 Click below to launch the Web Dashboard inside Telegram:"
             )
+            # Telegram Web App buttons are rejected in group/supergroup chats
+            # (BUTTON_TYPE_INVALID). A normal URL button works in both private
+            # and group chats.
             buttons = [
-                [{"text": "📱 Open Flow Dashboard", "web_app": {"url": FRONTEND_URL}}]
+                [{"text": "📱 Open Flow Dashboard", "url": FRONTEND_URL}]
             ]
             await send_telegram_message(help_text, topic_id=topic_id, inline_keyboard=buttons)
             return {"ok": True, "command": "help"}
