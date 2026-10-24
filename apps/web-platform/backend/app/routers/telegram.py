@@ -38,6 +38,7 @@ def _authorize_telegram_actor(*, user_id: Any, chat_id: Any, topic_id: Any = Non
     allowed_chats = _configured_id_set("TELEGRAM_ALLOWED_CHAT_IDS")
     allowed_topics = _configured_id_set("TELEGRAM_ALLOWED_TOPIC_IDS")
     if _production_mode() and (not allowed_chats or not allowed_topics):
+        logger.error("Telegram authorization unavailable: production chat/topic allowlists are missing")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Telegram chat/topic allowlists are not configured",
@@ -241,7 +242,18 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
     try:
         update = await request.json()
     except Exception:
+        logger.warning("Telegram webhook received invalid JSON")
         return {"ok": False, "error": "Invalid JSON"}
+
+    # Log only update type and slash-command name; never log message bodies or user data.
+    update_type = "callback_query" if "callback_query" in update else "message" if "message" in update else "other"
+    command_name = None
+    incoming_message = update.get("message") if isinstance(update, dict) else None
+    if isinstance(incoming_message, dict):
+        incoming_text = incoming_message.get("text", "")
+        if isinstance(incoming_text, str) and incoming_text.startswith("/"):
+            command_name = incoming_text.split()[0].split("@")[0][:40]
+    logger.info("Telegram webhook update received: type=%s command=%s", update_type, command_name)
 
     # Case 1: Callback Query (Inline Button Click)
     if "callback_query" in update:
