@@ -73,7 +73,20 @@ def _replace_chunks(
 
 
 def ingest_intelligence_source(db: Session, source: models.IntelligenceSource) -> int:
-    body = "\n\n".join(part for part in [source.title, source.content_text, source.notes, source.url or ""] if part)
+    # RSS title, publisher, URL, and short feed descriptions are discovery metadata,
+    # not article evidence. Index only extracted article text for RSS sources so a
+    # metadata-only feed item cannot masquerade as grounded RAG knowledge.
+    if source.source_type == "rss":
+        body = (source.content_text or "").strip()
+        if len(body) < 200:
+            raise ValueError(
+                "RSS source has no extracted article body (minimum 200 characters); "
+                "metadata-only RSS records cannot be indexed"
+            )
+    else:
+        body = "\n\n".join(
+            part for part in [source.title, source.content_text, source.notes, source.url or ""] if part
+        )
     chunks = chunk_text(body)
     if not chunks:
         return 0
