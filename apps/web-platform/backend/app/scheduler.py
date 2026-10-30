@@ -271,6 +271,7 @@ def run_auto_feed_pull() -> dict[str, int]:
     Returns a summary dict: {"pulled": n, "skipped": n, "errors": n}.
     """
     from .integration_service import import_rss_feed
+    from .rag.ingest import UnindexableRSSContentError, ingest_intelligence_source
 
     logger = logging.getLogger(__name__)
     cutoff = datetime.now(timezone.utc) - timedelta(hours=_FEED_PULL_INTERVAL_HOURS)
@@ -317,6 +318,59 @@ def run_auto_feed_pull() -> dict[str, int]:
                     feed.url,
                     exc,
                     extra={"operation": "auto_feed_pull", "feed_url": feed.url},
+                )
+
+        # Index only sources that have never been indexed. This avoids rebuilding
+        # existing vectors on every six-hour feed cycle while allowing newly
+        # extracted RSS article bodies to become searchable automatically.
+        pending_sources = (
+            db.query(IntelligenceSource)
+            .filter(IntelligenceSource.indexing_status == "not_indexed")
+            .order_by(IntelligenceSource.updated_at.desc())
+            .limit(_FEED_PULL_BATCH * 5)
+            .all()
+        )
+        for source in pending_sources:
+            try:
+                source.indexing_status = "processing"
+                source.indexing_error = None
+                db.commit()
+                chunk_count = ingest_intelligence_source(db, source)
+                if chunk_count < 1:
+                    raise ValueError("Source contains no indexable content")
+                source.indexing_status = "indexed"
+                source.indexed_at = datetime.now(timezone.utc)
+                source.indexing_error = None
+                db.commit()
+            except UnindexableRSSContentError as exc:
+                db.rollback()
+                failed_source = (
+                    db.query(IntelligenceSource)
+                    .filter(IntelligenceSource.id == source.id)
+                    .first()
+                )
+                if failed_source is not None:
+                    failed_source.indexing_status = "failed"
+                    failed_source.indexing_error = str(exc)[:1000]
+                    db.commit()
+                summary["skipped"] += 1
+            except Exception as exc:
+                db.rollback()
+                failed_source = (
+                    db.query(IntelligenceSource)
+                    .filter(IntelligenceSource.id == source.id)
+                    .first()
+                )
+                if failed_source is not None:
+                    failed_source.indexing_status = "failed"
+                    failed_source.indexing_error = str(exc)[:1000]
+                    db.commit()
+                summary["errors"] += 1
+                logger.warning(
+                    "Auto feed pull: RAG indexing failed for source %s — %s",
+                    source.id,
+                    exc,
+                    extra={"operation": "auto_feed_pull", "source_id": source.id},
                 )
 
         db.commit()
@@ -561,7 +615,20 @@ def start_scheduler() -> None:
                         extra={"operation": "scheduled_daily_preview"},
                     )
                     delay_seconds = interval_hours * 60 * 60
-                sleep(delay_seconds)
+
+                # Wake for the six-hour feed cadence even when the daily-preview
+                # cooldown still has many hours remaining.
+                feed_remaining = (
+                    feed_interval_seconds
+                    if last_feed_pull is None
+                    else max(60.0, feed_interval_seconds - (now - last_feed_pull).total_seconds())
+                )
+                synthesis_remaining = (
+                    synthesis_interval_seconds
+                    if last_synthesis is None
+                    else max(60.0, synthesis_interval_seconds - (now - last_synthesis).total_seconds())
+                )
+                sleep(min(delay_seconds, feed_remaining, synthesis_remaining))
         finally:
             _SCHEDULER_LOCK.release()
 
