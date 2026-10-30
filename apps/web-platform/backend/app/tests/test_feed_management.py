@@ -282,3 +282,61 @@ def test_ensure_default_feed_registry_is_additive_and_idempotent(db, monkeypatch
     assert first_count == 2
     assert second_count == 0
     assert db.query(models.FeedSource).count() == 2
+
+
+
+def test_retry_failed_rss_article_extraction_recovers_only_valid_bodies(db, monkeypatch):
+    from .. import integration_service
+
+    failed = models.IntelligenceSource(
+        title="Previously unavailable article",
+        url="https://publisher.example.test/article",
+        source_type="rss",
+        category="Supply Chain",
+        trust_level="standard",
+        content_text="",
+        indexing_status="failed",
+        indexing_error="article body missing",
+    )
+    db.add(failed)
+    db.commit()
+    source_id = failed.id
+
+    monkeypatch.setattr(
+        integration_service,
+        "_fetch_article_text",
+        lambda _url: "Verified publisher article body " * 12,
+    )
+    result = integration_service.retry_failed_rss_article_extraction(db, limit=10)
+
+    recovered = db.query(models.IntelligenceSource).filter_by(id=source_id).one()
+    assert result == {"checked": 1, "recovered": 1, "still_empty": 0, "errors": 0}
+    assert len(recovered.content_text) >= 200
+    assert recovered.indexing_status == "not_indexed"
+    assert recovered.indexing_error is None
+
+
+def test_retry_failed_rss_article_extraction_keeps_short_content_unindexable(db, monkeypatch):
+    from .. import integration_service
+
+    failed = models.IntelligenceSource(
+        title="Short excerpt only",
+        url="https://publisher.example.test/article",
+        source_type="rss",
+        category="Supply Chain",
+        trust_level="standard",
+        content_text="",
+        indexing_status="failed",
+        indexing_error="article body missing",
+    )
+    db.add(failed)
+    db.commit()
+    source_id = failed.id
+
+    monkeypatch.setattr(integration_service, "_fetch_article_text", lambda _url: "Too short")
+    result = integration_service.retry_failed_rss_article_extraction(db, limit=10)
+
+    unchanged = db.query(models.IntelligenceSource).filter_by(id=source_id).one()
+    assert result == {"checked": 1, "recovered": 0, "still_empty": 1, "errors": 0}
+    assert unchanged.content_text == ""
+    assert unchanged.indexing_status == "failed"
