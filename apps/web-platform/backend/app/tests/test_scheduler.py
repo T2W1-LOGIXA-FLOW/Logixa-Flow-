@@ -279,7 +279,7 @@ def test_auto_feed_pull_indexes_only_pending_sources(
     from app.rag import ingest
 
     monkeypatch.setattr(scheduler, "SessionLocal", scheduler_session_factory)
-    monkeypatch.setattr(scheduler, "ensure_default_feed_registry", lambda _db: 0)
+    monkeypatch.setattr(integration_service, "ensure_default_feed_registry", lambda _db: 0)
     monkeypatch.setattr(integration_service, "import_rss_feed", lambda *_args, **_kwargs: (0, 0))
     monkeypatch.setattr(ingest, "ingest_intelligence_source", lambda _db, _source: 1)
 
