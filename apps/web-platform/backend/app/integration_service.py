@@ -4,6 +4,7 @@ import ipaddress
 import json
 import os
 import re
+from html.parser import HTMLParser
 import socket
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -50,6 +51,61 @@ class _SafeRSSRedirectHandler(urllib.request.HTTPRedirectHandler):
 
 
 _RSS_OPENER = urllib.request.build_opener(_SafeRSSRedirectHandler)
+
+class _ArticleTextParser(HTMLParser):
+    """Extract readable text while ignoring non-content HTML sections."""
+
+    _SKIP_TAGS = {"script", "style", "noscript", "svg", "nav", "footer", "header", "aside", "form"}
+    _BLOCK_TAGS = {"article", "main", "p", "div", "section", "h1", "h2", "h3", "h4", "li", "br"}
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self._skip_depth = 0
+        self.parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag in self._SKIP_TAGS:
+            self._skip_depth += 1
+        elif not self._skip_depth and tag in self._BLOCK_TAGS:
+            self.parts.append("\\n")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in self._SKIP_TAGS and self._skip_depth:
+            self._skip_depth -= 1
+        elif not self._skip_depth and tag in self._BLOCK_TAGS:
+            self.parts.append("\\n")
+
+    def handle_data(self, data: str) -> None:
+        if not self._skip_depth and data.strip():
+            self.parts.append(data.strip())
+
+
+def _extract_article_text(html: str, *, max_chars: int = 30000) -> str:
+    parser = _ArticleTextParser()
+    parser.feed(html[:2_000_000])
+    return re.sub(r"\\s+", " ", " ".join(parser.parts)).strip()[:max_chars]
+
+
+def _fetch_article_text(url: str) -> str:
+    """Fetch bounded public HTML article text; invalid/private destinations fail closed."""
+    safe_url = _validate_rss_url(url)
+    request = urllib.request.Request(
+        safe_url,
+        headers={"User-Agent": "Logixa-Flow-RSS/1.0", "Accept": "text/html,application/xhtml+xml"},
+    )
+    with _RSS_OPENER.open(request, timeout=10) as response:
+        content_type = (response.headers.get("Content-Type") or "").lower()
+        if content_type and "html" not in content_type:
+            return ""
+        raw = response.read(2_000_000)
+        charset = response.headers.get_content_charset() or "utf-8"
+    try:
+        html = raw.decode(charset, errors="replace")
+    except LookupError:
+        html = raw.decode("utf-8", errors="replace")
+    return _extract_article_text(html)
+
+
 
 DEFAULT_RSS_FEEDS = [
     "https://news.google.com/rss/search?q=supply+chain+management&hl=en-US&gl=US&ceid=US:en",
@@ -151,6 +207,14 @@ def import_rss_feed(
         if exists:
             skipped += 1
             continue
+        article_text = ""
+        if link:
+            try:
+                article_text = _fetch_article_text(link)
+            except Exception:
+                # Feed discovery remains useful even when a publisher blocks extraction.
+                # Such records remain explicitly unindexable until a body is available.
+                article_text = ""
         db.add(
             models.IntelligenceSource(
                 title=title[:255],
@@ -159,6 +223,7 @@ def import_rss_feed(
                 category=category,
                 trust_level=trust_level,
                 notes=description[:8000],
+                content_text=article_text if len(article_text) >= 200 else "",
             )
         )
         imported += 1
@@ -180,9 +245,26 @@ def sync_default_feeds(
     total_skipped = 0
     feed_results: list[dict[str, Any]] = []
     for feed_url in configured_rss_feeds(db):
+        try:
+            safe_feed_url = _validate_rss_url(feed_url)
+        except ValueError:
+            feed_results.append({"feed_url": feed_url, "imported": 0, "skipped": 0, "error": "invalid_or_unsafe_feed_url"})
+            continue
+        # Keep the scheduler's FeedSource registry aligned with configured RSS
+        # settings so both manual sync and the six-hour worker use one feed set.
+        registered = db.query(models.FeedSource).filter(models.FeedSource.url == safe_feed_url).first()
+        if registered is None:
+            db.add(models.FeedSource(
+                url=safe_feed_url,
+                title=safe_feed_url[:255],
+                category=category,
+                trust_level=trust_level,
+                is_active=True,
+            ))
+            db.commit()
         imported, skipped = import_rss_feed(
             db,
-            feed_url,
+            safe_feed_url,
             category=category,
             trust_level=trust_level,
             limit=limit_per_feed,
