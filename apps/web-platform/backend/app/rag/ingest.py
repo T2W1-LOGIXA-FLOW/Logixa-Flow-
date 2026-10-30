@@ -118,13 +118,19 @@ def ingest_brain_memory(db: Session, memory: models.AiMemoryBrain) -> int:
 def ingest_all_sources(db: Session, limit: int = 200) -> dict[str, int]:
     sources = db.query(models.IntelligenceSource).order_by(models.IntelligenceSource.updated_at.desc()).limit(limit).all()
     total_chunks = 0
+    indexed_sources = 0
+    failed_sources = 0
     for source in sources:
         try:
             source.indexing_status = "processing"
             source.indexing_error = None
             db.commit()
 
-            total_chunks += ingest_intelligence_source(db, source)
+            chunks = ingest_intelligence_source(db, source)
+            if chunks == 0:
+                raise ValueError("Source contains no indexable content")
+            total_chunks += chunks
+            indexed_sources += 1
 
             source.indexing_status = "indexed"
             source.indexed_at = models.utc_now()
@@ -132,8 +138,8 @@ def ingest_all_sources(db: Session, limit: int = 200) -> dict[str, int]:
             db.commit()
         except Exception as exc:
             db.rollback()
-            # Keep the source's operational state accurate for the bulk RAG
-            # endpoint as well as the dedicated knowledge-import endpoint.
+            # RSS feeds may discover metadata before article extraction is ready.
+            # Record the item as failed, but continue indexing unrelated sources.
             try:
                 failed_source = (
                     db.query(models.IntelligenceSource)
@@ -144,9 +150,10 @@ def ingest_all_sources(db: Session, limit: int = 200) -> dict[str, int]:
                     failed_source.indexing_status = "failed"
                     failed_source.indexing_error = str(exc)[:1000]
                     db.commit()
+                    failed_sources += 1
             except Exception:
                 db.rollback()
-            raise
+                raise
     memories = (
         db.query(models.AiMemoryBrain)
         .filter(models.AiMemoryBrain.status.in_({"approved", "published"}))
@@ -156,4 +163,10 @@ def ingest_all_sources(db: Session, limit: int = 200) -> dict[str, int]:
     )
     for memory in memories:
         total_chunks += ingest_brain_memory(db, memory)
-    return {"sources": len(sources), "brain_items": len(memories), "chunks": total_chunks}
+    return {
+        "sources": len(sources),
+        "indexed_sources": indexed_sources,
+        "failed_sources": failed_sources,
+        "brain_items": len(memories),
+        "chunks": total_chunks,
+    }
