@@ -269,3 +269,50 @@ def test_scheduler_avoids_hot_loop_when_cooldown_has_elapsed(
         db.close()
 
     assert scheduler._seconds_until_next_scheduled_preview(24, now=now) == 60
+
+
+
+def test_auto_feed_pull_indexes_only_pending_sources(
+    scheduler_session_factory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app import integration_service
+    from app.rag import ingest
+
+    monkeypatch.setattr(scheduler, "SessionLocal", scheduler_session_factory)
+    monkeypatch.setattr(integration_service, "import_rss_feed", lambda *_args, **_kwargs: (0, 0))
+    monkeypatch.setattr(ingest, "ingest_intelligence_source", lambda _db, _source: 1)
+
+    db = scheduler_session_factory()
+    try:
+        feed = models.FeedSource(
+            url="https://feeds.example.test/rss",
+            title="Example Feed",
+            category="Supply Chain",
+            trust_level="standard",
+            is_active=True,
+        )
+        source = models.IntelligenceSource(
+            title="Article with body",
+            url="https://publisher.example.test/article",
+            source_type="rss",
+            category="Supply Chain",
+            trust_level="standard",
+            content_text="Grounded article body " * 20,
+            indexing_status="not_indexed",
+        )
+        db.add_all([feed, source])
+        db.commit()
+        source_id = source.id
+    finally:
+        db.close()
+
+    result = scheduler.run_auto_feed_pull()
+
+    db = scheduler_session_factory()
+    try:
+        indexed = db.query(models.IntelligenceSource).filter_by(id=source_id).one()
+        assert indexed.indexing_status == "indexed"
+        assert indexed.indexed_at is not None
+        assert result["pulled"] == 1
+    finally:
+        db.close()
