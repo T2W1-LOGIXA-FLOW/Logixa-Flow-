@@ -16,6 +16,7 @@ from ..config import telegram_configured, telegram_enabled
 from ..security import require_admin
 from ..database import get_db
 from ..models import utc_now
+from ..llm.router import LLMRouter
 from pydantic import BaseModel, Field
 
 from ..services.telegram import send_telegram_message
