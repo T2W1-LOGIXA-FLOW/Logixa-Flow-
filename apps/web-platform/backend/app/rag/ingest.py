@@ -72,6 +72,10 @@ def _replace_chunks(
     return len(prepared)
 
 
+class UnindexableRSSContentError(ValueError):
+    """An RSS discovery item has not yet yielded a usable article body."""
+
+
 def ingest_intelligence_source(db: Session, source: models.IntelligenceSource) -> int:
     # RSS title, publisher, URL, and short feed descriptions are discovery metadata,
     # not article evidence. Index only extracted article text for RSS sources so a
@@ -79,7 +83,7 @@ def ingest_intelligence_source(db: Session, source: models.IntelligenceSource) -
     if source.source_type == "rss":
         body = (source.content_text or "").strip()
         if len(body) < 200:
-            raise ValueError(
+            raise UnindexableRSSContentError(
                 "RSS source has no extracted article body (minimum 200 characters); "
                 "metadata-only RSS records cannot be indexed"
             )
@@ -136,24 +140,34 @@ def ingest_all_sources(db: Session, limit: int = 200) -> dict[str, int]:
             source.indexed_at = models.utc_now()
             source.indexing_error = None
             db.commit()
-        except Exception as exc:
+        except UnindexableRSSContentError as exc:
+            # A feed discovery item without an extracted body is an expected,
+            # item-level condition. Record it and continue with other sources.
             db.rollback()
-            # RSS feeds may discover metadata before article extraction is ready.
-            # Record the item as failed, but continue indexing unrelated sources.
-            try:
-                failed_source = (
-                    db.query(models.IntelligenceSource)
-                    .filter(models.IntelligenceSource.id == source.id)
-                    .first()
-                )
-                if failed_source is not None:
-                    failed_source.indexing_status = "failed"
-                    failed_source.indexing_error = str(exc)[:1000]
-                    db.commit()
-                    failed_sources += 1
-            except Exception:
-                db.rollback()
-                raise
+            failed_source = (
+                db.query(models.IntelligenceSource)
+                .filter(models.IntelligenceSource.id == source.id)
+                .first()
+            )
+            if failed_source is not None:
+                failed_source.indexing_status = "failed"
+                failed_source.indexing_error = str(exc)[:1000]
+                db.commit()
+                failed_sources += 1
+        except Exception as exc:
+            # Provider, database, and unexpected failures must remain fail-closed.
+            # Record operational state, then propagate so callers see the outage.
+            db.rollback()
+            failed_source = (
+                db.query(models.IntelligenceSource)
+                .filter(models.IntelligenceSource.id == source.id)
+                .first()
+            )
+            if failed_source is not None:
+                failed_source.indexing_status = "failed"
+                failed_source.indexing_error = str(exc)[:1000]
+                db.commit()
+            raise
     memories = (
         db.query(models.AiMemoryBrain)
         .filter(models.AiMemoryBrain.status.in_({"approved", "published"}))

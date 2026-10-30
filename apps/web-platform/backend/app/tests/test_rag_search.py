@@ -480,3 +480,30 @@ def test_bulk_ingest_skips_metadata_only_rss_and_continues(monkeypatch, db: Sess
         models.DocumentEmbedding.source_type == "intelligence_source",
         models.DocumentEmbedding.source_id == str(rss.id),
     ).count() == 0
+
+
+
+def test_bulk_ingest_propagates_embedding_provider_failure(monkeypatch, db: Session):
+    monkeypatch.setenv("RAG_EMBEDDING_VERSION", "1")
+
+    def fail_provider(_text):
+        raise RuntimeError("embedding provider unavailable")
+
+    monkeypatch.setattr("app.rag.ingest.embed_text", fail_provider)
+    source = models.IntelligenceSource(
+        title="Provider outage source",
+        source_type="manual",
+        category="Supply Chain",
+        trust_level="standard",
+        content_text="Valid source content that should reach the embedding provider.",
+    )
+    db.add(source)
+    db.commit()
+    db.refresh(source)
+
+    with pytest.raises(RuntimeError, match="embedding provider unavailable"):
+        ingest_all_sources(db, limit=10)
+
+    db.refresh(source)
+    assert source.indexing_status == "failed"
+    assert "embedding provider unavailable" in source.indexing_error
