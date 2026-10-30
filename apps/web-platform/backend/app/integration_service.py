@@ -233,6 +233,39 @@ def import_rss_feed(
     return imported, skipped
 
 
+def retry_failed_rss_article_extraction(db: Session, *, limit: int = 15) -> dict[str, int]:
+    """Retry bounded extraction for RSS records discovered without an article body."""
+    candidates = (
+        db.query(models.IntelligenceSource)
+        .filter(
+            models.IntelligenceSource.source_type == "rss",
+            models.IntelligenceSource.indexing_status == "failed",
+            models.IntelligenceSource.content_text == "",
+            models.IntelligenceSource.url.isnot(None),
+        )
+        .order_by(models.IntelligenceSource.updated_at.asc())
+        .limit(max(1, min(limit, 50)))
+        .all()
+    )
+    summary = {"checked": 0, "recovered": 0, "still_empty": 0, "errors": 0}
+    for source in candidates:
+        summary["checked"] += 1
+        try:
+            article_text = _fetch_article_text(source.url or "")
+            if len(article_text) >= 200:
+                source.content_text = article_text
+                source.indexing_status = "not_indexed"
+                source.indexing_error = None
+                summary["recovered"] += 1
+            else:
+                summary["still_empty"] += 1
+        except Exception:
+            summary["errors"] += 1
+    if summary["recovered"]:
+        db.commit()
+    return summary
+
+
 def ensure_default_feed_registry(
     db: Session,
     *,
