@@ -86,6 +86,51 @@ def _extract_article_text(html: str, *, max_chars: int = 30000) -> str:
     return re.sub(r"\s+", " ", " ".join(parser.parts)).strip()[:max_chars]
 
 
+class _PublisherURLParser(HTMLParser):
+    """Find a publisher's canonical URL on a Google News redirect landing page."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.candidates: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        values = {key.lower(): value for key, value in attrs if value}
+        candidate = ""
+        if tag == "link" and "canonical" in (values.get("rel") or "").lower().split():
+            candidate = values.get("href") or ""
+        elif tag == "meta":
+            prop = (values.get("property") or values.get("name") or "").lower()
+            if prop in {"og:url", "twitter:url"}:
+                candidate = values.get("content") or ""
+            elif (values.get("http-equiv") or "").lower() == "refresh":
+                match = re.search(r"url\\s*=\\s*['\\"]?([^'\\"]+)", values.get("content") or "", re.I)
+                candidate = match.group(1).strip() if match else ""
+        elif tag == "a":
+            candidate = values.get("href") or ""
+        if candidate:
+            parsed = urlparse(candidate)
+            host = (parsed.hostname or "").lower()
+            if parsed.scheme in {"http", "https"} and host and not (
+                host == "google.com" or host.endswith(".google.com") or host.endswith(".googleusercontent.com")
+            ):
+                self.candidates.append(candidate)
+
+
+def _resolve_google_news_publisher_url(url: str, html: str) -> str:
+    """Resolve a Google News wrapper to a validated external publisher URL."""
+    host = (urlparse(url).hostname or "").lower()
+    if host != "news.google.com" and not host.endswith(".news.google.com"):
+        return url
+    parser = _PublisherURLParser()
+    parser.feed(html[:2_000_000])
+    for candidate in parser.candidates:
+        try:
+            return _validate_rss_url(urljoin(url, candidate))
+        except ValueError:
+            continue
+    return url
+
+
 def _fetch_article_text(url: str) -> str:
     """Fetch bounded public HTML article text; invalid/private destinations fail closed."""
     safe_url = _validate_rss_url(url)
@@ -99,10 +144,31 @@ def _fetch_article_text(url: str) -> str:
             return ""
         raw = response.read(2_000_000)
         charset = response.headers.get_content_charset() or "utf-8"
+        final_url = response.geturl()
     try:
         html = raw.decode(charset, errors="replace")
     except LookupError:
         html = raw.decode("utf-8", errors="replace")
+
+    # Google News RSS item URLs can resolve to a lightweight landing page rather
+    # than the publisher article. Follow only a canonical/metadata/external link
+    # that passes the same public-URL and redirect SSRF checks.
+    publisher_url = _resolve_google_news_publisher_url(final_url, html)
+    if publisher_url != final_url:
+        publisher_request = urllib.request.Request(
+            publisher_url,
+            headers={"User-Agent": "Logixa-Flow-RSS/1.0", "Accept": "text/html,application/xhtml+xml"},
+        )
+        with _RSS_OPENER.open(publisher_request, timeout=10) as publisher_response:
+            publisher_type = (publisher_response.headers.get("Content-Type") or "").lower()
+            if publisher_type and "html" not in publisher_type:
+                return ""
+            publisher_raw = publisher_response.read(2_000_000)
+            publisher_charset = publisher_response.headers.get_content_charset() or "utf-8"
+        try:
+            html = publisher_raw.decode(publisher_charset, errors="replace")
+        except LookupError:
+            html = publisher_raw.decode("utf-8", errors="replace")
     return _extract_article_text(html)
 
 
