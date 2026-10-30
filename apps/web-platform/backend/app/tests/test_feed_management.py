@@ -217,3 +217,46 @@ def test_feed_source_model(db):
     assert feed.is_active is True
     assert feed.last_scrape_status == "idle"
     assert feed.scrape_count == 0
+
+
+def test_extract_article_text_ignores_navigation_and_scripts():
+    from ..integration_service import _extract_article_text
+
+    body = "Supply chain resilience requires diversified suppliers and transparent logistics operations. " * 5
+    html = (
+        "<html><nav>Navigation should not be indexed</nav>"
+        "<article><h1>Supply Chain Update</h1><p>" + body + "</p>"
+        "<script>secret = 'not article text'</script></article></html>"
+    )
+    extracted = _extract_article_text(html)
+
+    assert "Supply Chain Update" in extracted
+    assert "diversified suppliers" in extracted
+    assert "Navigation should not be indexed" not in extracted
+    assert "not article text" not in extracted
+    assert len(extracted) >= 200
+
+
+def test_extract_article_text_is_bounded():
+    from ..integration_service import _extract_article_text
+
+    extracted = _extract_article_text("<article>" + ("article words " * 5000) + "</article>", max_chars=500)
+
+    assert len(extracted) <= 500
+
+
+def test_sync_default_feeds_registers_scheduler_sources(db, monkeypatch):
+    from .. import integration_service
+
+    monkeypatch.setattr(integration_service, "configured_rss_feeds", lambda session: ["https://feeds.example.test/rss"])
+    monkeypatch.setattr(integration_service, "_validate_rss_url", lambda url: url)
+    monkeypatch.setattr(integration_service, "import_rss_feed", lambda *args, **kwargs: (2, 1))
+    monkeypatch.setenv("RAG_AUTO_INGEST", "false")
+
+    result = integration_service.sync_default_feeds(db, ingest_rag=False)
+
+    feed = db.query(models.FeedSource).filter(models.FeedSource.url == "https://feeds.example.test/rss").one()
+    assert feed.is_active is True
+    assert feed.category == "Supply Chain"
+    assert result["feeds_processed"] == 1
+    assert result["imported"] == 2
