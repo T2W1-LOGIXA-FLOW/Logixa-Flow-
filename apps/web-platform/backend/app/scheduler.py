@@ -270,7 +270,7 @@ def run_auto_feed_pull() -> dict[str, int]:
 
     Returns a summary dict: {"pulled": n, "skipped": n, "errors": n}.
     """
-    from .integration_service import import_rss_feed
+    from .integration_service import ensure_default_feed_registry, import_rss_feed
     from .rag.ingest import UnindexableRSSContentError, ingest_intelligence_source
 
     logger = logging.getLogger(__name__)
@@ -279,6 +279,9 @@ def run_auto_feed_pull() -> dict[str, int]:
 
     db = SessionLocal()
     try:
+        # Bootstrap the scheduler registry from the same configured RSS sources
+        # used by the admin sync flow. This is additive and idempotent.
+        ensure_default_feed_registry(db)
         stale_feeds = (
             db.query(FeedSource)
             .filter(

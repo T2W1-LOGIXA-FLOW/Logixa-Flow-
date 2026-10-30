@@ -233,6 +233,41 @@ def import_rss_feed(
     return imported, skipped
 
 
+def ensure_default_feed_registry(
+    db: Session,
+    *,
+    category: str = "Supply Chain",
+    trust_level: str = "standard",
+) -> int:
+    """Add configured safe RSS URLs to the scheduler registry without fetching feeds."""
+    registered_count = 0
+    for feed_url in configured_rss_feeds(db):
+        try:
+            safe_feed_url = _validate_rss_url(feed_url)
+        except ValueError:
+            continue
+        existing = (
+            db.query(models.FeedSource)
+            .filter(models.FeedSource.url == safe_feed_url)
+            .first()
+        )
+        if existing is not None:
+            continue
+        db.add(
+            models.FeedSource(
+                url=safe_feed_url,
+                title=safe_feed_url[:255],
+                category=category,
+                trust_level=trust_level,
+                is_active=True,
+            )
+        )
+        registered_count += 1
+    if registered_count:
+        db.commit()
+    return registered_count
+
+
 def sync_default_feeds(
     db: Session,
     *,

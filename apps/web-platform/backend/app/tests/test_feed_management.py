@@ -260,3 +260,25 @@ def test_sync_default_feeds_registers_scheduler_sources(db, monkeypatch):
     assert feed.category == "Supply Chain"
     assert result["feeds_processed"] == 1
     assert result["imported"] == 2
+
+
+
+def test_ensure_default_feed_registry_is_additive_and_idempotent(db, monkeypatch):
+    from .. import integration_service
+
+    monkeypatch.setattr(
+        integration_service,
+        "configured_rss_feeds",
+        lambda _session: [
+            "https://feeds.example.test/one.xml",
+            "https://feeds.example.test/two.xml",
+        ],
+    )
+    monkeypatch.setattr(integration_service, "_validate_rss_url", lambda url: url)
+
+    first_count = integration_service.ensure_default_feed_registry(db)
+    second_count = integration_service.ensure_default_feed_registry(db)
+
+    assert first_count == 2
+    assert second_count == 0
+    assert db.query(models.FeedSource).count() == 2
