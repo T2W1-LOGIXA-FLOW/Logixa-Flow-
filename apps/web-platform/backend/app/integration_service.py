@@ -103,7 +103,7 @@ class _PublisherURLParser(HTMLParser):
             if prop in {"og:url", "twitter:url"}:
                 candidate = values.get("content") or ""
             elif (values.get("http-equiv") or "").lower() == "refresh":
-                match = re.search(r"url\\s*=\\s*['\\"]?([^'\\"]+)", values.get("content") or "", re.I)
+                match = re.search(r"url\s*=\s*['\"]?([^'\"]+)", values.get("content") or "", re.I)
                 candidate = match.group(1).strip() if match else ""
         elif tag == "a":
             candidate = values.get("href") or ""
