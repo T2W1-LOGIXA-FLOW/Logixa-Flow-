@@ -67,13 +67,13 @@ class _ArticleTextParser(HTMLParser):
         if tag in self._SKIP_TAGS:
             self._skip_depth += 1
         elif not self._skip_depth and tag in self._BLOCK_TAGS:
-            self.parts.append("\\n")
+            self.parts.append("\n")
 
     def handle_endtag(self, tag: str) -> None:
         if tag in self._SKIP_TAGS and self._skip_depth:
             self._skip_depth -= 1
         elif not self._skip_depth and tag in self._BLOCK_TAGS:
-            self.parts.append("\\n")
+            self.parts.append("\n")
 
     def handle_data(self, data: str) -> None:
         if not self._skip_depth and data.strip():
@@ -83,7 +83,7 @@ class _ArticleTextParser(HTMLParser):
 def _extract_article_text(html: str, *, max_chars: int = 30000) -> str:
     parser = _ArticleTextParser()
     parser.feed(html[:2_000_000])
-    return re.sub(r"\\s+", " ", " ".join(parser.parts)).strip()[:max_chars]
+    return re.sub(r"\s+", " ", " ".join(parser.parts)).strip()[:max_chars]
 
 
 def _fetch_article_text(url: str) -> str:
