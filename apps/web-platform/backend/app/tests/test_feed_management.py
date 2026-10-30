@@ -340,3 +340,33 @@ def test_retry_failed_rss_article_extraction_keeps_short_content_unindexable(db,
     assert result == {"checked": 1, "recovered": 0, "still_empty": 1, "errors": 0}
     assert unchanged.content_text == ""
     assert unchanged.indexing_status == "failed"
+
+
+
+def test_google_news_wrapper_resolves_only_validated_external_publisher_urls():
+    from ..integration_service import _resolve_google_news_publisher_url
+
+    html = (
+        '<html><head><link rel="canonical" '
+        'href="https://publisher.example.test/story/123"></head></html>'
+    )
+    assert _resolve_google_news_publisher_url(
+        "https://news.google.com/rss/articles/example", html
+    ) == "https://publisher.example.test/story/123"
+
+
+def test_google_news_wrapper_does_not_accept_google_or_private_destinations(monkeypatch):
+    from .. import integration_service
+
+    monkeypatch.setattr(
+        integration_service,
+        "_validate_rss_url",
+        lambda url: (_ for _ in ()).throw(ValueError("unsafe")),
+    )
+    html = (
+        '<html><head><link rel="canonical" href="http://127.0.0.1/admin"></head>'
+        '<body><a href="https://news.google.com/other">Google</a></body></html>'
+    )
+    assert integration_service._resolve_google_news_publisher_url(
+        "https://news.google.com/rss/articles/example", html
+    ) == "https://news.google.com/rss/articles/example"
