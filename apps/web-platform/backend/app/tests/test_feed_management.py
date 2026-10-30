@@ -343,14 +343,15 @@ def test_retry_failed_rss_article_extraction_keeps_short_content_unindexable(db,
 
 
 
-def test_google_news_wrapper_resolves_only_validated_external_publisher_urls():
-    from ..integration_service import _resolve_google_news_publisher_url
+def test_google_news_wrapper_resolves_only_validated_external_publisher_urls(monkeypatch):
+    from .. import integration_service
 
+    monkeypatch.setattr(integration_service, "_validate_rss_url", lambda url: url)
     html = (
         '<html><head><link rel="canonical" '
         'href="https://publisher.example.test/story/123"></head></html>'
     )
-    assert _resolve_google_news_publisher_url(
+    assert integration_service._resolve_google_news_publisher_url(
         "https://news.google.com/rss/articles/example", html
     ) == "https://publisher.example.test/story/123"
 
