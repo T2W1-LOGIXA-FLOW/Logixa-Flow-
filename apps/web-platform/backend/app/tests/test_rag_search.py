@@ -437,3 +437,46 @@ def test_rss_source_indexes_extracted_article_body_only(monkeypatch, db: Session
     assert all("Publisher metadata only" not in value for value in captured)
     assert all("news.google.com" not in value for value in captured)
     assert all("RSS headline" not in value for value in captured)
+
+def test_bulk_ingest_skips_metadata_only_rss_and_continues(monkeypatch, db: Session):
+    monkeypatch.setenv("RAG_EMBEDDING_VERSION", "1")
+    monkeypatch.setattr(
+        "app.rag.ingest.embed_text",
+        lambda text: ([1.0] + [0.0] * 767, "test-embedding"),
+    )
+    rss = models.IntelligenceSource(
+        title="RSS headline only",
+        url="https://news.google.com/rss/articles/metadata-only",
+        source_type="rss",
+        category="Supply Chain",
+        trust_level="standard",
+        notes="Publisher and short description",
+        content_text="",
+    )
+    manual = models.IntelligenceSource(
+        title="Valid manual source",
+        source_type="manual",
+        category="Supply Chain",
+        trust_level="standard",
+        content_text="Validated manual article content for bulk ingestion.",
+    )
+    db.add_all([rss, manual])
+    db.commit()
+    db.refresh(rss)
+    db.refresh(manual)
+
+    result = ingest_all_sources(db, limit=10)
+    db.refresh(rss)
+    db.refresh(manual)
+
+    assert result["sources"] == 2
+    assert result["indexed_sources"] == 1
+    assert result["failed_sources"] == 1
+    assert result["chunks"] == 1
+    assert rss.indexing_status == "failed"
+    assert "metadata-only RSS records cannot be indexed" in rss.indexing_error
+    assert manual.indexing_status == "indexed"
+    assert db.query(models.DocumentEmbedding).filter(
+        models.DocumentEmbedding.source_type == "intelligence_source",
+        models.DocumentEmbedding.source_id == str(rss.id),
+    ).count() == 0
