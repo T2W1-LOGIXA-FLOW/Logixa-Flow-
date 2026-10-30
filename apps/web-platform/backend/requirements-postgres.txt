@@ -4,5 +4,5 @@ psycopg2-binary==2.9.13
 psycopg[binary]>=3.3.6,<4
 
 # Optional dependencies used by admin import
-pypdf==6.21.1
+pypdf==6.21.2
 openpyxl==3.1.5
