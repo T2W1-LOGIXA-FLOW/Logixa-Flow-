@@ -299,7 +299,7 @@ def run_auto_feed_pull() -> dict[str, int]:
 
         for feed in stale_feeds:
             try:
-                import_rss_feed(db, feed.url, feed.category, feed.trust_level)
+                import_rss_feed(db, feed.url, category=feed.category, trust_level=feed.trust_level)
                 feed.last_scrape_at = datetime.now(timezone.utc)
                 feed.last_scrape_status = "success"
                 feed.scrape_count = (feed.scrape_count or 0) + 1
