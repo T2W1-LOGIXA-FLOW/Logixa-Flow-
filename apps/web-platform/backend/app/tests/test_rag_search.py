@@ -380,3 +380,103 @@ def test_ingest_all_sources_updates_source_indexing_status(monkeypatch, db: Sess
     assert source.indexed_at is not None
     assert source.indexing_error is None
 
+
+def test_rss_metadata_only_source_is_rejected_without_embedding(monkeypatch, db: Session):
+    monkeypatch.setenv("RAG_EMBEDDING_VERSION", "1")
+    embed = Mock(return_value=([1.0] * 768, "test-embedding"))
+    monkeypatch.setattr("app.rag.ingest.embed_text", embed)
+    source = models.IntelligenceSource(
+        title="RSS headline",
+        url="https://news.google.com/rss/articles/example",
+        source_type="rss",
+        category="Supply Chain",
+        trust_level="standard",
+        notes="RSS headline  Publisher name",
+        content_text="",
+    )
+    db.add(source)
+    db.commit()
+    db.refresh(source)
+
+    with pytest.raises(ValueError, match="metadata-only RSS records cannot be indexed"):
+        ingest_intelligence_source(db, source)
+
+    embed.assert_not_called()
+    assert db.query(models.DocumentEmbedding).filter(
+        models.DocumentEmbedding.source_type == "intelligence_source",
+        models.DocumentEmbedding.source_id == str(source.id),
+    ).count() == 0
+
+
+def test_rss_source_indexes_extracted_article_body_only(monkeypatch, db: Session):
+    monkeypatch.setenv("RAG_EMBEDDING_VERSION", "1")
+    captured = []
+    monkeypatch.setattr(
+        "app.rag.ingest.embed_text",
+        lambda value: (captured.append(value) or [1.0] * 768, "test-embedding"),
+    )
+    article = (
+        "A complete article body describing supply chain operations, inventory planning, "
+        "transportation capacity, supplier resilience, and logistics execution. "
+    ) * 3
+    source = models.IntelligenceSource(
+        title="RSS headline",
+        url="https://news.google.com/rss/articles/example",
+        source_type="rss",
+        category="Supply Chain",
+        trust_level="standard",
+        notes="Publisher metadata only",
+        content_text=article,
+    )
+    db.add(source)
+    db.commit()
+    db.refresh(source)
+
+    assert ingest_intelligence_source(db, source) >= 1
+    assert captured
+    assert all("Publisher metadata only" not in value for value in captured)
+    assert all("news.google.com" not in value for value in captured)
+    assert all("RSS headline" not in value for value in captured)
+
+def test_bulk_ingest_skips_metadata_only_rss_and_continues(monkeypatch, db: Session):
+    monkeypatch.setenv("RAG_EMBEDDING_VERSION", "1")
+    monkeypatch.setattr(
+        "app.rag.ingest.embed_text",
+        lambda text: ([1.0] + [0.0] * 767, "test-embedding"),
+    )
+    rss = models.IntelligenceSource(
+        title="RSS headline only",
+        url="https://news.google.com/rss/articles/metadata-only",
+        source_type="rss",
+        category="Supply Chain",
+        trust_level="standard",
+        notes="Publisher and short description",
+        content_text="",
+    )
+    manual = models.IntelligenceSource(
+        title="Valid manual source",
+        source_type="manual",
+        category="Supply Chain",
+        trust_level="standard",
+        content_text="Validated manual article content for bulk ingestion.",
+    )
+    db.add_all([rss, manual])
+    db.commit()
+    db.refresh(rss)
+    db.refresh(manual)
+
+    result = ingest_all_sources(db, limit=10)
+    db.refresh(rss)
+    db.refresh(manual)
+
+    assert result["sources"] == 2
+    assert result["indexed_sources"] == 1
+    assert result["failed_sources"] == 1
+    assert result["chunks"] == 1
+    assert rss.indexing_status == "failed"
+    assert "metadata-only RSS records cannot be indexed" in rss.indexing_error
+    assert manual.indexing_status == "indexed"
+    assert db.query(models.DocumentEmbedding).filter(
+        models.DocumentEmbedding.source_type == "intelligence_source",
+        models.DocumentEmbedding.source_id == str(rss.id),
+    ).count() == 0
