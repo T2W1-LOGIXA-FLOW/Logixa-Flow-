@@ -413,4 +413,176 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
             # directly instead of calling the separate shared-secret gateway route.
             return await _execute_telegram_action(payload, db=db)
 
+
+        # Command: /workflows — list active workflows
+        elif command == "/workflows":
+            try:
+                total = db.query(models.Workflow).count()
+                recent = db.query(models.Workflow).order_by(models.Workflow.updated_at.desc()).limit(5).all()
+                running = db.query(models.WorkflowRunRecord).filter(models.WorkflowRunRecord.status == "running").count()
+                lines = [f"⚙️ <b>[Logixa] Workflows Overview</b>\n", f"📊 Total: <code>{total}</code> | Running: <code>{running}</code>\n"]
+                if recent:
+                    lines.append("\n<b>Recent workflows:</b>")
+                    for wf in recent:
+                        lines.append(f"  • <code>{html_escape(str(wf.name)[:40])}</code>")
+                else:
+                    lines.append("\n<i>No workflows found.</i>")
+                await send_telegram_message("\n".join(lines), topic_id=topic_id)
+            except Exception:
+                logger.exception("Telegram /workflows failed")
+                await send_telegram_message("⚠️ Could not fetch workflows.", topic_id=topic_id)
+            return {"ok": True, "command": "workflows"}
+
+        # Command: /posts — recent blog posts
+        elif command == "/posts":
+            try:
+                total = db.query(models.Post).count()
+                published = db.query(models.Post).filter(models.Post.is_published == True).count()
+                recent = db.query(models.Post).order_by(models.Post.created_at.desc()).limit(5).all()
+                lines = [f"📝 <b>[Logixa] Posts Overview</b>\n", f"📊 Total: <code>{total}</code> | Published: <code>{published}</code>\n"]
+                if recent:
+                    lines.append("\n<b>Recent posts:</b>")
+                    for p in recent:
+                        st = "✅" if p.is_published else "📋"
+                        title = html_escape(str(p.title or "Untitled")[:50])
+                        lines.append(f"  {st} #{p.id} <code>{title}</code> [{p.status}]")
+                else:
+                    lines.append("\n<i>No posts found.</i>")
+                await send_telegram_message("\n".join(lines), topic_id=topic_id)
+            except Exception:
+                logger.exception("Telegram /posts failed")
+                await send_telegram_message("⚠️ Could not fetch posts.", topic_id=topic_id)
+            return {"ok": True, "command": "posts"}
+
+        # Command: /approve <id> — approve/publish a post
+        elif command == "/approve":
+            post_id = text[len("/approve"):].strip().split("@")[0]
+            if not post_id or not post_id.isdigit():
+                await send_telegram_message("⚠️ Usage: <code>/approve [post_id]</code>", topic_id=topic_id)
+                return {"ok": True, "command": "approve"}
+            try:
+                post = db.query(models.Post).filter(models.Post.id == int(post_id)).first()
+                if not post:
+                    await send_telegram_message(f"❌ Post #{post_id} not found.", topic_id=topic_id)
+                elif post.is_published and post.status == "published":
+                    await send_telegram_message(f"ℹ️ Post #{post_id} already published.", topic_id=topic_id)
+                else:
+                    post.status = "published"
+                    post.is_published = True
+                    post.published_at = post.published_at or models.utc_now()
+                    db.commit()
+                    cache_client.delete_prefix("posts:")
+                    await send_telegram_message(f"✅ <b>Post #{post_id} approved and published!</b>\n<code>{html_escape(str(post.title)[:60])}</code>", topic_id=topic_id)
+            except Exception:
+                db.rollback()
+                logger.exception("Telegram /approve failed")
+                await send_telegram_message("⚠️ Failed to approve post.", topic_id=topic_id)
+            return {"ok": True, "command": "approve"}
+
+        # Command: /reject <id> — reject/hide a post
+        elif command == "/reject":
+            post_id = text[len("/reject"):].strip().split("@")[0]
+            if not post_id or not post_id.isdigit():
+                await send_telegram_message("⚠️ Usage: <code>/reject [post_id]</code>", topic_id=topic_id)
+                return {"ok": True, "command": "reject"}
+            try:
+                post = db.query(models.Post).filter(models.Post.id == int(post_id)).first()
+                if not post:
+                    await send_telegram_message(f"❌ Post #{post_id} not found.", topic_id=topic_id)
+                else:
+                    post.status = "rejected"
+                    post.is_published = False
+                    post.published_at = None
+                    db.commit()
+                    cache_client.delete_prefix("posts:")
+                    await send_telegram_message(f"❌ <b>Post #{post_id} rejected.</b>\n<code>{html_escape(str(post.title)[:60])}</code>", topic_id=topic_id)
+            except Exception:
+                db.rollback()
+                logger.exception("Telegram /reject failed")
+                await send_telegram_message("⚠️ Failed to reject post.", topic_id=topic_id)
+            return {"ok": True, "command": "reject"}
+
+        # Command: /subscribers — subscriber stats
+        elif command == "/subscribers":
+            try:
+                total = db.query(models.Subscriber).count()
+                active = db.query(models.Subscriber).filter(models.Subscriber.is_active == True).count()
+                recent = db.query(models.Subscriber).order_by(models.Subscriber.created_at.desc()).limit(3).all()
+                lines = [f"📬 <b>[Logixa] Subscribers</b>\n", f"📊 Total: <code>{total}</code> | Active: <code>{active}</code>\n"]
+                if recent:
+                    lines.append("\n<b>Recent:</b>")
+                    for s in recent:
+                        email = html_escape(str(s.email)[:30]) if s.email else "?"
+                        lines.append(f"  • {email}")
+                await send_telegram_message("\n".join(lines), topic_id=topic_id)
+            except Exception:
+                logger.exception("Telegram /subscribers failed")
+                await send_telegram_message("⚠️ Could not fetch subscriber stats.", topic_id=topic_id)
+            return {"ok": True, "command": "subscribers"}
+
+        # Command: /contacts — contact stats
+        elif command == "/contacts":
+            try:
+                total = db.query(models.Contact).count()
+                recent = db.query(models.Contact).order_by(models.Contact.created_at.desc()).limit(3).all()
+                lines = [f"👥 <b>[Logixa] Contacts</b>\n", f"📊 Total: <code>{total}</code>\n"]
+                if recent:
+                    lines.append("\n<b>Recent:</b>")
+                    for c in recent:
+                        name = html_escape(str(c.name)[:30]) if c.name else "?"
+                        lines.append(f"  • {name} — {html_escape(str(c.email)[:30]) if c.email else '?'}")
+                await send_telegram_message("\n".join(lines), topic_id=topic_id)
+            except Exception:
+                logger.exception("Telegram /contacts failed")
+                await send_telegram_message("⚠️ Could not fetch contacts.", topic_id=topic_id)
+            return {"ok": True, "command": "contacts"}
+
+        # Command: /metrics — quick system overview
+        elif command == "/metrics":
+            try:
+                db.execute(sql_text("SELECT 1"))
+                db_ok = "OK"
+            except Exception:
+                db.rollback()
+                db_ok = "FAILED"
+            try:
+                post_count = db.query(models.Post).count()
+                wf_count = db.query(models.Workflow).count()
+                sub_count = db.query(models.Subscriber).count()
+                contact_count = db.query(models.Contact).count()
+                agent_count = db.query(models.AgentRun).count()
+                lines = [
+                    "📊 <b>[Logixa] System Metrics</b>\n",
+                    f"🗄️ Database: <code>{db_ok}</code>",
+                    f"📝 Posts: <code>{post_count}</code>",
+                    f"⚙️ Workflows: <code>{wf_count}</code>",
+                    f"📬 Subscribers: <code>{sub_count}</code>",
+                    f"👥 Contacts: <code>{contact_count}</code>",
+                    f"🤖 Agent Runs: <code>{agent_count}</code>",
+                ]
+                await send_telegram_message("\n".join(lines), topic_id=topic_id)
+            except Exception:
+                logger.exception("Telegram /metrics failed")
+                await send_telegram_message("⚠️ Could not fetch metrics.", topic_id=topic_id)
+            return {"ok": True, "command": "metrics"}
+
+        # Command: /logs — recent agent runs
+        elif command == "/logs":
+            try:
+                recent = db.query(models.AgentRun).order_by(models.AgentRun.created_at.desc()).limit(5).all()
+                lines = ["🤖 <b>[Logixa] Recent Agent Runs</b>\n"]
+                if recent:
+                    for r in recent:
+                        obj = html_escape(str(r.objective)[:50]) if r.objective else "?"
+                        ts = r.created_at.strftime("%m-%d %H:%M") if r.created_at else "?"
+                        st_icon = "✅" if r.status == "completed" else "❌" if r.status == "failed" else "🔄"
+                        lines.append(f"  {st_icon} [{ts}] <code>{obj}</code>")
+                else:
+                    lines.append("<i>No agent runs found.</i>")
+                await send_telegram_message("\n".join(lines), topic_id=topic_id)
+            except Exception:
+                logger.exception("Telegram /logs failed")
+                await send_telegram_message("⚠️ Could not fetch logs.", topic_id=topic_id)
+            return {"ok": True, "command": "logs"}
+
     return {"ok": True, "status": "processed"}
