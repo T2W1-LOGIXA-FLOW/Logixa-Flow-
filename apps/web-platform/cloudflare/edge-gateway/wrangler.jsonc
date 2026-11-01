@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "logixa-flow-edge-gateway",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-05",
+  "vars": {
+    "UPSTREAM_API": "https://logixa-flow-api.onrender.com",
+    "ALLOWED_ORIGIN": "https://logixa-flow.vercel.app"
+  }
+}
