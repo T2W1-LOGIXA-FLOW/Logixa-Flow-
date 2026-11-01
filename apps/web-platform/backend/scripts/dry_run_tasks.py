@@ -1,4 +1,4 @@
-﻿import sys
+import sys
 import pathlib
 import os
 import json
