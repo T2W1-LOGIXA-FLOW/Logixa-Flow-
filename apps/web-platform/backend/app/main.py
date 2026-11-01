@@ -282,6 +282,8 @@ def seed_brain_context() -> None:
 
 
 app = FastAPI(
+    docs_url="/docs" if os.getenv("ENVIRONMENT", "development").lower() != "production" else None,
+    redoc_url="/redoc" if os.getenv("ENVIRONMENT", "development").lower() != "production" else None,
     title="Logixa Flow API",
     description="CMS and engagement API for Logixa Flow.",
     version="1.1.0",
