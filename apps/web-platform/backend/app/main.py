@@ -352,6 +352,23 @@ app.add_middleware(
 
 # Keep request telemetry outside CORS and access-control middleware so it observes
 # preflight, rejected, successful, and failed HTTP responses consistently.
+
+
+# Startup Telegram notification
+@app.on_event("startup")
+async def startup_telegram_alert():
+    """Best-effort startup notification to Telegram topic."""
+    try:
+        from app.routers.telegram import send_telegram_message
+        topic_id = int(os.getenv("TELEGRAM_TOPIC_ID", "0")) or None
+        if topic_id:
+            await send_telegram_message(
+                "🟢 <b>Logixa Flow Backend</b> is now online and ready!",
+                topic_id=topic_id,
+            )
+    except Exception:
+        pass  # Never let notification failure block startup
+
 app.middleware("http")(request_observability_middleware)
 
 
@@ -416,3 +433,48 @@ def health():
     if database_ok:
         return {"status": "ok"}
     return JSONResponse(status_code=503, content={"status": "degraded"})
+
+
+
+# =============================================================================
+# Global Error Handler → Telegram Alert
+# =============================================================================
+async def _send_error_alert(path: str, error_type: str, error_msg: str) -> None:
+    """Best-effort error notification to Telegram. Never let alert failure mask the original error."""
+    try:
+        from app.routers.telegram import send_telegram_message
+        import os
+        topic_id = int(os.getenv("TELEGRAM_TOPIC_ID", "0")) or None
+        alert = (
+            "🚨 <b>Logixa Flow Error</b>\n\n"
+            f"📍 Path: <code>{path[:100]}</code>\n"
+            f"❌ Error: <code>{error_type}</code>\n"
+            f"📝 {error_msg[:300]}"
+        )
+        await send_telegram_message(alert, topic_id=topic_id)
+    except Exception:
+        pass  # Never let alert failure propagate
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler_with_alert(request, exc):
+    """Catch unhandled exceptions, log, alert via Telegram, return 500."""
+    import logging
+    logger = logging.getLogger("logixa.error")
+    path = str(request.url.path)[:200] if hasattr(request, "url") else "unknown"
+    error_type = type(exc).__name__
+    error_msg = str(exc)[:500]
+    logger.error("Unhandled error: %s %s — %s", path, error_type, error_msg)
+    
+    # Best-effort Telegram alert (fire and forget)
+    try:
+        import asyncio
+        asyncio.ensure_future(_send_error_alert(path, error_type, error_msg))
+    except Exception:
+        pass
+    
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
