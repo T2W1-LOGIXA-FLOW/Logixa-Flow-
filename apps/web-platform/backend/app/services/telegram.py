@@ -69,6 +69,40 @@ async def send_telegram_message(
         return None
 
 
+async def send_telegram_voice(
+    voice_bytes: bytes,
+    *,
+    caption: str = "",
+    topic_id: int | None = None,
+    chat_id: int | str | None = None,
+) -> dict[str, Any] | None:
+    """Send a voice note audio briefing to Telegram group/topic."""
+    token, configured_chat_id, default_topic = _get_telegram_credentials()
+    effective_chat_id = chat_id if chat_id is not None else configured_chat_id
+    effective_topic = topic_id if topic_id is not None else default_topic
+
+    if not token or not effective_chat_id:
+        logger.info("[Telegram:Logixa:VoiceDryRun] Voice briefing (%d bytes)", len(voice_bytes))
+        return None
+
+    url = f"{TELEGRAM_API_BASE}/bot{token}/sendVoice"
+    data: dict[str, Any] = {"chat_id": effective_chat_id, "caption": caption, "parse_mode": "HTML"}
+    if effective_topic:
+        data["message_thread_id"] = int(effective_topic)
+
+    files = {"voice": ("briefing.ogg", voice_bytes, "audio/ogg")}
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(url, data=data, files=files)
+            if response.status_code == 200:
+                return response.json()
+            logger.error("Telegram sendVoice API error (%s): %s", response.status_code, response.text)
+            return None
+    except Exception as exc:
+        logger.warning("Failed to send Telegram voice note: %s", type(exc).__name__)
+        return None
+
+
 async def send_notification(
     title: str,
     details: str,
