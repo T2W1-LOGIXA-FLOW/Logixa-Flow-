@@ -19,6 +19,7 @@ from .agent_graph import execute_content_graph
 from .routers.agent import score_source_grounding
 
 _SCHEDULER_LOCK = Lock()
+_SCHEDULER_THREAD: Thread | None = None
 _SCHEDULED_PREVIEW_LAST_ATTEMPT_KEY = "scheduler_daily_preview_last_attempt"
 
 
@@ -250,8 +251,10 @@ def run_daily_agent_preview_once() -> int | None:
 
 
 def scheduler_status() -> dict[str, object]:
+    enabled = os.getenv("ENABLE_SCHEDULER", "true").lower() == "true"
     return {
-        "enabled": os.getenv("ENABLE_SCHEDULER", "true").lower() == "true",
+        "enabled": enabled,
+        "running": bool(_SCHEDULER_THREAD and _SCHEDULER_THREAD.is_alive()),
         "interval_hours": max(int(os.getenv("SCHEDULER_INTERVAL_HOURS", "24")), 1),
     }
 
@@ -557,6 +560,7 @@ def run_weekly_brain_synthesis(category: str = "Supply Chain") -> int | None:
 # ---------------------------------------------------------------------------
 
 def start_scheduler() -> None:
+    global _SCHEDULER_THREAD
     if os.getenv("ENABLE_SCHEDULER", "true").lower() != "true":
         return
     interval_hours = max(int(os.getenv("SCHEDULER_INTERVAL_HOURS", "24")), 1)
@@ -640,5 +644,8 @@ def start_scheduler() -> None:
         finally:
             _SCHEDULER_LOCK.release()
 
-    Thread(target=loop, name="logixa-scheduler", daemon=True).start()
+    if _SCHEDULER_THREAD is not None and _SCHEDULER_THREAD.is_alive():
+        return
+    _SCHEDULER_THREAD = Thread(target=loop, name="logixa-scheduler", daemon=True)
+    _SCHEDULER_THREAD.start()
 
