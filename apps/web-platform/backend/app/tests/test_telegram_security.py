@@ -102,3 +102,23 @@ def test_admin_telegram_send_reports_only_confirmed_delivery(monkeypatch):
 
     assert captured == {"message": "approved test", "topic_id": 7}
     assert result == {"success": True, "delivered": True, "message_id": 42}
+
+
+def test_telegram_admin_allowlist_fails_closed_in_production(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.delenv("TELEGRAM_ADMIN_USER_IDS", raising=False)
+    with pytest.raises(HTTPException) as error:
+        telegram_router._authorize_telegram_admin(user_id=123)
+    assert error.value.status_code == 503
+
+
+def test_telegram_admin_allowlist_rejects_non_admin_and_accepts_configured(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("TELEGRAM_ADMIN_USER_IDS", "123,789")
+    telegram_router._authorize_telegram_admin(user_id=123)
+    with pytest.raises(HTTPException) as error:
+        telegram_router._authorize_telegram_admin(user_id=456)
+    assert error.value.status_code == 403
+    with pytest.raises(HTTPException) as missing:
+        telegram_router._authorize_telegram_admin(user_id=None)
+    assert missing.value.status_code == 403
