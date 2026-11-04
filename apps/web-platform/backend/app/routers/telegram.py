@@ -327,16 +327,15 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
         msg = update["message"]
         text = msg.get("text", "").strip()
         topic_id = msg.get("message_thread_id")
-        # /start and /help are non-privileged onboarding commands. Allow them
-        # from any chat so a user can discover the bot; operational commands
-        # and callback actions remain protected by the configured allowlists.
+        # Every message, including onboarding commands, is restricted to the
+        # configured production chat/topic allowlist. This prevents the
+        # Logixa Flow bot from replying in other project topics or groups.
         command = text.split()[0].split("@")[0].lower() if text.startswith("/") else ""
-        if command not in {"/start", "/help", "/commands"} and command:
-            _authorize_telegram_actor(
-                user_id=msg.get("from", {}).get("id"),
-                chat_id=msg.get("chat", {}).get("id"),
-                topic_id=topic_id,
-            )
+        _authorize_telegram_actor(
+            user_id=msg.get("from", {}).get("id"),
+            chat_id=msg.get("chat", {}).get("id"),
+            topic_id=topic_id,
+        )
         if command in {"/approve", "/reject"}:
             _authorize_telegram_admin(user_id=msg.get("from", {}).get("id"))
 
