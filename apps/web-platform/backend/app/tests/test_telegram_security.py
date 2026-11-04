@@ -20,13 +20,15 @@ def test_telegram_actor_allowlists_fail_closed_in_production(monkeypatch):
     assert error.value.status_code == 503
 
 
-def test_telegram_actor_allowlists_accept_only_configured_ids(monkeypatch):
+def test_telegram_actor_access_is_scoped_to_configured_chat_and_topic(monkeypatch):
     monkeypatch.setenv("ENVIRONMENT", "production")
+    # A stale optional per-user allowlist must not block members in the
+    # explicitly authorized forum topic. Privileged actions use admin IDs.
     monkeypatch.setenv("TELEGRAM_ALLOWED_USER_IDS", "123, 789")
     monkeypatch.setenv("TELEGRAM_ALLOWED_CHAT_IDS", "-456")
     monkeypatch.setenv("TELEGRAM_ALLOWED_TOPIC_IDS", "5")
 
-    _authorize_telegram_actor(user_id=123, chat_id=-456, topic_id=5)
+    _authorize_telegram_actor(user_id=999, chat_id=-456, topic_id=5)
 
     with pytest.raises(HTTPException) as wrong_topic:
         _authorize_telegram_actor(user_id=123, chat_id=-456, topic_id=6)
@@ -35,10 +37,6 @@ def test_telegram_actor_allowlists_accept_only_configured_ids(monkeypatch):
     with pytest.raises(HTTPException) as missing_topic:
         _authorize_telegram_actor(user_id=123, chat_id=-456)
     assert missing_topic.value.status_code == 403
-
-    with pytest.raises(HTTPException) as wrong_user:
-        _authorize_telegram_actor(user_id=999, chat_id=-456, topic_id=5)
-    assert wrong_user.value.status_code == 403
 
     with pytest.raises(HTTPException) as wrong_chat:
         _authorize_telegram_actor(user_id=123, chat_id=-789, topic_id=5)
