@@ -384,12 +384,31 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
                     ai_status = "UNAVAILABLE"
             except Exception:
                 ai_status = "UNAVAILABLE"
+            # Redis PING is read-only; memory fallback is not shared Redis.
+            redis_status = "memory fallback"
+            redis_client = getattr(cache_client, "_redis", None)
+            if redis_client is not None:
+                try:
+                    redis_client.ping()
+                    redis_status = "OK"
+                except Exception:
+                    redis_status = "FAILED"
+
+            # Storage has no common read-only adapter probe; report configuration only.
+            from ..config import upload_storage_configured
+            storage_status = "configured" if upload_storage_configured() else "not configured"
+
+            from ..scheduler import scheduler_status
+            scheduler = scheduler_status()
+            scheduler_label = "RUNNING" if scheduler.get("running") else "STOPPED" if scheduler.get("enabled") else "DISABLED"
             status_text = (
-                "🩺 <b>[Logixa-Flow] Runtime Checks:</b>\n\n"
-                f"• <b>API:</b> <code>request handled</code>\n"
-                f"• <b>Database:</b> <code>{db_status}</code>\n"
-                f"• <b>AI provider:</b> <code>{html_escape(ai_status)}</code>\n"
-                "• <b>Redis, storage, scheduler:</b> <code>not probed</code>"
+                "🩺 <b>[Logixa-Flow] Runtime Checks:</b>\\n\\n"
+                f"• <b>API:</b> <code>request handled</code>\\n"
+                f"• <b>Database:</b> <code>{db_status}</code>\\n"
+                f"• <b>AI provider:</b> <code>{html_escape(ai_status)}</code>\\n"
+                f"• <b>Redis:</b> <code>{html_escape(redis_status)}</code>\\n"
+                f"• <b>Storage:</b> <code>{html_escape(storage_status)}</code> (configuration only; I/O not tested)\\n"
+                f"• <b>Scheduler:</b> <code>{scheduler_label}</code>"
             )
             buttons = [
                 [{"text": "📱 Open Flow Dashboard", "url": FRONTEND_URL}]
