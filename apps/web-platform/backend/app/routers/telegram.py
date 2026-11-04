@@ -219,16 +219,24 @@ async def _execute_telegram_action(
 # ------------------------------------------------------------------------------
 async def send_logixa_morning_digest(topic_id: int | None = None) -> dict[str, Any] | None:
     """Generate and send an AI Morning Digest for Logixa Flow supply chain."""
+    # Only state facts backed by this request's database snapshot.
+    from ..models import Workflow, WorkflowRunRecord
+    try:
+        workflow_count = db.query(Workflow).count()
+        running_count = db.query(WorkflowRunRecord).filter(WorkflowRunRecord.status == "running").count()
+        failed_count = db.query(WorkflowRunRecord).filter(WorkflowRunRecord.status == "failed").count()
+        completed_count = db.query(WorkflowRunRecord).filter(WorkflowRunRecord.status == "completed").count()
+        snapshot = f"Workflows: {workflow_count}; running: {running_count}; completed runs: {completed_count}; failed runs: {failed_count}."
+    except Exception:
+        db.rollback()
+        snapshot = "Database metrics unavailable; operational counts were not verified."
     msg = (
-        "☀️ <b>[Logixa-Flow] AI Morning Digest & Operations Briefing</b>\n"
-        "━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        "📦 <b>Active Pipelines:</b> 12 automated workflows operational\n"
-        "⚡ <b>AI Engine:</b> Gemini 2.5 / Groq Failover Active (100% SLA)\n"
-        "🚚 <b>Logistics Queue:</b> 0 backlog anomalies detected\n"
-        "💡 <b>Daily Supply-Chain Insight:</b>\n"
-        "<i>\"Predictive container routing reduced turnaround latency by 14% this week. Maintain current routing heuristics.\"</i>\n"
-        "━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        "<i>Use buttons below to inspect live operations:</i>"
+        "☀️ <b>[Logixa-Flow] Operations Briefing</b>\\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━\\n"
+        f"📊 <b>Database snapshot:</b> {html_escape(snapshot)}\\n"
+        "⚠️ <b>AI provider SLA, logistics anomalies, and weekly trends:</b> not measured by this briefing.\\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━\\n"
+        "<i>Counts are database records, not a live infrastructure/SLO probe.</i>"
     )
     keyboard = [
         [
