@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import hmac
+import io
 from html import escape as html_escape
 from typing import Any
 
@@ -34,6 +35,16 @@ def _production_mode() -> bool:
 
 def _configured_id_set(env_name: str) -> set[str]:
     return {part.strip() for part in os.getenv(env_name, "").split(",") if part.strip()}
+
+
+def _authorize_telegram_admin(*, user_id: Any) -> None:
+    """Require an explicit admin ID for publish/reject operations."""
+    admins = _configured_id_set("TELEGRAM_ADMIN_USER_IDS")
+    if _production_mode() and not admins:
+        logger.error("Telegram admin authorization unavailable: TELEGRAM_ADMIN_USER_IDS is missing")
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Telegram admin allowlist is not configured")
+    if not user_id or str(user_id) not in admins:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Telegram admin is not authorized")
 
 
 def _authorize_telegram_actor(*, user_id: Any, chat_id: Any, topic_id: Any = None) -> None:
@@ -206,18 +217,36 @@ async def _execute_telegram_action(
 # ------------------------------------------------------------------------------
 # 2. AI MORNING DIGEST GENERATOR
 # ------------------------------------------------------------------------------
-async def send_logixa_morning_digest(topic_id: int | None = None) -> dict[str, Any] | None:
+async def send_logixa_morning_digest(topic_id: int | None = None, db: Session | None = None) -> dict[str, Any] | None:
     """Generate and send an AI Morning Digest for Logixa Flow supply chain."""
+    # Only state facts backed by this request's database snapshot.
+    from ..models import Workflow, WorkflowRunRecord
+    try:
+        if db is None:
+            from ..database import SessionLocal
+            db = SessionLocal()
+            close_db = True
+        else:
+            close_db = False
+        workflow_count = db.query(Workflow).count()
+        running_count = db.query(WorkflowRunRecord).filter(WorkflowRunRecord.status == "running").count()
+        failed_count = db.query(WorkflowRunRecord).filter(WorkflowRunRecord.status == "failed").count()
+        completed_count = db.query(WorkflowRunRecord).filter(WorkflowRunRecord.status == "completed").count()
+        snapshot = f"Workflows: {workflow_count}; running: {running_count}; completed runs: {completed_count}; failed runs: {failed_count}."
+    except Exception:
+        if db is not None:
+            db.rollback()
+        snapshot = "Database metrics unavailable; operational counts were not verified."
+    finally:
+        if "close_db" in locals() and close_db and db is not None:
+            db.close()
     msg = (
-        "☀️ <b>[Logixa-Flow] AI Morning Digest & Operations Briefing</b>\n"
-        "━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        "📦 <b>Active Pipelines:</b> 12 automated workflows operational\n"
-        "⚡ <b>AI Engine:</b> Gemini 2.5 / Groq Failover Active (100% SLA)\n"
-        "🚚 <b>Logistics Queue:</b> 0 backlog anomalies detected\n"
-        "💡 <b>Daily Supply-Chain Insight:</b>\n"
-        "<i>\"Predictive container routing reduced turnaround latency by 14% this week. Maintain current routing heuristics.\"</i>\n"
-        "━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        "<i>Use buttons below to inspect live operations:</i>"
+        "☀️ <b>[Logixa-Flow] Operations Briefing</b>\\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━\\n"
+        f"📊 <b>Database snapshot:</b> {html_escape(snapshot)}\\n"
+        "⚠️ <b>AI provider SLA, logistics anomalies, and weekly trends:</b> not measured by this briefing.\\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━\\n"
+        "<i>Counts are database records, not a live infrastructure/SLO probe.</i>"
     )
     keyboard = [
         [
@@ -232,7 +261,7 @@ async def send_logixa_morning_digest(topic_id: int | None = None) -> dict[str, A
     # Voice audio note synthesis via edge-tts
     try:
         import edge_tts
-        script = "Logixa Flow Morning Briefing. All twelve automated pipelines are operational. AI engine failover active at 100 percent. Zero anomalies detected."
+        script = "Logixa Flow morning operations briefing. " + snapshot + " AI provider SLA and logistics anomaly metrics are not verified in this report."
         comm = edge_tts.Communicate(script, "en-US-JennyNeural")
         buf = io.BytesIO()
         async for chunk in comm.stream():
@@ -289,6 +318,8 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
             username=cq.get("from", {}).get("username"),
         )
         _authorize_telegram_actor(user_id=payload.user_id, chat_id=payload.chat_id, topic_id=payload.topic_id)
+        if action.startswith(("logixa_blog_appr:", "logixa_blog_disc:")):
+            _authorize_telegram_admin(user_id=payload.user_id)
         return await _execute_telegram_action(payload, db=db)
 
     # Case 2: Message Text (Slash Commands)
@@ -306,6 +337,8 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
                 chat_id=msg.get("chat", {}).get("id"),
                 topic_id=topic_id,
             )
+        if command in {"/approve", "/reject"}:
+            _authorize_telegram_admin(user_id=msg.get("from", {}).get("id"))
 
         if not text:
             return {"ok": True, "note": "No text content"}
