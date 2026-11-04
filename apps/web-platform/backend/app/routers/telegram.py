@@ -217,19 +217,29 @@ async def _execute_telegram_action(
 # ------------------------------------------------------------------------------
 # 2. AI MORNING DIGEST GENERATOR
 # ------------------------------------------------------------------------------
-async def send_logixa_morning_digest(topic_id: int | None = None) -> dict[str, Any] | None:
+async def send_logixa_morning_digest(topic_id: int | None = None, db: Session | None = None) -> dict[str, Any] | None:
     """Generate and send an AI Morning Digest for Logixa Flow supply chain."""
     # Only state facts backed by this request's database snapshot.
     from ..models import Workflow, WorkflowRunRecord
     try:
+        if db is None:
+            from ..database import SessionLocal
+            db = SessionLocal()
+            close_db = True
+        else:
+            close_db = False
         workflow_count = db.query(Workflow).count()
         running_count = db.query(WorkflowRunRecord).filter(WorkflowRunRecord.status == "running").count()
         failed_count = db.query(WorkflowRunRecord).filter(WorkflowRunRecord.status == "failed").count()
         completed_count = db.query(WorkflowRunRecord).filter(WorkflowRunRecord.status == "completed").count()
         snapshot = f"Workflows: {workflow_count}; running: {running_count}; completed runs: {completed_count}; failed runs: {failed_count}."
     except Exception:
-        db.rollback()
+        if db is not None:
+            db.rollback()
         snapshot = "Database metrics unavailable; operational counts were not verified."
+    finally:
+        if "close_db" in locals() and close_db and db is not None:
+            db.close()
     msg = (
         "☀️ <b>[Logixa-Flow] Operations Briefing</b>\\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━\\n"
