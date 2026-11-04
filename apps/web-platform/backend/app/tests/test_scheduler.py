@@ -317,3 +317,51 @@ def test_auto_feed_pull_indexes_only_pending_sources(
         assert result["pulled"] == 1
     finally:
         db.close()
+
+
+
+def test_auto_feed_pull_marks_fetch_failure_as_error(
+    scheduler_session_factory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app import integration_service
+    from app.rag import ingest
+
+    monkeypatch.setattr(scheduler, "SessionLocal", scheduler_session_factory)
+    monkeypatch.setattr(integration_service, "ensure_default_feed_registry", lambda _db: 0)
+
+    def failed_fetch(*_args, **_kwargs):
+        raise RuntimeError("RSS feed could not be fetched")
+
+    monkeypatch.setattr(integration_service, "import_rss_feed", failed_fetch)
+    monkeypatch.setattr(integration_service, "retry_failed_rss_article_extraction", lambda *_args, **_kwargs: {
+        "checked": 0, "recovered": 0, "still_empty": 0, "errors": 0
+    })
+    monkeypatch.setattr(ingest, "ingest_intelligence_source", lambda _db, _source: 1)
+
+    db = scheduler_session_factory()
+    try:
+        feed = models.FeedSource(
+            url="https://feeds.example.test/rss",
+            title="Example Feed",
+            category="Supply Chain",
+            trust_level="standard",
+            is_active=True,
+        )
+        db.add(feed)
+        db.commit()
+        feed_id = feed.id
+    finally:
+        db.close()
+
+    result = scheduler.run_auto_feed_pull()
+
+    db = scheduler_session_factory()
+    try:
+        failed_feed = db.query(models.FeedSource).filter_by(id=feed_id).one()
+        assert failed_feed.last_scrape_status == "error"
+        assert failed_feed.scrape_count == 0
+        assert failed_feed.last_scrape_at is not None
+        assert result["pulled"] == 0
+        assert result["errors"] == 1
+    finally:
+        db.close()

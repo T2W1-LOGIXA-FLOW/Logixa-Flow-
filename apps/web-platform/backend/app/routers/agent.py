@@ -250,15 +250,19 @@ def fetch_rss_sources(
     db: Session = Depends(get_db),
     _: dict = Depends(require_admin),
 ) -> schemas.SourceFetchOut:
-    imported, skipped = import_rss_feed(
-        db,
-        payload.feed_url,
-        category=payload.category,
-        trust_level=payload.trust_level,
-        limit=payload.limit,
-    )
-    if imported == 0 and skipped == 0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="RSS feed could not be fetched or parsed")
+    try:
+        imported, skipped = import_rss_feed(
+            db,
+            payload.feed_url,
+            category=payload.category,
+            trust_level=payload.trust_level,
+            limit=payload.limit,
+        )
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="RSS feed could not be fetched or parsed",
+        ) from exc
     return schemas.SourceFetchOut(imported=imported, skipped=skipped)
 
 
