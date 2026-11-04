@@ -58,8 +58,16 @@ def _authorize_telegram_actor(*, user_id: Any, chat_id: Any, topic_id: Any = Non
             detail="Telegram chat/topic allowlists are not configured",
         )
     if allowed_chats and str(chat_id) not in allowed_chats:
+        logger.warning(
+            "Telegram authorization denied: chat mismatch (chat_present=%s, configured_chat_count=%d)",
+            chat_id is not None, len(allowed_chats),
+        )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Telegram chat is not authorized")
     if allowed_topics and (topic_id is None or str(topic_id) not in allowed_topics):
+        logger.warning(
+            "Telegram authorization denied: topic mismatch (topic_id=%s, configured_topic_count=%d)",
+            topic_id, len(allowed_topics),
+        )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Telegram topic is not authorized")
 
 
