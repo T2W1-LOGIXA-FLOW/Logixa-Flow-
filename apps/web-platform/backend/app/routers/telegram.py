@@ -49,7 +49,6 @@ def _authorize_telegram_admin(*, user_id: Any) -> None:
 
 def _authorize_telegram_actor(*, user_id: Any, chat_id: Any, topic_id: Any = None) -> None:
     """Restrict production Telegram actions to configured chats and forum topics."""
-    allowed_users = _configured_id_set("TELEGRAM_ALLOWED_USER_IDS")
     allowed_chats = _configured_id_set("TELEGRAM_ALLOWED_CHAT_IDS")
     allowed_topics = _configured_id_set("TELEGRAM_ALLOWED_TOPIC_IDS")
     if _production_mode() and (not allowed_chats or not allowed_topics):
@@ -58,8 +57,6 @@ def _authorize_telegram_actor(*, user_id: Any, chat_id: Any, topic_id: Any = Non
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Telegram chat/topic allowlists are not configured",
         )
-    if allowed_users and str(user_id) not in allowed_users:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Telegram user is not authorized")
     if allowed_chats and str(chat_id) not in allowed_chats:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Telegram chat is not authorized")
     if allowed_topics and (topic_id is None or str(topic_id) not in allowed_topics):
