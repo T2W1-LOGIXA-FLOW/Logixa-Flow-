@@ -255,12 +255,12 @@ def import_rss_feed(
         )
         with _RSS_OPENER.open(request, timeout=12) as response:
             xml_data = response.read(2_000_000)
-    except Exception:
-        return 0, 0
+    except Exception as exc:
+        raise RuntimeError("RSS feed could not be fetched") from exc
     try:
         root = ET.fromstring(xml_data)
-    except ET.ParseError:
-        return 0, 0
+    except ET.ParseError as exc:
+        raise ValueError("RSS feed returned invalid XML") from exc
     items = root.findall(".//item")[:limit]
     for item in items:
         title = (item.findtext("title") or "").strip()
@@ -396,13 +396,22 @@ def sync_default_feeds(
                 is_active=True,
             ))
             db.commit()
-        imported, skipped = import_rss_feed(
-            db,
-            safe_feed_url,
-            category=category,
-            trust_level=trust_level,
-            limit=limit_per_feed,
-        )
+        try:
+            imported, skipped = import_rss_feed(
+                db,
+                safe_feed_url,
+                category=category,
+                trust_level=trust_level,
+                limit=limit_per_feed,
+            )
+        except (RuntimeError, ValueError) as exc:
+            feed_results.append({
+                "feed_url": feed_url,
+                "imported": 0,
+                "skipped": 0,
+                "error": str(exc)[:200],
+            })
+            continue
         total_imported += imported
         total_skipped += skipped
         feed_results.append({"feed_url": feed_url, "imported": imported, "skipped": skipped})
