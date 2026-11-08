@@ -9,14 +9,11 @@ import {
   Trash2,
   Upload,
   Search,
-  Filter,
   ExternalLink,
   CheckCircle2,
   AlertCircle,
   Clock,
-  Sparkles,
   BarChart2,
-  Layers,
 } from "lucide-react";
 import AdminBreadcrumb from "@/components/admin/AdminBreadcrumb";
 import { adminFetch } from "@/components/api";

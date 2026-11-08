@@ -246,11 +246,11 @@ async def send_logixa_morning_digest(topic_id: int | None = None, db: Session | 
         if "close_db" in locals() and close_db and db is not None:
             db.close()
     msg = (
-        "☀️ <b>[Logixa-Flow] Operations Briefing</b>\\n"
-        "━━━━━━━━━━━━━━━━━━━━━━━━━\\n"
-        f"📊 <b>Database snapshot:</b> {html_escape(snapshot)}\\n"
-        "⚠️ <b>AI provider SLA, logistics anomalies, and weekly trends:</b> not measured by this briefing.\\n"
-        "━━━━━━━━━━━━━━━━━━━━━━━━━\\n"
+        "☀️ <b>[Logixa-Flow] Operations Briefing</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"📊 <b>Database snapshot:</b> {html_escape(snapshot)}\n"
+        "⚠️ <b>AI provider SLA, logistics anomalies, and weekly trends:</b> not measured by this briefing.\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         "<i>Counts are database records, not a live infrastructure/SLO probe.</i>"
     )
     keyboard = [
@@ -322,7 +322,13 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
             user_id=cq.get("from", {}).get("id"),
             username=cq.get("from", {}).get("username"),
         )
-        _authorize_telegram_actor(user_id=payload.user_id, chat_id=payload.chat_id, topic_id=payload.topic_id)
+        try:
+            _authorize_telegram_actor(user_id=payload.user_id, chat_id=payload.chat_id, topic_id=payload.topic_id)
+        except HTTPException as exc:
+            if exc.status_code == status.HTTP_403_FORBIDDEN:
+                logger.info("Telegram callback ignored for non-matching chat/topic (topic_id=%s)", topic_id)
+                return {"ok": True, "ignored": "unauthorized_scope"}
+            raise
         if action.startswith(("logixa_blog_appr:", "logixa_blog_disc:")):
             _authorize_telegram_admin(user_id=payload.user_id)
         return await _execute_telegram_action(payload, db=db)
@@ -336,11 +342,17 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
         # configured production chat/topic allowlist. This prevents the
         # Logixa Flow bot from replying in other project topics or groups.
         command = text.split()[0].split("@")[0].lower() if text.startswith("/") else ""
-        _authorize_telegram_actor(
-            user_id=msg.get("from", {}).get("id"),
-            chat_id=msg.get("chat", {}).get("id"),
-            topic_id=topic_id,
-        )
+        try:
+            _authorize_telegram_actor(
+                user_id=msg.get("from", {}).get("id"),
+                chat_id=msg.get("chat", {}).get("id"),
+                topic_id=topic_id,
+            )
+        except HTTPException as exc:
+            if exc.status_code == status.HTTP_403_FORBIDDEN:
+                logger.info("Telegram message ignored for non-matching chat/topic (topic_id=%s)", topic_id)
+                return {"ok": True, "ignored": "unauthorized_scope"}
+            raise
         if command in {"/approve", "/reject"}:
             _authorize_telegram_admin(user_id=msg.get("from", {}).get("id"))
 
@@ -406,12 +418,12 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)) -> d
             scheduler = scheduler_status()
             scheduler_label = "RUNNING" if scheduler.get("running") else "STOPPED" if scheduler.get("enabled") else "DISABLED"
             status_text = (
-                "🩺 <b>[Logixa-Flow] Runtime Checks:</b>\\n\\n"
-                f"• <b>API:</b> <code>request handled</code>\\n"
-                f"• <b>Database:</b> <code>{db_status}</code>\\n"
-                f"• <b>AI provider:</b> <code>{html_escape(ai_status)}</code>\\n"
-                f"• <b>Redis:</b> <code>{html_escape(redis_status)}</code>\\n"
-                f"• <b>Storage:</b> <code>{html_escape(storage_status)}</code> (configuration only; I/O not tested)\\n"
+                "🩺 <b>[Logixa-Flow] Runtime Checks:</b>\n\n"
+                f"• <b>API:</b> <code>request handled</code>\n"
+                f"• <b>Database:</b> <code>{db_status}</code>\n"
+                f"• <b>AI provider:</b> <code>{html_escape(ai_status)}</code>\n"
+                f"• <b>Redis:</b> <code>{html_escape(redis_status)}</code>\n"
+                f"• <b>Storage:</b> <code>{html_escape(storage_status)}</code> (configuration only; I/O not tested)\n"
                 f"• <b>Scheduler:</b> <code>{scheduler_label}</code>"
             )
             buttons = [

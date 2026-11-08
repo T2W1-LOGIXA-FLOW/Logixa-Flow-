@@ -129,6 +129,26 @@ async def _execute_node_action(node: Any, run_id: str) -> None:
     await action(node, run_id)
 
 
+def _condition_matches(node: Any, run_id: str) -> bool:
+    """Evaluate a local metadata condition configured on a workflow node."""
+    condition = node.config.get("condition")
+    if not condition:
+        return True
+    metadata = _EXECUTION_METRICS.setdefault(run_id, {}).get("metadata", {})
+    key = str(condition.get("key", "")).strip()
+    operator = str(condition.get("operator", "equals")).strip().lower()
+    present = key in metadata
+    actual = metadata.get(key)
+    if operator == "exists":
+        return present
+    if operator == "not_exists":
+        return not present
+    expected = condition.get("value")
+    if operator == "not_equals":
+        return actual != expected
+    return actual == expected
+
+
 # ---------------------------------------------------------------------------
 # Broadcast / error notification
 # ---------------------------------------------------------------------------
@@ -223,6 +243,14 @@ class WorkflowExecutor:
         self.state.current_node = node.id
         self.persist()
         await _broadcast(WorkflowTelemetryEvent(event="workflow.status", run_id=self.run_id, workflow_id=self.workflow_id, state=self.state))
+
+        if not _condition_matches(node, self.run_id):
+            _record_execution_history(self.run_id, f"node:{node.id}: skipped (condition did not match)")
+            self.completed_nodes.add(node.id)
+            self.state.completed_nodes = list(self._execution_order())
+            self.state.error = None
+            self.persist()
+            return
 
         attempts = 0
         last_error: Exception | None = None

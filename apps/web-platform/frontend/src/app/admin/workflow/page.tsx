@@ -72,6 +72,12 @@ function resolveWorkflowSocketUrl() {
   return url.toString().replace(/^http/, "ws");
 }
 
+function resolveWorkflowApiUrl(path: string) {
+  const configured = process.env.NEXT_PUBLIC_API_URL;
+  const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+  return new URL(path, configured || origin).toString();
+}
+
 export default function AdminWorkflowPage() {
   const socketRef = useRef<WebSocket | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState(defaultInitialNodes);
@@ -82,6 +88,9 @@ export default function AdminWorkflowPage() {
   const [connectionState, setConnectionState] = useState<ConnectionState>("connecting");
   const [telemetry, setTelemetry] = useState<WorkflowTelemetry | null>(null);
   const [logs, setLogs] = useState<string[]>(defaultLogs);
+  const [workflowId, setWorkflowId] = useState("command-canvas");
+  const [transferMessage, setTransferMessage] = useState<string | null>(null);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const visibleNodes = useMemo(
     () => nodes.filter((node) => !search || node.data.label.toLowerCase().includes(search.toLowerCase())),
@@ -124,6 +133,110 @@ export default function AdminWorkflowPage() {
     setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
     setInspectingNode(null);
   }, [setNodes, setEdges]);
+
+  const handleUpdateNode = useCallback((id: string, data: Partial<ServiceNodeData>) => {
+    setNodes((current) => current.map((node) => node.id === id ? { ...node, data: { ...node.data, ...data } } : node));
+    setInspectingNode((current) => current?.id === id ? { ...current, data: { ...current.data, ...data } } : current);
+  }, [setNodes]);
+
+  const workflowPayload = useCallback(() => ({
+    id: workflowId.trim(),
+    name: workflowId.trim().replace(/[-_]+/g, " ") || "Untitled workflow",
+    nodes: nodes.map((node) => ({
+      id: node.id,
+      type: "task",
+      name: node.data.label,
+      depends_on: edges.filter((edge) => edge.target === node.id).map((edge) => edge.source),
+      retry_count: 0,
+      timeout_seconds: 30,
+      config: {
+        detail: node.data.detail,
+        ...(node.data.conditionKey?.trim() ? {
+          condition: {
+            key: node.data.conditionKey.trim(),
+            operator: node.data.conditionOperator ?? "equals",
+            ...(!["exists", "not_exists"].includes(node.data.conditionOperator ?? "equals") ? { value: node.data.conditionValue ?? "" } : {}),
+          },
+        } : {}),
+      },
+    })),
+  }), [edges, nodes, workflowId]);
+
+  const authorizedWorkflowRequest = useCallback(async (path: string, init?: RequestInit) => {
+    const token = await getAdminSessionToken();
+    if (!token) throw new Error("An admin session is required.");
+    const response = await fetch(resolveWorkflowApiUrl(path), {
+      ...init,
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(init?.headers ?? {}) },
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(typeof body?.detail === "string" ? body.detail : "Workflow action failed.");
+    }
+    return response;
+  }, []);
+
+  const handleSaveWorkflow = useCallback(async () => {
+    const payload = workflowPayload();
+    if (!payload.id || !/^[A-Za-z0-9_-]+$/.test(payload.id)) {
+      setTransferMessage("Workflow ID may use letters, numbers, hyphens, and underscores only.");
+      return;
+    }
+    try {
+      await authorizedWorkflowRequest("/api/admin/workflow", { method: "POST", body: JSON.stringify(payload) });
+      setTransferMessage("Workflow saved locally. Export is now available.");
+    } catch (error) {
+      setTransferMessage(error instanceof Error ? error.message : "Unable to save workflow.");
+    }
+  }, [authorizedWorkflowRequest, workflowPayload]);
+
+  const handleExportWorkflow = useCallback(async () => {
+    try {
+      const response = await authorizedWorkflowRequest(`/api/admin/workflow/${encodeURIComponent(workflowId)}/export`);
+      const pack = await response.json();
+      const blob = new Blob([JSON.stringify(pack, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `logixa-workflow-${workflowId}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setTransferMessage("Workflow JSON downloaded. Secrets are excluded from the export.");
+    } catch (error) {
+      setTransferMessage(error instanceof Error ? error.message : "Save the workflow before exporting it.");
+    }
+  }, [authorizedWorkflowRequest, workflowId]);
+
+  const handleImportWorkflow = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      const pack = JSON.parse(await file.text());
+      const response = await authorizedWorkflowRequest("/api/admin/workflow/import", { method: "POST", body: JSON.stringify(pack) });
+      const imported = await response.json() as { id: string; nodes: Array<{ id: string; name: string; depends_on: string[]; config?: { detail?: string; condition?: { key?: string; operator?: ServiceNodeData["conditionOperator"]; value?: string } } }> };
+      setWorkflowId(imported.id);
+      setNodes(imported.nodes.map((node, index) => ({
+        id: node.id,
+        position: { x: 90 + (index % 3) * 280, y: 80 + Math.floor(index / 3) * 170 },
+        data: {
+          label: node.name,
+          detail: node.config?.detail || "Imported workflow node",
+          status: "green",
+          conditionKey: node.config?.condition?.key,
+          conditionOperator: node.config?.condition?.operator,
+          conditionValue: node.config?.condition?.value,
+        },
+        sourcePosition: Position.Right,
+        targetPosition: Position.Left,
+        type: "default",
+      })));
+      setEdges(imported.nodes.flatMap((node) => node.depends_on.map((source) => ({ id: `import-${source}-${node.id}`, source, target: node.id, animated: true, style: { stroke: "#22D3EE", strokeWidth: 2 } }))));
+      setTransferMessage("Workflow imported without overwriting existing definitions.");
+    } catch (error) {
+      setTransferMessage(error instanceof Error ? error.message : "The selected file is not a valid workflow pack.");
+    }
+  }, [authorizedWorkflowRequest, setEdges, setNodes]);
 
   // Execute test call to real backend API endpoints
   const handleExecuteNode = async (node: Node<ServiceNodeData>) => {
@@ -229,6 +342,15 @@ export default function AdminWorkflowPage() {
           </div>
         </header>
 
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/50 p-3 text-xs">
+          <label className="text-slate-300">Workflow ID <input value={workflowId} onChange={(event) => setWorkflowId(event.target.value)} className="ml-2 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-white" aria-label="Workflow ID" /></label>
+          <button onClick={handleSaveWorkflow} className="rounded border border-cyan-400/50 px-3 py-1.5 text-cyan-200">Save workflow</button>
+          <button onClick={handleExportWorkflow} className="rounded border border-slate-600 px-3 py-1.5 text-slate-100">Export JSON</button>
+          <button onClick={() => importInputRef.current?.click()} className="rounded border border-slate-600 px-3 py-1.5 text-slate-100">Import JSON</button>
+          <input ref={importInputRef} type="file" accept="application/json,.json" onChange={handleImportWorkflow} className="hidden" />
+          {transferMessage && <span className="text-slate-300">{transferMessage}</span>}
+        </div>
+
         <div className="workflow-canvas-wrap" aria-label="Workflow canvas" style={{ position: "relative" }}>
           <ReactFlow
             nodes={visibleNodes.map((node) => ({ ...node, className: nodeClass(node.data.status) }))}
@@ -252,6 +374,7 @@ export default function AdminWorkflowPage() {
             onClose={() => setInspectingNode(null)}
             onDeleteNode={handleDeleteNode}
             onExecuteNode={handleExecuteNode}
+            onUpdateNode={handleUpdateNode}
           />
         </div>
 

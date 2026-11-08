@@ -77,6 +77,30 @@ async def test_workflow_storage_round_trip() -> None:
 
 
 @pytest.mark.anyio
+async def test_manual_workflow_pack_round_trip_redacts_secrets_and_rejects_duplicates() -> None:
+    stored = await workflow.store_workflow(
+        WorkflowStorageCreate(
+            id="offline-runbook",
+            name="Offline Runbook",
+            nodes=[WorkflowNode(id="first", name="First task", config={"api_key": "never-export", "label": "safe"})],
+        ),
+        _admin={"role": "admin"},
+    )
+
+    pack = await workflow.export_workflow(stored.id, _admin={"role": "admin"})
+    assert pack["export_version"] == "1.0.0"
+    assert pack["workflow"]["nodes"][0]["config"]["api_key"] == "[redacted]"
+
+    pack["workflow"]["id"] = "offline-runbook-copy"
+    imported = await workflow.import_workflow(pack, _admin={"role": "admin"})
+    assert imported.id == "offline-runbook-copy"
+
+    with pytest.raises(HTTPException) as error:
+        await workflow.import_workflow(pack, _admin={"role": "admin"})
+    assert error.value.status_code == 409
+
+
+@pytest.mark.anyio
 async def test_workflow_orchestration_completes_and_broadcasts() -> None:
     await workflow.store_workflow(
         WorkflowStorageCreate(

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 
 interface LogixaFlowLogoProps {
   className?: string;
@@ -16,7 +17,7 @@ export function LogixaFlowLogo({
   return (
     <div className={`flex items-center gap-3 select-none ${className}`}>
       {/* Clean Squircle App Icon Tile */}
-      <img
+      <Image
         src="/logo.svg"
         alt="Logixa Flow Icon"
         width={size}

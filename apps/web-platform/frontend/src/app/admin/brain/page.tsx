@@ -11,14 +11,10 @@ import {
   FileEdit,
   Globe,
   Undo2,
-  ExternalLink,
   Layers,
   Database,
   Search,
-  Filter,
   RefreshCw,
-  Clock,
-  ArrowRight,
   ShieldCheck,
 } from "lucide-react";
 

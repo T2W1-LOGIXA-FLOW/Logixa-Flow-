@@ -14,6 +14,7 @@ import {
   PackageCheck,
   Plus,
   Server,
+  AlertTriangle,
 } from "lucide-react";
 import Skeleton from "./shadcn/Skeleton";
 import EmptyState from "./EmptyState";
@@ -107,6 +108,19 @@ export default function AdminDashboard() {
   const [activityFeed, setActivityFeed] = useState<AdminActivityEntry[]>([]);
   const [systemStatusError, setSystemStatusError] = useState<string | null>(null);
   const [activityError, setActivityError] = useState<string | null>(null);
+  const [anomalyThreshold, setAnomalyThreshold] = useState(80);
+  const [acknowledgedAlerts, setAcknowledgedAlerts] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("logixa-kpi-alert-settings");
+      if (saved) {
+        const parsed = JSON.parse(saved) as { threshold?: number; acknowledged?: string[] };
+        if (typeof parsed.threshold === "number") setAnomalyThreshold(parsed.threshold);
+        if (Array.isArray(parsed.acknowledged)) setAcknowledgedAlerts(parsed.acknowledged);
+      }
+    } catch { /* dashboard remains usable without local preferences */ }
+  }, []);
 
   const statCards = useMemo(
     () => [
@@ -262,6 +276,19 @@ export default function AdminDashboard() {
     ),
     [usageTrend],
   );
+  const anomalies = useMemo(() => metrics.map((metric) => {
+    const numeric = Number.parseFloat(String(metric.value).replace(/[^0-9.-]/g, ""));
+    return { key: metric.key, title: metric.title, value: metric.value, numeric, isAlert: Number.isFinite(numeric) && numeric >= anomalyThreshold };
+  }).filter((metric) => metric.isAlert), [metrics, anomalyThreshold]);
+  const saveAnomalySettings = (threshold: number, acknowledged = acknowledgedAlerts) => {
+    setAnomalyThreshold(threshold);
+    window.localStorage.setItem("logixa-kpi-alert-settings", JSON.stringify({ threshold, acknowledged }));
+  };
+  const acknowledgeAnomaly = (key: string) => {
+    const next = [...new Set([...acknowledgedAlerts, key])];
+    setAcknowledgedAlerts(next);
+    window.localStorage.setItem("logixa-kpi-alert-settings", JSON.stringify({ threshold: anomalyThreshold, acknowledged: next }));
+  };
 
   if (!token) {
     return (
@@ -379,6 +406,14 @@ export default function AdminDashboard() {
                 </article>
               ))
             )}
+          </section>
+
+          <section className="rounded-3xl border border-amber-400/20 bg-slate-900/70 p-5 shadow-xl shadow-black/15">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div><p className="text-xs font-bold uppercase tracking-[0.24em] text-amber-300">Local KPI anomaly rules</p><h2 className="mt-2 text-xl font-bold text-white">Threshold watchlist</h2><p className="mt-1 text-sm text-slate-400">Checks configured dashboard metrics only. Settings and acknowledgements remain in this browser; no alert is sent externally.</p></div>
+              <label className="text-sm text-slate-300">Alert at or above <input aria-label="KPI anomaly threshold" type="number" min="0" value={anomalyThreshold} onChange={(event) => saveAnomalySettings(Math.max(0, Number(event.target.value) || 0))} className="ml-2 w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-white" /></label>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">{anomalies.length ? anomalies.map((item) => <article key={item.key} className="flex items-center justify-between gap-3 rounded-xl border border-amber-400/25 bg-amber-500/5 p-3"><div className="flex items-center gap-2"><AlertTriangle className="h-4 w-4 shrink-0 text-amber-300" /><div><p className="font-semibold text-amber-100">{item.title}</p><p className="text-xs text-amber-200/75">Current value: {item.value}</p></div></div>{acknowledgedAlerts.includes(item.key) ? <span className="text-xs text-emerald-300">Acknowledged</span> : <button type="button" onClick={() => acknowledgeAnomaly(item.key)} className="rounded-lg border border-amber-400/30 px-2 py-1 text-xs text-amber-100 hover:bg-amber-400/10">Acknowledge</button>}</article>) : <p className="rounded-xl border border-dashed border-slate-700 p-4 text-sm text-slate-400">No configured numeric KPI currently meets the local threshold.</p>}</div>
           </section>
 
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

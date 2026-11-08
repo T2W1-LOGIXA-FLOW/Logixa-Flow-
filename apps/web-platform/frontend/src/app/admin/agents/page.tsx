@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { adminFetch, AgentRun, AgentRunsPage } from "@/components/api";
-import { ChevronLeft, ChevronRight, Plus, MessageCircle, Bot, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, MessageCircle } from "lucide-react";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import AdminBreadcrumb from "@/components/admin/AdminBreadcrumb";
 import AdminSearchBar from "@/components/admin/AdminSearchBar";

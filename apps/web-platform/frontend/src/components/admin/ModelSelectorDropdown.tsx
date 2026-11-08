@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Cpu, ChevronDown, Check, Zap, Sparkles, Brain } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 
 export type AIModelOption = {
   id: string;

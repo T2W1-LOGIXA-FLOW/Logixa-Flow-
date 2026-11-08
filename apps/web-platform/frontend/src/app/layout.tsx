@@ -6,8 +6,9 @@ import { Analytics } from "@vercel/analytics/next";
 import "@/styles/globals.css";
 
 export const metadata = {
-  title: "Logixa Flow",
+  title: "Logixa Flow — Smarter Supply Chain OS",
   description: "Smarter Supply Chain. Limitless Flow.",
+  icons: { icon: "/logo.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

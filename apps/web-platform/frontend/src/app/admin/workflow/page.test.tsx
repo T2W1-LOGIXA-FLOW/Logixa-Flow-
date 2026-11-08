@@ -27,6 +27,10 @@ describe("unified command canvas", () => {
     expect(screen.getByText("OUTBOUND")).toBeInTheDocument();
     expect(screen.getByText("ORCHESTRATOR")).toBeInTheDocument();
     expect(screen.getByLabelText("Process cost panel")).toBeInTheDocument();
+    expect(screen.getByLabelText("Workflow ID")).toHaveValue("command-canvas");
+    expect(screen.getByRole("button", { name: "Save workflow" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Export JSON" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Import JSON" })).toBeInTheDocument();
   });
 
   it("supports node filtering and sidebar selection", () => {

@@ -9,6 +9,9 @@ export type ServiceNodeData = {
   status: "green" | "amber" | "red";
   endpoint?: string;
   config?: Record<string, string>;
+  conditionKey?: string;
+  conditionOperator?: "equals" | "not_equals" | "exists" | "not_exists";
+  conditionValue?: string;
 };
 
 type NodeInspectorDrawerProps = {
@@ -16,6 +19,7 @@ type NodeInspectorDrawerProps = {
   onClose: () => void;
   onDeleteNode?: (id: string) => void;
   onExecuteNode?: (node: Node<ServiceNodeData>) => Promise<unknown>;
+  onUpdateNode?: (id: string, data: Partial<ServiceNodeData>) => void;
 };
 
 export default function NodeInspectorDrawer({
@@ -23,6 +27,7 @@ export default function NodeInspectorDrawer({
   onClose,
   onDeleteNode,
   onExecuteNode,
+  onUpdateNode,
 }: NodeInspectorDrawerProps) {
   const [executing, setExecuting] = useState(false);
   const [executionResult, setExecutionResult] = useState<string | null>(null);
@@ -113,6 +118,39 @@ export default function NodeInspectorDrawer({
             {data.status.toUpperCase()}
           </span>
         </div>
+
+        <fieldset style={{ border: "1px solid #263653", borderRadius: "6px", padding: "8px", margin: "12px 0" }}>
+          <legend style={{ padding: "0 4px", fontSize: "10px", color: "#22D3EE" }}>CONDITIONAL BRANCH (LOCAL)</legend>
+          <p style={{ margin: "0 0 8px", fontSize: "10px", color: "#94a3b8" }}>Skip this node unless a previous node&apos;s metadata matches. Leave the key blank to always run.</p>
+          <input
+            aria-label="Condition metadata key"
+            value={data.conditionKey ?? ""}
+            onChange={(event) => onUpdateNode?.(selectedNode.id, { conditionKey: event.target.value })}
+            placeholder="metadata key, e.g. approved"
+            style={{ width: "100%", boxSizing: "border-box", marginBottom: "6px", padding: "6px", background: "#0a0f1d", color: "#e2e8f0", border: "1px solid #334155", borderRadius: "4px", fontSize: "11px" }}
+          />
+          <div style={{ display: "flex", gap: "6px" }}>
+            <select
+              aria-label="Condition operator"
+              value={data.conditionOperator ?? "equals"}
+              onChange={(event) => onUpdateNode?.(selectedNode.id, { conditionOperator: event.target.value as ServiceNodeData["conditionOperator"] })}
+              style={{ flex: 1, padding: "6px", background: "#0a0f1d", color: "#e2e8f0", border: "1px solid #334155", borderRadius: "4px", fontSize: "11px" }}
+            >
+              <option value="equals">equals</option>
+              <option value="not_equals">not equals</option>
+              <option value="exists">exists</option>
+              <option value="not_exists">not exists</option>
+            </select>
+            <input
+              aria-label="Condition value"
+              value={data.conditionValue ?? ""}
+              disabled={["exists", "not_exists"].includes(data.conditionOperator ?? "equals")}
+              onChange={(event) => onUpdateNode?.(selectedNode.id, { conditionValue: event.target.value })}
+              placeholder="value"
+              style={{ flex: 1, padding: "6px", background: "#0a0f1d", color: "#e2e8f0", border: "1px solid #334155", borderRadius: "4px", fontSize: "11px" }}
+            />
+          </div>
+        </fieldset>
 
         {/* Action Controls */}
         <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>

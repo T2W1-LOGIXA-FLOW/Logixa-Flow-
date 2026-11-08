@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl, model_validator
 
 PostType = Literal["news", "education", "analysis"]
 PostCategory = Literal["Supply Chain", "Logistics", "Procurement", "Operations Excellence", "News"]
@@ -781,6 +781,60 @@ class WorkflowStorageCreate(BaseModel):
     id: str = Field(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9_-]+$")
     name: str = Field(min_length=1, max_length=120)
     nodes: list[WorkflowNode] = Field(min_length=1, max_length=50)
+
+    @model_validator(mode="after")
+    def validate_topology_and_conditions(self) -> "WorkflowStorageCreate":
+        """Reject invalid graphs before they can be stored or queued.
+
+        Conditions are intentionally small and local: a node may inspect a
+        value written earlier by ``set_metadata``.  This keeps branching
+        deterministic and does not require a third-party automation service.
+        """
+        node_ids = [node.id for node in self.nodes]
+        if len(node_ids) != len(set(node_ids)):
+            raise ValueError("workflow node IDs must be unique")
+
+        index = {node.id: node for node in self.nodes}
+        for node in self.nodes:
+            if len(node.depends_on) != len(set(node.depends_on)):
+                raise ValueError(f"node '{node.id}' has duplicate dependencies")
+            for dependency in node.depends_on:
+                if dependency == node.id:
+                    raise ValueError(f"node '{node.id}' cannot depend on itself")
+                if dependency not in index:
+                    raise ValueError(f"node '{node.id}' depends on missing node '{dependency}'")
+
+            condition = node.config.get("condition")
+            if condition is None:
+                continue
+            if not isinstance(condition, dict):
+                raise ValueError(f"node '{node.id}' config.condition must be an object")
+            key = str(condition.get("key", "")).strip()
+            operator = str(condition.get("operator", "equals")).strip().lower()
+            if not key:
+                raise ValueError(f"node '{node.id}' condition requires a metadata key")
+            if operator not in {"equals", "not_equals", "exists", "not_exists"}:
+                raise ValueError(f"node '{node.id}' has unsupported condition operator '{operator}'")
+            if operator in {"equals", "not_equals"} and "value" not in condition:
+                raise ValueError(f"node '{node.id}' condition operator '{operator}' requires a value")
+
+        visiting: set[str] = set()
+        visited: set[str] = set()
+
+        def visit(node_id: str) -> None:
+            if node_id in visited:
+                return
+            if node_id in visiting:
+                raise ValueError(f"workflow dependency cycle detected at node '{node_id}'")
+            visiting.add(node_id)
+            for dependency in index[node_id].depends_on:
+                visit(dependency)
+            visiting.remove(node_id)
+            visited.add(node_id)
+
+        for node_id in node_ids:
+            visit(node_id)
+        return self
 
 
 class WorkflowStorageOut(WorkflowStorageCreate):

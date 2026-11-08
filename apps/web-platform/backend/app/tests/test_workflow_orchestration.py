@@ -101,6 +101,47 @@ async def test_node_dependencies_and_registered_actions() -> None:
 
 
 @pytest.mark.anyio
+async def test_conditional_node_skips_when_local_metadata_does_not_match() -> None:
+    workflow = WorkflowStorageCreate(
+        id="conditional-workflow",
+        name="conditional workflow",
+        nodes=[
+            WorkflowNode(id="set", name="set", config={"action": "set_metadata", "key": "approved", "value": False}),
+            WorkflowNode(
+                id="only-if-approved",
+                name="only if approved",
+                depends_on=["set"],
+                config={"action": "log", "condition": {"key": "approved", "operator": "equals", "value": True}},
+            ),
+        ],
+    )
+    workflow_router._WORKFLOW_STORAGE[workflow.id] = WorkflowStorageOut(
+        **workflow.model_dump(), created_at=workflow_router._now(), updated_at=workflow_router._now()
+    )
+    run = WorkflowRunOut(run_id="run-conditional", workflow_id=workflow.id, state=WorkflowState(status="queued"))
+    workflow_router._WORKFLOW_RUNS[run.run_id] = run
+
+    await workflow_router._execute_workflow(run.run_id)
+
+    assert run.state.status == "completed"
+    assert run.state.completed_nodes == ["set", "only-if-approved"]
+    assert any("only-if-approved: skipped" in entry for entry in workflow_router._EXECUTION_HISTORY[run.run_id])
+
+
+def test_workflow_definition_rejects_invalid_graph_and_condition() -> None:
+    with pytest.raises(ValueError, match="cycle"):
+        WorkflowStorageCreate(
+            id="cycle", name="cycle",
+            nodes=[WorkflowNode(id="a", name="a", depends_on=["b"]), WorkflowNode(id="b", name="b", depends_on=["a"])],
+        )
+    with pytest.raises(ValueError, match="requires a metadata key"):
+        WorkflowStorageCreate(
+            id="bad-condition", name="bad condition",
+            nodes=[WorkflowNode(id="a", name="a", config={"condition": {"operator": "exists"}})],
+        )
+
+
+@pytest.mark.anyio
 async def test_error_handling_rolls_back_failed_run() -> None:
     workflow = WorkflowStorageCreate(
         id="broken-workflow",

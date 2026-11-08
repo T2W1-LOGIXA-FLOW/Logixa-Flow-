@@ -16,14 +16,9 @@ import {
 import {
   BarChart3,
   Cpu,
-  Database,
-  DollarSign,
-  Layers,
   Sparkles,
   RefreshCw,
   FileText,
-  Activity,
-  Zap,
 } from "lucide-react";
 
 // ─── Brain Dashboard Types ──────────────────────────────────────

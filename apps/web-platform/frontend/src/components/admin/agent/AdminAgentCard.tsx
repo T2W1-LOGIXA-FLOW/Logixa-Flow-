@@ -4,7 +4,7 @@ import AdminAgentStatusBadge from "./AdminAgentStatusBadge";
 import styles from "@/app/admin/agents/agent-theme.module.css";
 import type { AgentRun } from "@/components/api";
 import AdminAgentTimeline from "./AdminAgentTimeline";
-import { Brain, Cpu, Layers, Clock } from "lucide-react";
+import { Brain, Cpu, Clock } from "lucide-react";
 
 export default function AdminAgentCard({ run }: { run: AgentRun }) {
   const memoryStatus = run.memory?.status ?? (run.final_memory_id ? "Linked" : "Staged");

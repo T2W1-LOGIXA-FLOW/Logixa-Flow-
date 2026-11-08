@@ -85,6 +85,29 @@ router = APIRouter(prefix="/api/admin/workflow", tags=["admin", "workflow"])
 router.include_router(workflow_qstash.router)
 router.include_router(workflow_websocket.router)
 
+_SENSITIVE_CONFIG_KEYS = frozenset({"api_key", "apikey", "authorization", "credential", "credentials", "password", "secret", "token"})
+
+
+def _safe_export_value(value: Any) -> Any:
+    """Return a portable workflow value without exporting credentials."""
+    if isinstance(value, dict):
+        return {
+            key: ("[redacted]" if any(marker in key.lower() for marker in _SENSITIVE_CONFIG_KEYS) else _safe_export_value(item))
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_safe_export_value(item) for item in value]
+    return value
+
+
+def _manual_workflow_pack(workflow: WorkflowStorageOut) -> dict[str, Any]:
+    """Build a versioned, credentials-free JSON pack for explicit download."""
+    return {
+        "export_version": "1.0.0",
+        "source_app": "Logixa Flow",
+        "workflow": _safe_export_value(workflow.model_dump(mode="json")),
+    }
+
 
 # ---------------------------------------------------------------------------
 # CRUD — workflow definitions
@@ -107,6 +130,30 @@ async def store_workflow(payload: WorkflowStorageCreate, _admin=Depends(require_
     _WORKFLOW_STORAGE[payload.id] = workflow
     _persist_workflow_definition(workflow)
     return workflow
+
+
+@router.get("/{workflow_id}/export")
+async def export_workflow(workflow_id: str, _admin=Depends(require_admin)) -> dict[str, Any]:
+    """Download-safe manual workflow pack. It never contacts another project."""
+    workflow = _WORKFLOW_STORAGE.get(workflow_id) or _load_workflow_definition(workflow_id)
+    if workflow is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="workflow not found")
+    _WORKFLOW_STORAGE[workflow_id] = workflow
+    return _manual_workflow_pack(workflow)
+
+
+@router.post("/import", response_model=WorkflowStorageOut, status_code=status.HTTP_201_CREATED)
+async def import_workflow(pack: dict[str, Any], _admin=Depends(require_admin)) -> WorkflowStorageOut:
+    """Import one user-selected JSON pack without replacing an existing workflow."""
+    if pack.get("export_version") != "1.0.0" or not isinstance(pack.get("workflow"), dict):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="invalid workflow export pack")
+    try:
+        payload = WorkflowStorageCreate.model_validate(pack["workflow"])
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="invalid workflow definition") from exc
+    if _WORKFLOW_STORAGE.get(payload.id) or _load_workflow_definition(payload.id):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="workflow id already exists; imports never overwrite")
+    return await store_workflow(payload, _admin=_admin)
 
 
 @router.get("/{workflow_id}", response_model=WorkflowStorageOut)
