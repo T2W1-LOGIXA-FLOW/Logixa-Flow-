@@ -61,11 +61,16 @@ async def security_headers_middleware(request: Request, call_next):
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+    response.headers.setdefault("Content-Security-Policy", "default-src 'none'; base-uri 'none'; frame-ancestors 'none'")
+    if os.getenv("ENVIRONMENT", "development").lower() in {"production", "prod"}:
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     return response
 
 
 async def rate_limit_middleware(request: Request, call_next):
-    if os.getenv("USE_SLOWAPI", "true").lower() == "true":
+    # Keep this default aligned with app startup. Otherwise an unset setting
+    # skipped the custom limiter without ever enabling SlowAPI.
+    if os.getenv("USE_SLOWAPI", "false").lower() == "true":
         return await call_next(request)
     if os.getenv("ENABLE_RATE_LIMIT", "true").lower() != "true":
         return await call_next(request)

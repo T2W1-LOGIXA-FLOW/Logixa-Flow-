@@ -353,6 +353,8 @@ app.add_middleware(
 
 # Trusted hosts: reject requests with forged Host headers in production
 _trusted_hosts = [h.strip() for h in os.getenv("TRUSTED_HOSTS", "*").split(",") if h.strip()]
+if os.getenv("ENVIRONMENT", "development").lower() in {"production", "prod"} and _trusted_hosts == ["*"]:
+    raise ValueError("TRUSTED_HOSTS must be an explicit allowlist in production")
 if _trusted_hosts != ["*"]:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=_trusted_hosts)
 

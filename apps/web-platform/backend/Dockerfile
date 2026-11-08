@@ -5,8 +5,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY requirements.txt requirements-postgres.txt ./
-RUN pip install --no-cache-dir -r requirements.txt -r requirements-postgres.txt
+COPY requirements.txt requirements.lock ./
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
 COPY migrations ./migrations

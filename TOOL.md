@@ -126,7 +126,7 @@ Keep repository migration head separate from live production head. Keep implemen
 
 ## Current deployment architecture
 
-Render Free uses one Web Service. QStash provides durable delivery/delay/retry for the current path. PostgreSQL is durable workflow/run state. CELERY_ENABLED=false is intentional. Celery/Redis are optional only when explicitly enabled. A Render Background Worker is not a current prerequisite.
+Render Free uses one Web Service declared by the repository-root `render.yaml`; it is the only canonical Render blueprint. QStash provides durable delivery/delay/retry for the current path. PostgreSQL is durable workflow/run state. CELERY_ENABLED=false is intentional. Celery/Redis are optional only when explicitly enabled. A Render Background Worker is not a current prerequisite.
 
 ## Current storage routing
 
