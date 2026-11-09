@@ -92,7 +92,7 @@ graph TD
 ### Priority 2: Visual Workflow Canvas & Node Enhancements
 - [ ] **Custom Node Configuration Drawers:** Enable interactive property drawers for each ReactFlow node (LLM model selection, temperature, system prompts, retry backoff, and error branches).
 - [ ] **Dynamic Condition Branching:** Support visual conditional routers (`if/else`, `switch`, `regex match`) on canvas edges.
-- [ ] **Workflow Export/Import:** Support JSON/YAML workflow schema export, versioning, and template sharing.
+- [x] **Workflow JSON Export/Import:** The admin workflow canvas exposes JSON export and import. YAML, schema versioning, and template sharing are separate capabilities and remain unverified/not implemented.
 
 ### Priority 3: Guardrails, Cost Management & SLO Error Budgets
 - [ ] **Automated Quota Failsafe:** Automatically pause active workflows when project token consumption or API spend reaches 90% of configured monthly budget.
