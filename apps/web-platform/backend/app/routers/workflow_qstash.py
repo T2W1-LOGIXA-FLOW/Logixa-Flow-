@@ -116,8 +116,36 @@ async def qstash_dispatch(request: Request) -> dict[str, str]:
         return {"status": "already_running", "run_id": run_id}
 
     if os.getenv("CELERY_ENABLED", "false").lower() == "true":
-        from app.workers.tasks import execute_workflow_task
-        execute_workflow_task.delay(run_id)
+        try:
+            from app.workers.tasks import execute_workflow_task
+
+            execute_workflow_task.delay(run_id)
+        except Exception as exc:
+            # A broker/enqueue failure must release the claim immediately so
+            # QStash redelivery can retry without waiting for lease expiry.
+            logger.exception(
+                "Failed to enqueue workflow task",
+                extra={
+                    "run_id": run_id,
+                    "operation": "qstash_dispatch_enqueue",
+                    "error_type": type(exc).__name__,
+                },
+            )
+            try:
+                _release_job_claim(run_id)
+            except Exception:
+                logger.exception(
+                    "Failed to release workflow claim after enqueue error",
+                    extra={
+                        "run_id": run_id,
+                        "operation": "qstash_dispatch_release_claim",
+                        "error_type": "database_failure",
+                    },
+                )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Workflow queue is temporarily unavailable; delivery may be retried",
+            ) from exc
         return {"status": "queued", "run_id": run_id}
 
     # Free Render mode: keep execution inside the QStash request so QStash owns
