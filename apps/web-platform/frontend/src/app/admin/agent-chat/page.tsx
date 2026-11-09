@@ -323,7 +323,7 @@ export default function AdminAgentChatPage() {
         </div>
 
         {/* Input Area */}
-        <div className="border-t border-slate-800 bg-slate-900/50 p-4">
+        <div className="border-t border-slate-800 bg-slate-900/90 p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sticky bottom-0 z-20 backdrop-blur-md">
           <AIInputWithLoading
             onSubmit={handleAgentQuery}
             placeholder="Ask the agent something..."
