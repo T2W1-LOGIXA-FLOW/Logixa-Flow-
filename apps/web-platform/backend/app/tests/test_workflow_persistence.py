@@ -754,3 +754,40 @@ async def test_cancelled_qstash_execution_requeues_run_and_releases_claim(
         assert record.status == "queued"
     finally:
         db.close()
+
+
+
+@pytest.mark.anyio
+async def test_approval_metadata_and_execution_history_restore_after_restart() -> None:
+    await workflow.store_workflow(
+        WorkflowStorageCreate(
+            id="approval-recovery-flow",
+            name="Approval Recovery Flow",
+            nodes=[WorkflowNode(id="approval", type="approval", name="Approval")],
+        ),
+        _admin={"role": "admin"},
+    )
+    run = await workflow.run_workflow(
+        "approval-recovery-flow",
+        WorkflowRunRequest(workflow_id="approval-recovery-flow", delay_seconds=60),
+        _admin={"role": "admin"},
+    )
+    run.state.status = "waiting_approval"
+    run.state.approval_node = "approval"
+    workflow._EXECUTION_METRICS[run.run_id] = {
+        "approved_nodes": ["approval"],
+        "metadata": {"release_ticket": "REL-42"},
+    }
+    workflow._EXECUTION_HISTORY[run.run_id] = ["approval: approved by operator"]
+    workflow._persist_run_state(run)
+
+    # Simulate a new process: in-memory maps are empty, database is retained.
+    workflow._EXECUTION_METRICS.clear()
+    workflow._EXECUTION_HISTORY.clear()
+    workflow._WORKFLOW_RUNS.clear()
+
+    restored = workflow._load_run_state(run.run_id)
+    assert restored is not None
+    assert workflow._EXECUTION_METRICS[run.run_id]["approved_nodes"] == ["approval"]
+    assert workflow._EXECUTION_METRICS[run.run_id]["metadata"]["release_ticket"] == "REL-42"
+    assert workflow._EXECUTION_HISTORY[run.run_id] == ["approval: approved by operator"]
