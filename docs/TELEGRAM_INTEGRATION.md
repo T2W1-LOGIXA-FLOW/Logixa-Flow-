@@ -15,14 +15,14 @@ Logixa Flow uses the Telegram Supergroup to deliver mission-critical operational
 * Supply-chain threshold anomaly warnings (inventory low, shipping delays).
 * Controller state changes and scheduled task triggers.
 
-Operators can retry failed workflows or pause automation controllers directly from Telegram.
+Operators can retry failed workflows and inspect metrics from Telegram. Controller pause is not exposed as a Telegram inline action.
 
 ---
 
 ## 2. Topic Configuration
 
 * **Suggested Topic Name:** `📦 Logixa-Flow`
-* **Suggested Topic ID:** `4` (or your assigned `message_thread_id`)
+* **Configured Topic ID:** `5` (current production configuration; verify against Telegram's actual `message_thread_id` before changing it)
 * **Color / Icon:** 📦 Package / Workflow Automation
 
 ---
@@ -75,7 +75,6 @@ await notify_workflow_failed(
 ```
 * **Actions included:**
   - `[🔄 Retry Workflow]` (`logixa_wf_retry:wf_import_sync_09`)
-  - `[🛑 Disable Workflow]` (`logixa_wf_disable:wf_import_sync_09`)
 
 ### (3) Supply Chain Threshold Alert
 ```python
@@ -116,8 +115,7 @@ await notify_controller_status(
 This project includes a dedicated inbound endpoint to receive callbacks from the Central Cloudflare Gateway:
 * **Endpoint:** `POST /api/telegram/action`
 * **Supported Actions:**
-  * `logixa_wf_retry:<id>` -> Triggers immediate background retry for failed workflow
-  * `logixa_wf_disable:<id>` -> Pauses the workflow scheduler and marks state as disabled
+  * `logixa_wf_retry:<id>` -> Triggers retry for a failed workflow (actor authorization is enforced by the backend)
   * `logixa_wf_metrics:<id>` -> Replies with live runtime execution metrics in the topic
 
 ---
