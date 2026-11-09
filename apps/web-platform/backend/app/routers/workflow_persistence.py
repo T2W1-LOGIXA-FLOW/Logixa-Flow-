@@ -189,6 +189,11 @@ def _load_run_state(run_id: str) -> WorkflowRunOut | None:
         if record is None:
             return None
         metrics = json.loads(record.metrics_json or "{}")
+        # Restore execution metadata alongside the run state. Approval decisions
+        # and task metadata are persisted in metrics_json and must survive a
+        # worker/process restart before an approved run is resumed.
+        _EXECUTION_METRICS[run_id] = metrics
+        _EXECUTION_HISTORY[run_id] = json.loads(record.execution_log or "[]")
         return WorkflowRunOut(
             run_id=record.id,
             workflow_id=record.workflow_id,
