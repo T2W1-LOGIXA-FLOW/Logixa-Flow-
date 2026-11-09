@@ -623,6 +623,85 @@ async def test_qstash_dispatch_releases_claim_and_returns_retryable_status_on_ex
 
 
 @pytest.mark.anyio
+async def test_qstash_dispatch_releases_claim_when_celery_enqueue_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    await workflow.store_workflow(
+        WorkflowStorageCreate(
+            id="qstash-celery-flow",
+            name="QStash Celery flow",
+            nodes=[WorkflowNode(id="step", name="Step")],
+        ),
+        _admin={"role": "admin"},
+    )
+    run = WorkflowRunOut(
+        run_id="qstash-celery-run",
+        workflow_id="qstash-celery-flow",
+        state=WorkflowState(status="queued"),
+    )
+    workflow._WORKFLOW_RUNS[run.run_id] = run
+    workflow._persist_run_state(run)
+    db = workflow.SessionLocal()
+    try:
+        db.add(
+            models.ScheduledWorkflowJob(
+                id="job-qstash-celery",
+                run_id=run.run_id,
+                workflow_id=run.workflow_id,
+                priority=1,
+                scheduled_for=workflow._now(),
+                status="queued",
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    class FakeReceiver:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+        def verify(self, **kwargs):
+            return None
+
+    qstash_module = ModuleType("qstash")
+    qstash_module.Receiver = FakeReceiver
+    monkeypatch.setitem(sys.modules, "qstash", qstash_module)
+    monkeypatch.setenv("QSTASH_CURRENT_SIGNING_KEY", "current-test-key")
+    monkeypatch.setenv("QSTASH_NEXT_SIGNING_KEY", "next-test-key")
+    monkeypatch.setenv("QSTASH_DESTINATION_URL", "https://example.invalid")
+    monkeypatch.setenv("CELERY_ENABLED", "true")
+
+    from app.workers.tasks import execute_workflow_task
+
+    def fail_enqueue(run_id: str):
+        raise RuntimeError("simulated broker outage")
+
+    monkeypatch.setattr(execute_workflow_task, "delay", fail_enqueue)
+
+    class FakeRequest:
+        headers = {"Upstash-Signature": "signed-test-payload"}
+
+        async def body(self) -> bytes:
+            return json.dumps({"run_id": run.run_id}).encode("utf-8")
+
+    with pytest.raises(HTTPException) as raised:
+        await workflow.qstash_dispatch(FakeRequest())
+
+    assert raised.value.status_code == 503
+    db = workflow.SessionLocal()
+    try:
+        job = db.query(models.ScheduledWorkflowJob).filter(
+            models.ScheduledWorkflowJob.run_id == run.run_id
+        ).one()
+        assert job.status == "queued"
+        assert job.claimed_by is None
+        assert job.claimed_at is None
+    finally:
+        db.close()
+
+
+@pytest.mark.anyio
 async def test_qstash_terminal_redelivery_repairs_job_status_without_reexecution(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
