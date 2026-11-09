@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+from html import escape as html_escape
 from typing import Any
 import httpx
 
@@ -121,7 +122,7 @@ async def send_notification(
     status_icon = icon_map.get(status.upper(), "📦")
 
     lines = [
-        f"📦 <b>[Logixa-Flow]</b> {status_icon} <b>{title}</b>",
+        f"📦 <b>[Logixa-Flow]</b> {status_icon} <b>{html_escape(title)}</b>",
         "",
         details,
     ]
