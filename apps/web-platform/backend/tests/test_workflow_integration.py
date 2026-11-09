@@ -355,3 +355,101 @@ def test_stale_workflow_claim_is_reclaimable(monkeypatch: pytest.MonkeyPatch) ->
     assert db.query_obj.updated is not None
     assert db.query_obj.updated["status"] == "running"
     assert db.query_obj.updated["claimed_by"] == "test-worker"
+
+
+@pytest.mark.anyio
+async def test_qstash_dispatch_rejects_missing_signature_or_signing_keys(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("QSTASH_CURRENT_SIGNING_KEY", "test-current")
+    monkeypatch.setenv("QSTASH_NEXT_SIGNING_KEY", "test-next")
+
+    class MissingSignatureRequest:
+        headers: dict[str, str] = {}
+        async def body(self) -> bytes:
+            return b'{"run_id":"missing-signature"}'
+
+    with pytest.raises(HTTPException) as missing_signature:
+        await workflow.qstash_dispatch(MissingSignatureRequest())  # type: ignore[arg-type]
+    assert missing_signature.value.status_code == 401
+
+    monkeypatch.setenv("QSTASH_CURRENT_SIGNING_KEY", "")
+    class SignedRequest:
+        headers = {"Upstash-Signature": "signed"}
+        async def body(self) -> bytes:
+            return b'{"run_id":"missing-key"}'
+
+    with pytest.raises(HTTPException) as missing_key:
+        await workflow.qstash_dispatch(SignedRequest())  # type: ignore[arg-type]
+    assert missing_key.value.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_qstash_dispatch_rejects_invalid_signature_before_loading_run(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("QSTASH_CURRENT_SIGNING_KEY", "test-current")
+    monkeypatch.setenv("QSTASH_NEXT_SIGNING_KEY", "test-next")
+    monkeypatch.setenv("QSTASH_DESTINATION_URL", "https://logixa-flow.onrender.com")
+
+    class RejectingReceiver:
+        def __init__(self, **_: str) -> None:
+            pass
+        def verify(self, **_: str) -> bool:
+            raise ValueError("signature mismatch")
+
+    class SignedRequest:
+        headers = {"Upstash-Signature": "invalid"}
+        async def body(self) -> bytes:
+            return b'{"run_id":"must-not-load"}'
+
+    loaded: list[str] = []
+    monkeypatch.setattr("qstash.Receiver", RejectingReceiver)
+    monkeypatch.setattr(workflow_qstash, "_load_run_state", lambda run_id: loaded.append(run_id))
+    with pytest.raises(HTTPException) as error:
+        await workflow.qstash_dispatch(SignedRequest())  # type: ignore[arg-type]
+
+    assert error.value.status_code == 401
+    assert loaded == []
+
+
+@pytest.mark.anyio
+async def test_qstash_dispatch_releases_claim_and_returns_retryable_503_on_execution_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    queued = workflow.WorkflowRunOut(
+        run_id="retryable-run",
+        workflow_id="retryable-workflow",
+        state=workflow.WorkflowState(status="queued"),
+    )
+    workflow._WORKFLOW_RUNS[queued.run_id] = queued
+    monkeypatch.setenv("QSTASH_CURRENT_SIGNING_KEY", "test-current")
+    monkeypatch.setenv("QSTASH_NEXT_SIGNING_KEY", "test-next")
+    monkeypatch.setenv("QSTASH_DESTINATION_URL", "https://logixa-flow.onrender.com")
+    monkeypatch.setenv("CELERY_ENABLED", "false")
+
+    class AcceptingReceiver:
+        def __init__(self, **_: str) -> None:
+            pass
+        def verify(self, **_: str) -> bool:
+            return True
+
+    class SignedRequest:
+        headers = {"Upstash-Signature": "valid"}
+        async def body(self) -> bytes:
+            return b'{"run_id":"retryable-run"}'
+
+    released: list[str] = []
+    async def fail_execution(_: str) -> None:
+        raise RuntimeError("temporary persistence failure")
+
+    monkeypatch.setattr("qstash.Receiver", AcceptingReceiver)
+    monkeypatch.setattr(workflow_qstash, "_claim_job", lambda _: True)
+    monkeypatch.setattr(workflow_qstash, "_execute_workflow", fail_execution)
+    monkeypatch.setattr(workflow_qstash, "_release_job_claim", lambda run_id: released.append(run_id))
+
+    with pytest.raises(HTTPException) as error:
+        await workflow.qstash_dispatch(SignedRequest())  # type: ignore[arg-type]
+
+    assert error.value.status_code == 503
+    assert released == ["retryable-run"]
