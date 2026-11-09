@@ -147,7 +147,7 @@ async def send_notification(
 
 async def notify_workflow_completed(workflow_id: str, name: str, execution_time: float) -> None:
     """Notify when a supply chain workflow completes successfully."""
-    details = f"⚡ <b>Workflow:</b> <code>{name}</code>\n⏱️ <b>Duration:</b> {execution_time:.2f}s\n🆔 <code>{workflow_id}</code>"
+    details = f"⚡ <b>Workflow:</b> <code>{html_escape(name)}</code>\n⏱️ <b>Duration:</b> {execution_time:.2f}s\n🆔 <code>{html_escape(workflow_id)}</code>"
     actions = [
         ("📊 View Run Metrics", f"logixa_wf_metrics:{workflow_id}"),
     ]
@@ -156,7 +156,7 @@ async def notify_workflow_completed(workflow_id: str, name: str, execution_time:
 
 async def notify_workflow_failed(workflow_id: str, name: str, error_message: str) -> None:
     """Notify when a workflow fails and requires intervention."""
-    details = f"⚠️ <b>Workflow:</b> <code>{name}</code>\n❌ <b>Error:</b> {error_message}\n🆔 <code>{workflow_id}</code>"
+    details = f"⚠️ <b>Workflow:</b> <code>{html_escape(name)}</code>\n❌ <b>Error:</b> {html_escape(error_message)}\n🆔 <code>{html_escape(workflow_id)}</code>"
     actions = [
         ("🔄 Retry Workflow", f"logixa_wf_retry:{workflow_id}"),
         ("🛑 Disable Workflow", f"logixa_wf_disable:{workflow_id}"),
@@ -167,19 +167,19 @@ async def notify_workflow_failed(workflow_id: str, name: str, error_message: str
 async def notify_supply_chain_alert(metric: str, current_value: str, threshold: str, notes: str = "") -> None:
     """Trigger alert when a supply-chain threshold is breached."""
     details = (
-        f"📈 <b>Metric:</b> {metric}\n"
-        f"⚠️ <b>Current:</b> <code>{current_value}</code> (Threshold: {threshold})"
+        f"📈 <b>Metric:</b> {html_escape(metric)}\n"
+        f"⚠️ <b>Current:</b> <code>{html_escape(current_value)}</code> (Threshold: {html_escape(threshold)})"
     )
     if notes:
-        details += f"\n📝 {notes}"
+        details += f"\n📝 {html_escape(notes)}"
     await send_notification("Supply Chain Threshold Alert", details, status="WARNING")
 
 
 async def notify_controller_status(controller_name: str, state: str, reason: str = "") -> None:
     """Notify controller lifecycle change."""
-    details = f"🎮 <b>Controller:</b> <code>{controller_name}</code>\n📍 <b>State:</b> <code>{state}</code>"
+    details = f"🎮 <b>Controller:</b> <code>{html_escape(controller_name)}</code>\n📍 <b>State:</b> <code>{html_escape(state)}</code>"
     if reason:
-        details += f"\n💬 {reason}"
+        details += f"\n💬 {html_escape(reason)}"
     await send_notification("Controller State Update", details, status="INFO")
 
 
