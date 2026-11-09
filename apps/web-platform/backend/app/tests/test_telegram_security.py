@@ -120,3 +120,22 @@ def test_telegram_admin_allowlist_rejects_non_admin_and_accepts_configured(monke
     with pytest.raises(HTTPException) as missing:
         telegram_router._authorize_telegram_admin(user_id=None)
     assert missing.value.status_code == 403
+
+
+
+def test_telegram_notifications_escape_html_fields(monkeypatch):
+    captured = {}
+
+    async def fake_send(text, **kwargs):
+        captured["text"] = text
+        return {"ok": True}
+
+    monkeypatch.setattr("app.services.telegram.send_telegram_message", fake_send)
+    from ..services.telegram import notify_workflow_failed
+
+    asyncio.run(notify_workflow_failed("wf<1>", "A&B", "<b>untrusted error</b>"))
+
+    assert "A&amp;B" in captured["text"]
+    assert "&lt;b&gt;untrusted error&lt;/b&gt;" in captured["text"]
+    assert "wf&lt;1&gt;" in captured["text"]
+    assert "<b>untrusted error</b>" not in captured["text"]

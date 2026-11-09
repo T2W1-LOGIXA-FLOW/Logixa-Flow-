@@ -247,16 +247,16 @@ export default function AdminWorkflowPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: "Supply Chain Operations Automation", width: 1200, height: 630 }),
       }).catch(() => null);
-      return res?.ok ? await res.json() : { status: "simulated_success", model: "FLUX", banner_url: "https://image.pollinations.ai/prompt/Logistics%20Tech?width=1200&height=630&model=flux" };
+      return res?.ok ? await res.json() : { status: "simulation_only", simulated: true, model: "FLUX", note: "No banner-generation backend confirmed; no image was generated." };
     }
     if (label === "THOUGHT STREAM") {
-      return { status: "connected", stream_url: "/api/agent/stream/demo-session", protocol: "Server-Sent Events (SSE)" };
+      return { status: "demo_only", simulated: true, stream_url: null, note: "This node does not open a live SSE stream." };
     }
     if (label === "TELEGRAM GATE") {
-      return { status: "dispatched", target: "Telegram Admin Topic", actions: ["✅ Approve", "❌ Discard"] };
+      return { status: "simulation_only", simulated: true, target: "Telegram Admin Topic", actions: [], note: "No Telegram message or callback was dispatched." };
     }
     // Generic fallback
-    return { status: "ok", node: label, timestamp: new Date().toISOString() };
+    return { status: "simulation_only", simulated: true, node: label, timestamp: new Date().toISOString(), note: "No real node-specific backend action is wired to this test button." };
   };
 
   useEffect(() => {
