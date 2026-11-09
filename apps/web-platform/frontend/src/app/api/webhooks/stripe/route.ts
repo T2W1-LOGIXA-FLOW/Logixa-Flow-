@@ -3,6 +3,17 @@ import Stripe from "stripe";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 
+// These events currently have no durable subscription/payment handlers. Never
+// acknowledge them as successful: Stripe would stop retrying and billing state
+// would silently drift from the application database.
+const unimplementedEventTypes = new Set<Stripe.Event.Type>([
+  "checkout.session.completed",
+  "customer.subscription.updated",
+  "customer.subscription.deleted",
+  "invoice.payment_succeeded",
+  "invoice.payment_failed",
+]);
+
 export async function POST(request: NextRequest) {
   const stripeEnabled =
     process.env.STRIPE_CHECKOUT_ENABLED === "true";
@@ -39,36 +50,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  try {
-    switch (event.type) {
-      case "checkout.session.completed":
-        // Handle successful subscription
-        // Update user subscription in database here
-        break;
-
-      case "customer.subscription.updated":
-        // Update subscription details in database
-        break;
-
-      case "customer.subscription.deleted":
-        // Mark subscription as inactive
-        break;
-
-      case "invoice.payment_succeeded":
-        // Update payment history
-        break;
-
-      case "invoice.payment_failed":
-        // Send notification to user
-        break;
-
-      default:
-        // Unhandled event type
-    }
-
-    return NextResponse.json({ received: true });
-  } catch (error) {
-    console.error("Webhook processing error:", error);
-    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
+  if (unimplementedEventTypes.has(event.type)) {
+    return NextResponse.json(
+      {
+        error:
+          "Stripe event processing is not implemented; billing remains unavailable",
+      },
+      { status: 503 }
+    );
   }
+
+  return NextResponse.json({ received: true });
 }
