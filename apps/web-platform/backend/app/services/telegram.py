@@ -159,7 +159,6 @@ async def notify_workflow_failed(workflow_id: str, name: str, error_message: str
     details = f"⚠️ <b>Workflow:</b> <code>{html_escape(name)}</code>\n❌ <b>Error:</b> {html_escape(error_message)}\n🆔 <code>{html_escape(workflow_id)}</code>"
     actions = [
         ("🔄 Retry Workflow", f"logixa_wf_retry:{workflow_id}"),
-        ("🛑 Disable Workflow", f"logixa_wf_disable:{workflow_id}"),
     ]
     await send_notification("Workflow Execution Failed", details, status="ERROR", actions=actions)
 
