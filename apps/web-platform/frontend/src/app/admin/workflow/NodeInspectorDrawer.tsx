@@ -49,10 +49,11 @@ export default function NodeInspectorDrawer({
         setExecutionResult(
           JSON.stringify(
             {
-              status: "success",
+              status: "simulation_only",
+              simulated: true,
               node: data.label,
               timestamp: new Date().toISOString(),
-              message: `Executed module ${data.label} successfully via zero-cost pipeline.`,
+              message: `No backend execution was performed for ${data.label}.`,
             },
             null,
             2
