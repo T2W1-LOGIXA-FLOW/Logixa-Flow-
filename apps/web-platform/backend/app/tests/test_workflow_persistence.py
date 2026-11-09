@@ -671,6 +671,9 @@ async def test_qstash_dispatch_releases_claim_when_celery_enqueue_fails(
     monkeypatch.setenv("QSTASH_NEXT_SIGNING_KEY", "next-test-key")
     monkeypatch.setenv("QSTASH_DESTINATION_URL", "https://example.invalid")
     monkeypatch.setenv("CELERY_ENABLED", "true")
+    # Celery app construction validates its broker URL even though this test
+    # replaces task enqueue with a local failure and never opens a connection.
+    monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
 
     from app.workers.tasks import execute_workflow_task
 
