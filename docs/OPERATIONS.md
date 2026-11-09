@@ -140,3 +140,8 @@ Preserve evidence, correlation IDs, sanitized logs, affected run/session IDs, an
 The read-only provider inventory is in [docs/INFRASTRUCTURE_AUDIT_2026-10-15.md](INFRASTRUCTURE_AUDIT_2026-10-15.md). Production SQL confirms Alembic head `20261011_0013`, 8 durable RAG observability events, and zero workflow definitions/nodes/runs/scheduled jobs. A safe no-side-effect workflow must be created through authenticated admin access before testing the full QStash delivery → execution → persisted completion → duplicate idempotency → retry/stale-claim recovery chain.
 
 The Render service is live on main commit `8a1b5ad4bfab817e5e4a56d8cec22b1b035e4215`. Vercel main production deployment is READY, but project API `live=false` and ERROR latestDeployment metadata need careful scope-aware review under the existing owner lock. Cloudflare account inventory has no zones/Workers/Pages/KV/D1/Queues; R2 is not enabled/inspectable. Cloudflare `enforce_twofactor=false`, Supabase RLS/no-policy findings (34 tables), leaked-password warning, and 82 unused-index advisories are tracked as review items; do not make broad policy/index changes without evidence. Release certification remains pending.
+
+
+## Stripe billing readiness
+
+Stripe checkout is intentionally disabled unless `STRIPE_CHECKOUT_ENABLED=true` is configured. The current webhook route verifies signatures but does not yet persist subscription or invoice lifecycle events. It returns HTTP 503 for those verified event types rather than falsely acknowledging them. Do not enable checkout until durable, idempotent handlers and database access-control tests are implemented and a Stripe test-mode end-to-end run is recorded. No production environment variables or secrets were changed as part of this audit.
