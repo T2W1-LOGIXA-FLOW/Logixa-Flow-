@@ -1,3 +1,33 @@
+# Current production audit — 2026-11-09 (latest verified snapshot)
+
+## Deployment and runtime
+- Repository main is `32382907f98d3845b063fd3e37145bbdf8291a3c`. Vercel production deployment `dpl_8RXvvp1hyiGAjRUdoJknthNPUeqd` is READY and serves the `logixa-flow.vercel.app` alias for that exact commit.
+- Render backend service `srv-d9172fe8bjmc739pd600` is on the Free plan, tracks `main`, and has automatic deploys enabled. Its latest deployment is LIVE for backend commit `bfa5337b0775c40f2fffe126fde6281a11a0c8fc` (PR #200 backend changes). The latest repository commits after that are documentation/frontend-facing, so the backend did not require a new deploy.
+- Render application logs show repeated `GET /health` responses with HTTP 200 and approximately 697–707 ms duration in the inspected window. The bounded 7-day Render ERROR-log query returned no entries. This is a bounded log observation, not a complete request-level SLO or uptime certification.
+- GitHub reports the `main` branch is not protected and has no required status checks configured. This is a governance/release-control gap; no branch settings were changed during this audit.
+
+## Database and queue snapshot
+- Production Supabase Alembic head: `20261016_0015`.
+- Read-only row counts: `workflows=0`, `workflow_nodes=0`, `workflow_runs=0`, `scheduled_workflow_jobs=0`, `agent_runs=122`.
+- Upstash QStash delivery logs and Workflow run logs returned no entries in either US or EU regions during this inspection. Empty logs do not establish that signing, delivery, completion, or recovery works.
+- Therefore live QStash dispatch → persisted workflow completion → duplicate idempotency → retry/stale-claim recovery remains NOT VERIFIED. A safe authenticated admin-created test workflow/run is still required; do not insert guessed workflow rows or run IDs directly into production SQL.
+
+## Current release gates
+1. Execute a controlled, no-side-effect workflow through the authenticated admin path, then verify signed QStash delivery, persisted completion, duplicate suppression, retry, and stale-claim recovery. Keep this gate pending until there is a real run and auditable evidence.
+2. Verify Agent → Brain → approval → publish/resume with durable results and approval enforcement. Do not publish or mutate real content as a synthetic test.
+3. Complete the SLO observation window with request-level latency/error-rate evidence and verify the external alert path. The current health log sample is not an SLO pass.
+4. Rehearse application rollback and managed Supabase Auth/Storage plus object-storage recovery using isolated recovery targets; do not run destructive restore operations against production.
+5. Observe at least one full 24-hour scheduler cycle and verify no duplicate/missed execution.
+6. Keep Stripe checkout/billing disabled until durable, idempotent subscription/payment handlers and test-mode end-to-end verification exist. Unimplemented verified webhook events now fail closed with HTTP 503 rather than being acknowledged as processed.
+7. Review the unprotected `main` branch and configure required checks/review rules through GitHub repository settings. This audit found the gap but did not change repository settings.
+
+## Operating constraints and audit boundary
+- Continue using Free plans only. No paid-tier upgrade was made or recommended as a prerequisite.
+- No production environment variables or secrets were read, changed, or rotated. No production database rows, workflow records, or content were inserted/updated/deleted. No deployment was manually triggered.
+- This snapshot records verified deployment/runtime facts separately from unverified product-level workflows. Overall status remains **DEPLOYED — NOT FULLY PRODUCTION-CERTIFIED**.
+
+---
+
 # Current production status — 2026-10-21 (supersedes stale summaries below)
 
 ## Verified on this audit
