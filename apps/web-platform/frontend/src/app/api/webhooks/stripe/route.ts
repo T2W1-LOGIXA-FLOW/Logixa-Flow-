@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
-
 // These events currently have no durable subscription/payment handlers. Never
 // acknowledge them as successful: Stripe would stop retrying and billing state
 // would silently drift from the application database.
@@ -26,6 +24,7 @@ export async function POST(request: NextRequest) {
   }
 
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
   if (!stripeSecretKey || !webhookSecret) {
     return NextResponse.json(
       { beta_mode: true, error: "Stripe webhook is not configured" },
