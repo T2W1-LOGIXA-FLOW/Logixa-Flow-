@@ -3,9 +3,9 @@
 **Overall release: DEPLOYED — NOT FULLY PRODUCTION-CERTIFIED.** This update supersedes older deployment, dependency-audit, and provider snapshots below.
 
 ## Verified on current main
-- Main HEAD: 4029acddbc3b67f78fa91d6a188e6218f74db3ed. PR #206, #207, and #208 are merged. PR #208 checks passed: [CI #42779982393](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/42779982393), [CodeQL #42779982283](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/42779982283), and [Production CI/CD #42779982307](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/42779982307).
+- PR #206, #207, and #208 are merged; current main also contains this dated documentation audit. PR #208 checks passed: [CI #42779982393](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/42779982393), [CodeQL #42779982283](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/42779982283), and [Production CI/CD #42779982307](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/runs/42779982307).
 - Render Free backend deploy [dep-dbpbfnvg5rvs738gl7qg](https://dashboard.render.com/web/srv-d9172fe8bjmc739pd600/deploys/dep-dbpbfnvg5rvs738gl7qg) is LIVE for backend commit de084fd8764ba78bcbe2b6897ed44703aefc13b4; GET /health returned HTTP 200.
-- Vercel production deployment dpl_73D5BkQXf24HY2TNaQ4CrxTTL93s is READY for main HEAD and serves logixa-flow.vercel.app. GET / and GET /admin/login returned HTTP 200.
+- Vercel production deployment for current main is READY and serves logixa-flow.vercel.app. GET / and GET /admin/login returned HTTP 200.
 - Backend local CI-equivalent tests: 294 passed, 5 skipped after Alembic migrations were applied to an isolated local SQLite CI database. No production migration was run.
 - Frontend Vitest: 36 files / 87 tests passed. Next.js 15.5.28 production build passed.
 - Full frontend npm audit: 0 vulnerabilities including development dependencies; production-only audit: 0 vulnerabilities.

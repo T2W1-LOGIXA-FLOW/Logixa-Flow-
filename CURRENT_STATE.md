@@ -1,7 +1,7 @@
 # Current production audit — 2026-11-10 (latest verified snapshot)
 
 ## Current deployment and free-tier posture
-- Repository main HEAD: 4029acddbc3b67f78fa91d6a188e6218f74db3ed. PRs #206, #207, and #208 are merged.
+- Application-code baseline from PR #208: 4029acddbc3b67f78fa91d6a188e6218f74db3ed. PRs #206, #207, and #208 are merged; current main also contains this documentation-only audit.
 - Render backend is Free, tracks main, and auto-deploys. Latest live deployment dep-dbpbfnvg5rvs738gl7qg runs commit de084fd8764ba78bcbe2b6897ed44703aefc13b4. GET /health returned HTTP 200.
 - Vercel production deployment dpl_73D5BkQXf24HY2TNaQ4CrxTTL93s is READY for main HEAD. Production / and /admin/login returned HTTP 200. Project-level live=false metadata remains under the existing Vercel change lock.
 - Upstash Redis and both QStash regions are Free. Redis auto-upgrade and QStash Prod Pack are disabled.

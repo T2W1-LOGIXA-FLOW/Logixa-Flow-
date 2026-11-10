@@ -3,9 +3,9 @@
 All infrastructure work must remain on existing Free tiers. Do not upgrade Render, Supabase, Upstash, or Vercel; do not add paid AI fallbacks or a separate worker. Render Free sleep behavior is accepted rather than bypassed with a keep-alive loop.
 
 ## Current verified state
-- Main HEAD: 4029acddbc3b67f78fa91d6a188e6218f74db3ed; PR #206 QStash claim-release, PR #207 SEC-01–SEC-18 hardening, and PR #208 frontend dependency remediation are merged.
+- PR #206 QStash claim-release, PR #207 SEC-01–SEC-18 hardening, and PR #208 frontend dependency remediation are merged; current main also includes the dated audit documentation.
 - Render Free backend is LIVE for commit de084fd8764ba78bcbe2b6897ed44703aefc13b4; health endpoint HTTP 200.
-- Vercel production deployment is READY for main HEAD; public home and admin-login routes return HTTP 200.
+- Vercel production deployment is READY for current main; public home and admin-login routes return HTTP 200.
 - Backend local CI-equivalent tests: 294 passed, 5 skipped. Frontend: 87 passed across 36 files. Production build passed. Full frontend npm audit: zero vulnerabilities.
 - Supabase production Alembic head 20261016_0015; all 36 public tables have RLS; no direct SELECT grants to anon/authenticated. QStash US/EU and Upstash Redis remain on Free plans.
 

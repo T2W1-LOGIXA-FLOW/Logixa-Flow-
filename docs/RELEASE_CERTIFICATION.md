@@ -2,9 +2,9 @@
 
 **Certification remains: DEPLOYED — NOT FULLY PRODUCTION-CERTIFIED.** This is a fresh provider/runtime and local verification snapshot, not a blanket production sign-off.
 
-- Main HEAD is 4029acddbc3b67f78fa91d6a188e6218f74db3ed. PR #206, #207, and #208 are merged. PR #208 CI #42779982393, CodeQL #42779982283, and Production CI/CD #42779982307 passed.
+- PR #206, #207, and #208 are merged; the current main branch also contains this dated documentation audit. PR #208 CI #42779982393, CodeQL #42779982283, and Production CI/CD #42779982307 passed.
 - Render Free backend deployment dep-dbpbfnvg5rvs738gl7qg is LIVE for de084fd8764ba78bcbe2b6897ed44703aefc13b4; /health returned HTTP 200.
-- Vercel production deployment dpl_73D5BkQXf24HY2TNaQ4CrxTTL93s is READY for main HEAD and has the production alias; / and /admin/login returned HTTP 200.
+- Vercel production deployment for current main is READY and its production alias serves / and /admin/login with HTTP 200.
 - Backend local CI-equivalent suite: 294 passed / 5 skipped after applying migrations to an isolated local SQLite CI database. Frontend: 36 files / 87 tests passed; production build passed; full npm audit reports 0 vulnerabilities.
 - Supabase production Alembic head is 20261016_0015. All 36 public tables have RLS; direct SELECT grants are anon=0, authenticated=0, service_role=36. Workflow definitions/nodes/runs/scheduled jobs and stored_files are all zero.
 - Upstash Redis is Free with auto-upgrade disabled. QStash US and EU are Free with Prod Pack disabled; schedules are empty in both regions and no live workflow run exists.
