@@ -4,6 +4,7 @@ import json
 import os
 import time
 from collections import defaultdict, deque
+from threading import Lock
 from typing import Any
 
 
@@ -75,6 +76,7 @@ class RateLimiter:
         self.limit = int(os.getenv("RATE_LIMIT_REQUESTS", "60"))
         self.window_seconds = int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60"))
         self._hits: dict[str, deque[float]] = defaultdict(deque)
+        self._lock = Lock()
         self._redis = None
         redis_url = os.getenv("REDIS_URL")
         if redis_url:
@@ -102,20 +104,24 @@ class RateLimiter:
 
         if self._redis:
             redis_key = f"rl:{key}:{effective_limit}:{effective_window}"
-            count = self._redis.incr(redis_key)
-            if count == 1:
-                self._redis.expire(redis_key, effective_window)
+            script = """
+            local count = redis.call('INCR', KEYS[1])
+            if count == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
+            return count
+            """
+            count = self._redis.eval(script, 1, redis_key, effective_window)
             return int(count) <= effective_limit
 
         now = time.time()
         memory_key = f"{key}:{effective_limit}:{effective_window}"
-        hits = self._hits[memory_key]
-        while hits and hits[0] <= now - effective_window:
-            hits.popleft()
-        if len(hits) >= effective_limit:
-            return False
-        hits.append(now)
-        return True
+        with self._lock:
+            hits = self._hits[memory_key]
+            while hits and hits[0] <= now - effective_window:
+                hits.popleft()
+            if len(hits) >= effective_limit:
+                return False
+            hits.append(now)
+            return True
 
 
 cache_client = CacheClient()

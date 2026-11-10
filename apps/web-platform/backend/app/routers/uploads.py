@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from fastapi.responses import StreamingResponse
+from PIL import Image, UnidentifiedImageError
 
 from .. import models, schemas
 from ..database import SessionLocal
@@ -41,19 +42,30 @@ def _max_upload_bytes() -> int:
     return min(max(value, 1), B2_MAX_BYTES)
 
 
-def _validate_image_upload(file: UploadFile, content: bytes) -> None:
+def _validate_image_upload(file: UploadFile) -> None:
     content_type = (file.content_type or "").split(";", 1)[0].strip().lower()
-    signatures = {
-        "image/jpeg": content.startswith(b"\xff\xd8\xff"),
-        "image/png": content.startswith(b"\x89PNG\r\n\x1a\n"),
-        "image/gif": content.startswith((b"GIF87a", b"GIF89a")),
-        "image/webp": len(content) >= 12 and content[:4] == b"RIFF" and content[8:12] == b"WEBP",
+    expected_formats = {
+        "image/jpeg": "JPEG",
+        "image/png": "PNG",
+        "image/gif": "GIF",
+        "image/webp": "WEBP",
     }
-    if not signatures.get(content_type, False):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Uploaded file content does not match its image type",
-        )
+    expected = expected_formats.get(content_type)
+    if expected is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported image type")
+    try:
+        file.file.seek(0)
+        with Image.open(file.file) as image:
+            if image.format != expected:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded file content does not match its image type")
+            width, height = image.size
+            if width < 1 or height < 1 or width > 12000 or height > 12000 or width * height > 40_000_000:
+                raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Image dimensions exceed the allowed limit")
+            image.verify()
+    except (UnidentifiedImageError, OSError, ValueError) as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded image is invalid or corrupted") from exc
+    finally:
+        file.file.seek(0)
 
 
 def _owner_id(admin: object) -> str | None:
@@ -79,9 +91,7 @@ def upload_file(request: Request, file: UploadFile = File(...), _admin=Depends(r
         )
 
     if content_type in ALLOWED_IMAGE_TYPES:
-        signature = file.file.read(32)
-        file.file.seek(0)
-        _validate_image_upload(file, signature)
+        _validate_image_upload(file)
 
     try:
         classify_storage(file.filename or "upload", content_type, size_bytes)

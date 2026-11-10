@@ -12,6 +12,10 @@ COPY app ./app
 COPY migrations ./migrations
 COPY alembic.ini ./
 
+RUN addgroup --system --gid 10001 app && adduser --system --uid 10001 --ingroup app --home /app app \
+    && chown -R app:app /app
+USER 10001:10001
+
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:${PORT:-8000}/health', timeout=5)"

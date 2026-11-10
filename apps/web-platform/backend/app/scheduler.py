@@ -4,8 +4,7 @@ import json
 import os
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
-from threading import Lock, Thread
-from time import sleep
+from threading import Event, Lock, Thread
 
 import logging
 from sqlalchemy.exc import IntegrityError
@@ -20,6 +19,7 @@ from .routers.agent import score_source_grounding
 
 _SCHEDULER_LOCK = Lock()
 _SCHEDULER_THREAD: Thread | None = None
+_SCHEDULER_STOP_EVENT = Event()
 _SCHEDULED_PREVIEW_LAST_ATTEMPT_KEY = "scheduler_daily_preview_last_attempt"
 
 
@@ -576,7 +576,7 @@ def start_scheduler() -> None:
             last_feed_pull: datetime | None = None
             last_synthesis: datetime | None = None
 
-            while True:
+            while not _SCHEDULER_STOP_EVENT.is_set():
                 now = datetime.now(timezone.utc)
 
                 # --- Daily agent preview (existing) ---
@@ -640,12 +640,24 @@ def start_scheduler() -> None:
                     if last_synthesis is None
                     else max(60.0, synthesis_interval_seconds - (now - last_synthesis).total_seconds())
                 )
-                sleep(min(delay_seconds, feed_remaining, synthesis_remaining))
+                _SCHEDULER_STOP_EVENT.wait(min(delay_seconds, feed_remaining, synthesis_remaining))
         finally:
             _SCHEDULER_LOCK.release()
 
     if _SCHEDULER_THREAD is not None and _SCHEDULER_THREAD.is_alive():
         return
+    _SCHEDULER_STOP_EVENT.clear()
     _SCHEDULER_THREAD = Thread(target=loop, name="logixa-scheduler", daemon=True)
     _SCHEDULER_THREAD.start()
+
+
+def stop_scheduler(timeout: float = 10.0) -> None:
+    """Signal the scheduler worker and wait briefly for a clean shutdown."""
+    global _SCHEDULER_THREAD
+    _SCHEDULER_STOP_EVENT.set()
+    thread = _SCHEDULER_THREAD
+    if thread is not None and thread.is_alive():
+        thread.join(timeout=max(0.0, timeout))
+    if thread is not None and not thread.is_alive():
+        _SCHEDULER_THREAD = None
 

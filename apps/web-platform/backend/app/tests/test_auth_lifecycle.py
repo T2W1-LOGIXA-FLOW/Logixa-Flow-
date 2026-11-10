@@ -20,8 +20,8 @@ def test_auth_me_returns_identity_from_verified_supabase_user(
 ) -> None:
     calls: list[dict[str, object]] = []
 
-    def verify_request(url: str, *, headers: dict[str, str], timeout: int):
-        calls.append({"url": url, "headers": headers, "timeout": timeout})
+    def verify_request(url: str, *, headers: dict[str, str], timeout: tuple[int, int], allow_redirects: bool):
+        calls.append({"url": url, "headers": headers, "timeout": timeout, "allow_redirects": allow_redirects})
         return SimpleNamespace(
             status_code=200,
             json=lambda: {
@@ -43,6 +43,7 @@ def test_auth_me_returns_identity_from_verified_supabase_user(
     assert calls[0]["url"] == "https://auth.example.test/auth/v1/user"
     assert calls[0]["headers"]["Authorization"] == "Bearer " + "supabase-" + "access"
     assert calls[0]["headers"]["apikey"] == "test-publishable-key"
+    assert calls[0]["allow_redirects"] is False
 
 
 def test_auth_me_rejects_missing_bearer_token(client: TestClient) -> None:

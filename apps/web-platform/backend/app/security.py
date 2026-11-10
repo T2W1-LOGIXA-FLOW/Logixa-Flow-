@@ -18,14 +18,15 @@ load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 def _get_jwt_secret() -> str:
     """Get the legacy custom JWT secret used only by compatibility helpers."""
-    secret = os.getenv("JWT_SECRET", os.getenv("API_SECRET_TOKEN", "change-me-in-production"))
+    secret = os.getenv("JWT_SECRET") or os.getenv("API_SECRET_TOKEN")
+    if not secret or secret.strip().lower().startswith(("change-", "replace-", "your-", "generate-")):
+        raise ValueError("JWT_SECRET must be explicitly configured; insecure defaults are forbidden.")
+    secret = secret.strip()
     is_production = os.getenv("ENVIRONMENT", "development").lower() in {"production", "prod"}
-
-    if is_production and secret in {"change-me-in-production", "", None}:
-        raise ValueError(
-            "CRITICAL: JWT_SECRET or API_SECRET_TOKEN must be set in production environments."
-        )
-
+    if is_production:
+        from .config import _secret_entropy_ok
+        if not _secret_entropy_ok(secret):
+            raise ValueError("Production JWT_SECRET does not meet the required length and entropy policy.")
     return secret
 
 
@@ -82,7 +83,8 @@ def _verify_supabase_token(token: str) -> dict[str, Any]:
                 "apikey": SUPABASE_PUBLISHABLE_KEY,
                 "Authorization": "Bearer " + token,
             },
-            timeout=5,
+            timeout=(3, 5),
+            allow_redirects=False,
         )
     except requests.RequestException as exc:
         raise HTTPException(
