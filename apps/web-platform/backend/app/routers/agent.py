@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import re
 import json
+import threading
 from decimal import Decimal, InvalidOperation
 from html import escape
 from typing import Any, Literal, Optional
@@ -14,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..analytics import log_analytics_event
+from ..cache import rate_limiter
 from ..agent_graph import execute_content_graph
 from ..agent_control import read_agent_control, write_agent_control
 from ..database import get_db
@@ -24,6 +26,7 @@ from ..rag.sanitizer import sanitize_for_llm
 from ..security import require_admin
 
 router = APIRouter()
+_AGENT_EXECUTION_SLOTS = threading.BoundedSemaphore(2)
 
 
 def slugify(value: str) -> str:
@@ -280,6 +283,14 @@ async def run_agent(
             .all()
         )
 
+    actor_id = str((_.get("sub") if isinstance(_, dict) else None) or "unknown-admin")
+    if not rate_limiter.allow(f"agent:user:{actor_id}", limit=2, window_seconds=60):
+        raise HTTPException(status_code=429, detail="Agent run quota exceeded; retry after one minute.")
+    if not rate_limiter.allow("agent:global", limit=20, window_seconds=3600):
+        raise HTTPException(status_code=429, detail="Global agent execution budget is exhausted for this hour.")
+    if not _AGENT_EXECUTION_SLOTS.acquire(blocking=False):
+        raise HTTPException(status_code=429, detail="Agent capacity is busy; retry shortly.")
+
     run = models.AgentRun(
         objective=payload.message,
         model="pending",
@@ -288,9 +299,13 @@ async def run_agent(
         source_ids=json.dumps(payload.source_ids),
         status="running",
     )
-    db.add(run)
-    db.commit()
-    db.refresh(run)
+    try:
+        db.add(run)
+        db.commit()
+        db.refresh(run)
+    except Exception:
+        _AGENT_EXECUTION_SLOTS.release()
+        raise
 
     try:
         graph = execute_content_graph(db, run, payload.message, sources)
@@ -307,6 +322,8 @@ async def run_agent(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="AI agent execution failed; review the run state and retry.",
         ) from exc
+    finally:
+        _AGENT_EXECUTION_SLOTS.release()
 
     brief = graph.final
     confidence_score, hallucination_score = score_source_grounding(sources)

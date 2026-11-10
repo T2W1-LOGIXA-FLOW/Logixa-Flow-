@@ -60,8 +60,8 @@ def test_storage_routing_falls_back_from_cloudinary_to_supabase(monkeypatch: pyt
 
 def test_production_env_requires_celery_redis_and_storage(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ENVIRONMENT", "production")
-    monkeypatch.setenv("JWT_SECRET", "j" * 32)
-    monkeypatch.setenv("API_SECRET_TOKEN", "a" * 32)
+    monkeypatch.setenv("JWT_SECRET", "q7W!m3P#v9R@x2L$k8N^c4B&z6T*e1H?")
+    monkeypatch.setenv("API_SECRET_TOKEN", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}")
     monkeypatch.setenv("CELERY_ENABLED", "true")
     monkeypatch.delenv("REDIS_URL", raising=False)
     monkeypatch.setenv("UPLOAD_STORAGE_BACKEND", "cloudinary")
@@ -120,8 +120,8 @@ def test_qstash_publish_targets_dispatch_endpoint(monkeypatch: pytest.MonkeyPatc
 
 def test_production_env_allows_render_free_without_celery(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ENVIRONMENT", "production")
-    monkeypatch.setenv("JWT_SECRET", "j" * 32)
-    monkeypatch.setenv("API_SECRET_TOKEN", "a" * 32)
+    monkeypatch.setenv("JWT_SECRET", "q7W!m3P#v9R@x2L$k8N^c4B&z6T*e1H?")
+    monkeypatch.setenv("API_SECRET_TOKEN", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}")
     monkeypatch.setenv("CELERY_ENABLED", "false")
     monkeypatch.delenv("REDIS_URL", raising=False)
     monkeypatch.setenv("QSTASH_TOKEN", "qstash-token")

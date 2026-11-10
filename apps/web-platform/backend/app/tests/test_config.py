@@ -33,9 +33,9 @@ def test_production_rejects_secrets_shorter_than_32_characters(monkeypatch):
     assert any(item.startswith("API_SECRET_TOKEN") for item in missing)
 
 
-def test_production_accepts_non_placeholder_secrets_at_least_32_characters(monkeypatch):
+def test_production_accepts_high_entropy_secrets(monkeypatch):
     monkeypatch.setenv("ENVIRONMENT", "production")
-    set_required_secrets(monkeypatch, "j" * 32, "a" * 32)
+    set_required_secrets(monkeypatch, "q7W!m3P#v9R@x2L$k8N^c4B&z6T*e1H?", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}")
 
     assert validate_env() == []
 

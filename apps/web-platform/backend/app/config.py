@@ -64,10 +64,20 @@ def env_configured(key: str) -> bool:
     return bool(clean_env_value(key))
 
 
+def _secret_entropy_ok(value: str) -> bool:
+    import math
+    from collections import Counter
+    if len(value) < 32 or len(set(value)) < 12:
+        return False
+    counts = Counter(value)
+    entropy = -sum((count / len(value)) * math.log2(count / len(value)) for count in counts.values())
+    return entropy >= 3.5
+
+
 def _is_placeholder_secret(value: str | None) -> bool:
     if not value:
         return True
-    return value.strip().lower().startswith("change-")
+    return value.strip().lower().startswith(("change-", "replace-", "your-", "generate-"))
 
 
 def ai_provider_configured(role: str | None = None) -> bool:
@@ -123,8 +133,8 @@ def validate_env() -> list[str]:
             secret = clean_env_value(key)
             if _is_placeholder_secret(secret):
                 missing.append(f"{key} (must be configured safely in production)")
-            elif len(secret) < 32:
-                missing.append(f"{key} (must be at least 32 characters in production)")
+            elif not _secret_entropy_ok(secret):
+                missing.append(f"{key} (must be at least 32 characters, 12 distinct characters, and 3.5 bits/character entropy)")
 
         celery_enabled = os.getenv("CELERY_ENABLED", "false").lower() == "true"
         if celery_enabled and not env_configured("REDIS_URL"):

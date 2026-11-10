@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 import os
+import re
 from typing import Optional
 
 from .. import schemas, models
+from ..cache import rate_limiter
 from ..database import get_db
 from ..integration_service import (
     import_draft_dict,
@@ -305,11 +307,24 @@ def check_duplicate_source(db: Session, title: str, url: Optional[str]) -> bool:
 @router.post("/admin/integration/trigger-email")
 def trigger_email_endpoint(payload: dict, db: Session = Depends(get_db), _: dict = Depends(require_admin)) -> dict:
     """Trigger a test email (queued via Celery if configured). Payload: { to, subject, body? }"""
-    to = (payload.get("to") or "").strip()
-    subject = (payload.get("subject") or "Test email from Logixa Flow").strip()
-    body = payload.get("body") or "This is a test email from Logixa Flow."
-    if not to:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing 'to' address")
+    actor_id = str((_.get("sub") if isinstance(_, dict) else None) or "unknown-admin")
+    if not rate_limiter.allow(f"email:test:{actor_id}", limit=3, window_seconds=3600):
+        raise HTTPException(status_code=429, detail="Email test-send quota exceeded; retry later.")
+    recipient = payload.get("to")
+    subject_value = payload.get("subject", "Test email from Logixa Flow")
+    body = payload.get("body", "This is a test email from Logixa Flow.")
+    if not isinstance(recipient, str):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A valid recipient email address is required")
+    to = recipient.strip()
+    if len(to) > 254 or not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", to):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A valid recipient email address is required")
+    if not isinstance(subject_value, str):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email subject")
+    subject = subject_value.strip()
+    if len(subject) > 200 or any(ch in subject for ch in "\r\n"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email subject")
+    if not isinstance(body, str) or len(body) > 20000:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email body exceeds the allowed size")
     try:
         from ..tasks import send_email_task
 
@@ -322,4 +337,4 @@ def trigger_email_endpoint(payload: dict, db: Session = Depends(get_db), _: dict
             res = send_email_task.apply(args=(to, subject, body))
             return {"message": "Email sent (sync)", "result": res.get()}
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Email delivery failed") from exc
