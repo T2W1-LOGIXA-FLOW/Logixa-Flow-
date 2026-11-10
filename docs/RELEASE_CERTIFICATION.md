@@ -1,3 +1,19 @@
+# Audit update — 2026-11-10
+
+**Certification remains: DEPLOYED — NOT FULLY PRODUCTION-CERTIFIED.** This is a fresh provider/runtime and local verification snapshot, not a blanket production sign-off.
+
+- Main HEAD is 4029acddbc3b67f78fa91d6a188e6218f74db3ed. PR #206, #207, and #208 are merged. PR #208 CI #42779982393, CodeQL #42779982283, and Production CI/CD #42779982307 passed.
+- Render Free backend deployment dep-dbpbfnvg5rvs738gl7qg is LIVE for de084fd8764ba78bcbe2b6897ed44703aefc13b4; /health returned HTTP 200.
+- Vercel production deployment dpl_73D5BkQXf24HY2TNaQ4CrxTTL93s is READY for main HEAD and has the production alias; / and /admin/login returned HTTP 200.
+- Backend local CI-equivalent suite: 294 passed / 5 skipped after applying migrations to an isolated local SQLite CI database. Frontend: 36 files / 87 tests passed; production build passed; full npm audit reports 0 vulnerabilities.
+- Supabase production Alembic head is 20261016_0015. All 36 public tables have RLS; direct SELECT grants are anon=0, authenticated=0, service_role=36. Workflow definitions/nodes/runs/scheduled jobs and stored_files are all zero.
+- Upstash Redis is Free with auto-upgrade disabled. QStash US and EU are Free with Prod Pack disabled; schedules are empty in both regions and no live workflow run exists.
+- Supabase leaked-password protection remains a Free-plan limitation (Pro+ only); this warning is not a reason to upgrade.
+
+Still pending: authenticated QStash workflow completion/idempotency/retry/recovery; Agent → Brain → approval → publish/resume; full SLO/error-budget observation and alert delivery; application rollback and managed Auth/Storage/object-storage recovery; 24-hour scheduler observation; GitHub branch protection and Cloudflare MFA review; newsletter/provider failover. No production data, secrets, workflows, storage objects, or schedules were changed. See docs/INFRASTRUCTURE_AUDIT_2026-11-10.md for detailed evidence and limits.
+
+---
+
 # Audit update — 2026-10-21
 
 **Certification remains: PENDING FINAL EVIDENCE — NOT RELEASE-CERTIFIED.** This audit is read-only for production; it does not change runtime configuration, secrets, databases, or deployments.
@@ -192,7 +208,7 @@ Release status remains **PENDING — NOT RELEASE-CERTIFIED**.
 
 ## Live provider audit — 2026-10-15
 
-The connected provider API and production SQL snapshot is recorded in [docs/INFRASTRUCTURE_AUDIT_2026-10-15.md](INFRASTRUCTURE_AUDIT_2026-10-15.md). Fresh checks confirm Render's current main deployment is live and Vercel's latest main production deployment is READY, while Vercel project metadata reports `live=false` and a separate ERROR Dependabot deployment as `latestDeployment`; no Vercel remediation was performed due to the owner lock. Supabase production is ACTIVE_HEALTHY at Alembic head `20261011_0013`, but workflow definitions/nodes/runs/scheduled jobs remain zero. Cloudflare lists no zones, Workers, Pages, KV, D1, or Queues; R2 is not enabled/inspectable.
+The connected provider API and production SQL snapshot is recorded in [docs/INFRASTRUCTURE_AUDIT_2026-11-10.md](INFRASTRUCTURE_AUDIT_2026-10-15.md). Fresh checks confirm Render's current main deployment is live and Vercel's latest main production deployment is READY, while Vercel project metadata reports `live=false` and a separate ERROR Dependabot deployment as `latestDeployment`; no Vercel remediation was performed due to the owner lock. Supabase production is ACTIVE_HEALTHY at Alembic head `20261011_0013`, but workflow definitions/nodes/runs/scheduled jobs remain zero. Cloudflare lists no zones, Workers, Pages, KV, D1, or Queues; R2 is not enabled/inspectable.
 
 Security/performance review items: Cloudflare account MFA enforcement is disabled; Supabase reports 34 RLS-enabled tables without policies, leaked-password protection disabled, and 82 unused-index advisories. These require scoped review and are not automatic authorization to change grants, policies, or indexes. All previously listed production release gates remain open unless directly evidenced; overall status is **PENDING — NOT RELEASE-CERTIFIED**.
 

@@ -1,22 +1,31 @@
-# Current execution status — 2026-10-21 (read this before the historical roadmap)
+# Current execution status — 2026-11-10 (Free-tier operating mode)
 
-The roadmap below contains historical local-development assumptions (including SQLite and local ports) that must not be treated as the production topology. Production uses the deployed Render FastAPI service and external Supabase PostgreSQL/pgvector according to the current operational evidence. Celery is intentionally disabled for the QStash/internal-queue design; do not add a separate worker without proving a requirement and checking the free-tier/cost impact.
+All infrastructure work must remain on existing Free tiers. Do not upgrade Render, Supabase, Upstash, or Vercel; do not add paid AI fallbacks or a separate worker. Render Free sleep behavior is accepted rather than bypassed with a keep-alive loop.
 
 ## Current verified state
-- Main commit `49a7d6fa5240895790f085909f0eab92200824c0` passed production CI/CD, CI, and CodeQL on 2026-10-20.
-- Render deployment is active; latest scheduled health probes passed. Render native metrics were not available in the current audit query, so latency/error SLOs are not certified from native metrics.
-- Frontend build failure exists on Dependabot PR #151 (Stripe SDK/API-version type mismatch), not on the current main commit. PR #150 is a major Next.js upgrade requiring compatibility review.
+- Main HEAD: 4029acddbc3b67f78fa91d6a188e6218f74db3ed; PR #206 QStash claim-release, PR #207 SEC-01–SEC-18 hardening, and PR #208 frontend dependency remediation are merged.
+- Render Free backend is LIVE for commit de084fd8764ba78bcbe2b6897ed44703aefc13b4; health endpoint HTTP 200.
+- Vercel production deployment is READY for main HEAD; public home and admin-login routes return HTTP 200.
+- Backend local CI-equivalent tests: 294 passed, 5 skipped. Frontend: 87 passed across 36 files. Production build passed. Full frontend npm audit: zero vulnerabilities.
+- Supabase production Alembic head 20261016_0015; all 36 public tables have RLS; no direct SELECT grants to anon/authenticated. QStash US/EU and Upstash Redis remain on Free plans.
 
-## Highest-priority unfinished work
-1. Live QStash workflow delivery/completion/idempotency/retry/recovery evidence.
-2. Agent → Brain → human approval → publish/resume end-to-end test.
-3. SLO observation plus verified alert delivery and metrics ingestion.
-4. Application rollback; managed Auth/Storage and object-storage recovery.
-5. 24-hour scheduler observation.
-6. Dependency PR triage and dependency-audit remediation.
-7. Newsletter/provider failover and owner-approval-gated infrastructure work.
+## Highest-priority unfinished production gates
+1. Safe authenticated production workflow for signed QStash delivery, durable completion, duplicate idempotency, retry, and stale-claim recovery. Production currently has zero workflows, nodes, runs, and scheduled jobs.
+2. Agent → Brain → explicit human approval → publish/resume E2E using an owner-approved test item.
+3. SLO observation window with request/error/latency evidence and a verified alert path.
+4. Application rollback and managed Supabase Auth/Storage plus object-storage recovery on isolated targets.
+5. A full 24-hour scheduler observation.
+6. GitHub main-branch protection/required-check review and Cloudflare MFA enforcement review.
+7. Newsletter/provider failover; keep unsupported billing/payment paths disabled until tested.
 
-Do not mark any item complete based on code existence, a unit test, or an unrelated successful probe. Attach run IDs, logs, timestamps, and result summaries to the release evidence. No production change was made during the 2026-10-21 audit.
+## Free-plan security limitations
+- Supabase leaked-password protection is Pro+ only. Do not upgrade. Configure the free minimum password length and character requirements in the Supabase Auth Email provider settings.
+- Supabase's 36 RLS-enabled/no-policy INFO findings match the backend-only grant model; direct SELECT privileges for anon/authenticated are zero. Do not add broad client access.
+- Render Free may sleep after inactivity; cold starts are expected. Do not provision a paid instance or background worker.
+
+The dated provider evidence and audit boundary are in docs/INFRASTRUCTURE_AUDIT_2026-11-10.md. Historical roadmap material below is retained for traceability and must not override this current status. Do not mark a gate complete from code or unit tests alone.
+
+---
 
 ---
 

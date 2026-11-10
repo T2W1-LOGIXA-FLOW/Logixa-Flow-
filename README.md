@@ -4,7 +4,7 @@
 
 > Owner: Project / Engineering
 > Update when: project identity, quick-start, documentation map, or high-level snapshot changes
-> Last Updated: 2026-10-15
+> Last Updated: 2026-11-10
 > Do NOT put here: detailed deployment, security, API, database, or provider runbooks.
 
 ## What is Logixa Flow?
@@ -33,23 +33,23 @@ AI: Gemini plus a multi-provider router, embeddings, RAG, AI Memory/Brain, agent
 
 Infrastructure: GitHub, Render, optional/locked Vercel frontend deployment, QStash, Cloudinary, Supabase Storage, Backblaze B2/S3-compatible storage, Google Drive.
 
-Frontend dependency declaration: Next.js `^15.5.27`; committed `package-lock.json` resolves Next.js to **15.5.27** (verified 2026-10-08).
+Frontend dependency declaration: Next.js `^15.5.27`; committed `package-lock.json` resolves Next.js to **15.5.28** (verified 2026-11-10).
 
 ## Current snapshot
 
-Latest connected-provider audit: [docs/INFRASTRUCTURE_AUDIT_2026-10-15.md](docs/INFRASTRUCTURE_AUDIT_2026-10-15.md). Provider resource states and remaining release gates were reconciled on 2026-10-15; release remains pending and no infrastructure was mutated during the audit.
+Latest connected-provider audit: [docs/INFRASTRUCTURE_AUDIT_2026-11-10.md](docs/INFRASTRUCTURE_AUDIT_2026-11-10.md). Current main HEAD is 4029acddbc3b67f78fa91d6a188e6218f74db3ed; PR #206, #207, and #208 are merged.
 
-Repository Alembic head: **20261011_0013**.
+Render backend remains on the Free plan and is live for backend commit de084fd8764ba78bcbe2b6897ed44703aefc13b4; /health returned HTTP 200. Vercel production deployment is READY for current main HEAD; / and /admin/login returned HTTP 200.
 
-Live production Supabase migration head: **20261011_0013** (verified 2026-10-11).
+Production Supabase Alembic head is **20261016_0015**. All 36 public tables have RLS enabled; direct SELECT grants to anon and authenticated are zero. Production currently has zero workflow definitions, workflow nodes, workflow runs, scheduled workflow jobs, and stored-file records.
 
-Public AI default: disabled. Admin AI default: enabled in repository configuration. Provider implementation/configuration/live health are tracked separately.
+Latest local verification: backend **294 passed / 5 skipped**, frontend **87 passed across 36 files**, Next.js production build passed, and full frontend npm audit reported **0 vulnerabilities**. Upstash Redis and QStash remain on Free plans; Redis auto-upgrade is disabled and QStash schedules are empty in both regions.
 
-Release status is **PENDING FINAL EVIDENCE**. Verified evidence includes Cloudinary, Supabase Storage upload/read/cleanup, private Backblaze B2/S3 plus deployed application upload → private download/readback → cleanup (run #38049146602), Google Drive upload/read, production auth/API smoke, authenticated Admin Brain API/UI smoke (run #38418481082), and production RAG ingestion → Voyage embedding → retrieval/citation (run #38227390320 attempt 4). The historical isolated public-schema restore tested migration `20261008_0012`; current production migration is `20261011_0013`, so current-schema restore readiness remains pending. Durable QStash workflow delivery/completion/idempotency, workflow recovery, Agent→Brain→Publish, SLO/alerting, rollback/DR, newsletter/provider failover, and scheduler observation remain pending. The QStash recovery patch was merged in [PR #115](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/pull/115) as `ede412e03dad4ab1cd15ee436c722c0f1581ea4e`; CI and CodeQL passed, and the Render deployment is live. Live QStash workflow recovery remains pending. Remaining gates and blockers are tracked in `CURRENT_STATE.md`, `ROADMAP.md`, `docs/RELEASE_CERTIFICATION.md`, and `docs/RELEASE_EVIDENCE.md`. Do not infer full certification from provider tests or repository CI alone.
+Release state remains **DEPLOYED — NOT FULLY PRODUCTION-CERTIFIED**. Live QStash workflow completion/idempotency/recovery, Agent→Brain→approval→publish, full SLO/alert evidence, rollback/managed Auth-Storage/object-storage recovery, 24-hour scheduler observation, GitHub branch protection, Cloudflare MFA review, and newsletter/provider failover remain pending. Supabase leaked-password protection is Pro+ only; keep the Free plan and use the available minimum-length and character-requirement controls.
 
 ## Documentation map
 
-- docs/INFRASTRUCTURE_AUDIT_2026-10-15.md — live provider inventory, security observations, and ordered remaining work.
+- docs/INFRASTRUCTURE_AUDIT_2026-11-10.md — latest live provider inventory, free-tier posture, security observations, and remaining gates.
 
 - PROJECT_OVERVIEW.md — product and architecture overview.
 - CURRENT_STATE.md — current status, gates, blockers, deferred work, and next action.

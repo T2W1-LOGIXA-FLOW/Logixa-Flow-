@@ -1,30 +1,42 @@
-# Current production audit — 2026-11-09 (latest verified snapshot)
+# Current production audit — 2026-11-10 (latest verified snapshot)
 
-## Deployment and runtime
-- Repository main is `32382907f98d3845b063fd3e37145bbdf8291a3c`. Vercel production deployment `dpl_8RXvvp1hyiGAjRUdoJknthNPUeqd` is READY and serves the `logixa-flow.vercel.app` alias for that exact commit.
-- Render backend service `srv-d9172fe8bjmc739pd600` is on the Free plan, tracks `main`, and has automatic deploys enabled. Its latest deployment is LIVE for backend commit `bfa5337b0775c40f2fffe126fde6281a11a0c8fc` (PR #200 backend changes). The latest repository commits after that are documentation/frontend-facing, so the backend did not require a new deploy.
-- Render application logs show repeated `GET /health` responses with HTTP 200 and approximately 697–707 ms duration in the inspected window. The bounded 7-day Render ERROR-log query returned no entries. This is a bounded log observation, not a complete request-level SLO or uptime certification.
-- GitHub reports the `main` branch is not protected and has no required status checks configured. This is a governance/release-control gap; no branch settings were changed during this audit.
+## Current deployment and free-tier posture
+- Repository main HEAD: 4029acddbc3b67f78fa91d6a188e6218f74db3ed. PRs #206, #207, and #208 are merged.
+- Render backend is Free, tracks main, and auto-deploys. Latest live deployment dep-dbpbfnvg5rvs738gl7qg runs commit de084fd8764ba78bcbe2b6897ed44703aefc13b4. GET /health returned HTTP 200.
+- Vercel production deployment dpl_73D5BkQXf24HY2TNaQ4CrxTTL93s is READY for main HEAD. Production / and /admin/login returned HTTP 200. Project-level live=false metadata remains under the existing Vercel change lock.
+- Upstash Redis and both QStash regions are Free. Redis auto-upgrade and QStash Prod Pack are disabled.
 
-## Database and queue snapshot
-- Production Supabase Alembic head: `20261016_0015`.
-- Read-only row counts: `workflows=0`, `workflow_nodes=0`, `workflow_runs=0`, `scheduled_workflow_jobs=0`, `agent_runs=122`.
-- Upstash QStash delivery logs and Workflow run logs returned no entries in either US or EU regions during this inspection. Empty logs do not establish that signing, delivery, completion, or recovery works.
-- Therefore live QStash dispatch → persisted workflow completion → duplicate idempotency → retry/stale-claim recovery remains NOT VERIFIED. A safe authenticated admin-created test workflow/run is still required; do not insert guessed workflow rows or run IDs directly into production SQL.
+## Verification on 2026-11-10
+- Backend local CI-equivalent run: Alembic head 20261016_0015 on isolated SQLite CI database; 294 passed, 5 skipped. No production migration was run.
+- Frontend Vitest: 36 files, 87 tests passed. Production build passed (Next.js 15.5.28).
+- Full frontend npm audit: 0 vulnerabilities; production-only audit: 0 vulnerabilities.
+- Render health, Vercel home, and admin-login probes returned HTTP 200. Frontend response included HSTS, nosniff, frame-deny, Referrer-Policy, and Permissions-Policy headers.
+- Unauthenticated admin diagnostics and unsigned QStash dispatch were rejected with HTTP 401.
 
-## Current release gates
-1. Execute a controlled, no-side-effect workflow through the authenticated admin path, then verify signed QStash delivery, persisted completion, duplicate suppression, retry, and stale-claim recovery. Keep this gate pending until there is a real run and auditable evidence.
-2. Verify Agent → Brain → approval → publish/resume with durable results and approval enforcement. Do not publish or mutate real content as a synthetic test.
-3. Complete the SLO observation window with request-level latency/error-rate evidence and verify the external alert path. The current health log sample is not an SLO pass.
-4. Rehearse application rollback and managed Supabase Auth/Storage plus object-storage recovery using isolated recovery targets; do not run destructive restore operations against production.
-5. Observe at least one full 24-hour scheduler cycle and verify no duplicate/missed execution.
-6. Keep Stripe checkout/billing disabled until durable, idempotent subscription/payment handlers and test-mode end-to-end verification exist. Unimplemented verified webhook events now fail closed with HTTP 503 rather than being acknowledged as processed.
-7. Review the unprotected `main` branch and configure required checks/review rules through GitHub repository settings. This audit found the gap but did not change repository settings.
+## Production database and queue
+- Supabase production project ephrnmigiwjhdjksreos is ACTIVE_HEALTHY on PostgreSQL 17.6.1; Alembic head 20261016_0015.
+- Read-only SQL: 36 public tables, all 36 with RLS; direct SELECT grants anon=0, authenticated=0, service_role=36.
+- Counts: workflows=0, workflow_nodes=0, workflow_runs=0, scheduled_workflow_jobs=0, stored_files=0.
+- Security Advisor: 36 INFO RLS-enabled/no-policy findings and one WARN for disabled leaked-password protection. Do not add broad policies or grants to clear INFO lints.
+- Supabase leaked-password protection is Pro+ only. Keep Free; use minimum length >=8 (preferably 12) and suitable character requirements in Authentication → Sign In / Providers → Email. The connected Supabase actions cannot change hosted Auth settings.
+- QStash schedules are empty in US and EU. Displayed November request counters are zero; US DLQ count is zero. Live QStash completion/idempotency/retry/recovery remains NOT VERIFIED.
 
-## Operating constraints and audit boundary
-- Continue using Free plans only. No paid-tier upgrade was made or recommended as a prerequisite.
-- No production environment variables or secrets were read, changed, or rotated. No production database rows, workflow records, or content were inserted/updated/deleted. No deployment was manually triggered.
-- This snapshot records verified deployment/runtime facts separately from unverified product-level workflows. Overall status remains **DEPLOYED — NOT FULLY PRODUCTION-CERTIFIED**.
+## Remaining production gates
+1. Safe authenticated test workflow for signed QStash delivery, durable completion, duplicate suppression, retry, and stale-claim recovery.
+2. Agent → Brain → explicit approval → publish/resume E2E using an approved test item.
+3. Full SLO observation with request/error/latency telemetry and verified alert delivery.
+4. Application rollback and managed Supabase Auth/Storage plus object-storage recovery against isolated targets.
+5. Full 24-hour scheduler observation.
+6. GitHub main-branch protection/required checks review; no connected mutation action is available.
+7. Cloudflare MFA enforcement review with owner-controlled recovery.
+8. Newsletter delivery/provider failover; do not add a provider or credentials without a free-tier/cost review.
+
+## Operating constraints
+- Free plans only. No paid upgrades, paid AI fallback, extra Render worker, or additional infrastructure was provisioned.
+- No production secrets were read or rotated. No production rows, workflows, content, storage objects, or schedules were mutated. No manual deployment or destructive recovery action was run.
+- Overall state remains **DEPLOYED — NOT FULLY PRODUCTION-CERTIFIED**. Keep each gate pending until direct evidence exists.
+
+---
 
 ---
 
@@ -490,7 +502,7 @@ PR #93 merged as `053891cfa7bd9e970566e9b598f507c6af53792f`. CI #641 passed back
 
 ## Live infrastructure audit update — 2026-10-15
 
-Read-only provider inventory and production SQL verification are recorded in [docs/INFRASTRUCTURE_AUDIT_2026-10-15.md](docs/INFRASTRUCTURE_AUDIT_2026-10-15.md). Key fresh observations: Render's single Free web service is live on main commit `8a1b5ad4bfab817e5e4a56d8cec22b1b035e4215`; Vercel's latest main production deployment is READY, but the project API reports `live=false` and its `latestDeployment` field points at an ERROR Dependabot deployment, so retain the existing Vercel lock and investigate only with owner approval. Supabase production is ACTIVE_HEALTHY at Alembic head `20261011_0013`, with 34 public tables, 8 RAG observability events, and zero workflow definitions/nodes/runs/scheduled jobs. Cloudflare inventory has no zones, Workers, Pages, KV, D1, or Queues; R2 cannot be listed because it is not enabled. Cloudflare account `enforce_twofactor=false` is an owner-level security follow-up.
+Read-only provider inventory and production SQL verification are recorded in [docs/INFRASTRUCTURE_AUDIT_2026-11-10.md](docs/INFRASTRUCTURE_AUDIT_2026-11-10.md). Key fresh observations: Render's single Free web service is live on main commit `8a1b5ad4bfab817e5e4a56d8cec22b1b035e4215`; Vercel's latest main production deployment is READY, but the project API reports `live=false` and its `latestDeployment` field points at an ERROR Dependabot deployment, so retain the existing Vercel lock and investigate only with owner approval. Supabase production is ACTIVE_HEALTHY at Alembic head `20261011_0013`, with 34 public tables, 8 RAG observability events, and zero workflow definitions/nodes/runs/scheduled jobs. Cloudflare inventory has no zones, Workers, Pages, KV, D1, or Queues; R2 cannot be listed because it is not enabled. Cloudflare account `enforce_twofactor=false` is an owner-level security follow-up.
 
 Supabase advisors report 34 RLS-enabled tables without policies (INFO), leaked-password protection disabled (WARN), and 82 unused-index findings (INFO). Do not mass-create policies, broaden grants, or drop indexes without workload and access-model review. No production infrastructure or application data was mutated during this audit. Release remains **PENDING — NOT RELEASE-CERTIFIED**; ordered gates are in the audit document.
 
