@@ -90,38 +90,75 @@ export default function AdminAgentChatPage() {
     try {
       setLoading(true);
       
-      // Call new chat API
-      const response = await adminFetch("/api/chat/query", token, {
-        method: "POST",
-        body: JSON.stringify({
-          query: message,
-          ...(selectedSessionId ? { session_id: selectedSessionId } : {}),
-          context: messages.map(m => ({
-            role: m.role,
-            content: m.content
-          }))
-        }),
-      });
+      // This exact operator command is an explicit action, not a general chat prompt.
+      // Route it to the durable Agent → Brain API instead of the conversational LLM endpoint.
+      const isPrivateP0SmokeCommand =
+        message.trim().replace(/\s+/g, " ").toLowerCase() ===
+        "create a private p0 approval smoke draft. do not publish.";
 
-      if (!response.ok) {
-        throw new Error("Failed to get response");
+      let agentMessage: ChatMessage;
+      if (isPrivateP0SmokeCommand) {
+        const response = await adminFetch("/api/agent/run", token, {
+          method: "POST",
+          body: JSON.stringify({ message, source_ids: [] }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(typeof data.detail === "string" ? data.detail : "Agent run could not be created");
+        }
+        if (
+          data.status !== "completed" ||
+          !data.id ||
+          !data.final_memory_id ||
+          data.memory?.status !== "pending" ||
+          data.memory?.is_public !== false
+        ) {
+          throw new Error("Agent response did not confirm a completed run with a private pending Brain item");
+        }
+        agentMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "agent",
+          content: [
+            "Private P0 approval smoke draft created. Nothing was published.",
+            `Agent Run ID: ${data.id}`,
+            `Brain item ID: ${data.final_memory_id}`,
+            `Brain status: ${data.memory.status} (private)`,
+            "Next: open Brain and use Approve only. Do not use Create CMS Draft or Publish.",
+          ].join("\n"),
+          timestamp: new Date().toISOString(),
+          agentId: "agent-run",
+        };
+      } else {
+        const response = await adminFetch("/api/chat/query", token, {
+          method: "POST",
+          body: JSON.stringify({
+            query: message,
+            ...(selectedSessionId ? { session_id: selectedSessionId } : {}),
+            context: messages.map(m => ({
+              role: m.role,
+              content: m.content
+            }))
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to get response");
+        }
+
+        const data = await response.json();
+        agentMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "agent",
+          content: data.response || "No response received",
+          timestamp: new Date().toISOString(),
+          agentId: data.agent_id,
+        };
       }
-
-      const data = await response.json();
-
-      // Add agent response to chat
-      const agentMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: "agent",
-        content: data.response || "No response received",
-        timestamp: new Date().toISOString(),
-        agentId: data.agent_id,
-      };
       setMessages(prev => [...prev, agentMessage]);
       setTranscriptSource("local");
       setError(null);
     } catch (err) {
-      setError("Admin chat API unavailable");
+      setError(err instanceof Error ? err.message : "Admin chat API unavailable");
       toast.error("Could not process your query");
       console.error(err);
     } finally {

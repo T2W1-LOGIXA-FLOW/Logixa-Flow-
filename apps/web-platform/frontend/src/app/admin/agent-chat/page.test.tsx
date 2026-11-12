@@ -19,7 +19,12 @@ vi.mock("@/components/api", () => ({
 
 vi.mock("@/components/ui/ai-input-with-loading", () => ({
   AIInputWithLoading: ({ onSubmit }: { onSubmit: (value: string) => void }) => (
-    <button onClick={() => onSubmit("Local draft")}>Chat input</button>
+    <>
+      <button onClick={() => onSubmit("Local draft")}>Chat input</button>
+      <button onClick={() => onSubmit("Create a private P0 approval smoke draft. Do not publish.")}>
+        Run P0 approval smoke
+      </button>
+    </>
   ),
 }));
 
@@ -59,6 +64,46 @@ describe("Admin agent chat session restore", () => {
       ok: true,
       json: async () => ({ response: "Agent response", agent_id: "default" }),
     });
+  });
+
+  it("routes the exact P0 smoke command to Agent → Brain and confirms private pending state", async () => {
+    adminRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        id: 41,
+        status: "completed",
+        final_memory_id: 73,
+        memory: { status: "pending", is_public: false },
+      }),
+    });
+    render(<AdminAgentChatPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText("Run P0 approval smoke"));
+    });
+    await waitFor(() => expect(screen.getByText(/Agent Run ID: 41/)).toBeInTheDocument());
+    expect(screen.getByText(/Brain item ID: 73/)).toBeInTheDocument();
+    expect(screen.getByText(/Nothing was published/)).toBeInTheDocument();
+    expect(adminRequest).toHaveBeenCalledWith("/api/agent/run", "test-token", expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({
+        message: "Create a private P0 approval smoke draft. Do not publish.",
+        source_ids: [],
+      }),
+    }));
+    expect(adminRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not report success when Agent response lacks a private pending Brain item", async () => {
+    adminRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 41, status: "completed", final_memory_id: 73, memory: { status: "approved", is_public: false } }),
+    });
+    render(<AdminAgentChatPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText("Run P0 approval smoke"));
+    });
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Agent response did not confirm"));
+    expect(screen.queryByText(/Agent Run ID: 41/)).not.toBeInTheDocument();
   });
 
   it("loads owned sessions and restores selected history", async () => {
