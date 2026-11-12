@@ -24,19 +24,17 @@ afterEach(() => {
 });
 
 describe("unified command canvas", () => {
-  it("renders five service nodes and process telemetry", () => {
+  it("renders an honest empty canvas and process telemetry", () => {
     render(<AdminWorkflowPage />);
     expect(screen.getByText("Workflow command center")).toBeInTheDocument();
-    expect(screen.getByText("RESEARCH")).toBeInTheDocument();
-    expect(screen.getByText("MEDIA")).toBeInTheDocument();
-    expect(screen.getByText("FINANCE")).toBeInTheDocument();
-    expect(screen.getByText("OUTBOUND")).toBeInTheDocument();
-    expect(screen.getByText("ORCHESTRATOR")).toBeInTheDocument();
+    expect(screen.getByText("Your workflow canvas is empty")).toBeInTheDocument();
+    expect(screen.getByRole("combobox")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Blank canvas" })).toBeInTheDocument();
+    expect(screen.queryByText("RESEARCH")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Process cost panel")).toBeInTheDocument();
     expect(screen.getByLabelText("Workflow ID")).toHaveValue("command-canvas");
     expect(screen.getByRole("button", { name: "Save workflow" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Run log-only workflow" })).toBeInTheDocument();
-    expect(screen.getByText("Run uses log-only task actions; no publish or external delivery.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Export JSON" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Import JSON" })).toBeInTheDocument();
   });
@@ -123,8 +121,8 @@ describe("unified command canvas", () => {
   it("supports node filtering and sidebar selection", () => {
     render(<AdminWorkflowPage />);
     fireEvent.change(screen.getByPlaceholderText("Search services..."), { target: { value: "finance" } });
-    expect(screen.getByText("FINANCE")).toBeInTheDocument();
-    expect(screen.queryByText("RESEARCH")).not.toBeInTheDocument();
+    expect(screen.getByText("Smart Receipt Parser")).toBeInTheDocument();
+    expect(screen.queryByText("Live Thought Stream")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Media/ }));
     expect(screen.getByText("Media category selected")).toBeInTheDocument();
   });
