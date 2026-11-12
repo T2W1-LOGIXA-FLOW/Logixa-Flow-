@@ -8,6 +8,7 @@ export type ServiceModule = {
   category: "Research" | "Media" | "Finance" | "Outbound";
   tag: string;
   endpoint?: string;
+  nodeType?: "task" | "approval" | "notification";
 };
 
 export const AVAILABLE_MODULES: ServiceModule[] = [
@@ -16,6 +17,7 @@ export const AVAILABLE_MODULES: ServiceModule[] = [
   { id: "flux_banner", name: "FLUX AI Banner Generator", canvasLabel: "FLUX BANNER", detail: "Pollinations 1200x630 banner", category: "Media", tag: "FLUX", endpoint: "/api/admin/posts/generate-banner" },
   { id: "edge_tts", name: "Edge Neural Voiceover", canvasLabel: "VOICEOVER", detail: "Burmese/English synthetic audio", category: "Media", tag: "AUDIO", endpoint: "/api/v1/episodes/voiceover" },
   { id: "receipt_extract", name: "Smart Receipt Parser", canvasLabel: "RECEIPT PARSER", detail: "Zero-cost tax/vendor extractor", category: "Finance", tag: "OCR", endpoint: "/api/documents/extract-receipt" },
+  { id: "approval_gate", name: "Human Approval Gate", canvasLabel: "APPROVAL GATE", detail: "Pause workflow until an Admin approves or rejects", category: "Outbound", tag: "HUMAN", nodeType: "approval" },
   { id: "telegram_gate", name: "Telegram Approval Gate", canvasLabel: "TELEGRAM GATE", detail: "Human-in-the-loop callback bot", category: "Outbound", tag: "BOT", endpoint: "/api/telegram/action" },
 ];
 

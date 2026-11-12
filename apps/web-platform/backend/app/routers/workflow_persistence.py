@@ -461,7 +461,7 @@ def restore_pending_workflow_runs() -> int:
     db = SessionLocal()
     try:
         jobs = db.query(models.ScheduledWorkflowJob).filter(
-            models.ScheduledWorkflowJob.status.in_(["queued", "running"])
+            models.ScheduledWorkflowJob.status.in_(["queued", "running", "waiting_approval"])
         ).order_by(
             models.ScheduledWorkflowJob.priority.desc(),
             models.ScheduledWorkflowJob.scheduled_for.asc(),
@@ -496,6 +496,11 @@ def restore_pending_workflow_runs() -> int:
                 "error": run.state.error,
                 "approval_node": run.state.approval_node,
             }
+            if run.state.status == "waiting_approval":
+                # Approval pauses are durable human decisions, not runnable queue
+                # work. Restore the run for Admin visibility without auto-resuming.
+                restored += 1
+                continue
             if not any(item["run_id"] == run.run_id for item in _EXECUTION_QUEUE):
                 _EXECUTION_QUEUE.append({
                     "run_id": run.run_id,

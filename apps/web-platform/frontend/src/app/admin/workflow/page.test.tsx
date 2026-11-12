@@ -96,6 +96,23 @@ describe("unified command canvas", () => {
     vi.unstubAllGlobals();
   });
 
+  it("saves a human approval module with the approval node type", async () => {
+    render(<AdminWorkflowPage />);
+    await act(async () => { await Promise.resolve(); });
+    vi.mocked(getAdminSessionToken).mockResolvedValue("admin-session-token");
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 201, json: async () => ({}) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    fireEvent.click(screen.getByTitle("Add Human Approval Gate to canvas"));
+    fireEvent.click(screen.getByRole("button", { name: "Save workflow" }));
+
+    await screen.findByRole("status");
+    const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(payload.nodes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: expect.stringMatching(/^approval_gate_/), type: "approval", name: "APPROVAL GATE" }),
+    ]));
+  });
+
   it("reports that an admin session is required before starting a run", async () => {
     render(<AdminWorkflowPage />);
     await act(async () => { await Promise.resolve(); });
