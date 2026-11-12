@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, AlertCircle, CheckCircle2, Cloud, Database, Mail, MessageCircle, Network, Power, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
+import { Activity, AlertCircle, CheckCircle2, Cloud, Database, MessageCircle, Network, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
 import { getAdminSessionToken } from "@/lib/adminSession";
 
 type Integration = {
@@ -146,7 +146,7 @@ export default function AdminIntegrationsPage() {
       )}
 
       <aside className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
-        <div className="flex items-start gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" /><div><h2 className="text-sm font-semibold text-amber-100">Important: scope of these switches</h2><p className="mt-1 text-xs leading-5 text-amber-100/70">These switches control availability in the workflow module library only. They do not revoke OAuth grants, delete credentials, stop existing background jobs, or disable a provider globally. A provider marked Configured has server credentials present; it has not necessarily passed a live connectivity test. Secrets are never returned to this page.</p></div></div>
+        <div className="flex items-start gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" /><div><h2 className="text-sm font-semibold text-amber-100">Important: scope of these switches</h2><p className="mt-1 text-xs leading-5 text-amber-100/70">These switches control availability in the workflow module library only where a matching workflow adapter exists (currently the Telegram approval gate). They do not revoke OAuth grants, delete credentials, stop existing background jobs, or disable a provider globally. Other catalog entries show server-side credential readiness but do not yet have dedicated executable workflow nodes. A provider marked Configured has server credentials present; it has not necessarily passed a live connectivity test. Secrets are never returned to this page.</p></div></div>
       </aside>
     </main>
   );
