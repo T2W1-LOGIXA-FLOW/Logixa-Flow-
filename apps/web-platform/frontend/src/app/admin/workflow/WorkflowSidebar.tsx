@@ -9,6 +9,7 @@ export type ServiceModule = {
   tag: string;
   endpoint?: string;
   nodeType?: "task" | "approval" | "notification";
+  integrationId?: string;
 };
 
 export const AVAILABLE_MODULES: ServiceModule[] = [
@@ -18,7 +19,7 @@ export const AVAILABLE_MODULES: ServiceModule[] = [
   { id: "edge_tts", name: "Edge Neural Voiceover", canvasLabel: "VOICEOVER", detail: "Burmese/English synthetic audio", category: "Media", tag: "AUDIO", endpoint: "/api/v1/episodes/voiceover" },
   { id: "receipt_extract", name: "Smart Receipt Parser", canvasLabel: "RECEIPT PARSER", detail: "Zero-cost tax/vendor extractor", category: "Finance", tag: "OCR", endpoint: "/api/documents/extract-receipt" },
   { id: "approval_gate", name: "Human Approval Gate", canvasLabel: "APPROVAL GATE", detail: "Pause workflow until an Admin approves or rejects", category: "Outbound", tag: "HUMAN", nodeType: "approval" },
-  { id: "telegram_gate", name: "Telegram Approval Gate", canvasLabel: "TELEGRAM GATE", detail: "Human-in-the-loop callback bot", category: "Outbound", tag: "BOT", endpoint: "/api/telegram/action" },
+  { id: "telegram_gate", name: "Telegram Approval Gate", canvasLabel: "TELEGRAM GATE", detail: "Human-in-the-loop callback bot", category: "Outbound", tag: "BOT", endpoint: "/api/telegram/action", integrationId: "telegram" },
 ];
 
 type WorkflowSidebarProps = {
@@ -26,6 +27,7 @@ type WorkflowSidebarProps = {
   onSearchChange: (value: string) => void;
   onSelect: (label: string) => void;
   onAddNode?: (module: ServiceModule) => void;
+  enabledIntegrationIds?: string[];
 };
 
 const categories = ["Research", "Media", "Finance", "Outbound"];
@@ -35,13 +37,15 @@ export default function WorkflowSidebar({
   onSearchChange,
   onSelect,
   onAddNode,
+  enabledIntegrationIds = [],
 }: WorkflowSidebarProps) {
   const filteredModules = AVAILABLE_MODULES.filter(
     (m) =>
-      !search ||
-      m.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.detail.toLowerCase().includes(search.toLowerCase()) ||
-      m.category.toLowerCase().includes(search.toLowerCase())
+      (!m.integrationId || enabledIntegrationIds.includes(m.integrationId)) &&
+      (!search ||
+        m.name.toLowerCase().includes(search.toLowerCase()) ||
+        m.detail.toLowerCase().includes(search.toLowerCase()) ||
+        m.category.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
