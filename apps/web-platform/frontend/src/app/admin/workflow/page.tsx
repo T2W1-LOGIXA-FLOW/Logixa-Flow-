@@ -38,26 +38,31 @@ type WorkflowTelemetry = {
   };
 };
 
-const defaultInitialNodes: Node<ServiceNodeData>[] = [
-  { id: "research", position: { x: 80, y: 80 }, data: { label: "RESEARCH", detail: "Intelligence intake", status: "green" }, sourcePosition: Position.Right, targetPosition: Position.Left, type: "default" },
-  { id: "media", position: { x: 350, y: 80 }, data: { label: "MEDIA", detail: "Content processing", status: "amber" }, sourcePosition: Position.Right, targetPosition: Position.Left, type: "default" },
-  { id: "finance", position: { x: 620, y: 80 }, data: { label: "FINANCE", detail: "Cost controls", status: "green" }, sourcePosition: Position.Bottom, targetPosition: Position.Left, type: "default" },
-  { id: "outbound", position: { x: 350, y: 280 }, data: { label: "OUTBOUND", detail: "Delivery gateway", status: "red" }, sourcePosition: Position.Right, targetPosition: Position.Top, type: "default" },
-  { id: "orchestrator", position: { x: 80, y: 280 }, data: { label: "ORCHESTRATOR", detail: "Command routing", status: "green" }, sourcePosition: Position.Right, targetPosition: Position.Left, type: "default" },
-];
+const defaultInitialNodes: Node<ServiceNodeData>[] = [];
+const defaultInitialEdges: Edge[] = [];
+const defaultLogs: string[] = [];
 
-const defaultInitialEdges: Edge[] = [
-  { id: "e1", source: "orchestrator", target: "research", animated: true, style: { stroke: "#22D3EE", strokeWidth: 2 } },
-  { id: "e2", source: "research", target: "media", animated: true, style: { stroke: "#8B5CF6", strokeWidth: 2 } },
-  { id: "e3", source: "media", target: "finance", animated: true, style: { stroke: "#22D3EE", strokeWidth: 2 } },
-  { id: "e4", source: "finance", target: "outbound", animated: true, style: { stroke: "#8B5CF6", strokeWidth: 2 } },
-];
-
-const defaultLogs = [
-  "[20:47:12] ROUTER  OK",
-  "[20:47:09] INDEXER READY",
-  "[20:46:51] MEDIA WAIT",
-  "[20:45:20] OUTBOUND RETRY",
+const starterTemplates = [
+  {
+    id: "private-review",
+    name: "Private review pipeline",
+    description: "Prepare a private task, pause for Admin approval, then record a completion event. No external delivery.",
+    nodes: [
+      { id: "prepare", type: "task" as const, name: "PREPARE PRIVATE DRAFT", detail: "Log-only preparation step", config: { action: "log", message: "Private draft preparation checkpoint" }, depends_on: [] as string[] },
+      { id: "approval", type: "approval" as const, name: "ADMIN APPROVAL", detail: "Wait for an explicit Admin decision", config: {}, depends_on: ["prepare"] },
+      { id: "complete", type: "notification" as const, name: "RECORD APPROVED", detail: "Internal log-only completion event", config: { channel: "log", message: "Admin approval recorded; no external message sent" }, depends_on: ["approval"] },
+    ],
+  },
+  {
+    id: "private-check",
+    name: "Private health check",
+    description: "Run two internal checkpoints and record completion. No provider calls or external side effects.",
+    nodes: [
+      { id: "check-input", type: "task" as const, name: "CHECK INPUT", detail: "Internal log-only check", config: { action: "log", message: "Input check completed" }, depends_on: [] as string[] },
+      { id: "record-result", type: "task" as const, name: "RECORD RESULT", detail: "Internal metadata checkpoint", config: { action: "set_metadata", key: "health_check", value: "passed" }, depends_on: ["check-input"] },
+      { id: "finish", type: "notification" as const, name: "FINISH", detail: "Internal log-only completion event", config: { channel: "log", message: "Private health check completed" }, depends_on: ["record-result"] },
+    ],
+  },
 ];
 
 function nodeClass(status: ServiceNodeData["status"]) {
@@ -90,6 +95,7 @@ export default function AdminWorkflowPage() {
   const [telemetry, setTelemetry] = useState<WorkflowTelemetry | null>(null);
   const [enabledIntegrationIds, setEnabledIntegrationIds] = useState<string[]>([]);
   const [logs, setLogs] = useState<string[]>(defaultLogs);
+  const [templateNotice, setTemplateNotice] = useState<string | null>(null);
   const [workflowId, setWorkflowId] = useState("command-canvas");
   const [transferMessage, setTransferMessage] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -109,6 +115,28 @@ export default function AdminWorkflowPage() {
     (params: Connection) => setEdges((eds) => addEdge({ ...params, animated: true, style: { stroke: "#22D3EE", strokeWidth: 2 } }, eds)),
     [setEdges]
   );
+
+  const handleApplyTemplate = useCallback((templateId: string) => {
+    const template = starterTemplates.find((item) => item.id === templateId);
+    if (!template) return;
+    if (nodes.length > 0 && !window.confirm("Replace the current unsaved canvas with this starter template?")) return;
+    const nextNodes: Node<ServiceNodeData>[] = template.nodes.map((item, index) => ({
+      id: item.id,
+      position: { x: 100 + index * 290, y: 150 },
+      data: { label: item.name, detail: item.detail, status: "green", nodeType: item.type },
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
+      type: "default",
+    }));
+    const nextEdges: Edge[] = template.nodes.flatMap((item) => item.depends_on.map((source) => ({ id: "template-" + source + "-" + item.id, source, target: item.id, animated: true, style: { stroke: "#22D3EE", strokeWidth: 2 } })));
+    setNodes(nextNodes);
+    setEdges(nextEdges);
+    setWorkflowId(template.id);
+    setTemplateNotice(template.name + " loaded. Review the steps, then save when ready. This template has no external integrations or delivery actions.");
+    setSelected(template.name + " loaded");
+    setLogs([]);
+    setInspectingNode(null);
+  }, [nodes.length, setEdges, setNodes]);
 
   // Add new n8n-style module to canvas
   const handleAddModule = useCallback((module: ServiceModule) => {
@@ -433,15 +461,17 @@ export default function AdminWorkflowPage() {
           <div>
             <span className="workflow-kicker">UNIFIED COMMAND CANVAS</span>
             <h1>Workflow command center</h1>
-            <p>Visual orchestration overview · <strong>{selected}</strong></p>
+            <p>Build from a safe starter template or a blank canvas · <strong>{selected}</strong></p>
           </div>
           <div className="workflow-header-status">
             <span className={`status-dot ${connectionState === "connected" ? "status-green" : connectionState === "connecting" ? "status-amber" : "status-red"}`} />
-            {connectionState === "connected" ? "SYSTEM LIVE" : connectionState === "connecting" ? "SYNCING" : "OFFLINE"}
+            {connectionState === "connected" ? "TELEMETRY CONNECTED" : connectionState === "connecting" ? "CONNECTING" : "TELEMETRY OFFLINE"}
           </div>
         </header>
 
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/50 p-3 text-xs">
+          <label className="text-slate-300">Start from template <select defaultValue="" onChange={(event) => { if (event.target.value) handleApplyTemplate(event.target.value); event.target.value = ""; }} className="ml-2 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-white"><option value="" disabled>Choose a safe starter…</option>{starterTemplates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select></label>
+          <button type="button" onClick={() => { if (nodes.length && !window.confirm("Clear the current unsaved canvas?")) return; setNodes([]); setEdges([]); setLogs([]); setWorkflowId("untitled-workflow"); setTemplateNotice("Blank canvas ready."); }} className="rounded border border-slate-600 px-3 py-1.5 text-slate-100">Blank canvas</button>
           <label className="text-slate-300">Workflow ID <input value={workflowId} onChange={(event) => setWorkflowId(event.target.value)} className="ml-2 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-white" aria-label="Workflow ID" /></label>
           <button onClick={handleSaveWorkflow} className="rounded border border-cyan-400/50 px-3 py-1.5 text-cyan-200">Save workflow</button>
           <button
@@ -455,8 +485,9 @@ export default function AdminWorkflowPage() {
           <button onClick={handleExportWorkflow} className="rounded border border-slate-600 px-3 py-1.5 text-slate-100">Export JSON</button>
           <button onClick={() => importInputRef.current?.click()} className="rounded border border-slate-600 px-3 py-1.5 text-slate-100">Import JSON</button>
           <input ref={importInputRef} type="file" accept="application/json,.json" onChange={handleImportWorkflow} className="hidden" />
-          <span className="text-slate-400">Run uses log-only task actions; no publish or external delivery.</span>
+          <span className="text-slate-400">Runs support internal log, metadata, and human-approval actions only. Provider execution and external delivery are not wired in this builder yet.</span>
           {transferMessage && <span role="status" className="text-slate-300">{transferMessage}</span>}
+          {templateNotice && <span role="status" className="basis-full text-cyan-200">{templateNotice}</span>}
         </div>
 
         {telemetry?.state.status === "waiting_approval" && (
