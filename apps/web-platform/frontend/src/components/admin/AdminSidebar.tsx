@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Activity, BarChart3, Brain, Calculator, Database, DollarSign, FileText,
   LayoutDashboard, Mail, MessageSquare, Package, Settings, Shield, Upload,
-  Workflow, X, Bot, Server,
+  Workflow, X, Bot, Server, Plug,
 } from "lucide-react";
 import styles from "@/app/admin/admin-theme.module.css";
 import { LogixaFlowLogo } from "@/components/LogixaFlowLogo";
