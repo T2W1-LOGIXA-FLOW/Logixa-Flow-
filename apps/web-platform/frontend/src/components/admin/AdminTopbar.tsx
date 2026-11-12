@@ -36,7 +36,7 @@ const routeLabels: Record<string, string> = {
   workflow: "Workflows",
 };
 
-export default function AdminTopbar({ onOpenSidebar }: { onOpenSidebar: () => void }) {
+export default function AdminTopbar({ onOpenSidebar, sidebarOpen }: { onOpenSidebar: () => void; sidebarOpen: boolean }) {
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
   const currentSegment = segments[segments.length - 1] || "admin";
@@ -52,7 +52,7 @@ export default function AdminTopbar({ onOpenSidebar }: { onOpenSidebar: () => vo
             className={`${styles.menuButton} rounded-lg border border-slate-700/80 bg-slate-900/80 p-2 text-slate-300 hover:text-white lg:hidden`}
             aria-label="Open admin navigation"
             aria-controls="admin-navigation"
-            aria-expanded="false"
+            aria-expanded={sidebarOpen}
           >
             <Menu className="h-5 w-5" aria-hidden="true" />
           </button>
