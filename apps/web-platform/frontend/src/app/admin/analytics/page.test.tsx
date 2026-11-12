@@ -42,4 +42,13 @@ describe("Admin analytics page", () => {
     expect(eventSource).not.toHaveBeenCalled();
     expect(document.body.textContent).not.toContain("test-token");
   });
+  it("does not present failed analytics requests as zero-valued data", async () => {
+    const { adminFetch } = await import("@/components/api");
+    vi.mocked(adminFetch).mockRejectedValueOnce(new Error("request failed"));
+
+    render(<AdminAnalyticsPage />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Analytics could not be loaded.");
+    expect(screen.queryByText("Authenticated daily snapshot loaded. Live streaming is not enabled on this view.")).not.toBeInTheDocument();
+  });
 });
