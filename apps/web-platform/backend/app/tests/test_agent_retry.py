@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from uuid import uuid4
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -27,7 +28,7 @@ def retry_client(monkeypatch: pytest.MonkeyPatch):
             yield session
 
     app.dependency_overrides[get_db] = override_db
-    retry_test_actor = "isolated-agent-retry-test-admin-" + str(id(engine))
+    retry_test_actor = "isolated-agent-retry-test-admin-" + uuid4().hex
     app.dependency_overrides[security.require_admin] = lambda: {
         "sub": retry_test_actor,
         "role": "admin",
