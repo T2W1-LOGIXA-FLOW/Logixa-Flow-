@@ -122,7 +122,7 @@ export default function WorkflowSidebar({
         </div>
       </div>
 
-      <p className="workflow-sidebar-hint">Drag-ready visual modules</p>
+      <p className="workflow-sidebar-hint">Select an action to add it to the canvas</p>
     </aside>
   );
 }
