@@ -169,9 +169,13 @@ const API_TIMEOUT_MS = 30000;
 
 type NextFetchInit = RequestInit & { next?: { revalidate?: number | false } };
 
-async function fetchWithTimeout(input: RequestInfo | URL, init: NextFetchInit = {}) {
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: NextFetchInit = {},
+  timeoutMs = API_TIMEOUT_MS,
+) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(input, { ...init, signal: controller.signal });
   } finally {
