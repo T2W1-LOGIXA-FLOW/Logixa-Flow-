@@ -31,6 +31,7 @@ const navigationItems = [
   ]},
   { category: "AUTOMATION", items: [
     { href: "/admin/workflow", label: "Workflows", icon: Workflow },
+    { href: "/admin/integrations", label: "Integrations", icon: Plug },
     { href: "/admin/controllers", label: "Controllers", icon: Activity },
   ]},
   { category: "OPERATIONS", items: [
