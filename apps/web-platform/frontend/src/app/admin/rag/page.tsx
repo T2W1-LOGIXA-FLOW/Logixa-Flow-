@@ -105,7 +105,7 @@ export default function RagIndexPage() {
         statusFilter === "all" ||
         (statusFilter === "indexed" && s.indexing_status === "indexed") ||
         (statusFilter === "pending" && s.indexing_status !== "indexed" && !s.indexing_error) ||
-        (statusFilter === "error" && Boolean(s.indexing_error));
+        (statusFilter === "error" && (Boolean(s.indexing_error) || s.indexing_status === "failed"));
 
       return matchesSearch && matchesStatus;
     });
