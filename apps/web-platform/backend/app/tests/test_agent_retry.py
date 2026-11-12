@@ -31,9 +31,10 @@ def retry_client(monkeypatch: pytest.MonkeyPatch):
         "sub": "isolated-agent-retry-test-admin",
         "role": "admin",
     }
-    monkeypatch.setattr(agent_router, "_start_agent_run", lambda run_id: None)
+    started: list[int] = []
+    monkeypatch.setattr(agent_router, "_start_agent_run", started.append)
     try:
-        yield TestClient(app), session_factory
+        yield TestClient(app), session_factory, started
     finally:
         app.dependency_overrides.pop(get_db, None)
         app.dependency_overrides.pop(security.require_admin, None)
@@ -42,7 +43,7 @@ def retry_client(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_failed_agent_run_can_be_retried_once_from_persisted_checkpoint(retry_client):
-    client, session_factory = retry_client
+    client, session_factory, started = retry_client
     with session_factory() as db:
         run = models.AgentRun(
             objective="Retry isolated private draft",
@@ -82,6 +83,7 @@ def test_failed_agent_run_can_be_retried_once_from_persisted_checkpoint(retry_cl
     assert payload["status"] == "queued"
     assert payload["retry_count"] == 1
     assert payload["final_memory_id"] is None
+    assert started == [run_id]
 
     with session_factory() as db:
         stored = db.query(models.AgentRun).filter_by(id=run_id).one()
@@ -89,10 +91,12 @@ def test_failed_agent_run_can_be_retried_once_from_persisted_checkpoint(retry_cl
         assert stored.status == "queued"
         assert stored.retry_count == 1
         assert [step.status for step in steps] == ["completed", "failed"]
+        assert db.query(models.AiMemoryBrain).count() == 0
 
     second = client.post(f"/api/admin/agent/runs/{run_id}/retry")
     assert second.status_code == 409
     assert "failed runs" in second.text.lower() or "retry limit" in second.text.lower()
+    assert started == [run_id]
 
 
 @pytest.mark.parametrize(
@@ -106,7 +110,7 @@ def test_failed_agent_run_can_be_retried_once_from_persisted_checkpoint(retry_cl
 def test_retry_rejects_non_retryable_or_already_retried_runs(
     retry_client, status, retry_count, final_memory_id, expected_detail
 ):
-    client, session_factory = retry_client
+    client, session_factory, _started = retry_client
     with session_factory() as db:
         run = models.AgentRun(
             objective="Do not duplicate this run",
