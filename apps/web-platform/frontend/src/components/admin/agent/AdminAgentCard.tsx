@@ -33,7 +33,7 @@ export default function AdminAgentCard({ run }: { run: AgentRun }) {
               Execution failed
             </div>
             <p className="mt-1 text-xs leading-relaxed text-slate-300">
-              {latestStep?.message || "The run stopped before a final result was recorded. Inspect persisted execution history for the last completed step."}
+              {latestStep?.message ? `Last recorded step: ${latestStep.message}` : "The run stopped before a final result was recorded. Inspect persisted execution history for the last completed step."}
             </p>
             <p className="mt-2 text-[11px] text-slate-400">
               No automatic retry is available. Check for an existing Brain item before starting a replacement run.
