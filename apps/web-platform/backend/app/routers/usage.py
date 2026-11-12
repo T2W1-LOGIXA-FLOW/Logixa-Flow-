@@ -54,9 +54,9 @@ def admin_usage_trend(
         if not r.created_at:
             continue
         day = r.created_at.astimezone(timezone.utc).date().isoformat()
-        entry = daily.get(day, {"date": day, "tokens": 0, "cost": Decimal("0"), "calls": 0})
+        entry = daily.get(day, {"date": day, "tokens": 0, "cost": 0.0, "calls": 0})
         entry["tokens"] += int(r.tokens_used or 0)
-        entry["cost"] += float(r.cost or 0.0)
+        entry["cost"] += float(r.cost or Decimal("0"))
         entry["calls"] += 1
         daily[day] = entry
 
