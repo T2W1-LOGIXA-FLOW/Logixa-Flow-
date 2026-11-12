@@ -13,7 +13,6 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from . import models
-from .agent_recovery import recover_stale_agent_runs
 from .cache import cache_client, rate_limiter
 from .config import ai_feature_status, ai_provider_configured, telegram_configured, telegram_enabled, upload_storage_configured, validate_env
 from .qstash import qstash_configured
@@ -72,20 +71,18 @@ def run_startup_tasks() -> None:
             )
             time.sleep(retry_delay)
 
-    # Reconcile only interrupted AgentRun rows older than the configured stale threshold.
-    recovery_db = SessionLocal()
+    # Agent runs are durable background jobs. Resume queued/interrupted runs
+    # from their persisted AgentStep checkpoints after every process restart.
     try:
-        stale_count = recover_stale_agent_runs(recovery_db)
-        if stale_count:
-            logger.warning(
-                "Marked %s stale agent run(s) failed after interrupted execution",
-                stale_count,
-                extra={"operation": "agent_run_stale_recovery", "recovered_count": stale_count},
+        resumed_agent_runs = agent.resume_pending_agent_runs()
+        if resumed_agent_runs:
+            logger.info(
+                "Resumed %s queued/interrupted AgentRun(s)",
+                resumed_agent_runs,
+                extra={"operation": "agent_run_restart_resume", "resumed_count": resumed_agent_runs},
             )
     except Exception as exc:
-        logger.warning("Stale agent run recovery skipped: %s", type(exc).__name__)
-    finally:
-        recovery_db.close()
+        logger.warning("Agent run restart recovery skipped: %s", type(exc).__name__)
 
     if os.getenv("SKIP_SEEDING", "false").lower() != "true":
         seed_app_settings()

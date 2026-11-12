@@ -66,43 +66,58 @@ describe("Admin agent chat session restore", () => {
     });
   });
 
-  it("routes the exact P0 smoke command to Agent → Brain and confirms private pending state", async () => {
-    adminRequest.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        id: 41,
-        status: "completed",
-        final_memory_id: 73,
-        memory: { status: "pending", is_public: false },
-      }),
-    });
+  it("queues the P0 smoke command and polls durable AgentRun state until private Brain completion", async () => {
+    adminRequest
+      .mockResolvedValueOnce({
+        status: 202,
+        ok: true,
+        json: async () => ({ id: 41, status: "queued" }),
+      })
+      .mockResolvedValueOnce({
+        status: 200,
+        ok: true,
+        json: async () => ({
+          id: 41,
+          status: "completed",
+          final_memory_id: 73,
+          memory: { status: "pending", is_public: false },
+        }),
+      });
     render(<AdminAgentChatPage />);
     await act(async () => {
       fireEvent.click(screen.getByText("Run P0 approval smoke"));
     });
-    await waitFor(() => expect(screen.getByText(/Agent Run ID: 41/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Agent Run ID: 41/)).toBeInTheDocument(), { timeout: 5000 });
     expect(screen.getByText(/Brain item ID: 73/)).toBeInTheDocument();
     expect(screen.getByText(/Nothing was published/)).toBeInTheDocument();
-    expect(adminRequest).toHaveBeenCalledWith("/api/agent/run", "test-token", expect.objectContaining({
+    expect(adminRequest).toHaveBeenNthCalledWith(1, "/api/agent/run", "test-token", expect.objectContaining({
       method: "POST",
       body: JSON.stringify({
         message: "Create a private P0 approval smoke draft. Do not publish.",
         source_ids: [],
       }),
-    }), 85_000);
-    expect(adminRequest).toHaveBeenCalledTimes(1);
+    }));
+    expect(adminRequest).toHaveBeenNthCalledWith(2, "/api/admin/agent/runs/41", "test-token");
+    expect(adminRequest).toHaveBeenCalledTimes(2);
   });
 
   it("does not report success when Agent response lacks a private pending Brain item", async () => {
-    adminRequest.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ id: 41, status: "completed", final_memory_id: 73, memory: { status: "approved", is_public: false } }),
-    });
+    adminRequest
+      .mockResolvedValueOnce({
+        status: 202,
+        ok: true,
+        json: async () => ({ id: 41, status: "queued" }),
+      })
+      .mockResolvedValueOnce({
+        status: 200,
+        ok: true,
+        json: async () => ({ id: 41, status: "completed", final_memory_id: 73, memory: { status: "approved", is_public: false } }),
+      });
     render(<AdminAgentChatPage />);
     await act(async () => {
       fireEvent.click(screen.getByText("Run P0 approval smoke"));
     });
-    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Agent response did not confirm"));
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Agent response did not confirm"), { timeout: 5000 });
     expect(screen.queryByText(/Agent Run ID: 41/)).not.toBeInTheDocument();
   });
 

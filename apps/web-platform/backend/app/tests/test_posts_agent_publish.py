@@ -202,6 +202,8 @@ def test_agent_brain_review_publish_and_unpublish_api_journey(posts_client, monk
         )
 
     monkeypatch.setattr(agent_router, "execute_content_graph", fake_content_graph)
+    monkeypatch.setattr(agent_router, "SessionLocal", session_factory)
+    monkeypatch.setattr(agent_router, "_start_agent_run", lambda run_id: None)
     app.dependency_overrides[security.require_admin] = lambda: {
         "sub": "release-test-admin",
         "role": "admin",
@@ -211,8 +213,13 @@ def test_agent_brain_review_publish_and_unpublish_api_journey(posts_client, monk
             "/api/agent/run",
             json={"message": "Create a local release-gate test insight", "source_ids": []},
         )
-        assert run_response.status_code == 201, run_response.text
-        run_payload = run_response.json()
+        assert run_response.status_code == 202, run_response.text
+        accepted = run_response.json()
+        assert accepted["status"] == "queued"
+        agent_router._execute_agent_run(accepted["id"])
+        state_response = client.get(f"/api/admin/agent/runs/{accepted['id']}")
+        assert state_response.status_code == 200, state_response.text
+        run_payload = state_response.json()
         assert run_payload["status"] == "completed"
         assert run_payload["memory"]["status"] == "pending"
         assert run_payload["memory"]["is_public"] is False

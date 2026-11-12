@@ -97,10 +97,38 @@ def execute_content_graph(db: Session, run: models.AgentRun, objective: str, sou
     providers: list[str] = []
     total_tokens = 0
     for order, (agent_name, task) in enumerate(NODE_TASKS, start=1):
+        # Agent runs are durable background jobs. On process restart, reuse
+        # completed step checkpoints and retry only the interrupted step.
+        step = (
+            db.query(models.AgentStep)
+            .filter(models.AgentStep.run_id == run.id, models.AgentStep.step_order == order)
+            .order_by(models.AgentStep.id.desc())
+            .first()
+        )
+        if step is not None and step.status == 'completed':
+            try:
+                parsed = json.loads(step.output_json or '{}')
+            except (TypeError, json.JSONDecodeError):
+                parsed = None
+            if isinstance(parsed, dict):
+                state[agent_name] = parsed
+                total_tokens += int(step.token_usage or 0)
+                if step.provider:
+                    providers.append(step.provider)
+                continue
+            # A corrupt checkpoint must be regenerated rather than silently
+            # allowing downstream agents to run without its evidence.
+
         operator_guidance = wait_if_agent_paused(db)
-        step = models.AgentStep(run_id=run.id, step_order=order, agent=agent_name, message=f'{agent_name} started',
-                                status='running', output_json='{}')
-        db.add(step)
+        if step is None:
+            step = models.AgentStep(run_id=run.id, step_order=order, agent=agent_name, message=f'{agent_name} started',
+                                    status='running', output_json='{}')
+            db.add(step)
+        else:
+            step.agent = agent_name
+            step.message = f'{agent_name} resumed'
+            step.status = 'running'
+            step.error = None
         db.commit()
         db.refresh(step)
         try:
