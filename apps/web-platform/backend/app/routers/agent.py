@@ -423,10 +423,18 @@ def _execute_agent_run(run_id: int) -> None:
 
 
 def _start_agent_run(run_id: int) -> None:
-    """Start one durable run, deduplicating threads within this web process."""
+    """Start one durable run, waiting briefly for a prior worker to finish cleanup."""
+    with _AGENT_THREAD_LOCK:
+        current = _AGENT_RUN_THREADS.get(run_id)
+    # A failed worker marks the row failed just before its finally block removes
+    # the thread entry. A manual retry can arrive in that narrow interval.
+    # Join outside the lock so the old worker can acquire the lock and clean up.
+    if current is not None and current.is_alive() and current is not threading.current_thread():
+        current.join(timeout=5)
     with _AGENT_THREAD_LOCK:
         current = _AGENT_RUN_THREADS.get(run_id)
         if current is not None and current.is_alive():
+            logger.warning("Agent run %s retry queued while prior worker is still exiting", run_id)
             return
         thread = threading.Thread(
             target=_execute_agent_run,
