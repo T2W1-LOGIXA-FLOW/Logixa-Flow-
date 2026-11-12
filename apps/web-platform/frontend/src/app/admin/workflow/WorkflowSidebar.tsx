@@ -19,7 +19,7 @@ export const AVAILABLE_MODULES: ServiceModule[] = [
   { id: "edge_tts", name: "Edge Neural Voiceover", canvasLabel: "VOICEOVER", detail: "Burmese/English synthetic audio", category: "Media", tag: "AUDIO", endpoint: "/api/v1/episodes/voiceover" },
   { id: "receipt_extract", name: "Smart Receipt Parser", canvasLabel: "RECEIPT PARSER", detail: "Zero-cost tax/vendor extractor", category: "Finance", tag: "OCR", endpoint: "/api/documents/extract-receipt" },
   { id: "approval_gate", name: "Human Approval Gate", canvasLabel: "APPROVAL GATE", detail: "Pause workflow until an Admin approves or rejects", category: "Outbound", tag: "HUMAN", nodeType: "approval" },
-  { id: "telegram_gate", name: "Telegram Approval Gate", canvasLabel: "TELEGRAM GATE", detail: "Human-in-the-loop callback bot", category: "Outbound", tag: "BOT", endpoint: "/api/telegram/action", integrationId: "telegram" },
+  { id: "telegram_gate", name: "Telegram Approval Gate (preview)", canvasLabel: "TELEGRAM PREVIEW", detail: "Preview only — workflow Telegram dispatch is not implemented", category: "Outbound", tag: "PREVIEW", endpoint: "/api/telegram/action", integrationId: "telegram" },
 ];
 
 type WorkflowSidebarProps = {
@@ -80,7 +80,7 @@ export default function WorkflowSidebar({
 
       {/* N8N-style action modules */}
       <div className="workflow-module-list" style={{ marginTop: "24px" }}>
-        <span className="workflow-kicker" style={{ fontSize: "9px" }}>ADD NODE TO PIPELINE</span>
+        <span className="workflow-kicker" style={{ fontSize: "9px" }}>ADD SUPPORTED ACTION</span>
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
           {filteredModules.map((m) => (
             <div
