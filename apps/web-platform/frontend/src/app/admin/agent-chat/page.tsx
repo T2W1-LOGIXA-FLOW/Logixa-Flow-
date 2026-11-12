@@ -101,7 +101,7 @@ export default function AdminAgentChatPage() {
         const response = await adminFetch("/api/agent/run", token, {
           method: "POST",
           body: JSON.stringify({ message, source_ids: [] }),
-        });
+        }, 85_000);
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
           throw new Error(typeof data.detail === "string" ? data.detail : "Agent run could not be created");
@@ -158,8 +158,15 @@ export default function AdminAgentChatPage() {
       setTranscriptSource("local");
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Admin chat API unavailable");
-      toast.error("Could not process your query");
+      const isTimeout = err instanceof DOMException && err.name === "AbortError";
+      setError(
+        isTimeout
+          ? "Agent run timed out while waiting for the backend. It may still be processing; check Agent Runs before retrying to avoid duplicate drafts."
+          : err instanceof Error
+            ? err.message
+            : "Admin chat API unavailable",
+      );
+      toast.error(isTimeout ? "Agent run timed out" : "Could not process your query");
       console.error(err);
     } finally {
       setLoading(false);

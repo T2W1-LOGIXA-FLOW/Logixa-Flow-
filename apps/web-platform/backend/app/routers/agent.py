@@ -270,7 +270,7 @@ def fetch_rss_sources(
 
 
 @router.post("/agent/run", response_model=schemas.AgentRunOut, status_code=status.HTTP_201_CREATED)
-async def run_agent(
+def run_agent(
     payload: schemas.AgentRunRequest,
     db: Session = Depends(get_db),
     _: dict = Depends(require_admin),

@@ -66,6 +66,27 @@ describe("admin API authentication", () => {
     fetchMock.mockRestore();
   });
 
+  it("uses a caller-supplied longer timeout for slow admin agent requests", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((_input, init) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          reject(new DOMException("The operation was aborted", "AbortError"));
+        });
+      }),
+    );
+
+    const request = adminFetch("/api/agent/run", "manual-session", { method: "POST" }, 85_000);
+    const rejection = expect(request).rejects.toMatchObject({ name: "AbortError" });
+    await vi.advanceTimersByTimeAsync(84_999);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(1);
+    await rejection;
+
+    fetchMock.mockRestore();
+    vi.useRealTimers();
+  });
+
   it("rejects a missing session without making a backend request", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 200 }));
 

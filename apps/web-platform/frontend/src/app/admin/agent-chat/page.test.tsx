@@ -89,7 +89,7 @@ describe("Admin agent chat session restore", () => {
         message: "Create a private P0 approval smoke draft. Do not publish.",
         source_ids: [],
       }),
-    }));
+    }), 85_000);
     expect(adminRequest).toHaveBeenCalledTimes(1);
   });
 
