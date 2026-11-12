@@ -88,6 +88,7 @@ export default function AdminWorkflowPage() {
   const [inspectingNode, setInspectingNode] = useState<Node<ServiceNodeData> | null>(null);
   const [connectionState, setConnectionState] = useState<ConnectionState>("connecting");
   const [telemetry, setTelemetry] = useState<WorkflowTelemetry | null>(null);
+  const [enabledIntegrationIds, setEnabledIntegrationIds] = useState<string[]>([]);
   const [logs, setLogs] = useState<string[]>(defaultLogs);
   const [workflowId, setWorkflowId] = useState("command-canvas");
   const [transferMessage, setTransferMessage] = useState<string | null>(null);
@@ -333,6 +334,15 @@ export default function AdminWorkflowPage() {
 
   useEffect(() => {
     let cancelled = false;
+    void authorizedWorkflowRequest("/api/admin/integrations/catalog")
+      .then((response) => response.json() as Promise<{ items?: Array<{ id: string; enabled: boolean }> }>)
+      .then((payload) => { if (!cancelled) setEnabledIntegrationIds((payload.items ?? []).filter((item) => item.enabled).map((item) => item.id)); })
+      .catch(() => { if (!cancelled) setEnabledIntegrationIds([]); });
+    return () => { cancelled = true; };
+  }, [authorizedWorkflowRequest]);
+
+  useEffect(() => {
+    let cancelled = false;
     async function restorePendingApproval() {
       try {
         const response = await authorizedWorkflowRequest("/api/admin/workflow/approvals/pending");
@@ -416,6 +426,7 @@ export default function AdminWorkflowPage() {
         onSearchChange={setSearch}
         onSelect={(label) => setSelected(`${label} category selected`)}
         onAddNode={handleAddModule}
+        enabledIntegrationIds={enabledIntegrationIds}
       />
       <section className="workflow-main">
         <header className="workflow-header">
