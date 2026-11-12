@@ -39,6 +39,16 @@ describe("unified command canvas", () => {
     expect(screen.getByRole("button", { name: "Import JSON" })).toBeInTheDocument();
   });
 
+  it("loads the private review starter without external delivery nodes", () => {
+    render(<AdminWorkflowPage />);
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "private-review" } });
+    expect(screen.getByLabelText("Workflow ID")).toHaveValue("private-review");
+    expect(screen.getByText("PREPARE PRIVATE DRAFT")).toBeInTheDocument();
+    expect(screen.getByText("ADMIN APPROVAL")).toBeInTheDocument();
+    expect(screen.getByText("RECORD APPROVED")).toBeInTheDocument();
+    expect(screen.getByText(/no external integrations or delivery actions/i)).toBeInTheDocument();
+  });
+
   it("creates and starts a log-only workflow run with the authenticated session", async () => {
     render(<AdminWorkflowPage />);
     await act(async () => { await Promise.resolve(); });
