@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/adminSession", () => ({
   getAdminSessionToken: vi.fn().mockResolvedValue(null),
@@ -16,6 +16,11 @@ beforeAll(() => {
       disconnect() {}
     } as typeof ResizeObserver;
   }
+});
+
+afterEach(() => {
+  vi.mocked(getAdminSessionToken).mockResolvedValue(null);
+  vi.unstubAllGlobals();
 });
 
 describe("unified command canvas", () => {
@@ -68,8 +73,6 @@ describe("unified command canvas", () => {
       headers: expect.objectContaining({ Authorization: "Bearer admin-session-token" }),
     }));
 
-    vi.mocked(getAdminSessionToken).mockResolvedValue(null);
-    vi.unstubAllGlobals();
   });
 
   it("does not overwrite an existing workflow when the canvas has unsaved changes", async () => {
@@ -87,7 +90,7 @@ describe("unified command canvas", () => {
 
     expect(await screen.findByRole("status")).toHaveTextContent("This workflow ID already contains different content.");
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(fetchMock).mock.calls[0][1]).toBeUndefined();
+    expect(vi.mocked(fetchMock).mock.calls[0][1]).toEqual(expect.objectContaining({ headers: expect.objectContaining({ Authorization: "Bearer admin-session-token" }) }));
 
     vi.mocked(getAdminSessionToken).mockResolvedValue(null);
     vi.unstubAllGlobals();
