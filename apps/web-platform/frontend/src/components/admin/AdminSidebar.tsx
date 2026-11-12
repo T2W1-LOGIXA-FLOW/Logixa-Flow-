@@ -59,9 +59,8 @@ export default function AdminSidebar({
   return (
     <aside
       id="admin-navigation"
-      className={`${styles.sidebar} fixed inset-y-0 left-0 z-50 flex h-[100dvh] w-64 flex-col border-r shadow-2xl shadow-black/40 backdrop-blur-xl transition-transform duration-300 ease-in-out lg:sticky lg:top-0 lg:h-screen ${open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+      className={`${styles.sidebar} fixed inset-y-0 left-0 z-50 flex h-[100dvh] w-64 flex-col border-r shadow-2xl shadow-black/40 backdrop-blur-xl transition-transform duration-300 ease-in-out lg:sticky lg:top-0 lg:h-screen ${open ? "visible translate-x-0" : "invisible -translate-x-full lg:visible lg:translate-x-0"}`}
       aria-label="Admin navigation"
-      aria-hidden={!open ? undefined : false}
     >
       <div className="border-b border-slate-800/80 px-4 py-4">
         <div className="flex items-center justify-between gap-3">
