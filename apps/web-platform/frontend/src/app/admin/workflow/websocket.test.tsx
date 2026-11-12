@@ -137,6 +137,6 @@ describe("workflow websocket integration", () => {
 
     await waitFor(() => expect(screen.getByText(/RESEARCH active|running workflow/i)).toBeInTheDocument());
     expect(screen.getByText("STATUS")).toBeInTheDocument();
-    expect(screen.getByText("RESEARCH")).toBeInTheDocument();
+    expect(screen.getByText("research")).toBeInTheDocument();
   });
 });
