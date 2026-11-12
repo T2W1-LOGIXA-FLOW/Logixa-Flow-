@@ -52,7 +52,7 @@ export default function AdminShell({
       ) : null}
       <AdminSidebar open={sidebarOpen} onClose={closeSidebar} onLogout={onLogout} />
       <div className="flex min-h-screen min-w-0 flex-1 flex-col bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.07),transparent_34%),#080d18]">
-        <AdminTopbar onOpenSidebar={() => setSidebarOpen(true)} />
+        <AdminTopbar onOpenSidebar={() => setSidebarOpen(true)} sidebarOpen={sidebarOpen} />
         <main id="admin-main" tabIndex={-1} className="min-w-0 flex-1 overflow-x-hidden px-4 pb-8 pt-5 sm:px-6 sm:pt-6 lg:px-8">
           <div className="mx-auto w-full max-w-[1440px]">{children}</div>
         </main>
