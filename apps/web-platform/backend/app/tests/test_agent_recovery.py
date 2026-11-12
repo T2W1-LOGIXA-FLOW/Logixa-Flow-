@@ -9,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 
 from app import models
 from app.agent_recovery import recover_stale_agent_runs
+from app.routers import agent as agent_router
 
 
 @pytest.fixture
@@ -85,3 +86,19 @@ def test_recover_stale_agent_runs_does_not_commit_when_nothing_is_stale(db):
     assert recover_stale_agent_runs(db, now=now, stale_after_hours=24) == 0
     db.refresh(recent)
     assert recent.status == "running"
+
+
+def test_resume_pending_agent_runs_restarts_queued_and_running_rows(db, monkeypatch):
+    queued = models.AgentRun(objective="queued", model="pending", input_context="{}", source_ids="[]", status="queued")
+    running = models.AgentRun(objective="interrupted", model="pending", input_context="{}", source_ids="[]", status="running")
+    completed = models.AgentRun(objective="done", model="local", input_context="{}", source_ids="[]", status="completed")
+    db.add_all([queued, running, completed])
+    db.commit()
+
+    factory = sessionmaker(bind=db.get_bind(), autocommit=False, autoflush=False)
+    started = []
+    monkeypatch.setattr(agent_router, "SessionLocal", factory)
+    monkeypatch.setattr(agent_router, "_start_agent_run", started.append)
+
+    assert agent_router.resume_pending_agent_runs() == 2
+    assert started == [queued.id, running.id]

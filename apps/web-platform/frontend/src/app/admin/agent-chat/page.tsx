@@ -101,19 +101,38 @@ export default function AdminAgentChatPage() {
         const response = await adminFetch("/api/agent/run", token, {
           method: "POST",
           body: JSON.stringify({ message, source_ids: [] }),
-        }, 85_000);
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          throw new Error(typeof data.detail === "string" ? data.detail : "Agent run could not be created");
+        });
+        const accepted = await response.json().catch(() => ({}));
+        if (response.status !== 202 || !accepted.id) {
+          throw new Error(typeof accepted.detail === "string" ? accepted.detail : "Agent run could not be queued");
         }
+
+        // The backend owns execution and restart recovery. Poll its durable run
+        // record rather than holding one HTTP request open across provider calls.
+        let data = accepted;
+        const deadline = Date.now() + 10 * 60 * 1000;
+        while (data.status === "queued" || data.status === "running") {
+          if (Date.now() >= deadline) {
+            throw new Error(`Agent run ${accepted.id} is still processing. Check Agent Runs before retrying to avoid a duplicate draft.`);
+          }
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          const stateResponse = await adminFetch(`/api/admin/agent/runs/${accepted.id}`, token);
+          const state = await stateResponse.json().catch(() => ({}));
+          if (!stateResponse.ok) {
+            throw new Error("Agent run status is temporarily unavailable. Check Agent Runs before retrying.");
+          }
+          data = state;
+        }
+
         if (
           data.status !== "completed" ||
-          !data.id ||
           !data.final_memory_id ||
           data.memory?.status !== "pending" ||
           data.memory?.is_public !== false
         ) {
-          throw new Error("Agent response did not confirm a completed run with a private pending Brain item");
+          throw new Error(data.status === "failed"
+            ? `Agent run ${accepted.id} failed. Review Agent Runs before retrying.`
+            : "Agent response did not confirm a completed run with a private pending Brain item");
         }
         agentMessage = {
           id: (Date.now() + 1).toString(),

@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import re
 import json
+import logging
 import threading
 from decimal import Decimal, InvalidOperation
 from html import escape
@@ -11,6 +12,7 @@ from typing import Any, Literal, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
@@ -18,15 +20,19 @@ from ..analytics import log_analytics_event
 from ..cache import rate_limiter
 from ..agent_graph import execute_content_graph
 from ..agent_control import read_agent_control, write_agent_control
-from ..database import get_db
+from ..database import SessionLocal, get_db
 from ..integration_service import import_rss_feed
 from ..llm.router import LLMRouter
 from ..models import utc_now
 from ..rag.sanitizer import sanitize_for_llm
 from ..security import require_admin
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 _AGENT_EXECUTION_SLOTS = threading.BoundedSemaphore(2)
+_AGENT_THREAD_LOCK = threading.Lock()
+_AGENT_RUN_THREADS: dict[int, threading.Thread] = {}
 
 
 def slugify(value: str) -> str:
@@ -269,27 +275,198 @@ def fetch_rss_sources(
     return schemas.SourceFetchOut(imported=imported, skipped=skipped)
 
 
-@router.post("/agent/run", response_model=schemas.AgentRunOut, status_code=status.HTTP_201_CREATED)
+def _execute_agent_run(run_id: int) -> None:
+    """Execute a persisted AgentRun outside the HTTP request and resume checkpoints."""
+    _AGENT_EXECUTION_SLOTS.acquire()
+    db = SessionLocal()
+    advisory_lock_acquired = False
+    try:
+        # PostgreSQL advisory locks prevent two web instances from resuming the
+        # same durable run. The lock is released automatically if the process
+        # dies; SQLite test/dev sessions use the process-local thread guard.
+        if db.get_bind().dialect.name == "postgresql":
+            advisory_lock_acquired = bool(
+                db.execute(
+                    text("SELECT pg_try_advisory_lock(hashtext(:lock_key))"),
+                    {"lock_key": f"logixa-agent-run:{run_id}"},
+                ).scalar()
+            )
+            if not advisory_lock_acquired:
+                return
+
+        run = db.query(models.AgentRun).filter(models.AgentRun.id == run_id).first()
+        if run is None or run.status in {"completed", "failed"}:
+            return
+        run.status = "running"
+        run.updated_at = utc_now()
+        db.commit()
+
+        try:
+            context = json.loads(run.input_context or "{}")
+        except (TypeError, json.JSONDecodeError):
+            context = {}
+        message = str(context.get("message") or run.objective)
+        try:
+            source_ids = json.loads(run.source_ids or "[]")
+        except (TypeError, json.JSONDecodeError):
+            source_ids = []
+        if not isinstance(source_ids, list):
+            source_ids = []
+        sources = (
+            db.query(models.IntelligenceSource)
+            .filter(models.IntelligenceSource.id.in_(source_ids))
+            .all()
+            if source_ids
+            else []
+        )
+
+        graph = execute_content_graph(db, run, message, sources)
+        brief = graph.final
+        confidence_score, hallucination_score = score_source_grounding(sources)
+        fact_check = brief.get("fact_check") or {}
+        quality_gate = brief.get("quality_gate") or {}
+        if fact_check.get("verdict") == "fail" or quality_gate.get("verdict") == "fail":
+            confidence_score = min(confidence_score, 0.45)
+            hallucination_score = max(hallucination_score, 0.55)
+
+        model_used = str(brief.get("model") or "local")
+        provider = ",".join(dict.fromkeys(graph.providers)) or "local"
+        content = str(brief.get("content_html") or brief.get("content") or "").strip()
+        if not content:
+            content = "<p>Agent graph completed without a publishable draft.</p>"
+        excerpt = str(brief.get("excerpt") or "Private AI-generated draft for admin review.")
+        title = str(brief.get("title") or "AI Preview: Supply Chain Signal Brief")
+        cost_estimate = (Decimal(graph.total_tokens) / Decimal("1000")) * Decimal(
+            os.getenv("AI_COST_PER_1K", "0.002")
+        )
+
+        # Commit the private Brain item and terminal AgentRun state atomically.
+        # A restart cannot leave an orphan memory that a resumed run duplicates.
+        memory = models.AiMemoryBrain(
+            category=sources[0].category if sources else "Supply Chain",
+            source_title=title,
+            source_url=sources[0].url if sources else None,
+            prompt=message,
+            content=content,
+            summary=excerpt[:500],
+            status="pending",
+            is_public=False,
+            confidence_score=confidence_score,
+            hallucination_score=hallucination_score,
+            source_ids=json.dumps(source_ids),
+            provider=provider,
+            token_usage=graph.total_tokens,
+            cost_estimate=cost_estimate,
+        )
+        db.add(memory)
+        db.flush()
+        run.model = model_used
+        run.provider = provider
+        run.token_usage = graph.total_tokens
+        run.cost_estimate = cost_estimate
+        run.final_memory_id = memory.id
+        run.status = "completed"
+        run.updated_at = utc_now()
+        db.commit()
+        db.refresh(memory)
+
+        try:
+            from ..rag.ingest import ingest_brain_memory
+            ingest_brain_memory(db, memory)
+        except Exception:
+            logger.warning("Agent Brain indexing skipped for run %s", run_id, exc_info=True)
+
+        log_analytics_event(
+            db,
+            "agent_run",
+            {
+                "run_id": run.id,
+                "memory_id": memory.id,
+                "confidence_score": confidence_score,
+                "quality_verdict": quality_gate.get("verdict", "review"),
+                "fact_check_verdict": fact_check.get("verdict", "review"),
+            },
+        )
+    except Exception as exc:
+        db.rollback()
+        logger.exception("Agent background execution failed", extra={"run_id": run_id})
+        failed_run = db.query(models.AgentRun).filter(models.AgentRun.id == run_id).first()
+        if failed_run is not None and failed_run.status not in {"completed", "failed"}:
+            failed_run.status = "failed"
+            failed_run.updated_at = utc_now()
+            db.commit()
+            try:
+                log_analytics_event(
+                    db,
+                    "agent_run_failed",
+                    {"run_id": run_id, "error_type": exc.__class__.__name__},
+                )
+            except Exception:
+                db.rollback()
+    finally:
+        try:
+            if advisory_lock_acquired:
+                db.execute(
+                    text("SELECT pg_advisory_unlock(hashtext(:lock_key))"),
+                    {"lock_key": f"logixa-agent-run:{run_id}"},
+                )
+                db.commit()
+        except Exception:
+            db.rollback()
+        finally:
+            db.close()
+            _AGENT_EXECUTION_SLOTS.release()
+            with _AGENT_THREAD_LOCK:
+                current = _AGENT_RUN_THREADS.get(run_id)
+                if current is threading.current_thread():
+                    _AGENT_RUN_THREADS.pop(run_id, None)
+
+
+def _start_agent_run(run_id: int) -> None:
+    """Start one durable run, deduplicating threads within this web process."""
+    with _AGENT_THREAD_LOCK:
+        current = _AGENT_RUN_THREADS.get(run_id)
+        if current is not None and current.is_alive():
+            return
+        thread = threading.Thread(
+            target=_execute_agent_run,
+            args=(run_id,),
+            name=f"agent-run-{run_id}",
+            daemon=True,
+        )
+        _AGENT_RUN_THREADS[run_id] = thread
+        thread.start()
+
+
+def resume_pending_agent_runs() -> int:
+    """Resume queued or interrupted AgentRuns after a web-process restart."""
+    db = SessionLocal()
+    try:
+        run_ids = [
+            row[0]
+            for row in db.query(models.AgentRun.id)
+            .filter(models.AgentRun.status.in_(["queued", "running"]))
+            .order_by(models.AgentRun.created_at.asc())
+            .all()
+        ]
+    finally:
+        db.close()
+    for run_id in run_ids:
+        _start_agent_run(int(run_id))
+    return len(run_ids)
+
+
+@router.post("/agent/run", response_model=schemas.AgentRunOut, status_code=status.HTTP_202_ACCEPTED)
 def run_agent(
     payload: schemas.AgentRunRequest,
     db: Session = Depends(get_db),
     _: dict = Depends(require_admin),
 ) -> schemas.AgentRunOut:
-    sources = []
-    if payload.source_ids:
-        sources = (
-            db.query(models.IntelligenceSource)
-            .filter(models.IntelligenceSource.id.in_(payload.source_ids))
-            .all()
-        )
-
     actor_id = str((_.get("sub") if isinstance(_, dict) else None) or "unknown-admin")
     if not rate_limiter.allow(f"agent:user:{actor_id}", limit=2, window_seconds=60):
         raise HTTPException(status_code=429, detail="Agent run quota exceeded; retry after one minute.")
     if not rate_limiter.allow("agent:global", limit=20, window_seconds=3600):
         raise HTTPException(status_code=429, detail="Global agent execution budget is exhausted for this hour.")
-    if not _AGENT_EXECUTION_SLOTS.acquire(blocking=False):
-        raise HTTPException(status_code=429, detail="Agent capacity is busy; retry shortly.")
 
     run = models.AgentRun(
         objective=payload.message,
@@ -297,100 +474,24 @@ def run_agent(
         provider=None,
         input_context=json.dumps({"message": payload.message, "source_ids": payload.source_ids}),
         source_ids=json.dumps(payload.source_ids),
-        status="running",
+        status="queued",
     )
-    try:
-        db.add(run)
-        db.commit()
-        db.refresh(run)
-    except Exception:
-        _AGENT_EXECUTION_SLOTS.release()
-        raise
-
-    try:
-        graph = execute_content_graph(db, run, payload.message, sources)
-    except Exception as exc:
-        run.status = "failed"
-        run.updated_at = utc_now()
-        db.commit()
-        log_analytics_event(
-            db,
-            "agent_run_failed",
-            {"run_id": run.id, "error_type": exc.__class__.__name__},
-        )
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="AI agent execution failed; review the run state and retry.",
-        ) from exc
-    finally:
-        _AGENT_EXECUTION_SLOTS.release()
-
-    brief = graph.final
-    confidence_score, hallucination_score = score_source_grounding(sources)
-    fact_check = brief.get("fact_check") or {}
-    quality_gate = brief.get("quality_gate") or {}
-    if fact_check.get("verdict") == "fail" or quality_gate.get("verdict") == "fail":
-        confidence_score = min(confidence_score, 0.45)
-        hallucination_score = max(hallucination_score, 0.55)
-
-    model_used = str(brief.get("model") or "local")
-    provider = ",".join(dict.fromkeys(graph.providers)) or "local"
-    content = str(brief.get("content_html") or brief.get("content") or "").strip()
-    if not content:
-        content = "<p>Agent graph completed without a publishable draft.</p>"
-    excerpt = str(brief.get("excerpt") or "Private AI-generated draft for admin review.")
-    title = str(brief.get("title") or "AI Preview: Supply Chain Signal Brief")
-
-    run.model = model_used
-    run.provider = provider
-    run.token_usage = graph.total_tokens
-    run.cost_estimate = (Decimal(graph.total_tokens) / Decimal("1000")) * Decimal(
-        os.getenv("AI_COST_PER_1K", "0.002")
-    )
-    run.status = "completed"
     db.add(run)
-
-    memory = models.AiMemoryBrain(
-        category=sources[0].category if sources else "Supply Chain",
-        source_title=title,
-        source_url=sources[0].url if sources else None,
-        prompt=payload.message,
-        content=content,
-        summary=excerpt[:500],
-        status="pending",
-        is_public=False,
-        confidence_score=confidence_score,
-        hallucination_score=hallucination_score,
-        source_ids=json.dumps(payload.source_ids),
-        provider=provider,
-        token_usage=graph.total_tokens,
-        cost_estimate=run.cost_estimate,
-    )
-    db.add(memory)
-    db.commit()
-    db.refresh(memory)
-
-    run.final_memory_id = memory.id
     db.commit()
     db.refresh(run)
+    _start_agent_run(run.id)
+    return serialize_run(db, run)
 
-    try:
-        from ..rag.ingest import ingest_brain_memory
-        ingest_brain_memory(db, memory)
-    except Exception:
-        pass
 
-    log_analytics_event(
-        db,
-        "agent_run",
-        {
-            "run_id": run.id,
-            "memory_id": memory.id,
-            "confidence_score": confidence_score,
-            "quality_verdict": quality_gate.get("verdict", "review"),
-            "fact_check_verdict": fact_check.get("verdict", "review"),
-        },
-    )
+@router.get("/admin/agent/runs/{run_id}", response_model=schemas.AgentRunOut)
+def get_agent_run(
+    run_id: int,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_admin),
+) -> schemas.AgentRunOut:
+    run = db.query(models.AgentRun).filter(models.AgentRun.id == run_id).first()
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent run not found")
     return serialize_run(db, run)
 
 
