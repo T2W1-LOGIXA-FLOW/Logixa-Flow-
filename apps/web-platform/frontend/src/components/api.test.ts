@@ -77,10 +77,11 @@ describe("admin API authentication", () => {
     );
 
     const request = adminFetch("/api/agent/run", "manual-session", { method: "POST" }, 85_000);
+    const rejection = expect(request).rejects.toMatchObject({ name: "AbortError" });
     await vi.advanceTimersByTimeAsync(84_999);
     expect(fetchMock).toHaveBeenCalledOnce();
     await vi.advanceTimersByTimeAsync(1);
-    await expect(request).rejects.toMatchObject({ name: "AbortError" });
+    await rejection;
 
     fetchMock.mockRestore();
     vi.useRealTimers();
