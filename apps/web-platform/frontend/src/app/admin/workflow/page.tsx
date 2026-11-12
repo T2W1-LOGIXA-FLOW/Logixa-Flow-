@@ -90,6 +90,7 @@ export default function AdminWorkflowPage() {
   const [logs, setLogs] = useState<string[]>(defaultLogs);
   const [workflowId, setWorkflowId] = useState("command-canvas");
   const [transferMessage, setTransferMessage] = useState<string | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const visibleNodes = useMemo(
@@ -162,14 +163,14 @@ export default function AdminWorkflowPage() {
     })),
   }), [edges, nodes, workflowId]);
 
-  const authorizedWorkflowRequest = useCallback(async (path: string, init?: RequestInit) => {
+  const authorizedWorkflowRequest = useCallback(async (path: string, init?: RequestInit, allowNotFound = false) => {
     const token = await getAdminSessionToken();
     if (!token) throw new Error("An admin session is required.");
     const response = await fetch(resolveWorkflowApiUrl(path), {
       ...init,
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(init?.headers ?? {}) },
     });
-    if (!response.ok) {
+    if (!response.ok && !(allowNotFound && response.status === 404)) {
       const body = await response.json().catch(() => null);
       throw new Error(typeof body?.detail === "string" ? body.detail : "Workflow action failed.");
     }
@@ -187,6 +188,52 @@ export default function AdminWorkflowPage() {
       setTransferMessage("Workflow saved locally. Export is now available.");
     } catch (error) {
       setTransferMessage(error instanceof Error ? error.message : "Unable to save workflow.");
+    }
+  }, [authorizedWorkflowRequest, workflowPayload]);
+
+  const handleRunWorkflow = useCallback(async () => {
+    const payload = workflowPayload();
+    if (!payload.id || !/^[A-Za-z0-9_-]+$/.test(payload.id)) {
+      setTransferMessage("Workflow ID may use letters, numbers, hyphens, and underscores only.");
+      return;
+    }
+
+    setIsRunning(true);
+    try {
+      const existing = await authorizedWorkflowRequest(
+        `/api/admin/workflow/${encodeURIComponent(payload.id)}`,
+        undefined,
+        true,
+      );
+      if (existing.status === 404) {
+        await authorizedWorkflowRequest("/api/admin/workflow", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+      } else {
+        const saved = await existing.json() as { name: string; nodes: unknown[] };
+        if (saved.name !== payload.name || JSON.stringify(saved.nodes) !== JSON.stringify(payload.nodes)) {
+          throw new Error("This workflow ID already contains different content. Save it explicitly first or choose a new ID before running.");
+        }
+      }
+      const response = await authorizedWorkflowRequest(
+        `/api/admin/workflow/${encodeURIComponent(payload.id)}/runs`,
+        {
+          method: "POST",
+          body: JSON.stringify({ workflow_id: payload.id, priority: 1, delay_seconds: 0 }),
+        },
+      );
+      const run = await response.json() as Omit<WorkflowTelemetry, "event">;
+      setTelemetry({ event: "workflow.status", ...run });
+      setTransferMessage(`Run accepted: ${run.run_id}. Canvas tasks execute in log-only mode.`);
+      setLogs((previous) => [
+        `[${new Date().toLocaleTimeString()}] RUN QUEUED ${run.run_id}`,
+        ...previous,
+      ].slice(0, 6));
+    } catch (error) {
+      setTransferMessage(error instanceof Error ? error.message : "Unable to start workflow run.");
+    } finally {
+      setIsRunning(false);
     }
   }, [authorizedWorkflowRequest, workflowPayload]);
 
@@ -345,10 +392,19 @@ export default function AdminWorkflowPage() {
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/50 p-3 text-xs">
           <label className="text-slate-300">Workflow ID <input value={workflowId} onChange={(event) => setWorkflowId(event.target.value)} className="ml-2 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-white" aria-label="Workflow ID" /></label>
           <button onClick={handleSaveWorkflow} className="rounded border border-cyan-400/50 px-3 py-1.5 text-cyan-200">Save workflow</button>
+          <button
+            onClick={handleRunWorkflow}
+            disabled={isRunning}
+            aria-label="Run log-only workflow"
+            className="rounded border border-emerald-400/60 px-3 py-1.5 text-emerald-200 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isRunning ? "Starting run…" : "Run log-only workflow"}
+          </button>
           <button onClick={handleExportWorkflow} className="rounded border border-slate-600 px-3 py-1.5 text-slate-100">Export JSON</button>
           <button onClick={() => importInputRef.current?.click()} className="rounded border border-slate-600 px-3 py-1.5 text-slate-100">Import JSON</button>
           <input ref={importInputRef} type="file" accept="application/json,.json" onChange={handleImportWorkflow} className="hidden" />
-          {transferMessage && <span className="text-slate-300">{transferMessage}</span>}
+          <span className="text-slate-400">Run uses log-only task actions; no publish or external delivery.</span>
+          {transferMessage && <span role="status" className="text-slate-300">{transferMessage}</span>}
         </div>
 
         <div className="workflow-canvas-wrap" aria-label="Workflow canvas" style={{ position: "relative" }}>
