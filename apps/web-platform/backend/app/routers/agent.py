@@ -558,6 +558,10 @@ def retry_agent_run(
     run = db.query(models.AgentRun).filter(models.AgentRun.id == run_id).first()
     if run is None:
         raise HTTPException(status_code=404, detail="Agent run not found")
+    logger.info(
+        "Admin queued bounded Agent Run retry",
+        extra={"run_id": run_id, "actor_id": actor_id, "retry_count": run.retry_count},
+    )
     _start_agent_run(run_id)
     db.refresh(run)
     return serialize_run(db, run)
