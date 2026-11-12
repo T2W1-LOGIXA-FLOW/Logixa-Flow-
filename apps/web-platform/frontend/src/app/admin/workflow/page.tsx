@@ -163,14 +163,14 @@ export default function AdminWorkflowPage() {
     })),
   }), [edges, nodes, workflowId]);
 
-  const authorizedWorkflowRequest = useCallback(async (path: string, init?: RequestInit) => {
+  const authorizedWorkflowRequest = useCallback(async (path: string, init?: RequestInit, allowNotFound = false) => {
     const token = await getAdminSessionToken();
     if (!token) throw new Error("An admin session is required.");
     const response = await fetch(resolveWorkflowApiUrl(path), {
       ...init,
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(init?.headers ?? {}) },
     });
-    if (!response.ok) {
+    if (!response.ok && !(allowNotFound && response.status === 404)) {
       const body = await response.json().catch(() => null);
       throw new Error(typeof body?.detail === "string" ? body.detail : "Workflow action failed.");
     }
@@ -200,10 +200,22 @@ export default function AdminWorkflowPage() {
 
     setIsRunning(true);
     try {
-      await authorizedWorkflowRequest("/api/admin/workflow", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+      const existing = await authorizedWorkflowRequest(
+        `/api/admin/workflow/${encodeURIComponent(payload.id)}`,
+        undefined,
+        true,
+      );
+      if (existing.status === 404) {
+        await authorizedWorkflowRequest("/api/admin/workflow", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+      } else {
+        const saved = await existing.json() as { name: string; nodes: unknown[] };
+        if (saved.name !== payload.name || JSON.stringify(saved.nodes) !== JSON.stringify(payload.nodes)) {
+          throw new Error("This workflow ID already contains different content. Save it explicitly first or choose a new ID before running.");
+        }
+      }
       const response = await authorizedWorkflowRequest(
         `/api/admin/workflow/${encodeURIComponent(payload.id)}/runs`,
         {
