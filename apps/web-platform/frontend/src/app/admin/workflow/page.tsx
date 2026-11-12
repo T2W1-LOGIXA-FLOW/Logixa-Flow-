@@ -485,7 +485,7 @@ export default function AdminWorkflowPage() {
           <button onClick={handleExportWorkflow} className="rounded border border-slate-600 px-3 py-1.5 text-slate-100">Export JSON</button>
           <button onClick={() => importInputRef.current?.click()} className="rounded border border-slate-600 px-3 py-1.5 text-slate-100">Import JSON</button>
           <input ref={importInputRef} type="file" accept="application/json,.json" onChange={handleImportWorkflow} className="hidden" />
-          <span className="text-slate-400">Runs support internal log, metadata, and human-approval actions only. Provider execution and external delivery are not wired in this builder yet.</span>
+          <span className="text-slate-400">Runs support internal log and human-approval actions only. Provider execution and external delivery are not wired in this builder yet.</span>
           {transferMessage && <span role="status" className="text-slate-300">{transferMessage}</span>}
           {templateNotice && <span role="status" className="basis-full text-cyan-200">{templateNotice}</span>}
         </div>
