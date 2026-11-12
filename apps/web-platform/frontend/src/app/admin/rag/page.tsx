@@ -104,7 +104,7 @@ export default function RagIndexPage() {
       const matchesStatus =
         statusFilter === "all" ||
         (statusFilter === "indexed" && s.indexing_status === "indexed") ||
-        (statusFilter === "pending" && s.indexing_status !== "indexed" && !s.indexing_error) ||
+        (statusFilter === "pending" && s.indexing_status !== "indexed" && s.indexing_status !== "failed" && !s.indexing_error) ||
         (statusFilter === "error" && (Boolean(s.indexing_error) || s.indexing_status === "failed"));
 
       return matchesSearch && matchesStatus;
@@ -193,7 +193,7 @@ export default function RagIndexPage() {
         <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 shadow-lg backdrop-blur-md">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Health Status</span>
           <div className="mt-2 flex items-center gap-2">
-            <span className={"inline-flex h-2.5 w-2.5 rounded-full " + (loading ? "bg-slate-500" : loadError || stats.errors ? "bg-rose-400" : stats.total === 0 ? "bg-amber-400" : "bg-emerald-400")} aria-hidden="true" />
+            <span className={"inline-flex h-2.5 w-2.5 rounded-full " + (loading ? "bg-slate-500" : loadError || stats.errors ? "bg-rose-400" : stats.total === 0 || stats.pending ? "bg-amber-400" : "bg-emerald-400")} aria-hidden="true" />
             <p className="text-base font-bold text-white">
               {loading ? "Checking index…" : loadError ? "Status unavailable" : stats.errors ? "Needs attention" : stats.total === 0 ? "No sources yet" : stats.pending ? "Indexing in progress" : "Index status healthy"}
             </p>
