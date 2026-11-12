@@ -4,9 +4,9 @@ import AdminAgentStatusBadge from "./AdminAgentStatusBadge";
 import styles from "@/app/admin/agents/agent-theme.module.css";
 import type { AgentRun } from "@/components/api";
 import AdminAgentTimeline from "./AdminAgentTimeline";
-import { Brain, Cpu, Clock, AlertTriangle } from "lucide-react";
+import { Brain, Cpu, Clock, AlertTriangle, RefreshCw } from "lucide-react";
 
-export default function AdminAgentCard({ run }: { run: AgentRun }) {
+export default function AdminAgentCard({ run, onRetry, retrying = false }: { run: AgentRun; onRetry: (runId: number) => void; retrying?: boolean }) {
   const memoryStatus = run.memory?.status ?? (run.final_memory_id ? "Linked" : "Not created");
   const latestStep = run.steps?.[run.steps.length - 1];
   const isFailed = run.status.toLowerCase() === "failed";
@@ -36,8 +36,21 @@ export default function AdminAgentCard({ run }: { run: AgentRun }) {
               {latestStep?.message ? `Last recorded step: ${latestStep.message}` : "The run stopped before a final result was recorded. Inspect persisted execution history for the last completed step."}
             </p>
             <p className="mt-2 text-[11px] text-slate-400">
-              No automatic retry is available. Check for an existing Brain item before starting a replacement run.
+              A manual retry resumes from the last completed checkpoint. Its result stays private and still requires human approval.
             </p>
+            {(run.retry_count ?? 0) < 1 && !run.final_memory_id && !run.memory ? (
+              <button
+                type="button"
+                onClick={() => onRetry(run.id)}
+                disabled={retrying}
+                className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/20 disabled:cursor-wait disabled:opacity-60"
+              >
+                <RefreshCw className={"h-3.5 w-3.5 " + (retrying ? "animate-spin" : "")} aria-hidden="true" />
+                {retrying ? "Queueing retry…" : "Retry failed run"}
+              </button>
+            ) : (
+              <p className="mt-2 text-[11px] font-semibold text-amber-300">One-time retry limit reached or a Brain item is already linked.</p>
+            )}
           </section>
         )}
 
