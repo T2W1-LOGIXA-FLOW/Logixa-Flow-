@@ -37,7 +37,7 @@ describe("Admin analytics page", () => {
 
     render(<AdminAnalyticsPage />);
 
-    await waitFor(() => expect(screen.getByText("Live analytics streaming is unavailable; showing the latest authenticated snapshot.")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Authenticated daily snapshot loaded. Live streaming is not enabled on this view.")).toBeInTheDocument());
     expect(adminFetch).toHaveBeenCalledWith("/api/admin/analytics?days=7", "test-token");
     expect(eventSource).not.toHaveBeenCalled();
     expect(document.body.textContent).not.toContain("test-token");
