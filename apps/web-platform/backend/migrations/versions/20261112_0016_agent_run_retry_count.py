@@ -26,7 +26,6 @@ def upgrade() -> None:
             "agent_runs",
             sa.Column("retry_count", sa.Integer(), nullable=False, server_default="0"),
         )
-        op.alter_column("agent_runs", "retry_count", server_default=None)
 
 
 def downgrade() -> None:
