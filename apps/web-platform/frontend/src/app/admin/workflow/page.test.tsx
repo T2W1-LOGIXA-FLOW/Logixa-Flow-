@@ -44,7 +44,6 @@ describe("unified command canvas", () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        event: "workflow.status",
         run_id: "run-p0-smoke",
         workflow_id: "command-canvas",
         state: { status: "queued", current_node: null, completed_nodes: [], error: null },
