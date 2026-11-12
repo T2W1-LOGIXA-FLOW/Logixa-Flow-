@@ -33,6 +33,7 @@ router = APIRouter()
 _AGENT_EXECUTION_SLOTS = threading.BoundedSemaphore(2)
 _AGENT_THREAD_LOCK = threading.Lock()
 _AGENT_RUN_THREADS: dict[int, threading.Thread] = {}
+_AGENT_RUN_STARTING: set[int] = set()
 
 
 def slugify(value: str) -> str:
@@ -423,18 +424,34 @@ def _execute_agent_run(run_id: int) -> None:
 
 
 def _start_agent_run(run_id: int) -> None:
-    """Start one durable run, waiting briefly for a prior worker to finish cleanup."""
+    """Start one durable run, deferring safely while a previous worker exits."""
     with _AGENT_THREAD_LOCK:
         current = _AGENT_RUN_THREADS.get(run_id)
-    # A failed worker marks the row failed just before its finally block removes
-    # the thread entry. A manual retry can arrive in that narrow interval.
-    # Join outside the lock so the old worker can acquire the lock and clean up.
-    if current is not None and current.is_alive() and current is not threading.current_thread():
-        current.join(timeout=5)
-    with _AGENT_THREAD_LOCK:
-        current = _AGENT_RUN_THREADS.get(run_id)
+        if run_id in _AGENT_RUN_STARTING:
+            return
         if current is not None and current.is_alive():
-            logger.warning("Agent run %s retry queued while prior worker is still exiting", run_id)
+            if current is threading.current_thread():
+                return
+            # A failed worker marks the row failed immediately before its finally
+            # block removes the thread entry. Keep the retry queued and let a
+            # waiter start it after that worker has fully released its resources.
+            _AGENT_RUN_STARTING.add(run_id)
+
+            def start_after_previous_worker() -> None:
+                current.join()
+                with _AGENT_THREAD_LOCK:
+                    if _AGENT_RUN_THREADS.get(run_id) is threading.current_thread():
+                        _AGENT_RUN_THREADS.pop(run_id, None)
+                    _AGENT_RUN_STARTING.discard(run_id)
+                _start_agent_run(run_id)
+
+            waiter = threading.Thread(
+                target=start_after_previous_worker,
+                name=f"agent-run-retry-waiter-{run_id}",
+                daemon=True,
+            )
+            _AGENT_RUN_THREADS[run_id] = waiter
+            waiter.start()
             return
         thread = threading.Thread(
             target=_execute_agent_run,
