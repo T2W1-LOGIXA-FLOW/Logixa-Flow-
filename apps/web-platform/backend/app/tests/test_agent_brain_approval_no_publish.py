@@ -1,3 +1,4 @@
+import inspect
 from __future__ import annotations
 
 from types import SimpleNamespace
@@ -88,3 +89,9 @@ def test_agent_brain_draft_stays_private_and_unpublished_until_approval(
             assert session.query(models.Post).count() == 0
     finally:
         app.dependency_overrides.pop(security.require_admin, None)
+
+
+def test_agent_run_route_is_sync_for_fastapi_threadpool_execution() -> None:
+    # The route executes a synchronous multi-step LLM graph. Declaring it async
+    # would run that blocking graph on the event loop and stall health checks.
+    assert not inspect.iscoroutinefunction(agent_router.run_agent)
