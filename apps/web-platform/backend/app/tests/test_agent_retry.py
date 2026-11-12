@@ -27,8 +27,9 @@ def retry_client(monkeypatch: pytest.MonkeyPatch):
             yield session
 
     app.dependency_overrides[get_db] = override_db
+    retry_test_actor = "isolated-agent-retry-test-admin-" + str(id(engine))
     app.dependency_overrides[security.require_admin] = lambda: {
-        "sub": "isolated-agent-retry-test-admin",
+        "sub": retry_test_actor,
         "role": "admin",
     }
     started: list[int] = []
