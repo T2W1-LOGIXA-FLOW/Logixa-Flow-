@@ -79,7 +79,7 @@ def test_agent_brain_draft_stays_private_and_unpublished_until_approval(
             json={"publish_now": True},
         )
         assert publish_response.status_code == 409
-        assert "approval" in publish_response.text.lower()
+        assert "must be approved" in publish_response.text.lower()
 
         with session_factory() as session:
             memory = session.query(models.AiMemoryBrain).filter_by(id=memory_id).one()
