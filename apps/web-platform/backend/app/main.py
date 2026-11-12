@@ -71,8 +71,15 @@ def run_startup_tasks() -> None:
             )
             time.sleep(retry_delay)
 
-    # Agent runs are durable background jobs. Resume queued/interrupted runs
-    # from their persisted AgentStep checkpoints after every process restart.
+    if os.getenv("SKIP_SEEDING", "false").lower() != "true":
+        seed_app_settings()
+        seed_sample_posts()
+        seed_brain_context()
+    else:
+        logger.info("Skipping seeding (SKIP_SEEDING=true)")
+
+    # Seed LLM/provider settings before resuming durable background jobs.
+    # Completed AgentStep checkpoints ensure a restart retries only unfinished work.
     try:
         resumed_agent_runs = agent.resume_pending_agent_runs()
         if resumed_agent_runs:
@@ -83,13 +90,6 @@ def run_startup_tasks() -> None:
             )
     except Exception as exc:
         logger.warning("Agent run restart recovery skipped: %s", type(exc).__name__)
-
-    if os.getenv("SKIP_SEEDING", "false").lower() != "true":
-        seed_app_settings()
-        seed_sample_posts()
-        seed_brain_context()
-    else:
-        logger.info("Skipping seeding (SKIP_SEEDING=true)")
 
     try:
         restored = workflow.restore_pending_workflow_runs()
