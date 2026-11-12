@@ -265,14 +265,19 @@ export async function validateAdminToken(token: string) {
   }
 }
 
-export async function adminFetch(path: string, token: string, options: RequestInit = {}) {
+export async function adminFetch(
+  path: string,
+  token: string,
+  options: RequestInit = {},
+  timeoutMs = API_TIMEOUT_MS,
+) {
   const headers = new Headers(options.headers);
   if (!token) throw new Error("Admin session is required");
   headers.set("Authorization", "Bearer " + token);
   if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  let response = await fetchWithTimeout(`${API_URL}${path}`, { ...options, headers });
+  let response = await fetchWithTimeout(`${API_URL}${path}`, { ...options, headers }, timeoutMs);
 
   if (response.status === 401) {
     const refreshed = await refreshAdminSession();
@@ -281,7 +286,7 @@ export async function adminFetch(path: string, token: string, options: RequestIn
       const refreshedToken = await getAdminSessionToken();
       if (refreshedToken) {
         headers.set("Authorization", "Bearer " + refreshedToken);
-        response = await fetchWithTimeout(`${API_URL}${path}`, { ...options, headers });
+        response = await fetchWithTimeout(`${API_URL}${path}`, { ...options, headers }, timeoutMs);
       }
     }
   }
