@@ -62,7 +62,7 @@ describe("FeedManager", () => {
   it("filters feeds by search text and exposes a clear-filter state", async () => {
     render(<FeedManager />);
 
-    await screen.findByText("Supply Chain");
+    await screen.findByRole("cell", { name: "Supply Chain" });
     fireEvent.change(screen.getByRole("searchbox", { name: "Search feeds" }), {
       target: { value: "no-such-feed" },
     });
