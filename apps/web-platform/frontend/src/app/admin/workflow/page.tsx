@@ -503,7 +503,8 @@ export default function AdminWorkflowPage() {
           </section>
         )}
 
-        <div className="workflow-canvas-wrap" aria-label="Workflow canvas" style={{ position: "relative" }}>\n          {nodes.length === 0 && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center p-6 text-center"><div className="max-w-md rounded-xl border border-dashed border-cyan-400/30 bg-slate-950/90 p-6"><p className="text-sm font-semibold text-slate-100">Your workflow canvas is empty</p><p className="mt-2 text-xs leading-5 text-slate-400">Choose a safe starter template above, or add a supported module from the library. Only internal log, metadata and human-approval actions execute in this version.</p></div></div>}
+        <div className="workflow-canvas-wrap" aria-label="Workflow canvas" style={{ position: "relative" }}>
+          {nodes.length === 0 && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center p-6 text-center"><div className="max-w-md rounded-xl border border-dashed border-cyan-400/30 bg-slate-950/90 p-6"><p className="text-sm font-semibold text-slate-100">Your workflow canvas is empty</p><p className="mt-2 text-xs leading-5 text-slate-400">Choose a safe starter template above, or add a supported module from the library. Only internal log, metadata and human-approval actions execute in this version.</p></div></div>}
           <ReactFlow
             nodes={visibleNodes.map((node) => ({ ...node, className: nodeClass(node.data.status) }))}
             edges={edges.filter((edge) => visibleNodes.some((node) => node.id === edge.source) && visibleNodes.some((node) => node.id === edge.target))}
