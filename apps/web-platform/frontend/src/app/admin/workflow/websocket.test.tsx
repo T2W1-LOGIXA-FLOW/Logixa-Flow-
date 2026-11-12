@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import AdminWorkflowPage from "./page";
@@ -53,6 +53,65 @@ describe("workflow websocket integration", () => {
     expect(socket.send).toHaveBeenCalledWith(
       JSON.stringify({ type: "auth", token: "admin-token" }),
     );
+  });
+
+  it("shows approval controls and submits an authenticated approve decision", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          items: [{
+            event: "workflow.status",
+            run_id: "run-approval-ui",
+            workflow_id: "approval-flow",
+            state: {
+              status: "waiting_approval",
+              current_node: "human-check",
+              approval_node: "human-check",
+              completed_nodes: ["prepare"],
+              error: null,
+            },
+          }],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ run_id: "run-approval-ui", status: "queued", approved_node: "human-check" }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<AdminWorkflowPage />);
+
+    await waitFor(() => expect(sockets).toHaveLength(1));
+    const socket = sockets[0];
+    act(() => {
+      socket.onmessage?.({
+        data: JSON.stringify({
+          event: "workflow.status",
+          run_id: "run-approval-ui",
+          workflow_id: "approval-flow",
+          state: {
+            status: "waiting_approval",
+            current_node: "human-check",
+            approval_node: "human-check",
+            completed_nodes: ["prepare"],
+            error: null,
+          },
+        }),
+      });
+    });
+
+    expect(await screen.findByRole("region", { name: "Pending workflow approval" })).toBeInTheDocument();
+    expect(screen.getByText(/Downstream nodes are blocked/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Approve & resume" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/api/admin/workflow/runs/run-approval-ui/approve"),
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({ Authorization: "Bearer admin-token" }),
+      }),
+    ));
   });
 
   it("renders live telemetry updates from the workflow stream", async () => {

@@ -25,6 +25,7 @@ from app.schemas import (
     WorkflowRunOut,
     WorkflowRunRequest,
     WorkflowState,
+    WorkflowTelemetryEvent,
     WorkflowStorageCreate,
     WorkflowStorageOut,
 )
@@ -51,6 +52,7 @@ from app.routers.workflow_persistence import (
 )
 from app.routers.workflow_execution import (
     WorkflowExecutor,
+    _broadcast,
     _dispatch_workflow_run,
     _sync_execution_metrics,
     _EXECUTION_QUEUE,
@@ -130,6 +132,38 @@ async def store_workflow(payload: WorkflowStorageCreate, _admin=Depends(require_
     _WORKFLOW_STORAGE[payload.id] = workflow
     _persist_workflow_definition(workflow)
     return workflow
+
+
+@router.get("/approvals/pending")
+async def pending_workflow_approvals(_admin=Depends(require_admin)) -> dict[str, Any]:
+    """List durable approval pauses so the Admin UI can recover after reconnect/restart."""
+    db = SessionLocal()
+    try:
+        if not db.bind or not inspect(db.bind).has_table("workflow_runs"):
+            return {"items": []}
+        run_ids = [
+            row[0]
+            for row in db.query(models.WorkflowRunRecord.id)
+            .filter(models.WorkflowRunRecord.status == "waiting_approval")
+            .order_by(models.WorkflowRunRecord.updated_at.desc())
+            .limit(50)
+            .all()
+        ]
+    finally:
+        db.close()
+
+    items: list[dict[str, Any]] = []
+    for run_id in run_ids:
+        run = _load_run_state(run_id)
+        if run is None or run.state.status != "waiting_approval" or not run.state.approval_node:
+            continue
+        items.append({
+            "event": "workflow.status",
+            "run_id": run.run_id,
+            "workflow_id": run.workflow_id,
+            "state": run.state.model_dump(mode="json"),
+        })
+    return {"items": items}
 
 
 @router.get("/{workflow_id}/export")
@@ -285,6 +319,60 @@ async def approve_workflow_run(run_id: str, node_id: str | None = None, _admin=D
         db.close()
     _dispatch_workflow_run(run.run_id, delay_seconds=0)
     return {"run_id": run.run_id, "status": "queued", "approved_node": node.id}
+
+
+@router.post("/runs/{run_id}/reject")
+async def reject_workflow_run(
+    run_id: str,
+    node_id: str | None = None,
+    reason: str = "workflow approval rejected",
+    _admin=Depends(require_admin),
+) -> dict[str, Any]:
+    run = _WORKFLOW_RUNS.get(run_id) or _load_run_state(run_id)
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="workflow run not found")
+    if run.state.status != "waiting_approval":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="workflow run is not waiting for approval")
+    approval_id = node_id or run.state.approval_node
+    if not approval_id or approval_id != run.state.approval_node:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="approval node does not match the pending approval")
+    workflow = _WORKFLOW_STORAGE.get(run.workflow_id) or _load_workflow_definition(run.workflow_id)
+    if workflow is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="workflow not found")
+    if not any(item.id == approval_id and item.type == "approval" for item in workflow.nodes):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="approval node not found")
+
+    clean_reason = reason.strip()[:500] or "workflow approval rejected"
+    metrics = _EXECUTION_METRICS.setdefault(run.run_id, {})
+    metrics["rejected_node"] = approval_id
+    metrics["rejection_reason"] = clean_reason
+    _record_execution_history(run.run_id, f"approval:{approval_id}: rejected ({clean_reason})")
+    run.state.status = "failed"
+    run.state.current_node = None
+    run.state.approval_node = None
+    run.state.error = clean_reason
+    _WORKFLOW_RUNS[run.run_id] = run
+    _EXECUTION_STATES[run.run_id] = {
+        "run_id": run.run_id,
+        "workflow_id": run.workflow_id,
+        "status": "failed",
+        "current_node": None,
+        "completed_nodes": run.state.completed_nodes,
+        "error": clean_reason,
+        "approval_node": None,
+    }
+    _persist_run_state(run)
+    _mark_job_terminal(run.run_id, "failed")
+    _record_controller_result(run.run_id, "failed")
+    await _broadcast(
+        WorkflowTelemetryEvent(
+            event="workflow.status",
+            run_id=run.run_id,
+            workflow_id=run.workflow_id,
+            state=run.state,
+        )
+    )
+    return {"run_id": run_id, "status": "failed", "rejected_node": approval_id, "reason": clean_reason}
 
 
 # Re-export for callers that import from this module (e.g. controllers router)

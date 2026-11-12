@@ -6,6 +6,7 @@ import type { Node } from "@xyflow/react";
 export type ServiceNodeData = {
   label: string;
   detail: string;
+  nodeType?: "task" | "approval" | "notification";
   status: "green" | "amber" | "red";
   endpoint?: string;
   config?: Record<string, string>;
@@ -104,6 +105,11 @@ export default function NodeInspectorDrawer({
 
       <div style={{ marginTop: "12px", fontSize: "12px", color: "#cbd5e1" }}>
         <p style={{ margin: "0 0 8px", color: "#64748b" }}>{data.detail}</p>
+        {data.nodeType === "approval" && (
+          <div role="note" style={{ margin: "8px 0 12px", padding: "8px", border: "1px solid rgba(245, 158, 11, 0.45)", borderRadius: "6px", color: "#fbbf24", background: "rgba(245, 158, 11, 0.08)" }}>
+            This is a durable human checkpoint. The run pauses here until an Admin approves or rejects it. Downstream nodes remain blocked while approval is pending.
+          </div>
+        )}
         <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "12px" }}>
           <span style={{ fontSize: "10px", color: "#94a3b8" }}>Health Status:</span>
           <span

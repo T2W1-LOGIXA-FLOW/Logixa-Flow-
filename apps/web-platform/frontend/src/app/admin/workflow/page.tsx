@@ -22,7 +22,7 @@ import WorkflowSidebar, { type ServiceModule } from "./WorkflowSidebar";
 import NodeInspectorDrawer, { type ServiceNodeData } from "./NodeInspectorDrawer";
 import "./page.css";
 
-type WorkflowStatus = "queued" | "running" | "completed" | "failed";
+type WorkflowStatus = "queued" | "running" | "waiting_approval" | "completed" | "failed";
 type ConnectionState = "connecting" | "connected" | "disconnected";
 
 type WorkflowTelemetry = {
@@ -31,6 +31,7 @@ type WorkflowTelemetry = {
   workflow_id: string;
   state: {
     status: WorkflowStatus;
+    approval_node?: string | null;
     current_node: string | null;
     completed_nodes: string[];
     error?: string | null;
@@ -119,6 +120,7 @@ export default function AdminWorkflowPage() {
         detail: module.detail,
         status: "green",
         endpoint: module.endpoint,
+        nodeType: module.nodeType ?? "task",
       },
       sourcePosition: Position.Right,
       targetPosition: Position.Left,
@@ -145,7 +147,7 @@ export default function AdminWorkflowPage() {
     name: workflowId.trim().replace(/[-_]+/g, " ") || "Untitled workflow",
     nodes: nodes.map((node) => ({
       id: node.id,
-      type: "task",
+      type: node.data.nodeType ?? "task",
       name: node.data.label,
       depends_on: edges.filter((edge) => edge.target === node.id).map((edge) => edge.source),
       retry_count: 0,
@@ -237,6 +239,28 @@ export default function AdminWorkflowPage() {
     }
   }, [authorizedWorkflowRequest, workflowPayload]);
 
+  const handleApprovalDecision = useCallback(async (decision: "approve" | "reject") => {
+    if (!telemetry?.run_id || telemetry.state.status !== "waiting_approval") return;
+    if (decision === "reject" && !window.confirm("Reject this workflow approval? The run will stop and downstream nodes will not execute.")) return;
+    setIsRunning(true);
+    try {
+      const reason = encodeURIComponent("Rejected by Admin from Workflow command center.");
+      const endpoint = `/api/admin/workflow/runs/${encodeURIComponent(telemetry.run_id)}/${decision}${decision === "reject" ? `?reason=${reason}` : ""}`;
+      const response = await authorizedWorkflowRequest(endpoint, { method: "POST" });
+      const result = await response.json() as { status: string; approved_node?: string; rejected_node?: string };
+      setTelemetry((current) => current?.run_id === telemetry.run_id
+        ? { ...current, state: { ...current.state, status: decision === "approve" ? "queued" : "failed", approval_node: null, current_node: null, error: decision === "reject" ? result.rejected_node ?? "workflow approval rejected" : null } }
+        : current);
+      setTransferMessage(decision === "approve"
+        ? `Approval recorded for ${result.approved_node ?? telemetry.state.approval_node}. Workflow queued to resume.`
+        : `Approval rejected for ${result.rejected_node ?? telemetry.state.approval_node}. Workflow stopped.`);
+    } catch (error) {
+      setTransferMessage(error instanceof Error ? error.message : `Unable to ${decision} workflow.`);
+    } finally {
+      setIsRunning(false);
+    }
+  }, [authorizedWorkflowRequest, telemetry]);
+
   const handleExportWorkflow = useCallback(async () => {
     try {
       const response = await authorizedWorkflowRequest(`/api/admin/workflow/${encodeURIComponent(workflowId)}/export`);
@@ -261,7 +285,7 @@ export default function AdminWorkflowPage() {
     try {
       const pack = JSON.parse(await file.text());
       const response = await authorizedWorkflowRequest("/api/admin/workflow/import", { method: "POST", body: JSON.stringify(pack) });
-      const imported = await response.json() as { id: string; nodes: Array<{ id: string; name: string; depends_on: string[]; config?: { detail?: string; condition?: { key?: string; operator?: ServiceNodeData["conditionOperator"]; value?: string } } }> };
+      const imported = await response.json() as { id: string; nodes: Array<{ id: string; type?: "task" | "approval" | "notification"; name: string; depends_on: string[]; config?: { detail?: string; condition?: { key?: string; operator?: ServiceNodeData["conditionOperator"]; value?: string } } }> };
       setWorkflowId(imported.id);
       setNodes(imported.nodes.map((node, index) => ({
         id: node.id,
@@ -270,6 +294,7 @@ export default function AdminWorkflowPage() {
           label: node.name,
           detail: node.config?.detail || "Imported workflow node",
           status: "green",
+          nodeType: node.type ?? "task",
           conditionKey: node.config?.condition?.key,
           conditionOperator: node.config?.condition?.operator,
           conditionValue: node.config?.condition?.value,
@@ -305,6 +330,22 @@ export default function AdminWorkflowPage() {
     // Generic fallback
     return { status: "simulation_only", simulated: true, node: label, timestamp: new Date().toISOString(), note: "No real node-specific backend action is wired to this test button." };
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    async function restorePendingApproval() {
+      try {
+        const response = await authorizedWorkflowRequest("/api/admin/workflow/approvals/pending");
+        const payload = await response.json() as { items?: WorkflowTelemetry[] };
+        const pending = payload.items?.[0];
+        if (!cancelled && pending) setTelemetry(pending);
+      } catch {
+        // A socket reconnect can still deliver new workflow telemetry.
+      }
+    }
+    void restorePendingApproval();
+    return () => { cancelled = true; };
+  }, [authorizedWorkflowRequest]);
 
   useEffect(() => {
     let cancelled = false;
@@ -406,6 +447,19 @@ export default function AdminWorkflowPage() {
           <span className="text-slate-400">Run uses log-only task actions; no publish or external delivery.</span>
           {transferMessage && <span role="status" className="text-slate-300">{transferMessage}</span>}
         </div>
+
+        {telemetry?.state.status === "waiting_approval" && (
+          <section role="region" aria-label="Pending workflow approval" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/50 bg-amber-950/30 p-4">
+            <div>
+              <strong className="text-amber-200">Approval required</strong>
+              <p className="mt-1 text-xs text-amber-100/80">Run {telemetry.run_id} is paused at node {telemetry.state.approval_node ?? telemetry.state.current_node ?? "approval"}. Downstream nodes are blocked.</p>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" disabled={isRunning} onClick={() => void handleApprovalDecision("approve")} className="rounded border border-emerald-400/60 px-3 py-2 text-xs text-emerald-200 disabled:opacity-50">Approve &amp; resume</button>
+              <button type="button" disabled={isRunning} onClick={() => void handleApprovalDecision("reject")} className="rounded border border-red-400/60 px-3 py-2 text-xs text-red-200 disabled:opacity-50">Reject &amp; stop</button>
+            </div>
+          </section>
+        )}
 
         <div className="workflow-canvas-wrap" aria-label="Workflow canvas" style={{ position: "relative" }}>
           <ReactFlow
