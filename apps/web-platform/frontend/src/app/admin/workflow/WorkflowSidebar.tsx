@@ -37,13 +37,15 @@ export default function WorkflowSidebar({
   onSearchChange,
   onSelect,
   onAddNode,
+  enabledIntegrationIds = [],
 }: WorkflowSidebarProps) {
   const filteredModules = AVAILABLE_MODULES.filter(
     (m) =>
-      !search ||
-      m.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.detail.toLowerCase().includes(search.toLowerCase()) ||
-      m.category.toLowerCase().includes(search.toLowerCase())
+      (!m.integrationId || enabledIntegrationIds.includes(m.integrationId)) &&
+      (!search ||
+        m.name.toLowerCase().includes(search.toLowerCase()) ||
+        m.detail.toLowerCase().includes(search.toLowerCase()) ||
+        m.category.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
