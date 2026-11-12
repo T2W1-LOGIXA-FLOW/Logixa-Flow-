@@ -24,6 +24,7 @@ export default function AdminAgentsPage() {
   const [totalRuns, setTotalRuns] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
+  const [retryingRunId, setRetryingRunId] = useState<number | null>(null);
   const pageSize = 20;
 
   const loadAgents = useCallback(async () => {
@@ -65,6 +66,25 @@ export default function AdminAgentsPage() {
     }
     loadAgents();
   }, [token, isAuthenticated, loadAgents]);
+
+  const retryAgentRun = async (runId: number) => {
+    if (!token || retryingRunId !== null) return;
+    const confirmed = window.confirm(
+      "Retry failed Agent Run #" + runId + " from its last completed checkpoint? This queues one private Brain draft only; it does not publish or send anything externally.",
+    );
+    if (!confirmed) return;
+
+    setRetryingRunId(runId);
+    try {
+      await adminFetch("/api/admin/agent/runs/" + runId + "/retry", token, { method: "POST" });
+      toast.success("Agent Run #" + runId + " retry queued.");
+      await loadAgents();
+    } catch {
+      toast.error("Retry was not queued. Check the run state and one-time retry limit.");
+    } finally {
+      setRetryingRunId(null);
+    }
+  };
 
   if (!isAuthenticated) {
     return (
@@ -141,7 +161,7 @@ export default function AdminAgentsPage() {
         <>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {agents.map((agent) => (
-              <AdminAgentCard key={agent.id} run={agent} />
+              <AdminAgentCard key={agent.id} run={agent} onRetry={retryAgentRun} retrying={retryingRunId === agent.id} />
             ))}
           </div>
           <nav className="mt-6 flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl border border-slate-800/80 bg-slate-900/60 shadow-lg" aria-label="Agent runs pagination">
