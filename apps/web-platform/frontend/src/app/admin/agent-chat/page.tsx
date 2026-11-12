@@ -93,7 +93,7 @@ export default function AdminAgentChatPage() {
       // This exact operator command is an explicit action, not a general chat prompt.
       // Route it to the durable Agent → Brain API instead of the conversational LLM endpoint.
       const isPrivateP0SmokeCommand =
-        message.trim().replace(/\\s+/g, " ").toLowerCase() ===
+        message.trim().replace(/\s+/g, " ").toLowerCase() ===
         "create a private p0 approval smoke draft. do not publish.";
 
       let agentMessage: ChatMessage;
@@ -124,7 +124,7 @@ export default function AdminAgentChatPage() {
             `Brain item ID: ${data.final_memory_id}`,
             `Brain status: ${data.memory.status} (private)`,
             "Next: open Brain and use Approve only. Do not use Create CMS Draft or Publish.",
-          ].join("\\n"),
+          ].join("\n"),
           timestamp: new Date().toISOString(),
           agentId: "agent-run",
         };
