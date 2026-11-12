@@ -41,14 +41,19 @@ export default function RagIndexPage() {
   const [busy, setBusy] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!token) return;
     setLoading(true);
+    setLoadError(null);
     try {
       const response = await adminFetch("/api/admin/knowledge/sources", token);
-      setSources(await response.json());
+      const data: unknown = await response.json();
+      if (!Array.isArray(data)) throw new Error("Invalid knowledge sources response");
+      setSources(data as Source[]);
     } catch {
+      setLoadError("Knowledge sources could not be loaded. Retry the request or check the authenticated API health.");
       toast.error("Knowledge sources could not be loaded.");
     } finally {
       setLoading(false);
@@ -186,13 +191,14 @@ export default function RagIndexPage() {
         <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 shadow-lg backdrop-blur-md">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Health Status</span>
           <div className="mt-2 flex items-center gap-2">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
-            </span>
-            <p className="text-base font-bold text-white">RAG Engine Live</p>
+            <span className={"inline-flex h-2.5 w-2.5 rounded-full " + (loading ? "bg-slate-500" : loadError || stats.errors ? "bg-rose-400" : stats.total === 0 ? "bg-amber-400" : "bg-emerald-400")} aria-hidden="true" />
+            <p className="text-base font-bold text-white">
+              {loading ? "Checking index…" : loadError ? "Status unavailable" : stats.errors ? "Needs attention" : stats.total === 0 ? "No sources yet" : "Index status healthy"}
+            </p>
           </div>
-          <p className="mt-1 text-xs text-slate-500">{stats.errors ? `${stats.errors} failed source(s)` : "Zero indexing errors"}</p>
+          <p className="mt-1 text-xs text-slate-500">
+            {loadError ? "Source health could not be verified." : stats.errors ? `${stats.errors} source(s) need attention` : stats.total === 0 ? "No knowledge sources are currently tracked." : "No indexing errors reported."}
+          </p>
         </div>
       </div>
 
@@ -230,6 +236,15 @@ export default function RagIndexPage() {
           />
         </div>
       </div>
+
+      {loadError ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-500/30 bg-rose-500/5 p-4 text-sm text-rose-200" role="alert">
+          <p>{loadError}</p>
+          <button type="button" onClick={() => void load()} disabled={loading} className="rounded-lg border border-rose-400/30 px-3 py-2 font-semibold hover:bg-rose-500/10 disabled:opacity-50">
+            {loading ? "Retrying…" : "Retry"}
+          </button>
+        </div>
+      ) : null}
 
       {/* Table Section */}
       <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 shadow-xl backdrop-blur-md overflow-hidden">
