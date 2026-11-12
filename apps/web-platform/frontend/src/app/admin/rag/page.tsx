@@ -53,6 +53,7 @@ export default function RagIndexPage() {
       if (!Array.isArray(data)) throw new Error("Invalid knowledge sources response");
       setSources(data as Source[]);
     } catch {
+      setSources([]);
       setLoadError("Knowledge sources could not be loaded. Retry the request or check the authenticated API health.");
       toast.error("Knowledge sources could not be loaded.");
     } finally {
@@ -113,11 +114,12 @@ export default function RagIndexPage() {
   const stats = useMemo(() => {
     const total = sources.length;
     const indexed = sources.filter((s) => s.indexing_status === "indexed").length;
-    const errors = sources.filter((s) => Boolean(s.indexing_error)).length;
+    const errors = sources.filter((s) => Boolean(s.indexing_error) || s.indexing_status === "failed").length;
+    const pending = sources.filter((s) => s.indexing_status !== "indexed" && s.indexing_status !== "failed" && !s.indexing_error).length;
     const avgFreshness = total
       ? Math.round((sources.reduce((acc, s) => acc + s.freshness_score, 0) / total) * 100)
       : 0;
-    return { total, indexed, errors, avgFreshness };
+    return { total, indexed, errors, pending, avgFreshness };
   }, [sources]);
 
   if (!isAuthenticated) return null;
@@ -168,19 +170,19 @@ export default function RagIndexPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 shadow-lg backdrop-blur-md">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Sources</span>
-          <p className="mt-2 text-2xl font-extrabold text-white">{stats.total}</p>
+          <p className="mt-2 text-2xl font-extrabold text-white">{loading || loadError ? "—" : stats.total}</p>
           <p className="mt-1 text-xs text-slate-500">Tracked in knowledge base</p>
         </div>
         <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 shadow-lg backdrop-blur-md">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Indexed Ratio</span>
           <p className="mt-2 text-2xl font-extrabold text-emerald-400">
-            {stats.indexed} <span className="text-sm font-normal text-slate-400">/ {stats.total}</span>
+            {loading || loadError ? "—" : stats.indexed} <span className="text-sm font-normal text-slate-400">/ {loading || loadError ? "—" : stats.total}</span>
           </p>
           <p className="mt-1 text-xs text-slate-500">Embeddings active in vector DB</p>
         </div>
         <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 shadow-lg backdrop-blur-md">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Avg. Freshness</span>
-          <p className="mt-2 text-2xl font-extrabold text-cyan-400">{stats.avgFreshness}%</p>
+          <p className="mt-2 text-2xl font-extrabold text-cyan-400">{loading || loadError ? "—" : stats.avgFreshness + "%"}</p>
           <div className="mt-2 h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
             <div
               className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-500"
@@ -193,11 +195,11 @@ export default function RagIndexPage() {
           <div className="mt-2 flex items-center gap-2">
             <span className={"inline-flex h-2.5 w-2.5 rounded-full " + (loading ? "bg-slate-500" : loadError || stats.errors ? "bg-rose-400" : stats.total === 0 ? "bg-amber-400" : "bg-emerald-400")} aria-hidden="true" />
             <p className="text-base font-bold text-white">
-              {loading ? "Checking index…" : loadError ? "Status unavailable" : stats.errors ? "Needs attention" : stats.total === 0 ? "No sources yet" : "Index status healthy"}
+              {loading ? "Checking index…" : loadError ? "Status unavailable" : stats.errors ? "Needs attention" : stats.total === 0 ? "No sources yet" : stats.pending ? "Indexing in progress" : "Index status healthy"}
             </p>
           </div>
           <p className="mt-1 text-xs text-slate-500">
-            {loadError ? "Source health could not be verified." : stats.errors ? `${stats.errors} source(s) need attention` : stats.total === 0 ? "No knowledge sources are currently tracked." : "No indexing errors reported."}
+            {loadError ? "Source health could not be verified." : stats.errors ? `${stats.errors} source(s) need attention` : stats.total === 0 ? "No knowledge sources are currently tracked." : stats.pending ? `${stats.pending} source(s) are waiting for indexing.` : "No indexing errors reported."}
           </p>
         </div>
       </div>
