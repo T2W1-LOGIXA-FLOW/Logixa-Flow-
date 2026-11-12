@@ -158,7 +158,7 @@ export default function AdminAgentChatPage() {
       setTranscriptSource("local");
       setError(null);
     } catch (err) {
-      setError("Admin chat API unavailable");
+      setError(err instanceof Error ? err.message : "Admin chat API unavailable");
       toast.error("Could not process your query");
       console.error(err);
     } finally {
