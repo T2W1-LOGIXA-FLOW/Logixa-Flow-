@@ -211,8 +211,8 @@ export default function AdminWorkflowPage() {
           body: JSON.stringify({ workflow_id: payload.id, priority: 1, delay_seconds: 0 }),
         },
       );
-      const run = await response.json() as WorkflowTelemetry;
-      setTelemetry(run);
+      const run = await response.json() as Omit<WorkflowTelemetry, "event">;
+      setTelemetry({ event: "workflow.status", ...run });
       setTransferMessage(`Run accepted: ${run.run_id}. Canvas tasks execute in log-only mode.`);
       setLogs((previous) => [
         `[${new Date().toLocaleTimeString()}] RUN QUEUED ${run.run_id}`,
