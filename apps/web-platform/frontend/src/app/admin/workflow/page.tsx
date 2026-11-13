@@ -138,12 +138,14 @@ export default function AdminWorkflowPage() {
     setInspectingNode(null);
   }, [nodes.length, setEdges, setNodes]);
 
-  // Add new n8n-style module to canvas
+  // Add supported action in a predictable left-to-right sequence and connect it to the previous step.
   const handleAddModule = useCallback((module: ServiceModule) => {
+    if (!module.supported) return;
     const newId = `${module.id}_${Date.now()}`;
+    const previousNode = nodes[nodes.length - 1];
     const newNode: Node<ServiceNodeData> = {
       id: newId,
-      position: { x: 200 + Math.random() * 200, y: 150 + Math.random() * 150 },
+      position: { x: 120 + nodes.length * 260, y: 180 },
       data: {
         label: module.canvasLabel,
         detail: module.detail,
@@ -156,9 +158,12 @@ export default function AdminWorkflowPage() {
       type: "default",
     };
     setNodes((prev) => [...prev, newNode]);
-    setSelected(`${module.canvasLabel} added to canvas`);
-    setLogs((prev) => [`[${new Date().toLocaleTimeString()}] ADDED ${module.canvasLabel} NODE`, ...prev].slice(0, 6));
-  }, [setNodes]);
+    if (previousNode) {
+      setEdges((prev) => [...prev, { id: `auto-${previousNode.id}-${newId}`, source: previousNode.id, target: newId, animated: true, style: { stroke: "#22D3EE", strokeWidth: 2 } }]);
+    }
+    setSelected(`${module.canvasLabel} added; connected to previous step`);
+    setLogs((prev) => [`[${new Date().toLocaleTimeString()}] ADDED ${module.canvasLabel}`, ...prev].slice(0, 6));
+  }, [nodes, setEdges, setNodes]);
 
   const handleDeleteNode = useCallback((id: string) => {
     setNodes((nds) => nds.filter((n) => n.id !== id));
