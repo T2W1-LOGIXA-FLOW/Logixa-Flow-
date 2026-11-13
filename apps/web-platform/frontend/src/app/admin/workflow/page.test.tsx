@@ -111,13 +111,13 @@ describe("unified command canvas", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 201, json: async () => ({}) });
     vi.stubGlobal("fetch", fetchMock);
 
-    fireEvent.click(screen.getByTitle("Add Human Approval Gate to canvas"));
+    fireEvent.click(screen.getByRole("button", { name: "Add Human approval" }));
     fireEvent.click(screen.getByRole("button", { name: "Save workflow" }));
 
     await screen.findByRole("status");
     const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(payload.nodes).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: expect.stringMatching(/^approval_gate_/), type: "approval", name: "APPROVAL GATE" }),
+      expect.objectContaining({ id: expect.stringMatching(/^approval_gate_/), type: "approval", name: "ADMIN APPROVAL" }),
     ]));
   });
 
@@ -130,10 +130,12 @@ describe("unified command canvas", () => {
 
   it("supports node filtering and sidebar selection", () => {
     render(<AdminWorkflowPage />);
-    fireEvent.change(screen.getByPlaceholderText("Search services..."), { target: { value: "finance" } });
-    expect(screen.getByText("Smart Receipt Parser")).toBeInTheDocument();
-    expect(screen.queryByText("Live Thought Stream")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Media/ }));
-    expect(screen.getByText("Media category selected")).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText("Search actions…"), { target: { value: "internal" } });
+    expect(screen.getByText("Internal task")).toBeInTheDocument();
+    expect(screen.queryByText("Telegram delivery")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText("Search actions…"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("tab", { name: "Approval" }));
+    expect(screen.getByText("Approval category selected")).toBeInTheDocument();
+    expect(screen.getByText("Human approval")).toBeInTheDocument();
   });
 });
