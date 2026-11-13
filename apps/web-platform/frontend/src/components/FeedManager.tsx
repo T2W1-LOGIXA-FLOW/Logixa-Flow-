@@ -292,7 +292,7 @@ export default function FeedManager() {
         </div>
       ) : (
         <>
-          <div className="w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain rounded-lg border border-slate-700">
+          <div className="hidden w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain rounded-lg border border-slate-700 sm:block">
             <table className="w-full min-w-[960px] table-fixed border-collapse text-sm">
               <colgroup>
                 <col style={{ width: "20%" }} />
@@ -381,6 +381,28 @@ export default function FeedManager() {
                 })}
               </tbody>
             </table>
+          </div>
+          <div className="space-y-3 sm:hidden" aria-label="Feed cards">
+            {pageFeeds.map((feed) => {
+              const trustLevel = feed.trust_level?.trim() || "standard";
+              const scrapeStatus = feed.last_scrape_status?.trim() || "not scraped";
+              return (
+                <article key={feed.id} className="min-w-0 rounded-xl border border-slate-700 bg-slate-900/70 p-3.5">
+                  <h3 className="break-words text-sm font-semibold text-slate-100">{feed.title || feed.url}</h3>
+                  <a href={feed.url} target="_blank" rel="noopener noreferrer" className="mt-1 block break-all text-xs text-cyan-300 underline-offset-2 hover:underline">{feed.url}</a>
+                  <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+                    <div><dt className="text-slate-500">Category</dt><dd className="mt-0.5 break-words text-slate-200">{feed.category || "Uncategorized"}</dd></div>
+                    <div><dt className="text-slate-500">Trust</dt><dd className="mt-0.5 text-slate-200 capitalize">{trustLevel}</dd></div>
+                    <div><dt className="text-slate-500">Last scrape</dt><dd className="mt-0.5 text-slate-200">{feed.last_scrape_at ? new Date(feed.last_scrape_at).toLocaleDateString() : "Never"}</dd></div>
+                    <div><dt className="text-slate-500">Status</dt><dd className="mt-0.5 break-words text-slate-200 capitalize">{scrapeStatus}</dd></div>
+                  </dl>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button onClick={() => void handleScrapeFeed(feed.id)} disabled={scrapingId === feed.id} variant="ghost" aria-label={`Scrape ${feed.title || feed.url}`}>{scrapingId === feed.id ? "Scraping…" : "Scrape"}</Button>
+                    <Button onClick={() => void handleDeleteFeed(feed.id)} variant="ghost" aria-label={`Delete ${feed.title || feed.url}`} style={{ color: "#fca5a5" }}>Delete</Button>
+                  </div>
+                </article>
+              );
+            })}
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-400">
             <p aria-live="polite">
