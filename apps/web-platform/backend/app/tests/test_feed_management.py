@@ -371,3 +371,46 @@ def test_google_news_wrapper_does_not_accept_google_or_private_destinations(monk
     assert integration_service._resolve_google_news_publisher_url(
         "https://news.google.com/rss/articles/example", html
     ) == "https://news.google.com/rss/articles/example"
+
+
+
+def test_rss_body_recovery_flows_into_rag_chunks(db, monkeypatch):
+    """Isolated SQLite regression: failed RSS extraction -> article body -> RAG chunks."""
+    from .. import integration_service
+    from ..rag import ingest
+
+    source = models.IntelligenceSource(
+        title="Recovered supply-chain article",
+        url="https://publisher.example.test/recovered",
+        source_type="rss",
+        category="Supply Chain",
+        trust_level="standard",
+        content_text="",
+        indexing_status="failed",
+        indexing_error="RSS source has no extracted article body",
+    )
+    db.add(source)
+    db.commit()
+    source_id = source.id
+
+    article_body = (
+        "Supply chain resilience requires diversified suppliers, transparent logistics, "
+        "reliable inventory signals, and measurable risk controls. "
+    ) * 8
+    monkeypatch.setattr(integration_service, "_fetch_article_text", lambda _url: article_body)
+    recovery = integration_service.retry_failed_rss_article_extraction(db, limit=1)
+    recovered = db.query(models.IntelligenceSource).filter_by(id=source_id).one()
+
+    assert recovery == {"checked": 1, "recovered": 1, "still_empty": 0, "errors": 0}
+    assert len(recovered.content_text) >= 200
+    assert recovered.indexing_status == "not_indexed"
+
+    monkeypatch.setattr(ingest, "embed_text", lambda _text: ([0.01, 0.02, 0.03], "test-embedding"))
+    monkeypatch.setattr(ingest, "pgvector_column_exists", lambda _db: False)
+    chunks_written = ingest.ingest_intelligence_source(db, recovered)
+
+    chunks = db.query(models.DocumentEmbedding).filter_by(
+        source_type="intelligence_source", source_id=str(source_id)
+    ).all()
+    assert chunks_written == len(chunks) > 0
+    assert any("diversified suppliers" in chunk.content for chunk in chunks)
