@@ -11,7 +11,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 import feedparser
 
-from config import RAW_DIR, RSS_FEEDS
+from .config import RAW_DIR, RSS_FEEDS
 
 
 @dataclass(frozen=True)
