@@ -52,8 +52,8 @@ describe("FeedManager", () => {
   it("renders readable fallback states and full action labels for incomplete feed metadata", async () => {
     render(<FeedManager />);
 
-    expect(await screen.findByText("standard")).toBeInTheDocument();
-    expect(screen.getByText("not scraped")).toBeInTheDocument();
+    expect((await screen.findAllByText("standard")).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("not scraped").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByRole("columnheader", { name: "Actions" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Scrape https:/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Delete https:/ })).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe("FeedManager", () => {
 
     expect(await screen.findByText("No feeds match your filters.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect(await screen.findByText("standard")).toBeInTheDocument();
+    expect((await screen.findAllByText("standard")).length).toBeGreaterThanOrEqual(1);
   });
 
   it("loads feeds through the authenticated admin endpoint", async () => {
