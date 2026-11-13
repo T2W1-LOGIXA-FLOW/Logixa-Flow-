@@ -14,7 +14,7 @@ export default function AdminStatusBadge({
   return (
     <span className={`${styles.statusBadge} ${styles[tone]}`} aria-label={label}>
       <span className={`${styles.statusDot} ${pulse ? "animate-pulse" : ""}`} aria-hidden="true" />
-      {label}
+      <span className="hidden sm:inline">{label}</span>
     </span>
   );
 }
