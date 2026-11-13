@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from alembic import command
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine, inspect, text
 
 from .. import models
@@ -22,7 +23,10 @@ SCHEMA_MIGRATION = (
 MONEY_MIGRATION = (
     MIGRATIONS_DIR / "versions" / "20261005_0007_convert_money_to_numeric.py"
 )
-CURRENT_HEAD = "20261016_0015"
+_ALEMBIC_CONFIG = Config(str(BACKEND_DIR / "alembic.ini"))
+_ALEMBIC_CONFIG.set_main_option("script_location", str(MIGRATIONS_DIR))
+CURRENT_HEAD = ScriptDirectory.from_config(_ALEMBIC_CONFIG).get_current_head()
+assert CURRENT_HEAD is not None
 
 
 def alembic_config(database_url: str) -> Config:

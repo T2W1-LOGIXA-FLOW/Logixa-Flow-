@@ -60,6 +60,7 @@ export interface AgentRun {
   objective: string;
   model: string;
   status: string;
+  retry_count?: number;
   final_memory_id?: number | null;
   steps: AgentStep[];
   memory?: AiMemory | null;

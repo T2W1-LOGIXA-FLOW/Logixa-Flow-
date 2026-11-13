@@ -421,6 +421,7 @@ class AgentRunOut(BaseModel):
     objective: str
     model: str
     status: str
+    retry_count: int = 0
     final_memory_id: int | None
     steps: list[AgentStepOut] = []
     memory: AiMemoryOut | None = None
