@@ -53,7 +53,7 @@ export function ModelSelectorDropdown() {
         className="flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-slate-900/90 px-3 py-1.5 text-xs font-semibold text-slate-200 shadow-lg shadow-cyan-950/20 hover:border-cyan-400 hover:bg-slate-800/80 transition-all"
       >
         <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
-        <span className="text-white">{activeModel.name}</span>
+        <span className="hidden text-white sm:inline">{activeModel.name}</span>
         <span className="rounded bg-cyan-500/10 px-1.5 py-0.5 text-[10px] font-mono text-cyan-300">
           {activeModel.speed}
         </span>
