@@ -344,26 +344,15 @@ export default function AdminWorkflowPage() {
     }
   }, [authorizedWorkflowRequest, setEdges, setNodes]);
 
-  // Execute test call to real backend API endpoints
-  const handleExecuteNode = async (node: Node<ServiceNodeData>) => {
-    const label = node.data.label;
-    if (label === "FLUX BANNER") {
-      const res = await fetch("/api/admin/posts/generate-banner", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: "Supply Chain Operations Automation", width: 1200, height: 630 }),
-      }).catch(() => null);
-      return res?.ok ? await res.json() : { status: "simulation_only", simulated: true, model: "FLUX", note: "No banner-generation backend confirmed; no image was generated." };
-    }
-    if (label === "THOUGHT STREAM") {
-      return { status: "demo_only", simulated: true, stream_url: null, note: "This node does not open a live SSE stream." };
-    }
-    if (label === "TELEGRAM GATE") {
-      return { status: "simulation_only", simulated: true, target: "Telegram Admin Topic", actions: [], note: "No Telegram message or callback was dispatched." };
-    }
-    // Generic fallback
-    return { status: "simulation_only", simulated: true, node: label, timestamp: new Date().toISOString(), note: "No real node-specific backend action is wired to this test button." };
-  };
+  // Preview a node locally only. Never trigger external/provider side effects from the inspector.
+  const handleExecuteNode = async (node: Node<ServiceNodeData>) => ({
+    status: "preview_only",
+    executed: false,
+    node: node.data.label,
+    node_type: node.data.nodeType ?? "task",
+    detail: node.data.detail,
+    note: "Preview only. Use Run log-only workflow to execute supported internal log and approval steps.",
+  });
 
   useEffect(() => {
     let cancelled = false;
