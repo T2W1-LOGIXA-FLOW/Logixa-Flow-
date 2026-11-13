@@ -40,7 +40,7 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0F1E] text-[#E2E8F0] p-8">
+    <div className="min-h-0 w-full min-w-0 bg-[#0A0F1E] text-[#E2E8F0] p-0">
       <div className="mx-auto w-full max-w-5xl">
         <div className="mb-6 flex items-center justify-between">
           <div>
@@ -53,7 +53,7 @@ export default function AdminSettingsPage() {
         </div>
 
         {/* Tabs */}
-        <div className="mb-6 flex items-center gap-2">
+        <div className="mb-6 flex flex-wrap items-center gap-2">
           <button type="button" onClick={() => setActiveTab('general')} className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${activeTab === 'general' ? 'bg-[#22D3EE]/10 text-[#22D3EE] border-l-2 border-[#22D3EE] shadow-[0_0_12px_rgba(34,211,238,0.06)]' : 'text-[#94A3B8] hover:bg-[#101728]'}`}>
             <Settings className="h-4 w-4" />
             General
