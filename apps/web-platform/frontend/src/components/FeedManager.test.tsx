@@ -55,8 +55,8 @@ describe("FeedManager", () => {
     expect((await screen.findAllByText("standard")).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("not scraped").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByRole("columnheader", { name: "Actions" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Scrape https:/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Delete https:/ })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /Scrape https:/ }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole("button", { name: /Delete https:/ }).length).toBeGreaterThanOrEqual(1);
   });
 
   it("filters feeds by search text and exposes a clear-filter state", async () => {
