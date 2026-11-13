@@ -183,16 +183,13 @@ export default function RagIndexPage() {
             />
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 shadow-lg backdrop-blur-md">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Health Status</span>
+        <div className={`rounded-2xl border p-4 shadow-lg backdrop-blur-md ${stats.errors ? "border-rose-500/30 bg-rose-950/20" : "border-slate-800/80 bg-slate-900/60"}`}>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Indexing Health</span>
           <div className="mt-2 flex items-center gap-2">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
-            </span>
-            <p className="text-base font-bold text-white">RAG Engine Live</p>
+            <span className={`inline-flex h-3 w-3 shrink-0 rounded-full ${stats.errors ? "bg-rose-500" : "bg-emerald-500"}`} aria-hidden="true" />
+            <p className={`text-base font-bold ${stats.errors ? "text-rose-300" : "text-white"}`}>{stats.errors ? "Indexing degraded" : "All sources healthy"}</p>
           </div>
-          <p className="mt-1 text-xs text-slate-500">{stats.errors ? `${stats.errors} failed source(s)` : "Zero indexing errors"}</p>
+          <p className="mt-1 text-xs text-slate-400">{stats.errors ? `${stats.errors} of ${stats.total} source(s) failed indexing` : "Zero indexing errors"}</p>
         </div>
       </div>
 
