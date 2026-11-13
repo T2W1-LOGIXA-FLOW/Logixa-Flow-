@@ -333,7 +333,7 @@ export default function BrainReviewPage() {
                 onClick={() => setFilter(item)}
                 className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold capitalize transition-all ${
                   active
-                    ? "bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 font-bold"
+                    ? "bg-slate-800 text-cyan-200 border border-cyan-500/30 shadow-sm"
                     : "text-slate-400 hover:text-white hover:bg-slate-800/60"
                 }`}
               >
@@ -360,9 +360,9 @@ export default function BrainReviewPage() {
         {/* Left Column: Queue List (5 cols on lg) */}
         <div className="lg:col-span-5 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 shadow-xl backdrop-blur-md space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-800/60">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+            <div className="flex items-center gap-2 whitespace-nowrap text-xs font-bold uppercase tracking-wider text-slate-400">
               <Layers className="h-4 w-4 text-cyan-400" />
-              Queue ({filteredItems.length})
+              Queue <span className="tabular-nums">({filteredItems.length})</span>
             </div>
             <button
               onClick={() => refresh()}

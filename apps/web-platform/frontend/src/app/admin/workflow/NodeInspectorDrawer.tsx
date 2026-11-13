@@ -97,7 +97,7 @@ export default function NodeInspectorDrawer({
         </div>
         <button
           onClick={onClose}
-          style={{ background: "transparent", border: 0, color: "#94a3b8", cursor: "pointer", fontSize: "16px" }}
+          aria-label="Close node inspector" style={{ background: "transparent", border: 0, color: "#94a3b8", cursor: "pointer", fontSize: "16px" }}
         >
           ✕
         </button>
@@ -177,7 +177,7 @@ export default function NodeInspectorDrawer({
               cursor: executing ? "not-allowed" : "pointer",
             }}
           >
-            {executing ? "Running..." : "▶️ Test Execute"}
+            {executing ? "Preparing preview…" : "Preview only"}
           </button>
           {onDeleteNode && (
             <button
@@ -196,7 +196,7 @@ export default function NodeInspectorDrawer({
                 cursor: "pointer",
               }}
             >
-              🗑️
+              Delete
             </button>
           )}
         </div>

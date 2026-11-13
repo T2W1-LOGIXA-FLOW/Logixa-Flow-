@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Activity, BarChart3, Brain, Calculator, Database, DollarSign, FileText,
   LayoutDashboard, Mail, MessageSquare, Package, Settings, Shield, Upload,
-  Workflow, X, Bot, Server, CreditCard, Rocket, Lightbulb, MessagesSquare,
+Workflow, X, Bot, Server, CreditCard, Rocket, Lightbulb, MessagesSquare, Plug,
 } from "lucide-react";
 import styles from "@/app/admin/admin-theme.module.css";
 import { LogixaFlowLogo } from "@/components/LogixaFlowLogo";
@@ -34,6 +34,7 @@ const navigationItems = [
   ]},
   { category: "AUTOMATION", items: [
     { href: "/admin/workflow", label: "Workflows", icon: Workflow },
+    { href: "/admin/integrations", label: "Integrations", icon: Plug },
     { href: "/admin/controllers", label: "Controllers", icon: Activity },
   ]},
   { category: "OPERATIONS", items: [

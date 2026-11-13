@@ -338,3 +338,80 @@ def trigger_email_endpoint(payload: dict, db: Session = Depends(get_db), _: dict
             return {"message": "Email sent (sync)", "result": res.get()}
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Email delivery failed") from exc
+
+# Central integration catalog. This controls workflow-library availability only;
+# it never mutates provider credentials or disconnects an external account.
+INTEGRATION_CATALOG = [
+    {"id": "openrouter", "name": "OpenRouter", "category": "AI", "description": "Primary AI model gateway", "required_env": ["OPENROUTER_API_KEY"]},
+    {"id": "gemini", "name": "Google Gemini", "category": "AI", "description": "Gemini model provider", "required_env": ["GEMINI_API_KEY"]},
+    {"id": "groq", "name": "Groq", "category": "AI", "description": "Low-latency model provider", "required_env": ["GROQ_API_KEY"]},
+    {"id": "mistral", "name": "Mistral", "category": "AI", "description": "Mistral model provider", "required_env": ["MISTRAL_API_KEY"]},
+    {"id": "cohere", "name": "Cohere", "category": "AI", "description": "Cohere model provider", "required_env": ["COHERE_API_KEY"]},
+    {"id": "cloudflare_ai", "name": "Cloudflare AI", "category": "AI", "description": "Cloudflare AI gateway/provider", "required_env": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]},
+    {"id": "cloudinary", "name": "Cloudinary", "category": "Storage", "description": "Image and media asset storage", "required_env": ["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"]},
+    {"id": "supabase_storage", "name": "Supabase Storage", "category": "Storage", "description": "Managed object storage", "required_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]},
+    {"id": "backblaze_b2", "name": "Backblaze B2", "category": "Storage", "description": "S3-compatible private object storage", "required_env": ["S3_ENDPOINT_URL", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_BUCKET"]},
+    {"id": "google_drive", "name": "Google Drive", "category": "Productivity", "description": "OAuth-based document export and backup", "required_env": ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_DRIVE_REFRESH_TOKEN"]},
+    {"id": "telegram", "name": "Telegram", "category": "Messaging", "description": "Human approval notifications and callbacks", "required_env": ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"]},
+    {"id": "qstash", "name": "Upstash QStash", "category": "Automation", "description": "Signed workflow dispatch and delayed jobs", "required_env": ["QSTASH_TOKEN", "QSTASH_CURRENT_SIGNING_KEY", "QSTASH_NEXT_SIGNING_KEY"]},
+]
+
+
+def _integration_catalog_item(db: Session, item: dict) -> dict:
+    missing = [key for key in item["required_env"] if not os.getenv(key, "").strip()]
+    setting = db.query(models.AppSetting).filter(
+        models.AppSetting.key == f"integration_catalog_enabled:{item['id']}"
+    ).first()
+    configured = not missing
+    # Existing configured providers remain available by default; unconfigured
+    # providers cannot be enabled until their server-side credentials exist.
+    enabled = (setting.value.lower() == "true") if setting else configured
+    return {
+        "id": item["id"],
+        "name": item["name"],
+        "category": item["category"],
+        "description": item["description"],
+        "configured": configured,
+        "missing_requirements": len(missing),
+        "enabled": bool(configured and enabled),
+        "availability_scope": "workflow_library",
+    }
+
+
+@router.get("/admin/integrations/catalog")
+def get_integration_catalog(
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_admin),
+) -> dict:
+    """Return integration readiness without exposing environment variable names or values."""
+    items = [_integration_catalog_item(db, item) for item in INTEGRATION_CATALOG]
+    return {"items": items, "scope": "workflow_library"}
+
+
+@router.patch("/admin/integrations/catalog/{integration_id}")
+def set_integration_catalog_enabled(
+    integration_id: str,
+    payload: dict,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_admin),
+) -> dict:
+    """Enable/disable a configured connector in the workflow module library only."""
+    item = next((entry for entry in INTEGRATION_CATALOG if entry["id"] == integration_id), None)
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Integration not found")
+    enabled = payload.get("enabled")
+    if not isinstance(enabled, bool):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="enabled must be a boolean")
+    current = _integration_catalog_item(db, item)
+    if enabled and not current["configured"]:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Configure the provider credentials before enabling it.")
+    key = f"integration_catalog_enabled:{integration_id}"
+    setting = db.query(models.AppSetting).filter(models.AppSetting.key == key).first()
+    if setting is None:
+        setting = models.AppSetting(key=key, value=str(enabled).lower())
+        db.add(setting)
+    else:
+        setting.value = str(enabled).lower()
+    db.commit()
+    return _integration_catalog_item(db, item)
+

@@ -1,24 +1,27 @@
 "use client";
 
+import { useMemo, useState } from "react";
+import { Plus, Search, ShieldCheck, Workflow } from "lucide-react";
+
 export type ServiceModule = {
   id: string;
   name: string;
   canvasLabel: string;
   detail: string;
-  category: "Research" | "Media" | "Finance" | "Outbound";
+  category: "Core" | "Approval" | "Integrations";
   tag: string;
   endpoint?: string;
   nodeType?: "task" | "approval" | "notification";
+  integrationId?: string;
+  supported: boolean;
 };
 
 export const AVAILABLE_MODULES: ServiceModule[] = [
-  { id: "thought_stream", name: "Live Thought Stream", canvasLabel: "THOUGHT STREAM", detail: "Real-time agent cognition trace", category: "Research", tag: "AI/SSE", endpoint: "/api/agent/stream/demo" },
-  { id: "concept_map", name: "Mermaid Mindmap Engine", canvasLabel: "CONCEPT MAP", detail: "Knowledge relation diagram", category: "Research", tag: "GRAPH", endpoint: "/api/admin/workflow/concept-map" },
-  { id: "flux_banner", name: "FLUX AI Banner Generator", canvasLabel: "FLUX BANNER", detail: "Pollinations 1200x630 banner", category: "Media", tag: "FLUX", endpoint: "/api/admin/posts/generate-banner" },
-  { id: "edge_tts", name: "Edge Neural Voiceover", canvasLabel: "VOICEOVER", detail: "Burmese/English synthetic audio", category: "Media", tag: "AUDIO", endpoint: "/api/v1/episodes/voiceover" },
-  { id: "receipt_extract", name: "Smart Receipt Parser", canvasLabel: "RECEIPT PARSER", detail: "Zero-cost tax/vendor extractor", category: "Finance", tag: "OCR", endpoint: "/api/documents/extract-receipt" },
-  { id: "approval_gate", name: "Human Approval Gate", canvasLabel: "APPROVAL GATE", detail: "Pause workflow until an Admin approves or rejects", category: "Outbound", tag: "HUMAN", nodeType: "approval" },
-  { id: "telegram_gate", name: "Telegram Approval Gate", canvasLabel: "TELEGRAM GATE", detail: "Human-in-the-loop callback bot", category: "Outbound", tag: "BOT", endpoint: "/api/telegram/action" },
+  { id: "log_task", name: "Internal task", canvasLabel: "INTERNAL TASK", detail: "Write a private execution checkpoint to workflow logs", category: "Core", tag: "LOG", nodeType: "task", supported: true },
+  { id: "approval_gate", name: "Human approval", canvasLabel: "ADMIN APPROVAL", detail: "Pause until an Admin explicitly approves or rejects", category: "Approval", tag: "HUMAN", nodeType: "approval", supported: true },
+  { id: "log_event", name: "Log completion", canvasLabel: "LOG EVENT", detail: "Record an internal completion event; no external message", category: "Core", tag: "LOG", nodeType: "notification", supported: true },
+  { id: "telegram_gate", name: "Telegram delivery", canvasLabel: "TELEGRAM", detail: "Provider adapter is not implemented; preview only", category: "Integrations", tag: "NOT READY", integrationId: "telegram", supported: false },
+  { id: "email_delivery", name: "Email delivery", canvasLabel: "EMAIL", detail: "Provider adapter is not implemented; preview only", category: "Integrations", tag: "NOT READY", supported: false },
 ];
 
 type WorkflowSidebarProps = {
@@ -26,99 +29,58 @@ type WorkflowSidebarProps = {
   onSearchChange: (value: string) => void;
   onSelect: (label: string) => void;
   onAddNode?: (module: ServiceModule) => void;
+  enabledIntegrationIds?: string[];
 };
 
-const categories = ["Research", "Media", "Finance", "Outbound"];
+const categories = ["All actions", "Core", "Approval", "Integrations"] as const;
 
-export default function WorkflowSidebar({
-  search,
-  onSearchChange,
-  onSelect,
-  onAddNode,
-}: WorkflowSidebarProps) {
-  const filteredModules = AVAILABLE_MODULES.filter(
-    (m) =>
-      !search ||
-      m.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.detail.toLowerCase().includes(search.toLowerCase()) ||
-      m.category.toLowerCase().includes(search.toLowerCase())
-  );
+export default function WorkflowSidebar({ search, onSearchChange, onSelect, onAddNode, enabledIntegrationIds = [] }: WorkflowSidebarProps) {
+  const [category, setCategory] = useState<(typeof categories)[number]>("All actions");
+  const filteredModules = useMemo(() => AVAILABLE_MODULES.filter((module) => {
+    const matchesCategory = category === "All actions" || module.category === category;
+    const matchesSearch = !search || [module.name, module.detail, module.category].some((value) => value.toLowerCase().includes(search.toLowerCase()));
+    const integrationAvailable = !module.integrationId || enabledIntegrationIds.includes(module.integrationId);
+    return matchesCategory && matchesSearch && integrationAvailable;
+  }), [category, search, enabledIntegrationIds]);
 
   return (
-    <aside className="workflow-sidebar" aria-label="Workflow services">
+    <aside className="workflow-sidebar" aria-label="Workflow action library">
       <div className="workflow-sidebar-heading">
-        <span className="workflow-kicker">COMMAND LIBRARY</span>
-        <h2>Service modules</h2>
+        <span className="workflow-kicker">NODE LIBRARY</span>
+        <h2>Build workflow</h2>
+        <p>Choose an action to add it to the canvas.</p>
       </div>
       <label className="workflow-search">
-        <span className="sr-only">Search services</span>
-        <input
-          value={search}
-          onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Search services..."
-        />
+        <Search size={14} aria-hidden="true" />
+        <span className="sr-only">Search actions</span>
+        <input value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder="Search actions…" />
       </label>
-
-      {/* Category quick selectors */}
-      <div className="workflow-sidebar-groups">
-        {categories.map((category) => (
-          <button
-            key={category}
-            type="button"
-            className="workflow-category"
-            onClick={() => onSelect(category)}
-          >
-            <span>{category}</span>
-            <span className="workflow-tag">{category === "Research" ? "CORE" : "OPS"}</span>
+      <div className="workflow-category-tabs" role="tablist" aria-label="Action categories">
+        {categories.map((item) => (
+          <button key={item} type="button" role="tab" aria-selected={category === item} className={category === item ? "workflow-category is-active" : "workflow-category"} onClick={() => { setCategory(item); onSelect(item); }}>
+            {item}
           </button>
         ))}
       </div>
-
-      {/* N8N-style action modules */}
-      <div className="workflow-module-list" style={{ marginTop: "24px" }}>
-        <span className="workflow-kicker" style={{ fontSize: "9px" }}>ADD NODE TO PIPELINE</span>
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
-          {filteredModules.map((m) => (
-            <div
-              key={m.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "8px 10px",
-                background: "rgba(10, 15, 30, 0.7)",
-                border: "1px solid rgba(34, 211, 238, 0.15)",
-                borderRadius: "6px",
-                fontSize: "11px",
-              }}
-            >
-              <div>
-                <span style={{ color: "#f8fafc", display: "block", fontWeight: 600 }}>{m.name}</span>
-                <span style={{ color: "#64748b", fontSize: "10px" }}>{m.detail}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => onAddNode?.(m)}
-                title={`Add ${m.name} to canvas`}
-                style={{
-                  background: "rgba(34, 211, 238, 0.15)",
-                  color: "#22D3EE",
-                  border: "1px solid rgba(34, 211, 238, 0.4)",
-                  borderRadius: "4px",
-                  padding: "3px 7px",
-                  fontSize: "10px",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                }}
-              >
-                + Add
-              </button>
+      <div className="workflow-module-list">
+        <div className="workflow-library-count"><Workflow size={13} aria-hidden="true" /> {filteredModules.length} actions</div>
+        {filteredModules.map((module) => (
+          <article key={module.id} className={module.supported ? "workflow-module-card" : "workflow-module-card is-unavailable"}>
+            <div className="workflow-module-copy">
+              <div className="workflow-module-title">{module.name}</div>
+              <p>{module.detail}</p>
+              <span className={module.supported ? "workflow-module-tag" : "workflow-module-tag is-muted"}>{module.supported ? module.tag : "COMING SOON"}</span>
             </div>
-          ))}
-        </div>
+            {module.supported ? (
+              <button type="button" className="workflow-add-node" onClick={() => onAddNode?.(module)} aria-label={"Add " + module.name}><Plus size={16} /> Add</button>
+            ) : (
+              <span className="workflow-unavailable-label" title="This action is not executable yet"><ShieldCheck size={14} /> Not ready</span>
+            )}
+          </article>
+        ))}
+        {filteredModules.length === 0 && <p className="workflow-library-empty">No actions match this filter.</p>}
       </div>
-
-      <p className="workflow-sidebar-hint">Drag-ready visual modules</p>
+      <div className="workflow-sidebar-hint"><strong>Supported now</strong><br />Internal log steps and durable Admin approval. Provider delivery remains disabled until its adapter is implemented.</div>
     </aside>
   );
 }

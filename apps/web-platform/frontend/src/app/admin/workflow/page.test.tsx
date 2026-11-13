@@ -24,21 +24,29 @@ afterEach(() => {
 });
 
 describe("unified command canvas", () => {
-  it("renders five service nodes and process telemetry", () => {
+  it("renders an honest empty canvas and process telemetry", () => {
     render(<AdminWorkflowPage />);
     expect(screen.getByText("Workflow command center")).toBeInTheDocument();
-    expect(screen.getByText("RESEARCH")).toBeInTheDocument();
-    expect(screen.getByText("MEDIA")).toBeInTheDocument();
-    expect(screen.getByText("FINANCE")).toBeInTheDocument();
-    expect(screen.getByText("OUTBOUND")).toBeInTheDocument();
-    expect(screen.getByText("ORCHESTRATOR")).toBeInTheDocument();
+    expect(screen.getByText("Your workflow canvas is empty")).toBeInTheDocument();
+    expect(screen.getByRole("combobox")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Blank canvas" })).toBeInTheDocument();
+    expect(screen.queryByText("RESEARCH")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Process cost panel")).toBeInTheDocument();
     expect(screen.getByLabelText("Workflow ID")).toHaveValue("command-canvas");
     expect(screen.getByRole("button", { name: "Save workflow" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Run log-only workflow" })).toBeInTheDocument();
-    expect(screen.getByText("Run uses log-only task actions; no publish or external delivery.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Export JSON" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Import JSON" })).toBeInTheDocument();
+  });
+
+  it("loads the private review starter without external delivery nodes", () => {
+    render(<AdminWorkflowPage />);
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "private-review" } });
+    expect(screen.getByLabelText("Workflow ID")).toHaveValue("private-review");
+    expect(screen.getByText("PREPARE PRIVATE DRAFT")).toBeInTheDocument();
+    expect(screen.getByText("ADMIN APPROVAL")).toBeInTheDocument();
+    expect(screen.getByText("RECORD APPROVED")).toBeInTheDocument();
+    expect(screen.getByText(/no external integrations or delivery actions/i)).toBeInTheDocument();
   });
 
   it("creates and starts a log-only workflow run with the authenticated session", async () => {
@@ -103,13 +111,13 @@ describe("unified command canvas", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 201, json: async () => ({}) });
     vi.stubGlobal("fetch", fetchMock);
 
-    fireEvent.click(screen.getByTitle("Add Human Approval Gate to canvas"));
+    fireEvent.click(screen.getByRole("button", { name: "Add Human approval" }));
     fireEvent.click(screen.getByRole("button", { name: "Save workflow" }));
 
     await screen.findByRole("status");
     const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(payload.nodes).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: expect.stringMatching(/^approval_gate_/), type: "approval", name: "APPROVAL GATE" }),
+      expect.objectContaining({ id: expect.stringMatching(/^approval_gate_/), type: "approval", name: "ADMIN APPROVAL" }),
     ]));
   });
 
@@ -122,10 +130,12 @@ describe("unified command canvas", () => {
 
   it("supports node filtering and sidebar selection", () => {
     render(<AdminWorkflowPage />);
-    fireEvent.change(screen.getByPlaceholderText("Search services..."), { target: { value: "finance" } });
-    expect(screen.getByText("FINANCE")).toBeInTheDocument();
-    expect(screen.queryByText("RESEARCH")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Media/ }));
-    expect(screen.getByText("Media category selected")).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText("Search actions…"), { target: { value: "internal" } });
+    expect(screen.getByText("Internal task")).toBeInTheDocument();
+    expect(screen.queryByText("Telegram delivery")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText("Search actions…"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("tab", { name: "Approval" }));
+    expect(screen.getByText("Approval category selected")).toBeInTheDocument();
+    expect(screen.getByText("Human approval")).toBeInTheDocument();
   });
 });

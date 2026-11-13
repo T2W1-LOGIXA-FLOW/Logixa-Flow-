@@ -20,6 +20,7 @@ google-api-python-client>=2.201.0
 google-auth>=2.59.1
 sentry-sdk[fastapi]>=2.72.0
 httpx>=0.28.0
+feedparser==6.0.12
 psycopg2-binary==2.9.13
 psycopg[binary]>=3.3.6,<4
 pypdf==6.21.4
