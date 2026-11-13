@@ -8,7 +8,7 @@ import styles from "@/app/admin/admin-theme.module.css";
 export default function AdminTopbar({ onOpenSidebar }: { onOpenSidebar: () => void }) {
   return (
     <header className={`${styles.topbar} sticky top-0 z-30 border-b backdrop-blur-xl`}>
-      <div className="flex min-h-16 items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+      <div className="flex min-h-14 items-center justify-between gap-2 px-3 py-2 sm:min-h-16 sm:gap-3 sm:px-6 sm:py-3 lg:px-8">
         <button
           type="button"
           onClick={onOpenSidebar}
@@ -22,7 +22,7 @@ export default function AdminTopbar({ onOpenSidebar }: { onOpenSidebar: () => vo
           <span aria-hidden="true">/</span>
           <span className="truncate">Admin workspace</span>
         </div>
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-3">
           <ModelSelectorDropdown />
           <AdminStatusBadge label="Admin workspace" tone="cyan" />
         </div>
