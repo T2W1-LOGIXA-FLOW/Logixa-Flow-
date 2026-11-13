@@ -12,14 +12,39 @@
   --admin-success: #6ee7b7;
   --admin-warning: #fbbf24;
   --admin-danger: #fca5a5;
+  min-height: 100vh;
   background: var(--admin-bg);
   color: var(--admin-text);
+  color-scheme: dark;
+}
+
+.skipLink {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  transform: translateY(-180%);
+  border: 1px solid var(--admin-cyan);
+  border-radius: 0.65rem;
+  background: #0d1422;
+  padding: 0.7rem 1rem;
+  color: #f1f5f9;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.skipLink:focus {
+  transform: translateY(0);
+  outline: 2px solid var(--admin-cyan);
+  outline-offset: 2px;
 }
 
 .sidebar {
-  background: rgb(10 16 28 / 96%);
+  background: rgb(10 16 28 / 98%);
   border-color: var(--admin-border);
   box-shadow: 16px 0 48px rgb(0 0 0 / 14%);
+  scrollbar-color: #334155 transparent;
+  scrollbar-width: thin;
 }
 
 .navLink {
@@ -50,8 +75,9 @@
 }
 
 .topbar {
-  background: rgb(8 13 24 / 86%);
+  background: rgb(8 13 24 / 92%);
   border-color: rgb(37 50 71 / 82%);
+  padding-top: env(safe-area-inset-top, 0);
 }
 
 .statusBadge,
@@ -82,30 +108,17 @@
   background: var(--admin-muted);
 }
 
-.success .statusDot {
-  background: var(--admin-success);
-}
-
-.cyan .statusDot {
-  background: var(--admin-cyan);
-}
-
-.violet .statusDot {
-  background: var(--admin-violet);
-}
-
-.warning .statusDot {
-  background: var(--admin-warning);
-}
-
-.danger .statusDot {
-  background: var(--admin-danger);
-}
+.success .statusDot { background: var(--admin-success); }
+.cyan .statusDot { background: var(--admin-cyan); }
+.violet .statusDot { background: var(--admin-violet); }
+.warning .statusDot { background: var(--admin-warning); }
+.danger .statusDot { background: var(--admin-danger); }
 
 .action {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  min-height: 2.5rem;
   border-radius: 0.7rem;
   padding: 0.55rem 0.8rem;
   font-size: 0.75rem;
@@ -113,9 +126,14 @@
   transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
-.action:hover {
+.action:hover:not(:disabled) {
   border-color: rgb(103 232 249 / 35%);
   background: rgb(103 232 249 / 7%);
+}
+
+.action:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .card {
@@ -147,9 +165,21 @@
   letter-spacing: -0.025em;
 }
 
+.shell :focus-visible {
+  scroll-margin-block: 6rem;
+}
+
 @media (max-width: 1023px) {
   .sidebar {
-    width: min(18rem, calc(100vw - 2rem));
+    width: min(19rem, calc(100vw - 2rem));
+  }
+}
+
+@media (max-width: 639px) {
+  .statusBadge {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.58rem;
+    letter-spacing: 0.06em;
   }
 }
 

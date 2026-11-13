@@ -33,6 +33,7 @@ router = APIRouter()
 _AGENT_EXECUTION_SLOTS = threading.BoundedSemaphore(2)
 _AGENT_THREAD_LOCK = threading.Lock()
 _AGENT_RUN_THREADS: dict[int, threading.Thread] = {}
+_AGENT_RUN_STARTING: set[int] = set()
 
 
 def slugify(value: str) -> str:
@@ -423,10 +424,34 @@ def _execute_agent_run(run_id: int) -> None:
 
 
 def _start_agent_run(run_id: int) -> None:
-    """Start one durable run, deduplicating threads within this web process."""
+    """Start one durable run, deferring safely while a previous worker exits."""
     with _AGENT_THREAD_LOCK:
         current = _AGENT_RUN_THREADS.get(run_id)
+        if run_id in _AGENT_RUN_STARTING:
+            return
         if current is not None and current.is_alive():
+            if current is threading.current_thread():
+                return
+            # A failed worker marks the row failed immediately before its finally
+            # block removes the thread entry. Keep the retry queued and let a
+            # waiter start it after that worker has fully released its resources.
+            _AGENT_RUN_STARTING.add(run_id)
+
+            def start_after_previous_worker() -> None:
+                current.join()
+                with _AGENT_THREAD_LOCK:
+                    if _AGENT_RUN_THREADS.get(run_id) is threading.current_thread():
+                        _AGENT_RUN_THREADS.pop(run_id, None)
+                    _AGENT_RUN_STARTING.discard(run_id)
+                _start_agent_run(run_id)
+
+            waiter = threading.Thread(
+                target=start_after_previous_worker,
+                name=f"agent-run-retry-waiter-{run_id}",
+                daemon=True,
+            )
+            _AGENT_RUN_THREADS[run_id] = waiter
+            waiter.start()
             return
         thread = threading.Thread(
             target=_execute_agent_run,
@@ -492,6 +517,70 @@ def get_agent_run(
     run = db.query(models.AgentRun).filter(models.AgentRun.id == run_id).first()
     if run is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent run not found")
+    return serialize_run(db, run)
+
+
+MAX_AGENT_RUN_RETRIES = 1
+
+
+@router.post(
+    "/admin/agent/runs/{run_id}/retry",
+    response_model=schemas.AgentRunOut,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def retry_agent_run(
+    run_id: int,
+    db: Session = Depends(get_db),
+    admin: dict = Depends(require_admin),
+) -> schemas.AgentRunOut:
+    """Queue one operator-requested retry from the last durable step checkpoint."""
+    actor_id = str(admin.get("sub") or "unknown-admin")
+    if not rate_limiter.allow(f"agent:retry:user:{actor_id}", limit=2, window_seconds=60):
+        raise HTTPException(status_code=429, detail="Agent retry quota exceeded; retry after one minute.")
+    if not rate_limiter.allow("agent:retry:global", limit=5, window_seconds=3600):
+        raise HTTPException(status_code=429, detail="Global agent retry budget is exhausted for this hour.")
+
+    # Compare-and-set prevents duplicate clicks or concurrent admins from queuing
+    # the same failed run more than once. The worker resumes completed step
+    # checkpoints and retries only the first unfinished/failed step.
+    updated = (
+        db.query(models.AgentRun)
+        .filter(
+            models.AgentRun.id == run_id,
+            models.AgentRun.status == "failed",
+            models.AgentRun.final_memory_id.is_(None),
+            models.AgentRun.retry_count < MAX_AGENT_RUN_RETRIES,
+        )
+        .update(
+            {
+                models.AgentRun.status: "queued",
+                models.AgentRun.retry_count: models.AgentRun.retry_count + 1,
+                models.AgentRun.updated_at: utc_now(),
+            },
+            synchronize_session=False,
+        )
+    )
+    if updated != 1:
+        db.rollback()
+        run = db.query(models.AgentRun).filter(models.AgentRun.id == run_id).first()
+        if run is None:
+            raise HTTPException(status_code=404, detail="Agent run not found")
+        if run.final_memory_id is not None:
+            raise HTTPException(status_code=409, detail="This run already has a linked Brain item; retry is blocked.")
+        if run.retry_count >= MAX_AGENT_RUN_RETRIES:
+            raise HTTPException(status_code=409, detail="The one-time retry limit has been reached for this run.")
+        raise HTTPException(status_code=409, detail="Only failed runs without a linked Brain item can be retried.")
+
+    db.commit()
+    run = db.query(models.AgentRun).filter(models.AgentRun.id == run_id).first()
+    if run is None:
+        raise HTTPException(status_code=404, detail="Agent run not found")
+    logger.info(
+        "Admin queued bounded Agent Run retry",
+        extra={"run_id": run_id, "actor_id": actor_id, "retry_count": run.retry_count},
+    )
+    _start_agent_run(run_id)
+    db.refresh(run)
     return serialize_run(db, run)
 
 

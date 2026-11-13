@@ -136,6 +136,7 @@ class AgentRun(Base):
     token_usage = Column(Integer, nullable=True)
     cost_estimate = Column(Numeric(18, 6, asdecimal=True), nullable=True)
     output_version = Column(Integer, nullable=False, default=1)
+    retry_count = Column(Integer, nullable=False, default=0, server_default="0")
     status = Column(String(40), default="completed", nullable=False, index=True)
     final_memory_id = Column(Integer, nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
