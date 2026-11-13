@@ -32,6 +32,27 @@ def clean_html(value: str | None) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def extract_entry_summary(entry: dict) -> str:
+    """Prefer full RSS content:encoded/content over short summary/description."""
+    content_items = entry.get("content") or []
+    if isinstance(content_items, dict):
+        content_items = [content_items]
+    for item in content_items:
+        if isinstance(item, dict):
+            full_content = clean_html(item.get("value"))
+            if full_content:
+                return full_content
+
+    # feedparser maps RSS content:encoded into content[0].value; this fallback
+    # also handles feeds exposing a richer summary_detail.value field.
+    summary_detail = entry.get("summary_detail")
+    if isinstance(summary_detail, dict):
+        detailed_summary = clean_html(summary_detail.get("value"))
+        if detailed_summary:
+            return detailed_summary
+    return clean_html(entry.get("summary") or entry.get("description"))
+
+
 def canonicalize_url(url: str) -> str:
     parsed = urlparse(url)
     query = parse_qs(parsed.query)
@@ -69,7 +90,7 @@ def fetch_articles(feeds: list[str] | None = None, output_dir: Path = RAW_DIR) -
                 RawArticle(
                     id=article_id,
                     title=clean_html(entry.get("title")),
-                    summary=clean_html(entry.get("summary") or entry.get("description")),
+                    summary=extract_entry_summary(entry),
                     link=link,
                     published=entry.get("published") or entry.get("updated"),
                     source_feed=feed_url,
