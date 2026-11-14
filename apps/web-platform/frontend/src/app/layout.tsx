@@ -2,6 +2,7 @@ import ThemeProvider from "@/components/shadcn/ThemeProvider";
 import { LanguageProvider } from "@/lib/LanguageContext";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import "@/styles/globals.css";
 
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         )}
         {/* Telegram Web App SDK for seamless Mini App integration */}
         <script src="https://telegram.org/js/telegram-web-app.js" async />
+        <SpeedInsights />
         <Analytics />
       </body>
     </html>
