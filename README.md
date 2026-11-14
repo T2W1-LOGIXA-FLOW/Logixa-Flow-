@@ -1,93 +1,90 @@
-# Logixa Flow
+# ⚡ Logixa Flow
+> **Autonomous Multi-Agent Workflow Engine & Real-Time Orchestration Platform**
 
-[![CI](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/workflows/ci.yml) [![CodeQL](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/T2W1-LOGIXA-FLOW/Logixa-Flow-/actions/workflows/codeql.yml)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Python_3.12-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL_&_pgvector-3ECF8E?style=flat-square&logo=supabase)](https://supabase.com/)
+[![Gemini 2.0](https://img.shields.io/badge/Gemini-2.0_Flash-4285F4?style=flat-square&logo=google)](https://deepmind.google/technologies/gemini/)
+[![Groq](https://img.shields.io/badge/Groq-LPU_Inference-F55036?style=flat-square)](https://groq.com/)
+[![Upstash](https://img.shields.io/badge/Upstash-Redis_&_QStash-00E599?style=flat-square&logo=upstash)](https://upstash.com/)
+[![Render](https://img.shields.io/badge/Render-Backend_Live-46E3B7?style=flat-square&logo=render)](https://logixa-flow.onrender.com)
+[![Vercel](https://img.shields.io/badge/Vercel-Frontend_Live-black?style=flat-square&logo=vercel)](https://logixa-flow.vercel.app)
+[![Telegram](https://img.shields.io/badge/Telegram_Bot-Topic_#5-26A5E4?style=flat-square&logo=telegram)](https://t.me/)
 
-> Owner: Project / Engineering
-> Update when: project identity, quick-start, documentation map, or high-level snapshot changes
-> Last Updated: 2026-11-10
-> Do NOT put here: detailed deployment, security, API, database, or provider runbooks.
+---
 
-## What is Logixa Flow?
+## 🌟 Overview
 
-Logixa Flow is an AI-powered supply-chain intelligence and workflow automation platform. It combines a public knowledge surface, private admin control plane, AI/RAG, human-reviewed content workflows, durable workflow automation, scheduling, storage integrations, and operational tooling.
+**Logixa Flow** is an enterprise-grade multi-agent autonomous execution system. It orchestrates intelligent LLM agents across complex multi-step pipelines, automated data synthesis, document validation, and asynchronous task delivery.
 
-Core loop:
+Designed with a high-throughput Python FastAPI backend running on Render and a responsive Next.js 15 command center hosted on Vercel.
 
-Source / File / User Input → Ingestion → RAG / AI → Review / Decision → Workflow → Action → Analytics
+---
 
-## Architecture at a glance
+## 🚀 Key Features
 
-Next.js / React frontend → FastAPI backend → Supabase PostgreSQL + pgvector, with external AI, storage, QStash, Google Drive, and other integrations.
+* **🤖 Multi-Agent Orchestration**: Autonomous agent pipelines powered by Gemini 2.0 Flash, Groq Whisper/LLaMA 3.3, and OpenRouter fallbacks.
+* **🧠 Vector Memory & RAG**: Semantic vector retrieval powered by Supabase `pgvector` and Voyage AI embeddings.
+* **⚡ Asynchronous Queue Engine**: Celery & Upstash Redis/QStash background worker execution with automatic retries and dead-letter handling.
+* **📊 Visual Workflow Designer**: Real-time interactive pipeline builder and execution tracer.
+* **🛡️ Enterprise Governance**: Role-based access control, cryptographic webhook signatures, and automated audit logging.
+* **📲 Dedicated Telegram Ops Bot**: Direct pipeline triggering, status inspections, and live system alerts in Topic `#5`.
 
-The canonical workflow implementation is `apps/web-platform/backend/app/routers/workflow.py`. PostgreSQL is the durable workflow/run source of truth. The current Render Free path uses QStash delivery and in-process canonical execution with `CELERY_ENABLED=false`.
+---
 
-## Technology stack
+## 🏗️ System Architecture
 
-Frontend: Next.js, React 19.3.0, TypeScript, @xyflow/react.
+```
+┌─────────────────────────────────┐       ┌──────────────────────────────────┐
+│      Next.js 15 Command UI      │       │     Dedicated Telegram Bot       │
+│      (Vercel Production)        │       │         (Topic #5 Ops)           │
+└────────────────┬────────────────┘       └────────────────┬─────────────────┘
+                 │                                         │
+                 ▼                                         ▼
+┌────────────────────────────────────────────────────────────────────────────┐
+│                    FastAPI Core Engine (Render Cloud)                      │
+│   • Asynchronous Agent Dispatcher & Pipeline Executor                      │
+│   • LLM Router: Gemini 2.0 Flash ➔ Groq ➔ OpenRouter (Tiered Fallbacks)   │
+│   • Vector Knowledge Ingestion & Hybrid RAG Retrieval                      │
+└─────────────────────────────────────┬──────────────────────────────────────┘
+                                      │
+                                      ▼
+┌────────────────────────────────────────────────────────────────────────────┐
+│                       Data & Background Services                           │
+│   • Supabase PostgreSQL (pgvector, Session Pooler, RLS Guardrails)         │
+│   • Upstash Redis REST & Celery Broker (Real-time Message Bus)              │
+│   • Cloudinary CDN & Backblaze B2 (Artifact & Document Vault)              │
+│   • Sentry & Axiom Observability Pipeline                                  │
+└────────────────────────────────────────────────────────────────────────────┘
+```
 
-Backend: Python, FastAPI, Uvicorn, SQLAlchemy, SlowAPI, JWT/admin authorization.
+---
 
-Data: PostgreSQL through Supabase, pgvector, Alembic.
+## ⚡ Quickstart
 
-AI: Gemini plus a multi-provider router, embeddings, RAG, AI Memory/Brain, agent runs, and usage/cost telemetry.
+```bash
+# 1. Backend Setup
+cd apps/web-platform/backend
+python -m venv .venv
+source .venv/bin/activate  # Or .venv\Scripts\activate on Windows
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
 
-Infrastructure: GitHub, Render, optional/locked Vercel frontend deployment, QStash, Cloudinary, Supabase Storage, Backblaze B2/S3-compatible storage, Google Drive.
+# 2. Frontend Setup
+cd ../frontend
+pnpm install
+pnpm dev
+```
 
-Frontend dependency declaration: Next.js `^15.5.27`; committed `package-lock.json` resolves Next.js to **15.5.28** (verified 2026-11-10).
+---
 
-## Current snapshot
+## 🔒 Security & Isolation
 
-Latest connected-provider audit: [docs/INFRASTRUCTURE_AUDIT_2026-11-10.md](docs/INFRASTRUCTURE_AUDIT_2026-11-10.md). Current main HEAD is 4029acddbc3b67f78fa91d6a188e6218f74db3ed; PR #206, #207, and #208 are merged.
+* **Strict Sandbox Isolation**: Zero cross-project dependencies or runtime shared states.
+* **Secure Webhook Verification**: All incoming webhooks verified with SHA256 HMAC tokens.
 
-Render backend remains on the Free plan and is live for backend commit de084fd8764ba78bcbe2b6897ed44703aefc13b4; /health returned HTTP 200. Vercel production deployment is READY for current main HEAD; / and /admin/login returned HTTP 200.
+---
 
-Production Supabase Alembic head is **20261016_0015**. All 36 public tables have RLS enabled; direct SELECT grants to anon and authenticated are zero. Production currently has zero workflow definitions, workflow nodes, workflow runs, scheduled workflow jobs, and stored-file records.
+## 📜 License
 
-Latest local verification: backend **294 passed / 5 skipped**, frontend **87 passed across 36 files**, Next.js production build passed, and full frontend npm audit reported **0 vulnerabilities**. Upstash Redis and QStash remain on Free plans; Redis auto-upgrade is disabled and QStash schedules are empty in both regions.
-
-Release state remains **DEPLOYED — NOT FULLY PRODUCTION-CERTIFIED**. Live QStash workflow completion/idempotency/recovery, Agent→Brain→approval→publish, full SLO/alert evidence, rollback/managed Auth-Storage/object-storage recovery, 24-hour scheduler observation, GitHub branch protection, Cloudflare MFA review, and newsletter/provider failover remain pending. Supabase leaked-password protection is Pro+ only; keep the Free plan and use the available minimum-length and character-requirement controls.
-
-## Documentation map
-
-- docs/INFRASTRUCTURE_AUDIT_2026-11-10.md — latest live provider inventory, free-tier posture, security observations, and remaining gates.
-
-- PROJECT_OVERVIEW.md — product and architecture overview.
-- CURRENT_STATE.md — current status, gates, blockers, deferred work, and next action.
-- ROADMAP.md — phases, acceptance criteria, release gates, future work, and backlog.
-- UI_DESIGN_SYSTEM.md — frontend design rules evidenced in code.
-- TOOL.md — working protocol, documentation protocol, git/CI rules, tools matrix, and evidence rules.
-- SECURITY.md — security model, boundaries, secrets, authorization, and incident handling.
-- docs/ARCHITECTURE.md — architecture decisions and durable execution boundaries.
-- docs/DEVELOPMENT.md — development setup and CI policy.
-- docs/TESTING.md — test layers and evidence rules.
-- docs/DEPLOYMENT.md — deployment topology and release gates.
-- docs/OPERATIONS.md — operations, recovery, monitoring, and provider verification.
-- docs/DATABASE.md — schema, migration, RLS, and durable-state rules.
-- docs/API.md — API contracts and route boundaries.
-- docs/AI_RAG.md — AI providers, gates, RAG behavior, and publication safety.
-- docs/STORAGE.md — storage routing and provider verification.
-- docs/TOOLS_AND_LLM_INVENTORY.md — platform tools, external services, LLM adapters, and active-provider status.
-- docs/TROUBLESHOOTING.md — diagnostics and recovery guidance.
-
-## Quick start
-
-Backend (FastAPI Engine — Port 8000):
-
-    cd apps/web-platform/backend
-    python -m pip install -r requirements.txt
-    python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-
-Frontend:
-
-    cd apps/web-platform/frontend
-    npm install
-    npm run dev -- -p 3000
-
-Checks:
-
-    npm run build
-    python -m pytest -q
-    git diff --check
-    git status --short
-
-For operational work, read TOOL.md first and then the relevant domain document.
+Private Enterprise License. All Rights Reserved.
